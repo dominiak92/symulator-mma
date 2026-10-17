@@ -7,7 +7,7 @@
   --line: #2d2d32;
   --text: #f4f4f5;
   --muted: #a1a1aa;
-  --faint: #6b6b74;
+  --faint: #8b8b95;
 
   --cyan: #01aeee; /* kolor z logo, Twój narożnik */
   --cyan-soft: rgba(1, 174, 238, 0.14);
@@ -5210,4 +5210,48 @@ button.hs:active,
 .tile small .ico {
   width: 10px;
   height: 10px;
+}
+.fi-card {
+  max-height: 100%;
+  overflow: auto;
+}
+@media (max-height: 480px) {
+  .fi-card .fighter-art {
+    width: 64px;
+    height: 77px;
+  }
+  .fi-word {
+    padding-bottom: 28px;
+    font-size: 1.6rem;
+  }
+  .tut-art {
+    min-height: 0;
+  }
+  .decision-sheet {
+    max-height: 75vh;
+  }
+}
+/* przyciski samouczka zawsze widoczne, nawet na niskim ekranie */
+.tut-nav {
+  position: sticky;
+  bottom: -18px;
+  margin: 0 -18px -18px;
+  padding: 10px 18px 18px;
+  background: linear-gradient(transparent, var(--panel) 30%);
+}
+@media (max-height: 480px) {
+  .tut-art .fighter-art {
+    width: 64px;
+    height: 77px;
+  }
+  .tut-art {
+    padding: 6px;
+  }
+  .tut-belt .belt-art {
+    width: 110px;
+    height: 55px;
+  }
+  .tut-slide h2 {
+    font-size: 1.2rem;
+  }
 }
