@@ -1,3 +1,5 @@
+import { Icon, IconGallery } from './ui/Icon';
+import { Tutorial, tutorialSeen } from './ui/Tutorial';
 import { useCallback, useEffect, useState } from 'react';
 import type { GameState } from './engine/types';
 import { addToMuseum, clearSlot, loadAchievements, loadGoals, loadSlot, saveAchievements, saveGoals, saveSlot } from './storage';
@@ -16,6 +18,7 @@ import { START_PROFILES } from './engine/data';
 type Screen =
   | { name: 'menu' }
   | { name: 'slots' }
+  | { name: 'tutorial'; then: 'slots' | 'menu' }
   | { name: 'create'; slot: number }
   | { name: 'game' }
   | { name: 'achievements' }
@@ -124,19 +127,22 @@ export default function App() {
   };
 
   if (typeof location !== 'undefined' && location.hash === '#herby') return <EmblemGallery />;
+  if (typeof location !== 'undefined' && location.hash === '#ikony') return <IconGallery />;
   return (
     <>
       <div className="cage-top" aria-hidden="true" />
       <div className="app">
         {screen.name === 'menu' && (
           <Menu
-            onPlay={() => setScreen({ name: 'slots' })}
+            onPlay={() => setScreen(tutorialSeen() ? { name: 'slots' } : { name: 'tutorial', then: 'slots' })}
+            onTutorial={() => setScreen({ name: 'tutorial', then: 'menu' })}
             onDaily={startDaily}
             onAchievements={() => setScreen({ name: 'achievements' })}
             onMuseum={() => setScreen({ name: 'museum' })}
             onSettings={() => setScreen({ name: 'settings' })}
           />
         )}
+        {screen.name === 'tutorial' && <Tutorial onDone={() => setScreen(screen.then === 'slots' ? { name: 'slots' } : { name: 'menu' })} />}
         {screen.name === 'achievements' && <AchievementsScreen onBack={toMenu} />}
         {screen.name === 'museum' && <MuseumScreen onBack={toMenu} />}
         {screen.name === 'settings' && <SettingsScreen onBack={toMenu} />}
@@ -180,6 +186,9 @@ export default function App() {
       <div className="toasts" aria-live="polite">
         {toasts.slice(0, 1).map((t) => (
           <button key={t.id} className="toast reveal" onClick={() => setToasts((x) => x.slice(1))} aria-label={`${t.a.kind}: ${t.a.title}. Dotknij, żeby zamknąć.`}>
+            <span className="toast-ico">
+              <Icon name="trophy" size={18} />
+            </span>
             <small>
               {t.a.kind}
               {toasts.length > 1 ? ` · jeszcze ${toasts.length - 1}` : ''}

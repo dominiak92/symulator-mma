@@ -65,10 +65,14 @@ const SETTINGS = 'spz-mma-settings';
 export interface Settings {
   animations: boolean;
   cardTheme: string;
+  /** podpowiedzi trenera w pierwszej karierze */
+  tips: boolean;
+  tipsSeen: string[];
+  tutorialSeen: boolean;
 }
 export function loadSettings(): Settings {
   const raw = safeGet(SETTINGS);
-  const def: Settings = { animations: true, cardTheme: 'gg' };
+  const def: Settings = { animations: true, cardTheme: 'gg', tips: true, tipsSeen: [], tutorialSeen: false };
   if (!raw) return def;
   try {
     return { ...def, ...JSON.parse(raw) };

@@ -690,9 +690,9 @@ select.input {
   .hud-name {
     order: 2;
   }
-  .hud-chips {
+  .hud-stats {
     order: 3;
-    width: 440px;
+    width: 460px;
     flex: none;
   }
   .hud-name .full {
@@ -2604,34 +2604,6 @@ h3,
   scroll-margin-top: calc(var(--hud-h) + 8px);
 }
 
-/* pasek postępu wtopiony w dół HUD-a */
-.hud-progress {
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: 1fr;
-  gap: 3px;
-  margin: 2px -16px -10px;
-  height: 4px;
-}
-.hud-progress span {
-  background: var(--line);
-}
-.hud-progress span.on {
-  background: linear-gradient(90deg, var(--cta), var(--cyan));
-}
-.hud-progress span.now {
-  background: var(--cyan);
-  animation: nowpulse 1.4s ease-in-out infinite;
-}
-@keyframes nowpulse {
-  50% {
-    opacity: 0.45;
-  }
-}
-.hud.has-progress {
-  border-bottom: 0;
-}
-
 /* nagłówek sezonu */
 .season-step {
   padding-top: 16px;
@@ -3396,10 +3368,14 @@ details.intro-notes p {
   h2 {
     font-size: 1.35rem;
   }
-  /* toasty na dole, nad przyciskiem */
+  /* toasty u góry, na belce (nie zasłaniają przycisków ani wyborów) */
   .toasts {
-    top: auto;
-    bottom: calc(100px + env(safe-area-inset-bottom));
+    top: calc(6px + env(safe-area-inset-top));
+    bottom: auto;
+    left: 10px;
+    right: 62px;
+    width: auto;
+    transform: none;
   }
 }
 
@@ -3418,10 +3394,10 @@ details.intro-notes p {
 }
 
 /* miganie HUD przy zmianie */
-.hud-chip b.flash-up {
+.hs b.flash-up {
   animation: budUp 0.9s ease-out;
 }
-.hud-chip b.flash-down {
+.hs b.flash-down {
   animation: budDown 0.9s ease-out;
 }
 @keyframes budUp {
@@ -3939,13 +3915,15 @@ details.intro-notes p {
   .toast {
     padding: 6px 12px;
   }
-  .toast > span,
-  .toast > p {
-    display: none;
-  }
 }
 .toast.reveal {
-  animation: dalejUp 0.4s cubic-bezier(0.2, 1.4, 0.4, 1) both;
+  animation: toastIn 0.4s cubic-bezier(0.2, 1.4, 0.4, 1) both;
+}
+@keyframes toastIn {
+  from {
+    opacity: 0;
+    transform: translateY(-30px);
+  }
 }
 
 /* =====================================================================
@@ -3982,15 +3960,6 @@ h3.pt-ico .ico {
 }
 .panel-title .pt-ico .ico {
   color: var(--cyan);
-}
-.hud-chip small {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-.hud-chip small .ico {
-  color: var(--cyan);
-  opacity: 0.9;
 }
 .dock button {
   display: flex;
@@ -4178,4 +4147,540 @@ h3.pt-ico .ico {
 .menu-tile .tile-ico {
   grid-row: span 2;
   margin: 0;
+}
+
+/* =====================================================================
+   HUD v3: jeden pasek statystyk, ciągły pasek postępu
+   ===================================================================== */
+.hud {
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 8px;
+}
+.hud-stats {
+  display: grid;
+  grid-template-columns: 1.35fr 1.1fr 1fr 0.8fr;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.hs {
+  min-width: 0;
+  padding: 5px 8px 6px;
+  border-left: 1px solid var(--line);
+}
+.hs:first-child {
+  border-left: 0;
+}
+.hs small {
+  display: block;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--faint);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.3;
+}
+.hs b {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--display);
+  font-size: 1.05rem;
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+  min-width: 0;
+}
+.hs b .ico {
+  color: var(--cyan);
+}
+.hs b i {
+  font-style: normal;
+  font-size: 0.72rem;
+  color: var(--muted);
+  font-family: var(--body);
+}
+.hs b.neg {
+  color: var(--bad);
+}
+.hud-progress {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 3px;
+  background: transparent;
+  margin: 0;
+  display: block;
+}
+.hud-progress i {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, var(--cta), var(--cyan));
+  border-radius: 0 3px 3px 0;
+  box-shadow: 0 0 8px rgba(1, 174, 238, 0.6);
+  transition: width 0.5s ease-out;
+}
+@media (max-width: 370px) {
+  .hs {
+    padding: 4px 6px 5px;
+  }
+  .hs b {
+    font-size: 0.95rem;
+    gap: 3px;
+  }
+  .hs b .ico {
+    width: 12px;
+    height: 12px;
+  }
+}
+
+/* toast osiągnięcia */
+.toast {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  column-gap: 10px;
+  align-items: center;
+  box-shadow: 0 12px 30px -10px rgba(0, 0, 0, 0.8);
+}
+.toast-ico {
+  grid-row: span 3;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--gold-soft);
+  color: var(--gold);
+}
+.toast > small,
+.toast > strong,
+.toast > span:not(.toast-ico) {
+  grid-column: 2;
+}
+@media (max-width: 640px) {
+  .toast > span:not(.toast-ico) {
+    display: none;
+  }
+}
+
+/* =====================================================================
+   Samouczek, podpowiedzi trenera, „Jak grać”
+   ===================================================================== */
+.tutorial {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  padding: max(16px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom));
+  background: rgba(5, 5, 7, 0.86);
+  backdrop-filter: blur(6px);
+  animation: fadeIn 0.25s ease-out;
+}
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+}
+.tut-card {
+  position: relative;
+  width: min(440px, 100%);
+  max-height: 100%;
+  overflow: auto;
+  display: grid;
+  gap: 14px;
+  padding: 16px 18px 18px;
+  border-radius: 18px;
+  border: 1px solid var(--line);
+  background:
+    radial-gradient(120% 60% at 50% 0%, rgba(1, 174, 238, 0.16), transparent 70%),
+    var(--panel);
+  box-shadow: 0 30px 80px -20px rgba(0, 0, 0, 0.9);
+  animation: stepIn 0.35s ease-out;
+}
+.tut-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.tut-skip {
+  appearance: none;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font-weight: 600;
+  font-size: 0.9rem;
+  padding: 6px 4px;
+  cursor: pointer;
+}
+.tut-slide {
+  display: grid;
+  gap: 8px;
+  text-align: center;
+  animation: slideIn 0.35s ease-out;
+}
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+}
+.tut-slide h2 {
+  font-size: 1.5rem;
+  margin: 4px 0 0;
+}
+.tut-slide p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.98rem;
+  line-height: 1.5;
+}
+.tut-art {
+  min-height: 150px;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16'%3E%3Cpath d='M0 8 L8 0 L16 8 L8 16 Z' fill='none' stroke='%23ffffff' stroke-opacity='0.06' stroke-width='1'/%3E%3C/svg%3E"),
+    var(--bg-deep);
+  padding: 12px;
+}
+.tut-faceoff {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+}
+.tut-faceoff .vs-word {
+  padding-bottom: 46px;
+}
+.tut-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px 14px;
+  width: 100%;
+}
+.tut-stats span,
+.tut-icons span {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  color: var(--cyan);
+}
+.tut-stats small,
+.tut-icons small {
+  color: var(--text);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+.tut-stats span {
+  animation: rmpop 0.35s cubic-bezier(0.2, 1.6, 0.4, 1) both;
+}
+.tut-stats span:nth-child(2) { animation-delay: 0.05s; }
+.tut-stats span:nth-child(3) { animation-delay: 0.1s; }
+.tut-stats span:nth-child(4) { animation-delay: 0.15s; }
+.tut-stats span:nth-child(5) { animation-delay: 0.2s; }
+.tut-stats span:nth-child(6) { animation-delay: 0.25s; }
+.tut-icons {
+  display: flex;
+  gap: 28px;
+}
+.tut-choice {
+  display: grid;
+  gap: 8px;
+  width: 100%;
+  text-align: left;
+}
+.tut-opt {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 4px 10px;
+  align-items: center;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel);
+}
+.tut-opt b {
+  font-size: 0.9rem;
+}
+.tut-opt span {
+  font-family: var(--display);
+  font-size: 1.3rem;
+  font-weight: 700;
+}
+.tut-opt i {
+  grid-column: 1 / -1;
+  height: 5px;
+  border-radius: 3px;
+  animation: barGrow 0.7s ease-out both;
+}
+.tut-opt i.good {
+  background: var(--good);
+}
+.tut-opt i.bad {
+  background: var(--bad);
+}
+.tut-belt .belt-art {
+  animation: trophyDrop 0.7s cubic-bezier(0.25, 1.6, 0.45, 1) both;
+}
+.tut-dots {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+}
+.tut-dots button {
+  appearance: none;
+  border: 0;
+  width: 8px;
+  height: 8px;
+  padding: 0;
+  border-radius: 999px;
+  background: var(--line);
+  cursor: pointer;
+  transition: width 0.25s, background 0.25s;
+}
+.tut-dots button.on {
+  width: 22px;
+  background: var(--cyan);
+}
+.tut-nav {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 8px;
+}
+.tut-nav .btn-ghost {
+  min-width: 52px;
+}
+.tut-nav > span {
+  display: none;
+}
+.tut-nav > span + .btn {
+  grid-column: 1 / -1;
+}
+
+/* podpowiedź trenera */
+.coach {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 10px;
+  margin: 10px 0 12px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(1, 174, 238, 0.45);
+  background: linear-gradient(135deg, rgba(1, 174, 238, 0.12), rgba(31, 0, 254, 0.08)), var(--bg-deep);
+  animation: stepIn 0.35s ease-out both;
+}
+.coach-av {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--cyan);
+  color: #021720;
+}
+.coach-body small {
+  display: block;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--cyan);
+}
+.coach-text {
+  font-size: 0.9rem;
+  line-height: 1.45;
+  margin-top: 2px;
+}
+.coach-text .ico {
+  color: var(--cyan);
+}
+.coach-btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+.coach-btns .btn {
+  padding: 6px 12px;
+  font-size: 0.85rem;
+}
+.live .coach {
+  margin: 8px 0;
+}
+
+/* „Jak grać” na stronie głównej */
+.how {
+  max-width: 760px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  background: var(--panel);
+  padding: 16px;
+}
+.how-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.how-head h2 {
+  font-size: 1.3rem;
+  margin: 0;
+}
+.how-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+  counter-reset: how;
+}
+.how-steps li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+  counter-increment: how;
+}
+.how-ico {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: var(--cyan-soft);
+  color: var(--cyan);
+}
+.how-ico::after {
+  content: counter(how);
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 0.66rem;
+  font-weight: 800;
+  background: var(--cta);
+  color: #fff;
+}
+.how-steps strong {
+  display: block;
+  font-family: var(--display);
+  font-size: 1.05rem;
+  letter-spacing: 0.01em;
+}
+.how-steps li > div > span {
+  display: block;
+  color: var(--muted);
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+@media (min-width: 760px) {
+  .how-steps {
+    grid-template-columns: 1fr 1fr;
+    gap: 14px 20px;
+  }
+}
+
+/* podpowiedź trenera: zwarta wersja */
+.coach {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: start;
+  padding: 9px 8px 9px 10px;
+}
+.coach-av {
+  width: 30px;
+  height: 30px;
+}
+.coach-text {
+  margin-top: 0;
+  font-size: 0.86rem;
+  line-height: 1.4;
+}
+.coach-off {
+  appearance: none;
+  border: 0;
+  background: none;
+  padding: 2px 0 0;
+  margin-top: 2px;
+  color: var(--faint);
+  font-size: 0.74rem;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+.coach-x {
+  appearance: none;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  width: 32px;
+  height: 32px;
+  margin: -6px -4px 0 0;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.coach-x:active {
+  background: var(--panel-2);
+}
+/* HUD: jednostka obok kwoty */
+.hs b i {
+  align-self: flex-end;
+  padding-bottom: 1px;
+}
+.tile {
+  overflow: hidden;
+}
+.tile small {
+  white-space: nowrap;
+  overflow: hidden;
+}
+/* nagłówek arkusza przyklejony do górnej krawędzi (kompensuje padding arkusza) */
+.sheet-head {
+  top: -20px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 14px;
+}
+.sheet {
+  overscroll-behavior: contain;
+}
+@media (max-width: 389px) {
+  .tiles {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+.medal-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+.medal-row .medal-art {
+  margin-left: 4px;
+}
+.belt-mark {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: 4px;
+  color: var(--gold);
+  vertical-align: -2px;
+}
+.season-kicker {
+  margin-bottom: 2px;
+}
+.season-head {
+  align-items: center;
 }
