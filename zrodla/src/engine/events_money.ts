@@ -253,7 +253,7 @@ export const MONEY_EVENTS: EventDef[] = [
     text: (s) => `Pierwszy raz widzisz na koncie, ile kosztuje ZUS za działalność. Księgowa mówi, że ${zl(cash(s, 0.03, 400, 6000))} zaległości trzeba wpłacić do końca miesiąca.`,
     choices: (s) => [
       { label: 'Płacisz', desc: 'Z ciężkim sercem.', effects: { money: -cash(s, 0.03, 400, 6000) } },
-      { label: 'Rozkładasz na raty', desc: 'Trzy raty z odsetkami, płacone z budżetu.', effects: { loan: { amount: 0, installment: Math.round((cash(s, 0.03, 400, 6000) * 1.12) / 3 / 10) * 10, count: 3 } } },
+      { label: 'Negocjujesz z ZUS-em', desc: 'Pismo o rozłożenie i umorzenie odsetek.', chance: 50, success: { money: -Math.round(cash(s, 0.03, 400, 6000) * 0.7 / 10) * 10, note: 'umorzone odsetki' }, fail: { money: -Math.round(cash(s, 0.03, 400, 6000) * 1.2 / 10) * 10, note: 'odsetki za zwłokę' }, successText: 'ZUS umarza odsetki. Płacisz mniej, niż się bałeś.', failText: 'Odmowa, a w międzyczasie naliczyły się odsetki za zwłokę.' },
     ],
   },
 ];

@@ -84,7 +84,9 @@ export const STAGE_LABELS: Record<TourneyStage, string> = {
   b: 'Walka o brąz',
 };
 
-export const AMATEUR_TOURNEYS = ['Puchar Polski MMA', 'Mistrzostwa Polski MMA'];
+export const AMATEUR_TOURNEYS = ['Amatorski Puchar Polski MMA', 'Amatorskie Mistrzostwa Polski MMA'];
+/** Słabsze zawody na start (gdy trener uzna, że trzeba się jeszcze otrzaskać). */
+export const AMATEUR_TOURNEYS_LOCAL = ['Amatorska Liga Wojewódzka MMA', 'Amatorski Turniej o Puchar Wojewody'];
 export const TOURNEY_CITIES = ['Gliwice', 'Łódź', 'Puławy', 'Warszawa', 'Grodzisk Mazowiecki', 'Lublin', 'Poznań', 'Wrocław'];
 
 export function amateurDivision(age: number, amFights: number): string {

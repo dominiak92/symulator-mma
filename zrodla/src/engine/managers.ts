@@ -20,8 +20,8 @@ export interface Manager {
 export const MANAGERS: Manager[] = [
   {
     id: 'zdzisiek',
-    name: 'Wujek Zdzisiek',
-    desc: 'Załatwia wszystko przez kolegę z wojska. Tani i zawsze odbiera telefon.',
+    name: 'Mirek „Telefon” Kaczmarek',
+    desc: 'Stara szkoła. Walki załatwia jednym telefonem do kolegi z federacji. Tani i zawsze odbiera.',
     cut: 0.05,
     purse: 1.1,
     negotiate: 5,
@@ -32,8 +32,8 @@ export const MANAGERS: Manager[] = [
   },
   {
     id: 'okulary',
-    name: 'Facet w okularach',
-    desc: 'Okulary przeciwsłoneczne o 23:00. Twierdzi, że zna wszystkich w federacji.',
+    name: 'Kamil Wroński · KW Fight',
+    desc: 'Okulary przeciwsłoneczne o 23:00 i trzy telefony naraz. Twierdzi, że zna wszystkich w federacji.',
     cut: 0.15,
     purse: 1.22,
     negotiate: 10,
@@ -45,7 +45,7 @@ export const MANAGERS: Manager[] = [
   },
   {
     id: 'spinacz',
-    name: 'Agencja Spinacz',
+    name: 'Agencja Narożnik',
     desc: 'Porządne umowy, Excel i kawa z ekspresu. Sponsorzy ich lubią.',
     cut: 0.1,
     purse: 1.2,
@@ -58,7 +58,7 @@ export const MANAGERS: Manager[] = [
   },
   {
     id: 'paradygmat',
-    name: 'Paradygmat Sports',
+    name: 'Hype Media Group',
     desc: 'Media i sponsorzy na pierwszym miejscu, walki trochę dalej.',
     cut: 0.12,
     purse: 1.15,
@@ -71,7 +71,7 @@ export const MANAGERS: Manager[] = [
   },
   {
     id: 'dominacja',
-    name: 'Dominacja Management',
+    name: 'Apex Fight Management',
     desc: 'Stajnia mistrzów z Florydy. Wywalczą ci walkę o pas, ale jesteś jednym z czterdziestu.',
     cut: 0.18,
     purse: 1.45,
