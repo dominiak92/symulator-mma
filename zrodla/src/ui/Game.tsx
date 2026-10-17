@@ -240,12 +240,13 @@ export default function Game({
                 </b>
               </button>
             )}
-            <button className="hs" onClick={() => setSheet('peers')} title="Wiek zawodnika. Dotknij, żeby zobaczyć swój rocznik">
+            <button className="hs" onClick={() => setSheet('peers')} title={`Wiek zawodnika i zużycie organizmu (${Math.round(g.wear)}/100). Dotknij, żeby zobaczyć swój rocznik`}>
               <small>Wiek</small>
               <b>
                 <Icon name="hourglass" size={14} />
                 {g.age}
               </b>
+              <WearMini wear={g.wear} />
             </button>
           </div>
         </div>
@@ -411,11 +412,7 @@ function SkillsPanel({ g, plain }: { g: GameState; plain?: boolean }) {
         );
       })}
       {g.injury && <p className="tag bad" style={{ marginTop: 10 }}><Icon name="bandage" size={13} />Kontuzja: {g.injury.name}, testy −{g.injury.penalty} pkt</p>}
-      {g.wear >= 40 && (
-        <p className="muted small" style={{ marginTop: 8 }}>
-          Zużycie organizmu {Math.round(g.wear)}/100. {g.wear >= 75 ? 'Lekarze patrzą na ciebie coraz krzywiej.' : 'Szczęka już nie ta co kiedyś.'}
-        </p>
-      )}
+      <WearBar wear={g.wear} />
       <div className="kv-grid">
         <span>Waga</span>
         <b>{WEIGHTS[g.profile.weight ?? 'polsrednia'].label}</b>
@@ -590,5 +587,43 @@ export function CareerPanel({ g, onRanking }: { g: GameState; onRanking?: () => 
         </button>
       )}
     </section>
+  );
+}
+
+const wearTone = (w: number) => (w >= 75 ? 'bad' : w >= 40 ? 'warn' : 'ok');
+
+/** Mały pasek zużycia organizmu pod wiekiem w HUD. */
+function WearMini({ wear }: { wear: number }) {
+  const w = Math.max(0, Math.min(100, Math.round(wear)));
+  return (
+    <span className={`wear-mini ${wearTone(w)}`} aria-label={`Zużycie organizmu ${w} na 100`}>
+      <i style={{ width: `${Math.max(4, w)}%` }} />
+    </span>
+  );
+}
+
+/** Pasek zużycia organizmu z opisem (panel zawodnika). */
+function WearBar({ wear }: { wear: number }) {
+  const w = Math.max(0, Math.min(100, Math.round(wear)));
+  const note =
+    w >= 90
+      ? 'Jeszcze jedna wojna i lekarze nie dadzą zgody na walki.'
+      : w >= 75
+        ? 'Lekarze patrzą na ciebie coraz krzywiej. Przy 100 koniec kariery.'
+        : w >= 40
+          ? 'Szczęka już nie ta co kiedyś. Przy 100 lekarze kończą karierę.'
+          : 'Organizm w dobrym stanie. Każda wojna w klatce dokłada tu punkty.';
+  return (
+    <div className={`wear-bar ${wearTone(w)}`}>
+      <div className="wear-head">
+        <span>Zużycie organizmu</span>
+        <b>{w}/100</b>
+      </div>
+      <div className="wear-track" aria-hidden="true">
+        <i style={{ width: `${w}%` }} />
+        <span className="wear-mark" style={{ left: '75%' }} />
+      </div>
+      <small>{note}</small>
+    </div>
   );
 }
