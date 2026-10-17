@@ -5612,3 +5612,16 @@ button.hs:active,
 @media (max-width: 340px) {
   .am-suffix { display: none; }
 }
+.link-btn {
+  appearance: none;
+  background: none;
+  border: 0;
+  padding: 4px 0;
+  color: var(--cyan);
+  font: inherit;
+  font-size: 0.8rem;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.ofr-auto { justify-self: center; }
