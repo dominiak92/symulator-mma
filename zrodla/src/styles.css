@@ -6124,7 +6124,7 @@ button.hs:active,
 .exp-card:nth-child(2) { animation-delay: 0.06s; }
 .exp-card:nth-child(3) { animation-delay: 0.12s; }
 .exp-card.exp-floryda { --acc: var(--cyan); }
-.exp-card.exp-montreal { --acc: #a78bfa; }
+.exp-card.exp-trondheim { --acc: #93c5fd; }
 .exp-card.locked { filter: saturate(0.4); }
 .exp-head { display: grid; grid-template-columns: 38px minmax(0, 1fr) auto; gap: 10px; align-items: center; }
 .exp-ico { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 11px; color: var(--acc); background: color-mix(in srgb, var(--acc) 16%, transparent); }
@@ -6204,3 +6204,38 @@ button.hs:active,
 .exp-plus { display: flex; gap: 6px; align-items: flex-start; margin: 0; font-size: 0.78rem; line-height: 1.35; color: var(--good); }
 .exp-plus .ico { flex: none; margin-top: 2px; }
 .exp-minus { margin-top: -4px; }
+
+/* walka na odbudowę */
+.fi-card.tuneup { border-color: rgba(148, 163, 184, 0.5); }
+.mgr-tip {
+  display: grid; grid-template-columns: 32px minmax(0, 1fr); gap: 10px; align-items: start; margin-top: 8px;
+  padding: 10px 12px; border-radius: 12px; background: rgba(245, 183, 0, 0.08); border: 1px solid rgba(245, 183, 0, 0.35);
+  animation: alertIn 0.35s ease-out both;
+}
+.mgr-tip-ico { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: rgba(245, 183, 0, 0.18); color: var(--gold); }
+.mgr-tip p { margin: 0; font-size: 0.84rem; line-height: 1.4; font-style: italic; }
+.tuneup-fx { display: grid; gap: 4px; margin-top: 8px; font-size: 0.8rem; }
+.tuneup-fx span { display: flex; gap: 6px; align-items: flex-start; line-height: 1.35; }
+.tuneup-fx .ico { flex: none; margin-top: 2px; }
+.tuneup-fx .good { color: var(--good); }
+.tuneup-fx .bad { color: var(--bad); }
+
+/* dziwny sponsor od menedżera */
+.shady {
+  margin-top: 14px; display: grid; gap: 10px; padding: 14px; border-radius: var(--r-md);
+  border: 1px solid rgba(245, 183, 0, 0.4); background: linear-gradient(150deg, rgba(245, 183, 0, 0.1), transparent 60%), var(--panel-2);
+  animation: alertIn 0.4s ease-out both;
+}
+.shady.taken { border-color: rgba(47, 211, 140, 0.4); }
+.shady-head { display: grid; grid-template-columns: 32px minmax(0, 1fr); gap: 10px; align-items: center; }
+.shady-head small { display: block; color: var(--gold); font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; }
+.shady-head b { font-size: 0.95rem; }
+.shady-body { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px; align-items: center; padding: 8px 10px; border-radius: 10px; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--line); }
+.shady-body strong { display: block; font-family: var(--display); font-weight: 400; font-size: 1.1rem; }
+.shady-body span { color: var(--muted); font-size: 0.82rem; }
+.shady-pitch { margin: 0; font-size: 0.84rem; line-height: 1.4; font-style: italic; color: var(--text); }
+.shady-fx { display: flex; flex-wrap: wrap; gap: 6px; }
+.shady-act { display: grid; grid-template-columns: 1fr 1.3fr; gap: 8px; }
+.shady-act .btn { justify-content: center; }
+.shady-done { display: flex; gap: 6px; align-items: flex-start; margin: 0; font-size: 0.84rem; color: var(--good); }
+.shady-done .ico { flex: none; margin-top: 2px; }
