@@ -322,12 +322,13 @@ function growthRate(s: GameState) {
 }
 
 /** Szacunek: ile wyniesie umiejętność po okresie przygotowawczym, gdy (nie) wybierzesz jej na obóz. */
-export function trainingForecast(s: GameState, k: StatKey, focused: boolean): number {
+export function trainingForecast(s: GameState, k: StatKey, focused: boolean, camp?: Camp | null): number {
   const room = Math.max(0, s.potential[k] - CLUB_CAP[s.club.quality] - s.stats[k]);
   let g = room * growthRate(s) * 0.85;
   if (k === s.club.specialty) g *= 1.25;
   if (focused) g += trainingPreview(s, k);
-  return clamp(Math.round(s.stats[k] + g), 1, 99);
+  const v = clamp(Math.round(s.stats[k] + g), 1, 99);
+  return camp ? clamp(v + Math.max(0, Math.min(campGain(s, camp, k), s.potential[k] - v)), 1, 99) : v;
 }
 
 /** Czy klub ogranicza już rozwój (statystyki blisko sufitu klubu, a talent pozwala na więcej). */
@@ -337,8 +338,43 @@ export function clubLimits(s: GameState): boolean {
   return near >= 2;
 }
 
-export function doTraining(s0: GameState, k: StatKey): GameState {
+// Obozy zagraniczne: droga premia dla zawodowców z wyższych szczebli
+export interface Camp {
+  id: string;
+  name: string;
+  place: string;
+  desc: string;
+  main: StatKey;
+  second: StatKey;
+}
+export const CAMPS: Camp[] = [
+  { id: 'tajlandia', name: 'Tajlandia', place: 'obóz muay thai pod Phuketem', desc: 'Dwa treningi dziennie, 35 stopni i łokcie od rana.', main: 'stand', second: 'cardio' },
+  { id: 'dagestan', name: 'Dagestan', place: 'sala zapaśnicza w górach', desc: 'Nikt nie mówi po polsku, za to każdy obala.', main: 'wrest', second: 'chin' },
+  { id: 'usa', name: 'Floryda', place: 'Amerykański Top Gym', desc: 'Sparingi z gwiazdami, analiza nagrań i najlepsza dieta.', main: 'bjj', second: 'iq' },
+];
+const CAMP_COST = [0, 0, 15000, 50000, 120000];
+export function campCost(s: GameState) {
+  return CAMP_COST[s.tier] ?? 0;
+}
+/** Powód, dla którego obóz nie jest dostępny (null = można jechać). */
+export function campBlocked(s: GameState): string | null {
+  if (s.tier < 2) return 'Obozy za granicą od ligi krajowej w górę.';
+  if (s.injury) return 'Najpierw wylecz kontuzję.';
+  if (s.money < campCost(s)) return `Brakuje pieniędzy: obóz kosztuje ${campCost(s).toLocaleString('pl-PL')} zł.`;
+  return null;
+}
+/** Premia z obozu do danej umiejętności (do granicy talentu). */
+export function campGain(s: GameState, camp: Camp | null | undefined, k: StatKey): number {
+  if (!camp) return 0;
+  const base = k === camp.main ? 2 : k === camp.second ? 1 : 0;
+  const g = s.age >= 33 ? Math.ceil(base / 2) : base;
+  return Math.max(0, Math.min(g, s.potential[k] - s.stats[k]));
+}
+
+export function doTraining(s0: GameState, k: StatKey, campId?: string | null): GameState {
+  if (s0.injury?.out) return rehabYear(s0);
   const s = clone(s0);
+  const camp = campId && !campBlocked(s0) ? CAMPS.find((c) => c.id === campId) ?? null : null;
   s.flags.ovrStart = ovr(s.stats);
   s.flags.moneyStart = s.money;
   withRng(s, (rng) => {
@@ -356,6 +392,15 @@ export function doTraining(s0: GameState, k: StatKey): GameState {
         g += focus;
       }
       s.stats[key] = clamp(Math.round(s.stats[key] + g), 1, 99);
+    }
+    s.camp = null;
+    if (camp) {
+      const cost = campCost(s);
+      for (const key of [camp.main, camp.second]) s.stats[key] = clamp(s.stats[key] + campGain(s, camp, key), 1, 99);
+      s.money -= cost;
+      s.media = clamp(s.media + 1, 0, 100);
+      s.camp = camp.id;
+      log(s, `Obóz: ${camp.name} (${camp.place}), ${cost.toLocaleString('pl-PL')} zł.`);
     }
     // głowa rośnie z doświadczeniem
     if (s.history.length >= 15 && s.age < 34 && rng.chance(0.5)) s.stats.iq = clamp(s.stats.iq + 1, 1, 99);
@@ -406,8 +451,50 @@ export function budgetLines(s: GameState): BudgetLine[] {
   for (const l of s.loans) lines.push({ label: 'Rata kredytu', sub: `${l.left === 1 ? 'ostatnia rata' : `zostało ${l.left} ${pl(l.left, 'rata', 'raty', 'rat')}`}`, amount: -l.installment, icon: 'card' });
   for (const sp of s.sponsors)
     lines.push({ label: sp.name, sub: `${sp.clause} · ${sp.seasonsLeft === 1 ? 'ostatni sezon' : `jeszcze ${sp.seasonsLeft} ${pl(sp.seasonsLeft, 'sezon', 'sezony', 'sezonów')}`}`, amount: sp.perSeason, logo: { kind: 'sponsor', name: sp.name } });
+  if (s.academy) lines.push({ label: academyName(s), sub: `twoja akademia · ${ACADEMY_LEVELS[s.academy - 1].name}`, amount: academyIncome(s), icon: 'home' });
   if (s.age < 19 && s.relations >= 3) lines.push({ label: 'Rodzice dokładają', sub: 'z trzynastki', amount: 2000 + s.relations * 300, icon: 'heart' });
   return lines;
+}
+
+// Własna akademia: inwestycja na późną karierę (przychód co sezon i punkty legacy)
+export const ACADEMY_LEVELS = [
+  { cost: 150000, income: 10000, name: 'sala w wynajętej hali', note: 'grupy dzieci i amatorów' },
+  { cost: 400000, income: 25000, name: 'własny klub z klatką', note: 'sekcja zawodnicza i obozy letnie' },
+  { cost: 1000000, income: 50000, name: 'akademia z filiami', note: 'trzy miasta, własna gala amatorska' },
+  { cost: 3000000, income: 120000, name: 'sieć akademii w całym kraju', note: 'franczyza, liga juniorów i program w telewizji' },
+];
+export function academyName(s: GameState) {
+  return `${s.profile.lastName} Team`;
+}
+export function academyIncome(s: GameState) {
+  const lvl = s.academy ?? 0;
+  if (!lvl) return 0;
+  // znane nazwisko ściąga ludzi na zajęcia
+  return Math.round((ACADEMY_LEVELS[lvl - 1].income * (0.7 + s.media / 150)) / 500) * 500;
+}
+/** Następny poziom akademii albo powód, dlaczego jeszcze nie. */
+export function academyNext(s: GameState): { cost: number; name: string; note: string; income: number; blocked: string | null } | null {
+  const lvl = s.academy ?? 0;
+  if (lvl >= ACADEMY_LEVELS.length) return null;
+  const L = ACADEMY_LEVELS[lvl];
+  let blocked: string | null = null;
+  if (s.tier < 2 && lvl === 0) blocked = 'Najpierw zrób nazwisko w lidze krajowej.';
+  else if (s.age < 22) blocked = 'Masz za mało lat, żeby ktoś ci powierzył dzieci na treningach.';
+  else if (s.loans.length) blocked = 'Bank nie da drugiego zobowiązania, najpierw spłać kredyt.';
+  else if (s.money < L.cost) blocked = `Potrzebujesz ${L.cost.toLocaleString('pl-PL')} zł.`;
+  const income = Math.round((L.income * (0.7 + s.media / 150)) / 500) * 500;
+  return { cost: L.cost, name: L.name, note: L.note, income, blocked };
+}
+export function investAcademy(s0: GameState): GameState {
+  const n = academyNext(s0);
+  if (!n || n.blocked) return s0;
+  const s = clone(s0);
+  s.money -= n.cost;
+  s.academy = (s.academy ?? 0) + 1;
+  s.rep = clamp(s.rep + 2, 0, 100);
+  s.media = clamp(s.media + 2, 0, 100);
+  log(s, s.academy === 1 ? `Otwierasz ${academyName(s)}: ${n.name}.` : `${academyName(s)} rośnie: ${n.name}.`);
+  return s;
 }
 
 export function budgetBalance(s: GameState) {
@@ -541,6 +628,146 @@ export function takeBreakYear(s0: GameState): GameState {
     s.flags.breakYears = (s.flags.breakYears ?? 0) + 1;
     log(s, 'Rok przerwy: praca zamiast walk.');
     for (const p of s.peers) progressPeer(rng, p);
+  });
+  s.phase = 'summary';
+  return s;
+}
+
+const INJ_MINOR = ['złamany nos', 'rozcięty łuk brwiowy', 'skręcona kostka', 'złamany palec u stopy', 'stłuczone żebro', 'naciągnięty mięsień dwugłowy', 'obity piszczel'];
+const INJ_SEVERE = ['pęknięty oczodół', 'złamana ręka', 'pęknięte żebro', 'wybity bark', 'naderwane więzadło w kolanie', 'złamana szczęka'];
+const INJ_OUT = ['zerwane więzadło krzyżowe', 'zerwany biceps', 'przepuklina dysku', 'zerwane ścięgno Achillesa'];
+
+/** Koszt roku rehabilitacji (lekarze, fizjo, operacja). */
+export function rehabCost(s: GameState) {
+  return [3000, 8000, 15000, 30000, 60000][s.tier] + livingCost(s.age) + (s.flags.kid ? 10000 : 0);
+}
+
+/** Rok rehabilitacji po ciężkim urazie: bez walk, umiejętności spadają, zużycie organizmu spada. */
+export function rehabYear(s0: GameState): GameState {
+  if (!s0.injury?.out) return s0;
+  const s = clone(s0);
+  withRng(s, (rng) => {
+    const ovrFrom = ovr(s.stats);
+    const moneyFrom = s.money;
+    const name = s.injury!.name;
+    const installments = s.loans.reduce((a, l) => a + l.installment, 0);
+    // bez pieniędzy leczysz się na NFZ: taniej, ale wolniej
+    const full = rehabCost(s) + installments;
+    const spend = Math.min(full, Math.max(0, s.money + OVERDRAFT));
+    const nfz = spend < full;
+    s.money -= spend;
+    for (const l of s.loans) l.left -= 1;
+    s.loans = s.loans.filter((l) => l.left > 0);
+    for (const k of STAT_KEYS) {
+      const drop = (k === 'cardio' ? rng.int(3, 5) : k === 'iq' ? -rng.int(0, 1) : k === 'chin' ? rng.int(0, 2) : rng.int(1, 3)) + (nfz && k !== 'iq' ? 1 : 0);
+      s.stats[k] = clamp(s.stats[k] - drop, 1, 99);
+    }
+    s.lastGains = {};
+    s.wear = clamp(s.wear - 12, 0, 100);
+    s.media = clamp(s.media - 5, 0, 100);
+    const wasRanked = s.tier > 0 && s.rank !== null;
+    if (s.tier > 0) s.rank = null;
+    // po powrocie jeszcze chwilę czuć uraz
+    s.injury = { name: `${name} (powrót po urazie)`, seasons: 2, penalty: 3 };
+    const story = rng.pick([
+      'Rok na rowerku stacjonarnym i gumach. Najgorsze są wieczory, kiedy koledzy wrzucają zdjęcia z gal.',
+      'Operacja, kule, potem fizjo trzy razy w tygodniu. Oglądasz walki z kanapy i notujesz błędy rywali.',
+      'Rehabilitacja idzie wolniej, niż obiecywał lekarz. Za to pierwszy raz od lat nic cię nie boli rano.',
+    ]);
+    const summary: SeasonSummary = {
+      season: s.season, year: s.year, age: s.age, tier: s.tier, fed: s.fed, club: s.club.name,
+      w: 0, l: 0, d: 0, rank: s.rank, champion: false, beltWon: false,
+      moneyDelta: s.money - moneyFrom, ovrFrom, ovrTo: ovr(s.stats),
+      form: 'Rehabilitacja', grade: 'Rok rehabilitacji',
+      bars: [
+        { label: 'Zdrowie', value: 60, note: 'zużycie organizmu spadło' },
+        { label: 'Forma fizyczna', value: 20, note: 'umiejętności spadły' },
+      ],
+      story: `${name.charAt(0).toUpperCase() + name.slice(1)}. ${nfz ? 'Na prywatną klinikę cię nie stać, więc kolejka na NFZ i ćwiczenia z filmików. ' : ''}${story}${wasRanked ? ' Wypadasz z rankingu.' : ''}`,
+    };
+    s.seasons.push(summary);
+    s.lastSummary = summary;
+    s.run = null;
+    s.event = null;
+    s.eventQueue = [];
+    log(s, `Rok rehabilitacji: ${name}.`);
+    for (const p of s.peers) progressPeer(rng, p);
+  });
+  s.phase = 'summary';
+  return s;
+}
+
+// „2-3 years Dagestan and forget”: trzy sezony w górach zamiast walk
+const DAGESTAN_COST = [0, 40000, 90000, 200000, 450000];
+export function dagestanCost(s: GameState) {
+  return DAGESTAN_COST[s.tier] ?? 0;
+}
+export function dagestanBlocked(s: GameState): string | null {
+  if (s.flags.dagestan) return 'Już tam byłeś. Drugi raz cię nie wpuszczą.';
+  if (s.tier < 1) return 'Najpierw przejdź na zawodowstwo.';
+  if (s.age > 30) return 'Po trzydziestce trzy lata w górach to już za dużo.';
+  if (s.injury) return 'Z kontuzją nie przetrwasz tamtejszych treningów.';
+  if (s.loans.length) return 'Najpierw spłać kredyt, rat z gór nie zapłacisz.';
+  if (s.money < dagestanCost(s)) return `Potrzebujesz ${dagestanCost(s).toLocaleString('pl-PL')} zł na trzy lata.`;
+  return null;
+}
+/** Przybliżone przyrosty (do podglądu): środek przedziału, do granicy talentu. */
+export const DAGESTAN_GAINS: Record<StatKey, [number, number]> = {
+  wrest: [8, 12],
+  cardio: [6, 9],
+  chin: [3, 5],
+  bjj: [3, 6],
+  iq: [2, 4],
+  stand: [0, 2],
+};
+export function goDagestan(s0: GameState): GameState {
+  if (dagestanBlocked(s0)) return s0;
+  const s = clone(s0);
+  withRng(s, (rng) => {
+    const ovrFrom = ovr(s.stats);
+    const moneyFrom = s.money;
+    const ageFrom = s.age;
+    s.money -= dagestanCost(s);
+    const m = s.age >= 28 ? 0.7 : 1;
+    const before = { ...s.stats };
+    for (const k of STAT_KEYS) {
+      const [a, b] = DAGESTAN_GAINS[k];
+      const g = Math.round(rng.int(a, b) * m);
+      s.stats[k] = clamp(Math.min(s.stats[k] + g, Math.max(s.stats[k], s.potential[k])), 1, 99);
+    }
+    s.lastGains = mapStats((k) => s.stats[k] - before[k]);
+    // dwa z trzech lat mijają tutaj, trzeci przy przejściu na rynek
+    ageOneYear(rng, s);
+    ageOneYear(rng, s);
+    for (let i = 0; i < 3; i++) for (const p of s.peers) progressPeer(rng, p);
+    s.media = clamp(s.media - 15, 0, 100);
+    s.rep = clamp(s.rep + 4, 0, 100);
+    s.wear = clamp(s.wear - 10, 0, 100);
+    if (s.tier > 0) s.rank = null;
+    s.contractSeasonsLeft = 0;
+    s.flags.dagestan = 1;
+    s.peakOvr = Math.max(s.peakOvr, ovr(s.stats));
+    const summary: SeasonSummary = {
+      season: s.season, year: s.year, age: s.age, tier: s.tier, fed: s.fed, club: s.club.name,
+      w: 0, l: 0, d: 0, rank: s.rank, champion: false, beltWon: false,
+      moneyDelta: s.money - moneyFrom, ovrFrom, ovrTo: ovr(s.stats),
+      form: 'Dagestan', grade: '2-3 years Dagestan and forget',
+      bars: [
+        { label: 'Forma fizyczna', value: 95, note: `OVR ${ovrFrom} → ${ovr(s.stats)}` },
+        { label: 'Rozpoznawalność', value: 15, note: 'kibice o tobie zapomnieli' },
+      ],
+      story: rng.pick([
+        `Wyjeżdżasz w wieku ${ageFrom} lat, wracasz po trzech. Bez internetu, bez cukru, z zapasami pięć razy dziennie. W hali nikt nie pamięta twojego nazwiska, za to ty pamiętasz każde obalenie.`,
+        `Trzy zimy w górach. Stary trener mówił do ciebie tylko „jeszcze raz”. Wracasz twardszy, cichszy i nikt w Polsce nie wie, czego się spodziewać.`,
+        `Trzy lata, jedna sala i baran na każde święto. Media pytają, czy w ogóle jeszcze walczysz. Zaraz się przekonają.`,
+      ]),
+    };
+    s.seasons.push(summary);
+    s.lastSummary = summary;
+    s.run = null;
+    s.event = null;
+    s.eventQueue = [];
+    log(s, 'Trzy lata w Dagestanie. Zapasy, góry i cisza.');
   });
   s.phase = 'summary';
   return s;
@@ -1322,9 +1549,23 @@ function finalizeFight(rng: Rng, s: GameState, rep: FightReport) {
   // zużycie i kontuzje
   const dmgTaken = rep.sim.me.dmg;
   s.wear = clamp(s.wear + (dmgTaken / 10) * (rep.amateur ? 0.4 : 1) + (res === 'L' && (rep.method === 'KO/TKO' || rep.method === 'Lekarz') ? (rep.amateur ? 3 : 7) : 0) + (s.age >= 32 ? 1.5 : 0), 0, 100);
-  if (dmgTaken > 50 && !s.injury && rng.chance(0.25)) {
-    s.injury = { name: rng.pick(['złamany nos', 'pęknięty oczodół', 'naderwany biceps', 'skręcona kostka', 'złamany palec u stopy', 'pęknięte żebro', 'rozcięty łuk brwiowy', 'naciągnięte więzadło kolana', 'wybity bark']), seasons: 1, penalty: 4 };
-    rep.moments.push({ round: rep.round, title: 'Kontuzja', text: `Po walce lekarz ma złe wieści: ${s.injury.name}.`, tone: 'bad' });
+  const injP = ((dmgTaken > 50 ? 0.22 : dmgTaken > 30 ? 0.07 : 0.02) + s.wear / 600 + (s.age >= 32 ? 0.03 : 0)) * (rep.amateur ? 0.5 : 0.8);
+  if (!s.injury && rng.chance(injP)) {
+    const roll = rng.next();
+    if (roll < 0.6) {
+      s.injury = { name: rng.pick(INJ_MINOR), seasons: 1, penalty: 4 };
+      rep.moments.push({ round: rep.round, title: 'Kontuzja', text: `Po walce lekarz ma złe wieści: ${s.injury.name}. Da się walczyć, ale nie na sto procent.`, tone: 'bad' });
+    } else if (roll < 0.88 || rep.amateur) {
+      s.injury = { name: rng.pick(INJ_SEVERE), seasons: 2, penalty: 5 };
+      s.flags.injuryStop = 1;
+      rep.moments.push({ round: rep.round, title: 'Poważna kontuzja', text: `Diagnoza: ${s.injury.name}. Lekarz skreśla cię do końca sezonu.`, tone: 'bad' });
+      log(s, `Poważna kontuzja: ${s.injury.name}. Koniec sezonu.`);
+    } else {
+      s.injury = { name: rng.pick(INJ_OUT), seasons: 2, penalty: 6, out: 1 };
+      s.flags.injuryStop = 1;
+      rep.moments.push({ round: rep.round, title: 'Uraz na rok', text: `Diagnoza: ${s.injury.name}. Operacja i cały następny sezon rehabilitacji.`, tone: 'bad' });
+      log(s, `Uraz na cały rok: ${s.injury.name}.`);
+    }
   }
 
   // ranking
@@ -1422,7 +1663,10 @@ function finalizeFight(rng: Rng, s: GameState, rep: FightReport) {
 
   if (rep.amateur) advanceTourney(s, rep, res);
   else if (s.run!.fights.length >= s.run!.planned) s.run!.done = true;
-  if (s.injury && s.injury.penalty >= 8) s.run!.done = true;
+  if (s.flags.injuryStop) {
+    s.flags.injuryStop = 0;
+    s.run!.done = true;
+  }
 }
 
 export const METHOD_SHORT: Record<string, string> = {
@@ -1931,6 +2175,8 @@ export function legacyScore(s: GameState): number {
   pts += Math.min(400, s.totalEarned / 25000);
   pts += s.media * 2;
   pts -= s.brokenPromises * 20;
+  // akademia zostaje po karierze: wychowankowie, nazwisko na drzwiach
+  pts += [0, 60, 160, 320, 550][s.academy ?? 0];
   const sp = START_PROFILES[s.profile.start].mult ?? 0;
   const diff = DIFFICULTY[s.profile.difficulty].mult;
   return Math.max(0, Math.round(pts * sp * diff));
@@ -1979,6 +2225,7 @@ export function careerStory(s: GameState): string {
   const bestPeer = s.peers.filter((p) => p.metCount > 0).sort((a, b) => b.metCount - a.metCount)[0];
   if (bestPeer) parts.push(`Odwieczny rywal: ${bestPeer.firstName} ${bestPeer.lastName}, bilans ${bestPeer.h2h.w}-${bestPeer.h2h.l}.`);
   if (s.freakFights) parts.push(`Freak fightów: ${s.freakFights}.`);
+  if (s.academy) parts.push(`Po karierze zostaje ${academyName(s)}: ${ACADEMY_LEVELS[s.academy - 1].name}.`);
   if (!first) parts.push('Kariera skończyła się, zanim na dobre się zaczęła.');
   return parts.join(' ');
 }

@@ -497,7 +497,7 @@ function option(
   lose: string,
 ): DecisionOption {
   KIND_OF[key] = kind;
-  const chance = chanceFrom(atk, def, mod + (kind === 'safe' ? 15 : 0));
+  const chance = chanceFrom(atk, def, mod + (kind === 'safe' ? 10 : 0));
   return { key, kind, label, desc, stat, chance, dist: distFrom(chance), win, lose };
 }
 
@@ -522,6 +522,19 @@ function styleNote(opp: Fighter): string {
 }
 
 function buildDecision(rng: Rng, ctx: FightCtx, sim: FightSim): DecisionPoint | null {
+  const dp = buildDecisionRaw(rng, ctx, sim);
+  if (dp)
+    dp.status = {
+      lead: sim.round === 0 ? null : cardsLead(sim),
+      stam: Math.round(sim.me.stam),
+      hurt: Math.round(sim.me.dmg),
+      oppStam: Math.round(sim.opp.stam),
+      oppHurt: Math.round(sim.opp.dmg),
+    };
+  return dp;
+}
+
+function buildDecisionRaw(rng: Rng, ctx: FightCtx, sim: FightSim): DecisionPoint | null {
   const me = eff(ctx.me, sim.me.dmg, sim.me.stam);
   const op = eff(ctx.opp.stats, sim.opp.dmg, sim.opp.stam);
   const n = shortName(ctx.opp);
@@ -684,7 +697,9 @@ export function applyDecision(rng: Rng, ctx: FightCtx, sim: FightSim, rep: Fight
   let effect = '';
   let tone: Moment['tone'] = out === 'super' ? 'purple' : out === 'success' ? 'good' : 'bad';
 
-  if (out === 'super' && kind === 'risk') {
+  // ryzyko może skończyć walkę także przy zwykłym sukcesie (rywal jest już obity albo zmęczony)
+  const finishTry = kind === 'risk' && out === 'success' && rng.chance(0.22 + Math.min(0.3, sim.opp.dmg / 140));
+  if ((out === 'super' || finishTry) && kind === 'risk') {
     sim.round = Math.max(sim.round, dp.round);
     let method: 'KO/TKO' | 'Poddanie' = 'KO/TKO';
     let detail: string;
@@ -708,13 +723,14 @@ export function applyDecision(rng: Rng, ctx: FightCtx, sim: FightSim, rep: Fight
 
   if (kind === 'risk') {
     if (out !== 'fail') {
-      sim.momentum += 10;
-      sim.opp.dmg += 8;
+      sim.momentum += 12;
+      sim.opp.dmg += 12;
       text = say(POOL.riskOk);
       effect = 'duża przewaga w tej rundzie';
     } else {
-      sim.momentum -= 10;
-      sim.me.dmg += rng.int(8, 15);
+      sim.momentum -= 12;
+      sim.me.dmg += rng.int(12, 20);
+      sim.me.stam = clamp(sim.me.stam - 12, 0, 100);
       text = say(POOL.riskFail);
       effect = 'obrywasz i tracisz rundę';
     }
@@ -735,14 +751,18 @@ export function applyDecision(rng: Rng, ctx: FightCtx, sim: FightSim, rep: Fight
       effect = 'runda pod górkę';
     }
   } else {
+    // bezpieczny wybór to też odpoczynek: wracają siły, mniej obrywasz
     if (out !== 'fail') {
-      sim.momentum += 5;
+      sim.momentum += 3;
+      sim.me.stam = clamp(sim.me.stam + 18, 0, 100);
+      sim.me.dmg = Math.max(0, sim.me.dmg - 8);
       text = say(POOL.safeOk);
-      effect = 'mała przewaga';
+      effect = 'łapiesz oddech i małą przewagę';
     } else {
-      sim.momentum -= 2;
+      sim.momentum -= 3;
+      sim.me.stam = clamp(sim.me.stam + 8, 0, 100);
       text = say(POOL.safeFail);
-      effect = 'runda dla rywala';
+      effect = 'runda dla rywala, ale odpocząłeś';
       tone = 'neutral';
     }
   }

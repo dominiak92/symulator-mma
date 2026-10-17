@@ -93,6 +93,8 @@ export interface Injury {
   name: string;
   seasons: number; // ile sezonów kary
   penalty: number; // odejmowane od testów (pkt %)
+  /** ile pełnych sezonów zawodnik pauzuje (rehabilitacja zamiast walk) */
+  out?: number;
 }
 
 // --- Efekty wydarzeń (deklaratywne, żeby dało się pokazać chipy przed wyborem) ---
@@ -170,6 +172,8 @@ export interface DecisionPoint {
   title: string;
   text: string;
   options: DecisionOption[];
+  /** stan walki w chwili decyzji (do pokazania graczowi) */
+  status?: { lead: number | null; stam: number; hurt: number; oppStam: number; oppHurt: number };
 }
 
 export type Method =
@@ -352,6 +356,10 @@ export interface GameState {
   /** wynik ostatniego szukania sponsora na własną rękę */
   pitch?: { season: number; ok: boolean; text: string; name?: string; slot: string } | null;
   loans: Loan[];
+  /** poziom własnej akademii (0 = brak) */
+  academy?: number;
+  /** obóz zagraniczny z ostatniego okresu przygotowawczego */
+  camp?: string | null;
   promises: Promise[];
   brokenPromises: number;
 
