@@ -132,6 +132,10 @@ with sync_playwright() as p:
             if first_time(f"ev{season}"):
                 shot(page, f"06-event-s{season+1}")
             page.locator(".step .choice").first.click()
+        elif page.locator(".offer-modal").count():
+            if first_time("offer"):
+                shot(page, "08b-oferta")
+            page.get_by_role("button", name="Przyjmuję walkę").click(); page.wait_for_timeout(200)
         elif page.locator(".fight-intro").count():
             if first_time("intro"):
                 shot(page, "08a-zapowiedz")

@@ -4,6 +4,7 @@ import * as G from '../src/engine/game';
 import { createRng } from '../src/engine/rng';
 import { STAT_KEYS, START_PROFILES } from '../src/engine/data';
 import { EVENTS } from '../src/engine/events';
+import { MANAGERS } from '../src/engine/managers';
 import type { GameState } from '../src/engine/types';
 
 const N = Number(process.argv[2] ?? 300);
@@ -48,6 +49,7 @@ for (let i = 0; i < N; i++) {
           if (s.pitch) checkText('sponsor', s.pitch.text);
           for (const l of G.budgetLines(s)) { checkText('budżet', l.label); checkText('budżet', l.sub); if (!Number.isFinite(l.amount)) note('budżet: NaN'); }
           if (rng.chance(0.3)) s = G.investAcademy(s);
+          { const fr = G.fightRange(s); if (fr && rng.chance(0.5)) s = G.setWantFights(s, rng.int(fr[0], fr[1])); }
           if (s.money + G.budgetBalance(s) < 0 && G.loanOffer(s) && rng.chance(0.7)) s = G.takeLoan(s);
           if (G.canStartSeason(s) && rng.chance(0.97)) s = G.startSeason(s);
           else s = G.takeBreakYear(s);
@@ -63,7 +65,13 @@ for (let i = 0; i < N; i++) {
         case 'season': {
           const run = s.run!;
           const cur = run.fights[run.fights.length - 1];
-          if (cur?.sim.pending) {
+          if (run.offer) {
+            checkText('oferta walki', run.offer.note);
+            checkText('rywal', run.offer.opp.lastName);
+            const r = rng.next();
+            s = r < 0.15 && !G.declineBlocked(s) ? G.declineOffer(s) : r < 0.3 && !run.offer.negotiated ? G.negotiateOffer(s) : G.acceptOffer(s);
+            for (const n of s.run?.notes ?? []) checkText('notka', n);
+          } else if (cur?.sim.pending) {
             checkText('decyzja', cur.sim.pending.text);
             for (const o of cur.sim.pending.options) { checkText('opcja', o.label); checkText('opcja', o.win); checkText('opcja', o.lose); }
             s = G.decide(s, rng.pick(cur.sim.pending.options).key);
@@ -85,6 +93,7 @@ for (let i = 0; i < N; i++) {
           s = G.pickContract(s, rng.pick(av.length ? av : [0]));
           const cl = m.clubs.map((c, j) => (G.clubAvailability(s, c).ok ? j : -1)).filter((j) => j >= 0);
           s = G.pickClub(s, rng.pick(cl.length ? cl : [0]));
+          if (rng.chance(0.3)) s = G.setManager(s, rng.chance(0.2) ? null : rng.pick(MANAGERS).id);
           for (const w of G.marketWarnings(s)) checkText('ostrzeżenie', w);
           if (rng.chance(0.01)) s = G.retire(s);
           else s = G.confirmMarket(s);

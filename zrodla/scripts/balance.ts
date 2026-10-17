@@ -1,6 +1,13 @@
 // Porównanie strategii gracza — szukanie luk w ekonomii i balansie.
 // Uruchom: npx tsx scripts/balance.ts [liczba karier na strategię]
 import {
+  acceptOffer,
+  declineBlocked,
+  declineOffer,
+  fightRange,
+  negotiateOffer,
+  setManager,
+  setWantFights,
   academyNext,
   campBlocked,
   campCost,
@@ -33,6 +40,7 @@ import {
   toSummary,
 } from '../src/engine/game';
 import { createRng } from '../src/engine/rng';
+import { MANAGERS, managerBlocked } from '../src/engine/managers';
 import { ovr } from '../src/engine/fighter';
 import type { GameState, StatKey } from '../src/engine/types';
 import { STAT_KEYS } from '../src/engine/data';
@@ -47,6 +55,9 @@ type Policy = {
   fightPick?: 'best' | 'risky' | 'smart' | 'normal';
   camps?: boolean;
   academy?: boolean;
+  offers?: 'accept' | 'picky' | 'negotiate';
+  manager?: 'none' | 'best' | 'cheap';
+  fights?: 'min' | 'max';
 };
 
 const weakest = (s: GameState) => [...STAT_KEYS].sort((a, b) => s.stats[a] - s.stats[b])[0];
@@ -79,6 +90,8 @@ function play(seed: number, p: Policy) {
           const best = [...PITCH_SLOTS].sort((a, b) => pitchChance(s, b.id) * pitchPay(s, b.id) - pitchChance(s, a.id) * pitchPay(s, a.id))[0];
           s = pitchSponsor(s, best.id);
         }
+        const fr = fightRange(s);
+        if (fr && p.fights) s = setWantFights(s, p.fights === 'max' ? fr[1] : fr[0]);
         if (p.academy) {
           const n = academyNext(s);
           if (n && !n.blocked && s.money - n.cost + budgetBalance(s) > 60000) s = investAcademy(s);
@@ -121,7 +134,12 @@ function play(seed: number, p: Policy) {
       case 'season': {
         const run = s.run!;
         const cur = run.fights[run.fights.length - 1];
-        if (cur?.sim.pending) {
+        if (run.offer) {
+          const o = run.offer;
+          if (p.offers === 'negotiate' && !o.negotiated) s = negotiateOffer(s);
+          else if (p.offers === 'picky' && !declineBlocked(s) && o.purse < s.contract.purse * 0.95 && (run.declines ?? 0) < 2) s = declineOffer(s);
+          else s = acceptOffer(s);
+        } else if (cur?.sim.pending) {
           const opts = [...cur.sim.pending.options];
           const st = cur.sim.pending.status;
           const byKind = (k: string) => opts.filter((x) => x.kind === k).sort((a, b) => b.chance - a.chance)[0];
@@ -170,6 +188,11 @@ function play(seed: number, p: Policy) {
           }
         });
         s = pickClub(s, bi);
+        if (p.manager && s.tier >= 1) {
+          const av = MANAGERS.filter((mg) => !managerBlocked(s, mg));
+          if (p.manager === 'none') s = setManager(s, null);
+          else if (av.length) s = setManager(s, (p.manager === 'best' ? [...av].sort((a, b) => b.purse - a.purse)[0] : [...av].sort((a, b) => a.cut - b.cut)[0]).id);
+        }
         s = confirmMarket(s);
         break;
       }
@@ -197,6 +220,14 @@ const POLICIES_ALL: Policy[] = [
   { name: 'tylko parter', train: () => 'bjj' },
   { name: 'tylko kondycja', train: () => 'cardio' },
   { name: 'tylko taktyka', train: () => 'iq' },
+  { name: 'oferty: wybredny', offers: 'picky' },
+  { name: 'oferty: negocjuje', offers: 'negotiate' },
+  { name: 'menedżer: najlepszy', manager: 'best' },
+  { name: 'menedżer: najtańszy', manager: 'cheap' },
+  { name: 'menedżer: bez', manager: 'none' },
+  { name: 'walki: max', fights: 'max' },
+  { name: 'walki: min', fights: 'min' },
+  { name: 'pełny gracz', manager: 'best', offers: 'negotiate', camps: true, academy: true, fightPick: 'smart' },
   { name: 'obozy', camps: true },
   { name: 'akademia', academy: true },
   { name: 'obozy+akademia', camps: true, academy: true },
