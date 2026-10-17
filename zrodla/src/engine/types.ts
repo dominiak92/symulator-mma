@@ -174,6 +174,8 @@ export interface DecisionPoint {
   options: DecisionOption[];
   /** stan walki w chwili decyzji (do pokazania graczowi) */
   status?: { lead: number | null; stam: number; hurt: number; oppStam: number; oppHurt: number };
+  /** decyzja narożnika w dużej walce */
+  corner?: boolean;
 }
 
 export type Method =
@@ -201,6 +203,12 @@ export interface FightSim {
   pending: DecisionPoint | null;
   decisionUsed: boolean;
   finished: boolean;
+  /** duża walka (o pas, z rywalem): decyzja w każdej przerwie */
+  big?: boolean;
+  /** id decyzji już pokazanych w tej walce */
+  seen?: string[];
+  /** po której rundzie padło ostatnie pytanie narożnika (-1 = jeszcze nie) */
+  asked?: number;
 }
 
 export interface FightReport {
@@ -315,6 +323,7 @@ export interface FightOffer {
   /** walka na odbudowę rekordu: słaby rywal z ujemnym bilansem na dziwnej gali */
   tuneup?: boolean;
   /** podpowiedź menedżera przy ofercie */
+  hook?: string;
   tip?: string;
 }
 
@@ -384,6 +393,8 @@ export interface Ending {
   verdictDesc: string;
   legacy: number;
   story: string;
+  /** premia za odejście na własnych warunkach */
+  top?: { title: string; pts: number; lines: string[] };
 }
 
 export interface GameState {

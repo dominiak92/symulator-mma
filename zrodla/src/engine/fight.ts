@@ -61,6 +61,14 @@ export interface FightCtx {
   decisionChance: number;
 }
 
+/** Cytaty trenera w przerwach dużych walk. */
+const CORNER_LINES = [
+  'Trener klęka przed tobą i łapie cię za kark: „Patrz na mnie. Słuchaj.”',
+  'Cutman przykłada lód do karku, trener mówi szybko i cicho.',
+  'Hala huczy. Trener musi krzyczeć ci prosto do ucha.',
+  'Woda, wazelina, ręcznik. Trener ma minutę i dwa zdania.',
+];
+
 type Who = 'me' | 'opp';
 type Action = 'strike' | 'takedown' | 'sub' | 'clinch';
 
@@ -525,7 +533,20 @@ function styleNote(opp: Fighter): string {
 }
 
 function buildDecision(rng: Rng, ctx: FightCtx, sim: FightSim): DecisionPoint | null {
-  const dp = buildDecisionRaw(rng, ctx, sim);
+  let dp = buildDecisionRaw(rng, ctx, sim);
+  if (sim.big) {
+    const seen = sim.seen ?? [];
+    // w dużej walce ta sama sytuacja nie powtarza się dwa razy z rzędu
+    if (!dp || (dp.id !== 'hurt' && seen.includes(dp.id)) || (dp.id === 'hurt' && seen[seen.length - 1] === 'hurt')) {
+      const me = eff(ctx.me, sim.me.dmg, sim.me.stam);
+      const op = eff(ctx.opp.stats, sim.opp.dmg, sim.opp.stam);
+      const base = ctx.form - ctx.penalty;
+      const safe: SafeFn = (key, label, desc, win, lose, stat = 'iq') => option(key, 'safe', label, desc, stat, me[stat], op[stat], base, win, lose);
+      dp = cornerFallback(sim, me, op, shortName(ctx.opp), sim.round + 1, base, safe, rng.pick(CORNER_LINES));
+    }
+    sim.seen = [...seen, dp.id];
+    dp.corner = dp.corner || sim.round > 0;
+  }
   if (dp)
     dp.status = {
       lead: sim.round === 0 ? null : cardsLead(sim),
@@ -558,6 +579,10 @@ function buildDecisionRaw(rng: Rng, ctx: FightCtx, sim: FightSim): DecisionPoint
         option('plan_bjj', 'risk', 'Szukamy poddania', 'Sprowadzamy do parteru i polujemy na szyję.', 'bjj', me.bjj, op.bjj * 0.8 + op.wrest * 0.2, base - 4, 'szansa na szybkie poddanie', 'lądujesz pod nim'),
       ],
     };
+  }
+  if (sim.big) {
+    const special = bigDecision(rng, ctx, sim, me, op, n, next, base, safe);
+    if (special) return special;
   }
   if (sim.me.dmg >= 40) {
     return {
@@ -639,6 +664,89 @@ function buildDecisionRaw(rng: Rng, ctx: FightCtx, sim: FightSim): DecisionPoint
     };
   }
   return null;
+}
+
+type SafeFn = (key: string, label: string, desc: string, win: string, lose: string, stat?: StatKey) => DecisionOption;
+
+/** Sytuacje narożnika, które pojawiają się tylko w dużych walkach. */
+function bigDecision(rng: Rng, _ctx: FightCtx, sim: FightSim, me: Eff, op: Eff, n: string, next: number, base: number, safe: SafeFn): DecisionPoint | null {
+  const seen = new Set(sim.seen ?? []);
+  const line = rng.pick(CORNER_LINES);
+  const lead = cardsLead(sim);
+  if (!seen.has('cut') && sim.me.dmg >= 22 && rng.chance(0.75)) {
+    return {
+      id: 'cut',
+      corner: true,
+      round: next,
+      title: 'Rozcięty łuk',
+      text: `Krew zalewa ci oko. Lekarz zagląda do narożnika i patrzy na ranę dłużej, niż byś chciał. Cutman ma sześćdziesiąt sekund.`,
+      options: [
+        safe('cut_close', 'Cutman zamyka ranę', 'Cała przerwa na łuk. Na taktykę nie zostaje czasu.', 'rana trzyma, odzyskujesz spokój', 'krew dalej leci', 'chin'),
+        option('cut_press', 'normal', 'Wazelina i kończymy rundę z przodu', 'Nie dajesz lekarzowi powodu, żeby przerwał.', 'iq', me.iq, op.iq, base, 'sędziowie widzą, że to ty dyktujesz warunki', 'rana się otwiera'),
+        option('cut_rush', 'risk', 'Kończysz, zanim przerwie lekarz', 'Wszystko w tej rundzie, póki widzisz.', 'stand', me.stand, op.chin, base - 6, 'szansa na nokaut', 'lekarz może przerwać walkę'),
+      ],
+    };
+  }
+  if (!seen.has('champ') && next >= 4 && sim.maxRounds >= 5) {
+    const tired = sim.opp.stam < sim.me.stam;
+    return {
+      id: 'champ',
+      corner: true,
+      round: next,
+      title: 'Rundy mistrzowskie',
+      text: `${line} „To są rundy, w których rodzą się mistrzowie. ${tired ? `${n} jest bardziej zmęczony od ciebie.` : `Jesteś zmęczony, ale on też.`}${lead > 0 ? ' Prowadzisz na kartach.' : lead < 0 ? ' Na kartach przegrywasz.' : ''}”`,
+      options: [
+        option('ch_pace', 'normal', 'Podkręcasz tempo', 'Zalewasz go akcjami, niech się dusi.', 'cardio', me.cardio, op.cardio, base + (tired ? 4 : 0), 'on gaśnie, ty rośniesz', 'paliwo kończy się tobie'),
+        option('ch_finish', 'risk', 'Idziesz po skończenie', 'Pas zdobywa się w klatce, nie na kartach.', 'stand', me.stand, op.chin, base - 2 + (tired ? 3 : 0), 'szansa na nokaut w rundzie mistrzowskiej', 'zostawiasz otwartą szczękę'),
+        safe('ch_smart', 'Mądra runda', 'Dystans, kontry, żadnych głupich błędów.', 'spokojnie zabierasz rundę', 'oddajesz mu inicjatywę'),
+      ],
+    };
+  }
+  if (!seen.has('ahead') && sim.round >= 2 && lead >= 2 && next < sim.maxRounds) {
+    return {
+      id: 'ahead',
+      corner: true,
+      round: next,
+      title: 'Prowadzisz wyraźnie',
+      text: `${line} „Masz te rundy. Nie musisz nic udowadniać. Ale ${n} będzie teraz szukał jednej bomby.”`,
+      options: [
+        safe('ah_safe', 'Jeździsz na nogach', 'Dystans, jab, odejście. Niech goni.', 'kolejna spokojna runda', 'pasywność może kosztować rundę', 'iq'),
+        option('ah_wrest', 'normal', 'Obalasz i kontrolujesz', 'Leżysz na nim i zabierasz czas.', 'wrest', me.wrest, op.wrest, base, 'runda z góry, zero ryzyka', 'wstaje i jest wkurzony'),
+        option('ah_kill', 'risk', 'Kończysz to teraz', 'Skoro jest twój, to go zamknij.', 'stand', me.stand, op.chin, base, 'skończenie przed czasem', 'jedna kontra zmienia wszystko'),
+      ],
+    };
+  }
+  if (!seen.has('behind') && sim.round >= 2 && lead <= -2 && next < sim.maxRounds) {
+    return {
+      id: 'behind',
+      corner: true,
+      round: next,
+      title: 'Uciekają ci rundy',
+      text: `${line} „Oddajesz mu te rundy. Dalej tak i przegrasz na kartach. Musimy coś zmienić.”`,
+      options: [
+        option('bh_wrest', 'normal', 'Zmieniasz plan na zapasy', 'Nogi, siatka, góra. Coś, czego się nie spodziewa.', 'wrest', me.wrest, op.wrest, base + 2, 'przejmujesz rundę', 'on jest na to gotowy'),
+        option('bh_bjj', 'risk', 'Polujesz na poddanie', 'Każda okazja na szyję albo rękę.', 'bjj', me.bjj, op.bjj, base - 4, 'szansa na poddanie', 'tracisz pozycję i rundę'),
+        option('bh_stand', 'risk', 'Wymiana na środku', 'Stajesz i bijesz się, ile wlezie.', 'stand', me.stand, op.stand, base - 4, 'szansa na nokaut', 'możesz zgasnąć'),
+      ],
+    };
+  }
+  return null;
+}
+
+/** Ogólna decyzja narożnika, gdy w dużej walce nic szczególnego się nie dzieje. */
+function cornerFallback(sim: FightSim, me: Eff, op: Eff, n: string, next: number, base: number, safe: SafeFn, line: string): DecisionPoint {
+  return {
+    id: `corner${next}`,
+    corner: true,
+    round: next,
+    title: `Przerwa przed ${next}. rundą`,
+    text: `${line} „${n} ${sim.opp.stam < 70 ? 'zwalnia' : 'jest świeży'}, ty ${sim.me.stam < 70 ? 'też czujesz już nogi' : 'masz jeszcze paliwo'}. Gdzie go łamiemy?”`,
+    options: [
+      option(`cr_stand${next}`, 'normal', 'Stójka, więcej kombinacji', 'Podkręcasz ręce, szukasz czystych trafień.', 'stand', me.stand, op.stand * 0.6 + op.iq * 0.4, base, 'zabierasz mu rundę', 'łapiesz kontrę'),
+      option(`cr_wrest${next}`, 'normal', 'Zapasy i kontrola', 'Obalenia, siatka, ciężar ciała.', 'wrest', me.wrest, op.wrest, base, 'runda z góry', 'tracisz siły na wejściach'),
+      safe(`cr_safe${next}`, 'Trzymasz plan', 'Robisz swoje i oddychasz.', 'mała przewaga i odpoczynek', 'nic się nie zmienia'),
+    ],
+  };
 }
 
 const POOL = {
@@ -769,6 +877,16 @@ export function applyDecision(rng: Rng, ctx: FightCtx, sim: FightSim, rep: Fight
       tone = 'neutral';
     }
   }
+  if (opt.key === 'cut_close' && out !== 'fail') {
+    sim.me.dmg = Math.max(0, sim.me.dmg - 8);
+    effect = 'rana zamknięta, krew nie leci';
+  }
+  if (opt.key === 'cut_rush' && out === 'fail' && rng.chance(0.45)) {
+    sim.round = Math.max(sim.round, dp.round);
+    rep.moments.push({ round: dp.round, title: dp.title, text: `Wybierasz: ${opt.label.charAt(0).toLowerCase() + opt.label.slice(1)}. Rzucasz się do przodu, ale ${n} trafia prosto w ranę. Sędzia woła lekarza, a ten tylko kręci głową.`, stat: opt.stat, chance: opt.chance, dist: opt.dist, outcome: out, effect: 'lekarz przerywa walkę', tone: 'bad', decision: true });
+    finishFight(rep, sim, 'opp', 'Lekarz', 'rozcięcie');
+    return;
+  }
   rep.moments.push({ round: dp.round, title: dp.title, text: `Wybierasz: ${opt.label.charAt(0).toLowerCase() + opt.label.slice(1)}. ${text}`, stat: opt.stat, chance: opt.chance, dist: opt.dist, outcome: out, effect, tone, decision: true });
 }
 
@@ -777,11 +895,13 @@ export function applyDecision(rng: Rng, ctx: FightCtx, sim: FightSim, rep: Fight
 // Przesuwa walkę do końca albo do następnej decyzji gracza
 export function advanceFight(rng: Rng, ctx: FightCtx, sim: FightSim, rep: FightReport) {
   while (!sim.finished && !sim.pending) {
-    if (ctx.allowDecision && !sim.decisionUsed && rng.chance(sim.round === 0 ? ctx.decisionChance * 0.45 : ctx.decisionChance * 0.4)) {
+    const bigTurn = !!sim.big && ctx.allowDecision && (sim.asked ?? -1) !== sim.round;
+    if (bigTurn || (ctx.allowDecision && !sim.decisionUsed && rng.chance(sim.round === 0 ? ctx.decisionChance * 0.45 : ctx.decisionChance * 0.4))) {
       if (sim.round < sim.maxRounds) {
         const dp = buildDecision(rng, ctx, sim);
         if (dp) {
           sim.pending = dp;
+          sim.asked = sim.round;
           return;
         }
       }

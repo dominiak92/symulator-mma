@@ -888,13 +888,13 @@ export const EXPEDITIONS: Expedition[] = [
     years: 2,
     maxAge: 30,
     cost: [0, 30000, 70000, 160000, 360000],
-    gains: { wrest: [8, 12], cardio: [6, 9], chin: [3, 5], bjj: [3, 6], iq: [2, 4], stand: [0, 2] },
-    ceiling: { wrest: 10, cardio: 8, chin: 5, bjj: 4 },
-    media: -12,
+    gains: { wrest: [12, 16], cardio: [9, 12], chin: [5, 7], bjj: [5, 8], iq: [3, 5], stand: [1, 3] },
+    ceiling: { wrest: 12, cardio: 10, chin: 6, bjj: 6, iq: 2 },
+    media: -8,
     rep: 4,
     wear: -10,
     desc: 'Dwa lata w górach (trzeci to powrót do formy). Zapasy pięć razy dziennie, bez internetu i bez cukru.',
-    minus: 'Kibice o tobie zapominają, wracasz bez rankingu.',
+    minus: 'Kibice o tobie zapominają, a w rankingu spadasz o kilka miejsc. Za to w pierwszym roku po powrocie jesteś w życiowej formie.',
     log: 'Dwa lata w Dagestanie. Zapasy, góry i cisza.',
     stories: [
       'Wyjeżdżasz w wieku {from} lat, wracasz po dwóch. Bez internetu, bez cukru, z zapasami pięć razy dziennie. W hali nikt nie pamięta twojego nazwiska, za to ty pamiętasz każde obalenie.',
@@ -908,14 +908,14 @@ export const EXPEDITIONS: Expedition[] = [
     place: 'USA · stajnia mistrzów',
     years: 2,
     maxAge: 33,
-    cost: [0, 45000, 100000, 220000, 460000],
-    gains: { stand: [4, 7], wrest: [4, 7], bjj: [4, 7], cardio: [3, 5], iq: [3, 5], chin: [1, 3] },
-    ceiling: { stand: 4, wrest: 4, bjj: 4, iq: 2 },
+    cost: [0, 35000, 75000, 170000, 360000],
+    gains: { stand: [8, 11], wrest: [8, 11], bjj: [8, 11], cardio: [5, 7], iq: [5, 7], chin: [2, 4] },
+    ceiling: { stand: 8, wrest: 8, bjj: 8, iq: 4, cardio: 3 },
     media: -4,
     rep: 3,
     wear: -6,
     desc: 'Dwa lata w największej amerykańskiej stajni. Sparingi z mistrzami i trenerzy od wszystkiego.',
-    minus: 'Najdroższy wyjazd. Wracasz bez rankingu, ale z filmikami z sali.',
+    minus: 'Najdroższy wyjazd. W rankingu spadasz o kilka miejsc, ale wracasz w życiowej formie i z filmikami z sali.',
     log: 'Dwa lata na Florydzie. Upał, sparingi i trenerzy od wszystkiego.',
     stories: [
       'Dwa lata w Top Squad. Codziennie ktoś z pasem leje cię na sparingu, a ty coraz częściej oddajesz. Wracasz jako zawodnik kompletny.',
@@ -929,13 +929,13 @@ export const EXPEDITIONS: Expedition[] = [
     years: 1,
     maxAge: 36,
     cost: [0, 25000, 55000, 120000, 250000],
-    gains: { cardio: [5, 8], stand: [3, 5], chin: [2, 4], iq: [2, 4], wrest: [1, 3], bjj: [1, 2] },
-    ceiling: { cardio: 5, chin: 3, stand: 2 },
+    gains: { cardio: [6, 9], stand: [3, 6], chin: [2, 4], iq: [2, 4], wrest: [2, 3], bjj: [1, 3] },
+    ceiling: { cardio: 6, chin: 3, stand: 3 },
     media: -2,
     rep: 2,
     wear: -10,
     desc: 'Jeden rok na północy: biegi po śniegu, sauna, przerębel i sparingi z Norwegami, którzy nigdy się nie męczą.',
-    minus: 'Rok bez walk i bez gaż. Ranking przepada.',
+    minus: 'Rok bez walk i bez gaż, w rankingu spadasz o kilka miejsc.',
     log: 'Rok w Trondheim. Śnieg, sauna i kondycja nie z tej ziemi.',
     stories: [
       'Rok w Trondheim. Słońce widziałeś może dwa razy, za to biegałeś po śniegu codziennie. Wracasz z płucami, które nie znają zmęczenia.',
@@ -991,8 +991,10 @@ export function goExpedition(s0: GameState, id: Expedition['id']): GameState {
     s.media = clamp(s.media + e.media, 0, 100);
     s.rep = clamp(s.rep + e.rep, 0, 100);
     s.wear = clamp(s.wear + e.wear, 0, 100);
-    if (s.tier > 0) s.rank = null;
+    // ranking nie przepada całkiem: spadasz o kilka miejsc, organizatorzy pamiętają nazwisko
+    if (s.tier > 0 && s.rank !== null) s.rank = s.rank === 0 ? 2 : Math.min(RANK_SIZE[s.tier], s.rank + 3 + e.years);
     s.contractSeasonsLeft = 0;
+    s.flags.expBoost = 1;
     if (e.id === 'dagestan') s.flags.dagestan = 1;
     else s.flags[`exp_${e.id}`] = 1;
     s.peakOvr = Math.max(s.peakOvr, ovr(s.stats));
@@ -1283,6 +1285,13 @@ export function applyEffects(s: GameState, e: Effects, rng: Rng) {
   }
   if (e.flag) s.flags[e.flag] = (s.flags[e.flag] ?? 0) + 1;
   if (e.flag === 'manager') s.manager = 'okulary';
+  if (e.flag === 'rivalPick' && !s.rivalId) {
+    const p = [...s.peers].filter((x) => !x.retired && Math.abs(x.tier - s.tier) <= 1).sort((a, b) => b.talent - a.talent)[0];
+    if (p) {
+      s.rivalId = p.id;
+      log(s, `Rywal na całą karierę: ${p.firstName} ${p.lastName}.`);
+    }
+  }
   if (e.flag === 'amTalent' || e.flag === 'amLocal') {
     s.flags.amLevel = e.flag === 'amTalent' ? 1 : 0;
     s.flags.tryoutPending = 0;
@@ -1471,14 +1480,18 @@ function pickOpponent(rng: Rng, s: GameState, idx: number): { opp: Fighter; titl
     return { opp: amateurOpponent(rng, s, t, t.stage ?? 'qf'), title: false, defense: false, peer: null };
   }
 
+  const rivalPeer = s.rivalId ? s.peers.find((p) => p.id === s.rivalId && !p.retired && p.tier === tier && tier >= 1 && !metThisSeason.has(p.id)) : undefined;
+  const asRival = (p: Peer, rank: number | null): Fighter => ({ ...p, stats: { ...p.stats }, record: { ...p.record }, rank, peer: true });
   // obrona pasa
   if (s.rank === 0) {
+    if (rivalPeer && rivalPeer.rank !== null && rivalPeer.rank <= 8 && rng.chance(0.55)) return { opp: asRival(rivalPeer, rivalPeer.rank), title: true, defense: true, peer: rivalPeer };
     const opp = generateOpponent(rng, tier, rng.int(1, 3), hard);
     return { opp, title: true, defense: true, peer: null };
   }
   // walka o pas
   const last = idx === run.planned - 1;
   if (s.rank !== null && (s.rank === 1 || (s.rank === 2 && last) || (s.rank <= 3 && last && rng.chance(0.4)))) {
+    if (rivalPeer && rivalPeer.rank === 0) return { opp: asRival(rivalPeer, 0), title: true, defense: false, peer: rivalPeer };
     const opp = generateOpponent(rng, tier, 0, hard);
     return { opp, title: true, defense: false, peer: null };
   }
@@ -1530,7 +1543,7 @@ function fightCtx(s: GameState, opp: Fighter): FightCtx {
     meName: fullName(s),
     opp,
     // czwarta i piąta walka w roku: organizm nie nadąża
-    form: s.run!.form.mod - Math.max(0, s.run!.fights.length - 3) * 5 + (s.run!.planned < s.contract.fights && s.contract.kind !== 'freak' ? 3 : 0) + fightMods(s),
+    form: s.run!.form.mod + ((s.flags.expBoost ?? 0) > 0 ? 5 : 0) - Math.max(0, s.run!.fights.length - 3) * 5 + (s.run!.planned < s.contract.fights && s.contract.kind !== 'freak' ? 3 : 0) + fightMods(s),
     penalty: s.injury?.penalty ?? 0,
     allowDecision: true,
     decisionChance: 0.55,
@@ -1582,7 +1595,8 @@ function buildOffer(rng: Rng, s: GameState, idx: number): FightOffer {
   const fed = freak ? s.contract.fed : s.fed;
   const spot = cardSpot(rng, s, title, opp, freak);
   const rival = !!peer && !!s.rivalId && peer.id === s.rivalId;
-  let purse = purseFor(s, opp, title, spot) * (rival ? 1.15 : 1);
+  const trilogy = rival && !!peer && peer.h2h.w === 1 && peer.h2h.l === 1;
+  let purse = purseFor(s, opp, title, spot) * (rival ? (trilogy ? 1.3 : 1.15) : 1);
   // organizator raz daje więcej, raz próbuje zaoszczędzić
   purse = Math.round((purse * (0.85 + rng.next() * 0.3)) / 100) * 100;
   return {
@@ -1596,7 +1610,17 @@ function buildOffer(rng: Rng, s: GameState, idx: number): FightOffer {
     purse,
     winBonus: Math.round(s.contract.winBonus * (title ? 1.8 : 1)),
     negotiated: false,
+    hook: rival && peer ? rivalHook(peer, title, defense, trilogy) : undefined,
   };
+}
+
+function rivalHook(p: Peer, title: boolean, defense: boolean, trilogy: boolean): string {
+  const h = `${p.h2h.w}-${p.h2h.l}${p.h2h.d ? `-${p.h2h.d}` : ''}`;
+  if (title && defense) return `Obrona pasa przeciwko odwiecznemu rywalowi. ${p.lastName} czekał na to latami. Wasz bilans: ${h}.`;
+  if (title) return `${p.lastName} ma pas. Twoja walka o tytuł to walka z odwiecznym rywalem. Wasz bilans: ${h}.`;
+  if (trilogy) return `Trylogia. Bilans 1-1, ta walka rozstrzygnie, kto był lepszy. Organizator dokłada 30% do gaży.`;
+  if (p.metCount === 0) return `${p.lastName}: rywal, o którym mówią wszyscy. Pierwsze starcie zawodowe, gaża +15%.`;
+  return `Odwieczny rywal. Wasz bilans: ${h}. Organizator dokłada 15% do gaży.`;
 }
 
 /** Czy menedżer (albo znajomy promotor) podsunie walkę na odbudowę rekordu. */
@@ -1789,6 +1813,15 @@ function startFight(rng: Rng, s: GameState, o: FightOffer) {
         rep.moments.push({ round: 0, title: 'Nie zrobiłeś wagi', text: `Waga pokazuje o 1,2 kg za dużo. ${fine.toLocaleString('pl-PL')} zł z gaży idzie do rywala, a ty wchodzisz do klatki wysuszony.`, tone: 'bad' });
       }
     }
+    if (!amateur && !freak && (title || o.rival)) {
+      rep.sim.big = true;
+      rep.moments.push({
+        round: 0,
+        title: title ? 'Wieczór, na który pracowałeś' : 'To nie jest zwykła walka',
+        text: `${rounds === 5 ? 'Pięć rund' : 'Trzy rundy'}. W tej walce narożnik pyta cię o decyzję w każdej przerwie. ${title ? 'Każda minuta może zmienić całą karierę.' : 'Wszyscy wiedzą, że tu chodzi o coś więcej niż ranking.'}`,
+        tone: 'purple',
+      });
+    }
     run.fights.push(rep);
     if (!amateur && !freak && !s.proDebut)
       rep.moments.push({
@@ -1848,7 +1881,7 @@ export function decide(s0: GameState, key: string): GameState {
   withRng(s, (rng) => {
     const ctx = fightCtx(s, rep.opp);
     applyDecision(rng, ctx, rep.sim, rep, key);
-    if (!rep.sim.finished) advanceFight(rng, { ...ctx, allowDecision: false }, rep.sim, rep);
+    if (!rep.sim.finished) advanceFight(rng, { ...ctx, allowDecision: !!rep.sim.big }, rep.sim, rep);
     if (rep.sim.finished) finalizeFight(rng, s, rep);
   });
   return s;
@@ -2322,7 +2355,7 @@ function finalizeFight(rng: Rng, s: GameState, rep: FightReport) {
         p.record.d++;
       }
       // narodziny rywalizacji: porażka z kimś z rocznika albo drugie spotkanie
-      if (!s.rivalId && !rep.amateur && (res === 'L' || p.metCount >= 2)) {
+      if (!s.rivalId && (res === 'L' || p.metCount >= 2)) {
         s.rivalId = p.id;
         rep.rival = true;
         rep.moments.push({
@@ -2532,6 +2565,9 @@ export function toSummary(s0: GameState): GameState {
   s.phase = 'summary';
   withRng(s, (rng) => {
     for (const p of s.peers) progressPeer(rng, p);
+    if (s.flags.expBoost) delete s.flags.expBoost;
+    const note = syncRival(rng, s);
+    if (note) summary.story = `${summary.story} ${note}`.trim();
   });
 
   // cięcie z federacji
@@ -2935,9 +2971,90 @@ export function confirmMarket(s0: GameState): GameState {
 // Koniec kariery
 // ---------------------------------------------------------------------------
 
+/** Odwieczny rywal idzie za tobą przez karierę: awansuje razem z tobą, a jego rok trafia do podsumowania. */
+export function syncRival(rng: Rng, s: GameState): string | null {
+  const rv = s.peers.find((p) => p.id === s.rivalId);
+  if (!rv) return null;
+  if (rv.retired) {
+    if (s.flags.rivalGone) return null;
+    s.flags.rivalGone = 1;
+    log(s, `${rv.firstName} ${rv.lastName} kończy karierę. Wasz bilans: ${rv.h2h.w}-${rv.h2h.l}.`);
+    return `${rv.lastName} ogłasza koniec kariery. Wasz bilans zostaje na zawsze: ${rv.h2h.w}-${rv.h2h.l}${rv.h2h.d ? `-${rv.h2h.d}` : ''}.`;
+  }
+  const before = rv.tier;
+  // rywal nie odstaje za bardzo: ten sam rocznik, podobna droga
+  const gap = ovr(s.stats) - ovr(rv.stats);
+  if (gap > 6) for (const k of STAT_KEYS) rv.stats[k] = clamp(rv.stats[k] + rng.int(1, 3), 5, 99);
+  if (rv.tier < s.tier && rng.chance(0.55)) {
+    if (rv.tier === 0) rv.record = { w: 0, l: 0, d: 0 };
+    rv.tier++;
+    rv.rank = rng.int(4, RANK_SIZE[rv.tier]);
+  } else if (rv.tier > s.tier && s.tier >= 1 && rv.tier - 1 >= 1 && rng.chance(0.25)) {
+    rv.tier--;
+    rv.rank = rng.int(1, 6);
+  }
+  if (rv.tier !== before) {
+    const up = rv.tier > before;
+    log(s, `Rywal ${rv.lastName}: ${up ? 'awans' : 'spadek'} do poziomu „${TIER_NAMES[rv.tier]}”.`);
+    return rv.tier === s.tier
+      ? `${rv.lastName} ${up ? 'awansuje' : 'wraca'} do twojej ligi. Prędzej czy później znowu staniecie naprzeciw siebie.`
+      : `Twój rywal ${rv.lastName} ${up ? 'awansuje' : 'spada'} na poziom „${TIER_NAMES[rv.tier]}”.`;
+  }
+  if (rv.tier === s.tier && rv.rank === 0) return `${rv.lastName} jest mistrzem twojej federacji. Jeśli chcesz pasa, musisz przejść przez niego.`;
+  if (rv.tier === s.tier && rv.rank !== null && rv.rank <= 5) return `${rv.lastName} jest w czołówce rankingu (#${rv.rank}). Wasza walka wisi w powietrzu.`;
+  return null;
+}
+
+/** Seria zwycięstw w ostatnich walkach zawodowych (bez freak fightów). */
+function proStreak(s: GameState): number {
+  let n = 0;
+  for (let i = s.history.length - 1; i >= 0; i--) {
+    const h = s.history[i];
+    if (h.amateur || h.freak) continue;
+    if (h.result !== 'W') break;
+    n++;
+  }
+  return n;
+}
+
+/** Premia LEGACY za dobrowolne odejście: jako mistrz, na serii albo w zdrowiu. */
+export function retireBonus(s: GameState): { title: string; pts: number; lines: string[] } | null {
+  if (!s.proDebut) return null;
+  const lines: string[] = [];
+  let pts = 0;
+  const champ = s.rank === 0 && s.tier >= 1 && s.contract.kind !== 'freak';
+  if (champ) {
+    const v = [0, 40, 110, 260, 600][s.tier];
+    pts += v;
+    lines.push(`Odchodzisz jako panujący mistrz: +${v}`);
+  }
+  const streak = proStreak(s);
+  if (streak >= 3) {
+    const v = Math.round(TIER_WIN_PTS[s.tier] * Math.min(streak, 8) * 0.8);
+    pts += v;
+    lines.push(`Seria ${streak} wygranych na koniec: +${v}`);
+  }
+  if (s.wear < 60 && s.age < 38 && (champ || streak >= 3)) {
+    pts += 40;
+    lines.push('Schodzisz zdrowy, zanim zdrowie zdecyduje za ciebie: +40');
+  }
+  if (!pts) return null;
+  const sp = START_PROFILES[s.profile.start].mult ?? 0;
+  const diff = DIFFICULTY[s.profile.difficulty].mult;
+  const total = Math.round(pts * sp * diff);
+  const title = champ && streak >= 3 ? 'Odszedł niepokonany' : champ ? 'Odszedł jako mistrz' : 'Odszedł na szczycie';
+  return { title, pts: total, lines };
+}
+
 export function retire(s0: GameState): GameState {
   const s = clone(s0);
-  endCareer(s, 'Sam decydujesz, że to koniec. Schodzisz z klatki na własnych warunkach.');
+  const top = retireBonus(s);
+  endCareer(s, top ? `${top.title}. Sam decydujesz, że to koniec, i schodzisz z klatki w najlepszym momencie.` : 'Sam decydujesz, że to koniec. Schodzisz z klatki na własnych warunkach.');
+  if (top && s.ending) {
+    s.ending.top = top;
+    s.ending.legacy += top.pts;
+    s.ending.verdictDesc += ` ${top.title === 'Odszedł niepokonany' ? 'Nikt nie zdążył zabrać ci pasa ani serii.' : 'Kibice zapamiętają cię u szczytu, a nie na równi pochyłej.'}`;
+  }
   return s;
 }
 

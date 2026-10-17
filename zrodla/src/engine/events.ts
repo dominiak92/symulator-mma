@@ -3,6 +3,7 @@ import { BELT_NAMES, START_PROFILES } from './data';
 import { EXTRA_EVENTS } from './events_extra';
 import { MONEY_EVENTS } from './events_money';
 import { REP_EVENTS } from './events_rep';
+import { STAGE_EVENTS } from './events_stage';
 
 export interface EventDef {
   id: string;
@@ -1127,6 +1128,7 @@ export const EVENTS: EventDef[] = [
   ...EXTRA_EVENTS,
   ...MONEY_EVENTS,
   ...REP_EVENTS,
+  ...STAGE_EVENTS,
 ];
 
 export function eventWeight(e: EventDef, s: GameState): number {
