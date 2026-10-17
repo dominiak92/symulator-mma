@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
 import { createPortal } from 'react-dom';
-import type { CardSpot, DecisionOption, FightReport, GameState, Moment } from '../../engine/types';
+import type { CardSpot, DecisionOption, DecisionPoint, FightReport, GameState, Moment } from '../../engine/types';
 import { SEASON_FORMS, STAGE_LABELS, STAT_LABELS, STYLE_LABELS } from '../../engine/data';
 import { decide, mainRecord, recStr, seasonNext, seasonSkip, toSummary } from '../../engine/game';
 import { OUTCOME_LABEL } from '../../engine/fight';
@@ -69,7 +69,7 @@ function MomentView({ m, style, anim }: { m: Moment; style?: CSSProperties; anim
           <span className={`tag ${m.outcome === 'fail' ? 'bad' : m.outcome === 'super' ? 'gold' : 'good'}`}>{OUTCOME_LABEL[m.outcome]}</span>
           <span className="faint">
             {STAT_LABELS[m.stat]}
-            {m.chance !== undefined ? ` · ${m.chance}%` : ''}
+            {m.chance !== undefined ? ` · ${chanceWord(m.chance)}` : ''}
           </span>
         </div>
       )}
@@ -137,40 +137,78 @@ function oppName(f: FightReport) {
   return `${o.firstName} ${o.lastName}`;
 }
 
+/** Szansa słowami zamiast procentu (procent zostaje w podpowiedzi). */
+function chanceWord(p: number) {
+  return p >= 72 ? 'prawie pewne' : p >= 56 ? 'raczej wyjdzie' : p >= 42 ? 'pół na pół' : p >= 28 ? 'ryzykowne' : 'rzut na taśmę';
+}
+const STAKE: Record<string, { icon: string; text: string }> = {
+  risk: { icon: 'bolt', text: 'może skończyć walkę' },
+  normal: { icon: 'trophy', text: 'wygrywasz rundę' },
+  safe: { icon: 'heart', text: 'łapiesz oddech, mniej obrywasz' },
+};
+
 function OptionButton({ o, onPick }: { o: DecisionOption; onPick: () => void }) {
-  const tone = o.chance >= 65 ? 'good' : o.chance >= 40 ? 'mid' : 'bad';
+  const tone = o.chance >= 56 ? 'good' : o.chance >= 42 ? 'mid' : 'bad';
+  const dots = o.chance >= 72 ? 5 : o.chance >= 56 ? 4 : o.chance >= 42 ? 3 : o.chance >= 28 ? 2 : 1;
+  const kind = o.kind ?? 'normal';
+  const st = STAKE[kind];
   return (
-    <button className={`choice opt opt-${o.kind ?? 'normal'}`} onClick={onPick}>
+    <button className={`choice opt opt-${kind}`} onClick={onPick} title={`Szansa: ${o.chance}%`}>
       <span className="opt-top">
         <span className="opt-label">{o.label}</span>
-        <span className={`chance-big tone-${tone}`}>{o.chance}%</span>
+        <span className={`chance-word tone-${tone}`}>
+          <span className="dots" aria-hidden="true">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <i key={i} className={i <= dots ? 'on' : ''} />
+            ))}
+          </span>
+          {chanceWord(o.chance)}
+        </span>
       </span>
-      <span className="opt-bar" aria-hidden="true">
-        <i className={tone} style={{ width: `${o.chance}%` }} />
+      <span className={`opt-stake stake-${kind}`}>
+        <Icon name={st.icon} size={14} />
+        <b>{st.text}</b>
       </span>
       <span className="opt-out">
         <span className="ok">✓ {o.win}</span>
         <span className="ko">✗ {o.lose}</span>
       </span>
       <span className="opt-meta">
-        {o.kind === 'safe' && (
-          <span className="tag blue">
-            <Icon name="shieldCheck" size={13} />
-            bezpiecznie
-          </span>
-        )}
-        {o.kind === 'risk' && (
-          <span className="tag red">
-            <Icon name="flame" size={13} />
-            ryzyko
-          </span>
-        )}
         <span className="faint test-stat">
           <Icon name={STAT_ICON[o.stat]} size={13} />
-          {STAT_LABELS[o.stat].toLowerCase()}
+          zależy od: {STAT_LABELS[o.stat].toLowerCase()}
         </span>
       </span>
     </button>
+  );
+}
+
+function hurtWord(d: number) {
+  return d >= 55 ? 'mocno obity' : d >= 30 ? 'obity' : d >= 12 ? 'lekko obity' : 'świeży';
+}
+function stamWord(v: number) {
+  return v >= 70 ? 'pełno sił' : v >= 45 ? 'zmęczony' : 'bez tlenu';
+}
+
+function FightStatus({ st }: { st: NonNullable<DecisionPoint['status']> }) {
+  const lead = st.lead === null ? null : st.lead > 0 ? 'prowadzisz' : st.lead < 0 ? 'przegrywasz' : 'remis';
+  return (
+    <div className="fight-status">
+      {lead && (
+        <span className={`fs ${st.lead! > 0 ? 'good' : st.lead! < 0 ? 'bad' : ''}`}>
+          <Icon name="scale" size={13} />
+          karty: {lead}
+        </span>
+      )}
+      <span className={`fs ${st.hurt >= 30 || st.stam < 45 ? 'bad' : ''}`}>
+        <Icon name="user" size={13} />
+        ty: {hurtWord(st.hurt)}, {stamWord(st.stam)}
+      </span>
+      <span className={`fs ${st.oppHurt >= 30 || st.oppStam < 50 ? 'good' : ''}`}>
+        <Icon name="target" size={13} />
+        on: {hurtWord(st.oppHurt)}, {stamWord(st.oppStam)}
+      </span>
+    </div>
   );
 }
 
@@ -239,7 +277,10 @@ function LiveCard({ g, f, start, animate, setGame }: { g: GameState; f: FightRep
       </div>
       <h3>{pending.title}</h3>
       <p className="decision-text">{pending.text}</p>
-      <CoachTip id="decision">Procent to szansa, że plan wejdzie. Bezpieczny wybór wchodzi częściej, ryzyko może skończyć walkę.</CoachTip>
+      {pending.status && <FightStatus st={pending.status} />}
+      <CoachTip id="decision">
+        Nie ma jednej dobrej odpowiedzi. Ryzyko może skończyć walkę, ale kosztuje zdrowie. Bezpieczny wybór daje odpocząć. Patrz na karty i siły: prowadzisz? Graj spokojnie. Przegrywasz? Trzeba zaryzykować.
+      </CoachTip>
       <div className="choice-list">
         {pending.options.map((o) => (
           <OptionButton key={o.key} o={o} onPick={() => setGame(decide(g, o.key))} />
@@ -384,6 +425,21 @@ const SCOUT: Record<string, string> = {
 function FightIntro({ g, f, n, total, onGo, paused }: { g: GameState; f: FightReport; n: number; total: number | null; onGo: () => void; paused: boolean }) {
   const o = f.opp;
   const head = f.amateur ? (f.stage ? STAGE_LABELS[f.stage] : 'Walka') : total ? `Walka ${n} z ${total}` : `Walka ${n}`;
+  const goRef = useRef<HTMLButtonElement>(null);
+  const goCb = useRef(onGo);
+  goCb.current = onGo;
+  // klawiatura: fokus na „Do walki!”, Esc też zamyka zapowiedź
+  useEffect(() => {
+    goRef.current?.focus({ preventScroll: true });
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        goCb.current();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
   return (
     <div className="fight-intro" role="dialog" aria-modal="true" aria-label={`Zapowiedź: ${head}`} onClick={onGo}>
       <div className={`fi-card ${f.title ? 'title-bout' : ''}`} onClick={(e) => e.stopPropagation()}>
@@ -430,7 +486,7 @@ function FightIntro({ g, f, n, total, onGo, paused }: { g: GameState; f: FightRe
           <Icon name="target" size={14} />
           {o.freak ? 'Freak fight. Kamery, hałas i cyrk. Nie daj się wyprowadzić z równowagi.' : SCOUT[o.style]}
         </p>
-        <button className="btn btn-primary btn-block btn-ico fi-go" onClick={onGo}>
+        <button ref={goRef} className="btn btn-primary btn-block btn-ico fi-go" onClick={onGo}>
           <Icon name="glove" />
           Do walki!
           {!paused && <i className="fi-timer" style={{ animationDuration: `${INTRO_MS}ms` }} />}
@@ -464,12 +520,22 @@ export default function Season({ game, setGame }: StepProps) {
   useEffect(() => {
     const stop = () => setPaused(true);
     const onKey = (e: KeyboardEvent) => {
+      // spacja na przycisku to kliknięcie, nie przewijanie
+      if (e.key === ' ' && (e.target as HTMLElement | null)?.closest?.('button, summary, input')) return;
       if (['ArrowDown', 'ArrowUp', 'PageDown', 'PageUp', 'Home', 'End', ' '].includes(e.key)) stop();
     };
+    // każde dotknięcie ekranu (poza sterowaniem sezonem, zapowiedzią i decyzją) zatrzymuje automat
+    const onDown = (e: PointerEvent) => {
+      const t = e.target as HTMLElement | null;
+      if (t?.closest?.('.play-ctrl, .fight-intro, .decision, .decision-sheet, .sheet, .icon-btn')) return;
+      stop();
+    };
+    window.addEventListener('pointerdown', onDown, { passive: true });
     window.addEventListener('touchmove', stop, { passive: true });
     window.addEventListener('wheel', stop, { passive: true });
     window.addEventListener('keydown', onKey);
     return () => {
+      window.removeEventListener('pointerdown', onDown);
       window.removeEventListener('touchmove', stop);
       window.removeEventListener('wheel', stop);
       window.removeEventListener('keydown', onKey);
@@ -660,6 +726,7 @@ export default function Season({ game, setGame }: StepProps) {
               Następna walka
               <Icon name="play" size={12} />
               {!paused && <i className="next-timer" style={{ animationDelay: `${revealMs}ms`, animationDuration: `${NEXT_MS}ms` }} />}
+              {paused && <small className="paused-note">czeka</small>}
             </button>
           )}
           <button className={`icon-pill ${fast ? 'on' : ''}`} onClick={() => setFast((x) => !x)} aria-pressed={fast} aria-label={fast ? 'Wolniej' : 'Szybciej'}>

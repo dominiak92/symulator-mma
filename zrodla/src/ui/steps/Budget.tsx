@@ -1,5 +1,5 @@
 import { STAT_LABELS } from '../../engine/data';
-import { OVERDRAFT, PITCH_SLOTS, pitchBlocked, pitchChance, pitchPay, pitchSponsor, breakPreview, budgetBalance, budgetLines, canStartSeason, expectedPurses, loanOffer, loanRefusal, startSeason, takeBreakYear, takeLoan } from '../../engine/game';
+import { ACADEMY_LEVELS, academyName, academyNext, investAcademy, OVERDRAFT, PITCH_SLOTS, pitchBlocked, pitchChance, pitchPay, pitchSponsor, breakPreview, budgetBalance, budgetLines, canStartSeason, expectedPurses, loanOffer, loanRefusal, startSeason, takeBreakYear, takeLoan } from '../../engine/game';
 import { useState } from 'react';
 import type { StatKey } from '../../engine/types';
 import { money, plural } from '../../format';
@@ -19,6 +19,10 @@ export default function Budget({ game, setGame }: StepProps) {
   const canStart = canStartSeason(g);
   const [confirmBreak, setConfirmBreak] = useState(false);
   const [pitchOpen, setPitchOpen] = useState(false);
+  const [confirmAcad, setConfirmAcad] = useState(false);
+  const acad = g.academy ?? 0;
+  const acadNext = academyNext(g);
+  const showAcad = acad > 0 || g.tier >= 2;
   const pitchDone = !!g.pitch && g.pitch.season === g.season;
   const blocked = pitchBlocked(g);
   const purses = expectedPurses(g);
@@ -136,6 +140,62 @@ export default function Budget({ game, setGame }: StepProps) {
           </button>
         )}
       </section>
+
+      {showAcad && (
+        <section className="pitch acad">
+          <div className="pitch-head">
+            <span className="ledger-ico plus">
+              <Icon name="home" size={16} />
+            </span>
+            <div>
+              <b>{acad ? academyName(g) : 'Własna akademia'}</b>
+              <small>
+                {acad
+                  ? `Poziom ${acad} z ${ACADEMY_LEVELS.length}: ${ACADEMY_LEVELS[acad - 1].name}. Zarabia co sezon i zostaje po karierze.`
+                  : 'Inwestycja na lata: przychód co sezon i punkty legacy po karierze.'}
+              </small>
+            </div>
+          </div>
+          {acadNext &&
+            (acadNext.blocked ? (
+              <p className="muted small" style={{ margin: 0 }}>
+                {acad ? 'Rozbudowa: ' : ''}
+                {acadNext.name} za {money(acadNext.cost)}. {acadNext.blocked}
+              </p>
+            ) : (
+              <div className="acad-offer">
+                <div className="acad-txt">
+                  <strong>{acadNext.name}</strong>
+                  <span>
+                    {acadNext.note} · {money(acadNext.cost)} · ok. {money(acadNext.income)} na sezon
+                  </span>
+                </div>
+                {confirmAcad ? (
+                  <div className="row" style={{ gap: 6 }}>
+                    <button className="btn btn-small btn-ghost" onClick={() => setConfirmAcad(false)}>
+                      Nie
+                    </button>
+                    <button
+                      className="btn btn-small btn-gold btn-ico"
+                      onClick={() => {
+                        setConfirmAcad(false);
+                        setGame(investAcademy(g));
+                      }}
+                    >
+                      <Icon name="check" size={15} />
+                      Tak, inwestuję
+                    </button>
+                  </div>
+                ) : (
+                  <button className="btn btn-small btn-ghost btn-ico" onClick={() => setConfirmAcad(true)}>
+                    <Icon name={acad ? 'plus' : 'home'} size={15} />
+                    {acad ? 'Rozbuduj' : 'Otwórz'}
+                  </button>
+                )}
+              </div>
+            ))}
+        </section>
+      )}
 
       {purses > 0 && g.contract.kind !== 'freak' && (
         <p className="muted" style={{ marginTop: 12 }}>
