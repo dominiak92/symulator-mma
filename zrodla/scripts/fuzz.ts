@@ -40,12 +40,14 @@ for (let i = 0; i < N; i++) {
       checkState(s, s.phase);
       switch (s.phase) {
         case 'training':
-          s = G.doTraining(s, rng.pick(STAT_KEYS));
+          if (rng.chance(0.08) && !G.dagestanBlocked(s)) s = G.goDagestan(s);
+          else s = G.doTraining(s, rng.pick(STAT_KEYS), rng.chance(0.5) ? rng.pick(G.CAMPS).id : null);
           break;
         case 'budget':
           if (rng.chance(0.3) && !G.pitchBlocked(s)) s = G.pitchSponsor(s, rng.pick(['spodenki', 'plecy', 'social'] as const));
           if (s.pitch) checkText('sponsor', s.pitch.text);
           for (const l of G.budgetLines(s)) { checkText('budżet', l.label); checkText('budżet', l.sub); if (!Number.isFinite(l.amount)) note('budżet: NaN'); }
+          if (rng.chance(0.3)) s = G.investAcademy(s);
           if (s.money + G.budgetBalance(s) < 0 && G.loanOffer(s) && rng.chance(0.7)) s = G.takeLoan(s);
           if (G.canStartSeason(s) && rng.chance(0.97)) s = G.startSeason(s);
           else s = G.takeBreakYear(s);

@@ -1,6 +1,11 @@
 // Porównanie strategii gracza — szukanie luk w ekonomii i balansie.
 // Uruchom: npx tsx scripts/balance.ts [liczba karier na strategię]
 import {
+  academyNext,
+  campBlocked,
+  campCost,
+  CAMPS,
+  investAcademy,
   budgetBalance,
   canStartSeason,
   choiceChance,
@@ -39,7 +44,9 @@ type Policy = {
   pitch?: boolean;
   events?: 'safe' | 'risky' | 'first';
   contract?: 'promo' | 'stay' | 'freak';
-  fightPick?: 'best' | 'risky';
+  fightPick?: 'best' | 'risky' | 'smart' | 'normal';
+  camps?: boolean;
+  academy?: boolean;
 };
 
 const weakest = (s: GameState) => [...STAT_KEYS].sort((a, b) => s.stats[a] - s.stats[b])[0];
@@ -57,13 +64,24 @@ function play(seed: number, p: Policy) {
     minMoney = Math.min(minMoney, s.money);
     moneyAt[s.age] = s.money;
     switch (s.phase) {
-      case 'training':
-        s = doTraining(s, (p.train ?? weakest)(s));
+      case 'training': {
+        const k = (p.train ?? weakest)(s);
+        let camp: string | null = null;
+        if (p.camps && !campBlocked(s) && s.money - campCost(s) + budgetBalance(s) > 20000) {
+          const sorted = [...CAMPS].sort((a, b) => s.stats[a.main] - s.stats[b.main]);
+          camp = sorted[0].id;
+        }
+        s = doTraining(s, k, camp);
         break;
+      }
       case 'budget': {
         if (p.pitch && !pitchBlocked(s)) {
           const best = [...PITCH_SLOTS].sort((a, b) => pitchChance(s, b.id) * pitchPay(s, b.id) - pitchChance(s, a.id) * pitchPay(s, a.id))[0];
           s = pitchSponsor(s, best.id);
+        }
+        if (p.academy) {
+          const n = academyNext(s);
+          if (n && !n.blocked && s.money - n.cost + budgetBalance(s) > 60000) s = investAcademy(s);
         }
         if (s.money + budgetBalance(s) < 0 && loanOffer(s)) {
           s = takeLoan(s);
@@ -105,7 +123,17 @@ function play(seed: number, p: Policy) {
         const cur = run.fights[run.fights.length - 1];
         if (cur?.sim.pending) {
           const opts = [...cur.sim.pending.options];
-          const o = p.fightPick === 'risky' ? opts.find((x) => x.kind === 'risk') ?? opts[0] : opts.sort((a, b) => b.chance - a.chance)[0];
+          const st = cur.sim.pending.status;
+          const byKind = (k: string) => opts.filter((x) => x.kind === k).sort((a, b) => b.chance - a.chance)[0];
+          let o = opts.sort((a, b) => b.chance - a.chance)[0];
+          if (p.fightPick === 'risky') o = byKind('risk') ?? o;
+          else if (p.fightPick === 'normal') o = byKind('normal') ?? o;
+          else if (p.fightPick === 'smart') {
+            // gra pod sytuację: obity → odpoczynek, przegrywa albo rywal słabnie → ryzyko, inaczej najlepsza zwykła
+            if (st && (st.hurt >= 35 || st.stam < 40)) o = byKind('safe') ?? o;
+            else if (st && ((st.lead ?? 0) < 0 || st.oppHurt >= 35 || st.oppStam < 50)) o = byKind('risk') ?? o;
+            else o = [...opts].filter((x) => x.kind !== 'safe').sort((a, b) => b.chance - a.chance)[0] ?? o;
+          }
           s = decide(s, o.key);
         } else if (run.done) s = toSummary(s);
         else s = seasonSkip(s);
@@ -163,10 +191,15 @@ const POLICIES_ALL: Policy[] = [
   { name: 'nie awansuje', contract: 'stay' },
   { name: 'freak fighty', contract: 'freak' },
   { name: 'ryzyko w walce', fightPick: 'risky' },
+  { name: 'zwykłe opcje w walce', fightPick: 'normal' },
+  { name: 'walka pod sytuację', fightPick: 'smart' },
   { name: 'tylko zapasy', train: () => 'wrest' },
   { name: 'tylko parter', train: () => 'bjj' },
   { name: 'tylko kondycja', train: () => 'cardio' },
   { name: 'tylko taktyka', train: () => 'iq' },
+  { name: 'obozy', camps: true },
+  { name: 'akademia', academy: true },
+  { name: 'obozy+akademia', camps: true, academy: true },
 ];
 const POLICIES = ONLY ? POLICIES_ALL.filter((p) => ONLY.split(',').some((o) => p.name.includes(o))) : POLICIES_ALL;
 
