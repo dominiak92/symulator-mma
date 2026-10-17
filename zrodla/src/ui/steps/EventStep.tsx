@@ -3,6 +3,8 @@ import { choiceChance, chooseEvent, continueAfterEvent, effectChips, type Chip }
 import { STAT_LABELS } from '../../engine/data';
 import type { StepProps } from '../Game';
 import { GG } from '../brand';
+import { Icon, STAT_ICON } from '../Icon';
+import type { StatKey } from '../../engine/types';
 
 export function Chips({ chips }: { chips: Chip[] }) {
   if (!chips.length) return null;
@@ -10,6 +12,7 @@ export function Chips({ chips }: { chips: Chip[] }) {
     <span className="chips">
       {chips.map((c, i) => (
         <span key={i} className={`tag ${c.tone}`}>
+          {c.icon && <Icon name={c.icon.startsWith('stat:') ? STAT_ICON[c.icon.slice(5) as StatKey] : c.icon} size={13} />}
           {c.text}
         </span>
       ))}
@@ -57,7 +60,10 @@ export default function EventStep({ game, setGame }: StepProps) {
   return (
     <section className="step">
       {ev.brand && GG[ev.brand as keyof typeof GG] && <img className="event-brand" src={GG[ev.brand as keyof typeof GG]} alt={ev.title} />}
-      <div className="kicker">Przed sezonem</div>
+      <div className="kicker pt-ico">
+        <Icon name="calendar" size={14} />
+        Przed sezonem
+      </div>
       <h2>{ev.title}</h2>
       <p className="lead" style={{ marginTop: 10 }}>
         {ev.text}
@@ -88,7 +94,12 @@ export default function EventStep({ game, setGame }: StepProps) {
                       <span className="ko">✗</span>
                       <Chips chips={effectChips(c.fail)} />
                     </span>
-                    {c.test && <span className="faint small">test: {STAT_LABELS[c.test].toLowerCase()}</span>}
+                    {c.test && (
+                      <span className="faint small test-stat">
+                        <Icon name={STAT_ICON[c.test]} size={13} />
+                        test: {STAT_LABELS[c.test].toLowerCase()}
+                      </span>
+                    )}
                   </>
                 ) : (
                   <Chips chips={effectChips(c.effects)} />
@@ -112,8 +123,9 @@ export default function EventStep({ game, setGame }: StepProps) {
             <Chips chips={effectChips(ev.resultEffects)} />
           </div>
           <div className="cta-bar float" style={{ ['--d' as string]: '350ms' }}>
-            <button className="btn btn-primary btn-block" onClick={() => setGame(continueAfterEvent(g))}>
+            <button className="btn btn-primary btn-block btn-ico" onClick={() => setGame(continueAfterEvent(g))}>
               Dalej
+              <Icon name="play" size={14} />
             </button>
           </div>
         </>

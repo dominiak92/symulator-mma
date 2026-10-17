@@ -4,6 +4,7 @@ import type { StatKey } from '../../engine/types';
 import { money, plural } from '../../format';
 import type { StepProps } from '../Game';
 import { Emblem, SponsorLogo, clubCrest } from '../Emblem';
+import { Icon, STAT_ICON } from '../Icon';
 
 export default function Budget({ game, setGame }: StepProps) {
   const g = game;
@@ -22,6 +23,7 @@ export default function Budget({ game, setGame }: StepProps) {
           <div className="chips" style={{ marginTop: 4 }}>
             {gains.map(([k, v]) => (
               <span key={k} className={`tag ${k === g.trainingPick ? 'gold' : 'good'}`}>
+                <Icon name={STAT_ICON[k]} size={13} />
                 {STAT_LABELS[k]} +{v}
               </span>
             ))}
@@ -32,7 +34,10 @@ export default function Budget({ game, setGame }: StepProps) {
       <div className="kicker">Budżet</div>
       <h2>Za co płacisz w tym roku</h2>
       <div className="money-line">
-        <span className="muted">Na koncie</span>
+        <span className="muted pt-ico">
+          <Icon name="coins" size={16} />
+          Na koncie
+        </span>
         <span className="money-big" style={{ color: g.money < 0 ? 'var(--bad)' : undefined }}>
           {money(g.money)}
         </span>
@@ -42,7 +47,19 @@ export default function Budget({ game, setGame }: StepProps) {
         {lines.map((l, i) => (
           <div className="ledger-row" key={i}>
             <div className="ledger-label">
-              {l.logo && (l.logo.kind === 'club' ? <Emblem spec={clubCrest(g.club)} size={30} title={l.logo.name} /> : <SponsorLogo name={l.logo.name} size={30} />)}
+              {l.logo ? (
+                l.logo.kind === 'club' ? (
+                  <Emblem spec={clubCrest(g.club)} size={30} title={l.logo.name} />
+                ) : (
+                  <SponsorLogo name={l.logo.name} size={30} />
+                )
+              ) : (
+                l.icon && (
+                  <span className={`ledger-ico ${l.amount >= 0 ? 'plus' : 'minus'}`}>
+                    <Icon name={l.icon} size={16} />
+                  </span>
+                )
+              )}
               <div>
                 {l.label}
                 {l.sub && <small>{l.sub}</small>}
@@ -84,7 +101,8 @@ export default function Budget({ game, setGame }: StepProps) {
         <div className="warn">
           Brakuje ci pieniędzy. Bank daje {money(loan.amount)} kredytu, spłata w {loan.count} ratach po {money(loan.installment)}, pierwsza za rok.
           <div className="row wrap" style={{ marginTop: 10 }}>
-            <button className="btn btn-small btn-gold" onClick={() => setGame(takeLoan(g))}>
+            <button className="btn btn-small btn-gold btn-ico" onClick={() => setGame(takeLoan(g))}>
+              <Icon name="card" size={15} />
               Biorę kredyt
             </button>
             <span className="small">Bez kredytu wchodzisz w sezon na minusie, a duże długi zabierają czas na trening.</span>
@@ -93,7 +111,8 @@ export default function Budget({ game, setGame }: StepProps) {
       )}
 
       <div className="cta-bar">
-        <button className="btn btn-primary btn-block" onClick={() => setGame(startSeason(g))}>
+        <button className="btn btn-primary btn-block btn-ico" onClick={() => setGame(startSeason(g))}>
+          <Icon name="glove" />
           Zaczynam sezon
         </button>
       </div>

@@ -9,6 +9,7 @@ import type { StepProps } from '../Game';
 import { GG } from '../brand';
 import { Belt, Confetti, Fighter, Medal } from '../Art';
 import { clubCrest } from '../Emblem';
+import { Icon, STAT_ICON } from '../Icon';
 
 const reduced = () => typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 
@@ -31,6 +32,7 @@ function FormReel({ g, spinning }: { g: GameState; spinning: boolean }) {
   const tone = spinning ? 'neutral' : form.tone;
   return (
     <div className="form-strip">
+      <Icon name="flame" size={15} className={`tone-${tone}`} />
       <small>Forma</small>
       <span className={`form-val tone-${tone} ${spinning ? 'spin' : 'lock'}`} aria-live="polite">
         {label}
@@ -50,7 +52,11 @@ function MomentView({ m, style, anim }: { m: Moment; style?: CSSProperties; anim
     <div className={`moment ${m.tone} ${anim ? 'm-anim' : ''}`} style={style}>
       <div className="mt">
         <span className="mt-title">
-          {m.brand && GG[m.brand as keyof typeof GG] && <img className="moment-brand" src={GG[m.brand as keyof typeof GG]} alt="" />}
+          {m.brand && GG[m.brand as keyof typeof GG] ? (
+            <img className="moment-brand" src={GG[m.brand as keyof typeof GG]} alt="" />
+          ) : (
+            <Icon name={momentIcon(m)} size={14} className={`mi ${m.tone}`} />
+          )}
           {m.title}
         </span>
         {m.round > 0 ? <span className="faint mt-round">R{m.round}</span> : null}
@@ -67,6 +73,23 @@ function MomentView({ m, style, anim }: { m: Moment; style?: CSSProperties; anim
       )}
     </div>
   );
+}
+
+function momentIcon(m: Moment): string {
+  const t = m.title.toLowerCase();
+  if (m.decision || t.includes('plan')) return 'target';
+  if (t.includes('nokaut') || /\bko\b|tko/.test(t)) return 'bolt';
+  if (t.includes('werdykt') || t.includes('sędzi') || t.includes('decyzj')) return 'scale';
+  if (t.includes('złot') || t.includes('srebr') || t.includes('brąz') || t.includes('medal')) return 'medal';
+  if (t.includes('pas') || t.includes('mistrz')) return 'trophy';
+  if (t.includes('kontuzj') || t.includes('rozci') || t.includes('lekarz') || t.includes('obity')) return 'bandage';
+  if (t.includes('debiut')) return 'sparkle';
+  if (t.includes('cyrk') || t.includes('krew') || t.includes('wypada') || t.includes('walkower')) return 'megaphone';
+  if (t.includes('bonus')) return 'coins';
+  if (m.tone === 'good') return 'check';
+  if (m.tone === 'bad') return 'x';
+  if (m.tone === 'purple') return 'star';
+  return 'clock';
 }
 
 function rankLabel(r: number | null) {
@@ -128,9 +151,22 @@ function OptionButton({ o, onPick }: { o: DecisionOption; onPick: () => void }) 
         <span className="ko">✗ {o.lose}</span>
       </span>
       <span className="opt-meta">
-        {o.kind === 'safe' && <span className="tag blue">bezpiecznie</span>}
-        {o.kind === 'risk' && <span className="tag red">ryzyko</span>}
-        <span className="faint">test: {STAT_LABELS[o.stat].toLowerCase()}</span>
+        {o.kind === 'safe' && (
+          <span className="tag blue">
+            <Icon name="shieldCheck" size={13} />
+            bezpiecznie
+          </span>
+        )}
+        {o.kind === 'risk' && (
+          <span className="tag red">
+            <Icon name="flame" size={13} />
+            ryzyko
+          </span>
+        )}
+        <span className="faint test-stat">
+          <Icon name={STAT_ICON[o.stat]} size={13} />
+          {STAT_LABELS[o.stat].toLowerCase()}
+        </span>
       </span>
     </button>
   );
@@ -192,10 +228,23 @@ function LiveCard({ g, f, start, animate, setGame }: { g: GameState; f: FightRep
   return (
     <article className={`live ${f.title ? 'title-bout' : ''} ${done ? `done res-${f.result ?? 'X'}` : ''} ${animate ? 'anim' : ''}`} id="live-fight">
       <div className="live-ctx">
-        <span>{contextLine(f)}</span>
+        <span className="ctx-ico">
+          <Icon name={f.amateur ? 'medal' : 'pin'} size={13} />
+          {contextLine(f)}
+        </span>
         <span className="row" style={{ gap: 4 }}>
-          {f.title && <span className="tag gold">{f.defense ? 'obrona pasa' : 'o pas'}</span>}
-          {f.peer && <span className="tag blue">rocznik</span>}
+          {f.title && (
+            <span className="tag gold">
+              <Icon name="trophy" size={12} />
+              {f.defense ? 'obrona pasa' : 'o pas'}
+            </span>
+          )}
+          {f.peer && (
+            <span className="tag blue">
+              <Icon name="users" size={12} />
+              rocznik
+            </span>
+          )}
         </span>
       </div>
 
@@ -232,7 +281,10 @@ function LiveCard({ g, f, start, animate, setGame }: { g: GameState; f: FightRep
 
       {done && (
         <div className={`stamp ${f.result ?? 'X'} ${finish ? 'finish' : ''}`} style={d(stampAt)}>
-          <strong>{resWord(f)}</strong>
+          <strong>
+            {f.result === 'W' && finish && <Icon name="bolt" size={22} />}
+            {resWord(f)}
+          </strong>
           {f.method !== 'Walkower' && (
             <span>
               {methodShort(f) === 'decyzja' ? f.method?.replace('Decyzja ', 'decyzja ') : methodShort(f)}
@@ -242,8 +294,17 @@ function LiveCard({ g, f, start, animate, setGame }: { g: GameState; f: FightRep
           )}
           {(f.earned > 0 || rankMove) && (
             <span className="stamp-foot">
-              {f.earned > 0 && <b className="earned">+{money(f.earned)}</b>}
-              {rankMove && <span>{rankMove}</span>}
+              {f.earned > 0 && (
+                <b className="earned">
+                  <Icon name="coins" size={14} />+{money(f.earned)}
+                </b>
+              )}
+              {rankMove && (
+                <span>
+                  <Icon name="trend" size={14} />
+                  {rankMove}
+                </span>
+              )}
             </span>
           )}
         </div>
@@ -270,7 +331,10 @@ function LiveCard({ g, f, start, animate, setGame }: { g: GameState; f: FightRep
       {pending && (
         <div className="decision m-anim" style={d(decisionAt)} id="decision">
           <div className="decision-head">
-            <span className="tag gold">Twoja decyzja</span>
+            <span className="tag gold">
+              <Icon name="target" size={13} />
+              Twoja decyzja
+            </span>
             <span className="faint">przed rundą {pending.round}</span>
           </div>
           <h3>{pending.title}</h3>
@@ -407,7 +471,7 @@ export default function Season({ game, setGame }: StepProps) {
         {!run.done && !waiting && (
           <div className="season-ctrl">
             <button className={`icon-pill ${fast ? 'on' : ''}`} onClick={() => setFast((x) => !x)} aria-pressed={fast} aria-label={fast ? 'Wolniej' : 'Szybciej'}>
-              ⏩
+              <Icon name="ff" size={16} />
             </button>
             <button
               className="icon-pill text"
@@ -416,6 +480,7 @@ export default function Season({ game, setGame }: StepProps) {
                 setGame(seasonSkip(gameRef.current));
               }}
             >
+              <Icon name="skip" size={14} />
               Pomiń
             </button>
           </div>
@@ -425,6 +490,7 @@ export default function Season({ game, setGame }: StepProps) {
       <div className="season-bar">
         <FormReel g={g} spinning={spinning} />
         <div className={`rec-pill ${lastRes === 'W' ? 'up' : lastRes === 'L' ? 'down' : ''}`} key={recKey}>
+          <Icon name="glove" size={14} />
           <small>Bilans</small>
           <b>
             {w}-{l}
@@ -454,7 +520,9 @@ export default function Season({ game, setGame }: StepProps) {
         )}
         {upcoming.map((u, i) => (
           <div className="upcoming" key={`u${i}`}>
-            <span className="res-badge sm X">?</span>
+            <span className="res-badge sm X">
+              <Icon name="clock" size={14} />
+            </span>
             {u}
           </div>
         ))}
@@ -462,7 +530,8 @@ export default function Season({ game, setGame }: StepProps) {
 
       {run.done && (
         <div className="cta-bar float" style={d(anim ? revealMs : 0)}>
-          <button className="btn btn-primary btn-block" onClick={() => setGame(toSummary(g))}>
+          <button className="btn btn-primary btn-block btn-ico" onClick={() => setGame(toSummary(g))}>
+            <Icon name="chart" />
             Podsumowanie sezonu
           </button>
         </div>

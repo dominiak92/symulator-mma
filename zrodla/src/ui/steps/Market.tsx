@@ -6,13 +6,14 @@ import { lat, money, plural } from '../../format';
 import type { StepProps } from '../Game';
 import { Emblem, clubCrest, crestFor } from '../Emblem';
 import { useState } from 'react';
+import { Icon, STAT_ICON } from '../Icon';
 
-const KIND: Record<Contract['kind'], { label: string; tone: string }> = {
-  stay: { label: 'zostajesz', tone: '' },
-  promotion: { label: 'awans', tone: 'good' },
-  demotion: { label: 'krok w tył', tone: 'bad' },
-  freak: { label: 'freak fight', tone: 'gold' },
-  side: { label: 'nowa gala', tone: '' },
+const KIND: Record<Contract['kind'], { label: string; tone: string; icon: string }> = {
+  stay: { label: 'zostajesz', tone: '', icon: 'home' },
+  promotion: { label: 'awans', tone: 'good', icon: 'trend' },
+  demotion: { label: 'krok w tył', tone: 'bad', icon: 'rotate' },
+  freak: { label: 'freak fight', tone: 'gold', icon: 'megaphone' },
+  side: { label: 'nowa gala', tone: '', icon: 'pin' },
 };
 
 /** Jak mocni są rywale na danym szczeblu w porównaniu z graczem. */
@@ -38,7 +39,10 @@ export default function Market({ game, setGame }: StepProps) {
   return (
     <>
       <section className="step">
-        <div className="kicker">Rynek · przed sezonem {g.season}</div>
+        <div className="kicker pt-ico">
+          <Icon name="briefcase" size={14} />
+          Rynek · przed sezonem {g.season}
+        </div>
         <h2>Gdzie walczysz w tym roku?</h2>
         <p className="muted small" style={{ marginTop: 4 }}>
           Masz {lat(g.age)}. Wybierz galę, niżej klub.
@@ -57,39 +61,60 @@ export default function Market({ game, setGame }: StepProps) {
                     {!(c.kind === 'stay' && c.tier === 0) && <Emblem spec={crestFor(c.fed)} size={34} title={c.fed} />}
                     <span className="fed">{c.kind === 'stay' && c.tier === 0 ? 'Amatorka' : c.fed}</span>
                   </span>
-                  <span className={`tag ${debut ? 'gold' : k.tone}`}>{debut ? 'debiut zawodowy' : k.label}</span>
+                  <span className={`tag ${debut ? 'gold' : k.tone}`}>
+                    <Icon name={debut ? 'sparkle' : k.icon} size={12} />
+                    {debut ? 'debiut zawodowy' : k.label}
+                  </span>
                 </span>
                 {c.note && <span className="offer-note">{c.note}</span>}
                 <span className="terms">
                   <span>
-                    <small>Gaża</small>
+                    <small>
+                      <Icon name="coins" size={11} />
+                      Gaża
+                    </small>
                     <b>{c.purse ? money(c.purse) : 'brak'}</b>
                   </span>
                   {c.winBonus > 0 && (
                     <span>
-                      <small>Za wygraną</small>
+                      <small>
+                      <Icon name="trophy" size={11} />
+                      Za wygraną
+                    </small>
                       <b>+{money(c.winBonus)}</b>
                     </span>
                   )}
                   <span>
-                    <small>Walki</small>
+                    <small>
+                      <Icon name="glove" size={11} />
+                      Walki
+                    </small>
                     <b>{c.tier === 0 && c.kind !== 'freak' ? '2 turnieje' : `${c.fights} ${plural(c.fights, 'walka', 'walki', 'walk')}`}</b>
                   </span>
                   {c.kind !== 'freak' && (
                     <span>
-                      <small>Rywale</small>
+                      <small>
+                      <Icon name="users" size={11} />
+                      Rywale
+                    </small>
                       <b className={`tone-${r.tone === 'good' ? 'good' : r.tone === 'bad' ? 'bad' : 'neutral'}`}>{r.text}</b>
                     </span>
                   )}
                   {c.entryCost > 0 && (
                     <span>
-                      <small>Koszty startów</small>
+                      <small>
+                      <Icon name="receipt" size={11} />
+                      Koszty startów
+                    </small>
                       <b>{money(c.entryCost)}</b>
                     </span>
                   )}
                   {c.kind === 'promotion' && c.tier >= 2 && (
                     <span>
-                      <small>Start w rankingu</small>
+                      <small>
+                      <Icon name="chart" size={11} />
+                      Start w rankingu
+                    </small>
                       <b>{c.startRank === null ? 'poza' : `#${c.startRank}`}</b>
                     </span>
                   )}
@@ -101,7 +126,8 @@ export default function Market({ game, setGame }: StepProps) {
 
         {watching.length > 0 && (
           <>
-            <div className="panel-title" style={{ marginTop: 18 }}>
+            <div className="panel-title pt-ico" style={{ marginTop: 18 }}>
+              <Icon name="clock" size={15} />
               Jeszcze nie teraz
             </div>
             {watching.map((c) => (
@@ -111,7 +137,10 @@ export default function Market({ game, setGame }: StepProps) {
                     <Emblem spec={crestFor(c.fed)} size={34} title={c.fed} />
                     <span className="fed">{c.fed}</span>
                   </span>
-                  <span className="tag">{g.tier === 0 ? 'zawodowstwo' : TIER_NAMES[c.tier]}</span>
+                  <span className="tag">
+                    <Icon name="clock" size={12} />
+                    {g.tier === 0 ? 'zawodowstwo' : TIER_NAMES[c.tier]}
+                  </span>
                 </span>
                 <span className="offer-note">{c.note}</span>
                 <span className="offer-note">
@@ -124,7 +153,10 @@ export default function Market({ game, setGame }: StepProps) {
       </section>
 
       <section className="step">
-        <h3 style={{ marginBottom: 10 }}>Klub</h3>
+        <h3 className="pt-ico" style={{ marginBottom: 10 }}>
+          <Icon name="home" size={18} />
+          Klub
+        </h3>
         <div role="radiogroup" aria-label="Klub" className="club-pick">
           {m.clubs.map((c, idx) => {
             const av = clubAvailability(g, c);
@@ -138,7 +170,18 @@ export default function Market({ game, setGame }: StepProps) {
                     <span className="fed">
                       {c.name}
                       <small className="club-sub">
-                        {c.city} · {c.cost ? `${money(c.cost)}/rok` : 'za darmo'} · {STAT_LABELS[c.specialty].toLowerCase()}
+                        <span>
+                          <Icon name="pin" size={12} />
+                          {c.city}
+                        </span>
+                        <span>
+                          <Icon name="coins" size={12} />
+                          {c.cost ? `${money(c.cost)}/rok` : 'za darmo'}
+                        </span>
+                        <span>
+                          <Icon name={STAT_ICON[c.specialty]} size={12} />
+                          {STAT_LABELS[c.specialty].toLowerCase()}
+                        </span>
                       </small>
                     </span>
                   </span>
@@ -190,7 +233,8 @@ export default function Market({ game, setGame }: StepProps) {
         ))}
 
         <div className="cta-bar">
-          <button className="btn btn-primary btn-block" disabled={!picked} onClick={() => setGame(confirmMarket(g))}>
+          <button className="btn btn-primary btn-block btn-ico" disabled={!picked} onClick={() => setGame(confirmMarket(g))}>
+            <Icon name="pen" />
             Podpisuję · sezon {g.season}
           </button>
         </div>
@@ -207,7 +251,8 @@ export default function Market({ game, setGame }: StepProps) {
               </button>
             </div>
           ) : (
-            <button className="btn btn-ghost btn-small" onClick={() => setConfirmRetire(true)}>
+            <button className="btn btn-ghost btn-small btn-ico" onClick={() => setConfirmRetire(true)}>
+              <Icon name="door" size={15} />
               Zakończ karierę
             </button>
           )}

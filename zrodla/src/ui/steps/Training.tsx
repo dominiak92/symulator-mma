@@ -4,6 +4,7 @@ import { STAT_KEYS, STAT_LABELS, STAT_TRAINING_DESC } from '../../engine/data';
 import { clubLimits, doTraining, introText, trainingForecast } from '../../engine/game';
 import type { StepProps } from '../Game';
 import { lat } from '../../format';
+import { Icon, STAT_ICON } from '../Icon';
 
 export default function Training({ game, setGame }: StepProps) {
   const [pick, setPick] = useState<StatKey | null>(null);
@@ -29,7 +30,8 @@ export default function Training({ game, setGame }: StepProps) {
           </p>
         )
       )}
-      <div className="kicker" style={{ marginTop: first ? 16 : 8 }}>
+      <div className="kicker pt-ico" style={{ marginTop: first ? 16 : 8 }}>
+        <Icon name="dumbbell" size={14} />
         Okres przygotowawczy
       </div>
       <h2>Co trenujesz na obozie?</h2>
@@ -47,8 +49,16 @@ export default function Training({ game, setGame }: StepProps) {
             <button key={k} className="choice train-opt" role="radio" aria-checked={on} onClick={() => setPick(k)}>
               <span className="opt-top">
                 <span className="opt-label">
+                  <span className="stat-ico">
+                    <Icon name={STAT_ICON[k]} size={17} />
+                  </span>
                   {STAT_LABELS[k]}
-                  {k === g.club.specialty && <span className="tag blue">klub</span>}
+                  {k === g.club.specialty && (
+                    <span className="tag blue">
+                      <Icon name="home" size={12} />
+                      klub
+                    </span>
+                  )}
                 </span>
                 <span className="train-nums">
                   <span className="cur">{now}</span>
@@ -66,7 +76,8 @@ export default function Training({ game, setGame }: StepProps) {
         })}
       </div>
       <div className="cta-bar">
-        <button className="btn btn-primary btn-block" disabled={!pick} onClick={() => pick && setGame(doTraining(g, pick))}>
+        <button className="btn btn-primary btn-block btn-ico" disabled={!pick} onClick={() => pick && setGame(doTraining(g, pick))}>
+          {pick && <Icon name={STAT_ICON[pick]} />}
           {pick ? `Trenuję: ${STAT_LABELS[pick].toLowerCase()}` : 'Wybierz, co trenujesz'}
         </button>
       </div>

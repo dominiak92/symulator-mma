@@ -5,6 +5,7 @@ import CareerChart from '../CareerChart';
 import { PeersTable } from '../Sheets';
 import { Belt, Confetti, CountUp, Fighter, Medal } from '../Art';
 import { clubCrest } from '../Emblem';
+import { Icon } from '../Icon';
 
 export default function Summary({ game, setGame, onPeers }: StepProps & { onPeers: () => void }) {
   const g = game;
@@ -43,20 +44,29 @@ export default function Summary({ game, setGame, onPeers }: StepProps & { onPeer
 
       <div className="tiles">
         <div className="tile">
-          <small>Wygrane</small>
+          <small>
+            <Icon name="check" size={11} />
+            Wygrane
+          </small>
           <b>
             <CountUp to={s.w} />
           </b>
         </div>
         <div className="tile">
-          <small>OVR</small>
+          <small>
+            <Icon name="trend" size={11} />
+            OVR
+          </small>
           <b>
             {s.ovrTo}
             <i className={s.ovrTo > s.ovrFrom ? 'pos' : ''}>{signed(s.ovrTo - s.ovrFrom)}</i>
           </b>
         </div>
         <div className="tile">
-          <small>Kasa</small>
+          <small>
+            <Icon name="coins" size={11} />
+            Kasa
+          </small>
           <b className={s.moneyDelta >= 0 ? 'pos' : 'neg'}>
             {(() => {
               const [num, unit] = moneyShort(Math.abs(s.moneyDelta)).split(' ');
@@ -71,7 +81,10 @@ export default function Summary({ game, setGame, onPeers }: StepProps & { onPeer
           </b>
         </div>
         <div className="tile">
-          <small>Media</small>
+          <small>
+            <Icon name="megaphone" size={11} />
+            Media
+          </small>
           <b>
             <CountUp to={g.media} />
           </b>
@@ -97,7 +110,10 @@ export default function Summary({ game, setGame, onPeers }: StepProps & { onPeer
       <div className="acc-list">
         <details className="acc">
           <summary>
-            <span>Rozwój</span>
+            <span>
+              <Icon name="dumbbell" size={15} />
+              Rozwój
+            </span>
             <b className={s.ovrTo > s.ovrFrom ? 'pos' : ''}>
               OVR {s.ovrFrom} → {s.ovrTo} ({signed(s.ovrTo - s.ovrFrom)})
             </b>
@@ -111,7 +127,10 @@ export default function Summary({ game, setGame, onPeers }: StepProps & { onPeer
         </details>
         <details className="acc">
           <summary>
-            <span>Twój rocznik</span>
+            <span>
+              <Icon name="users" size={15} />
+              Twój rocznik
+            </span>
             <b>
               {activePeers.length} z {g.peers.length} walczy
             </b>
@@ -126,7 +145,8 @@ export default function Summary({ game, setGame, onPeers }: StepProps & { onPeer
       </div>
 
       <div className="cta-bar float" style={{ ['--d' as string]: '500ms' }}>
-        <button className="btn btn-primary btn-block" onClick={() => setGame(toMarket(g))}>
+        <button className="btn btn-primary btn-block btn-ico" onClick={() => setGame(toMarket(g))}>
+          <Icon name="briefcase" />
           Dalej: rynek
         </button>
       </div>

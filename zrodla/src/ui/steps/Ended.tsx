@@ -12,6 +12,7 @@ import { GG } from '../brand';
 import { ACHIEVEMENTS } from '../../engine/achievements';
 import { Confetti, Fighter } from '../Art';
 import { clubCrest } from '../Emblem';
+import { Icon } from '../Icon';
 
 export default function Ended({ game, onNewCareer, onMenu }: { game: GameState; onNewCareer: () => void; onMenu: () => void }) {
   const g = game;
@@ -152,20 +153,24 @@ export default function Ended({ game, onNewCareer, onMenu }: { game: GameState; 
             </div>
             <div className="menu-list">
               {url && (
-                <a className="btn btn-primary btn-block" href={url} download={fileName} style={{ textAlign: 'center', textDecoration: 'none' }}>
+                <a className="btn btn-primary btn-block btn-ico" href={url} download={fileName} style={{ textAlign: 'center', textDecoration: 'none' }}>
+                  <Icon name="download" />
                   Pobierz kartę (PNG)
                 </a>
               )}
-              <button className="btn btn-ghost btn-block" onClick={share} disabled={!blob}>
+              <button className="btn btn-ghost btn-block btn-ico" onClick={share} disabled={!blob}>
+                <Icon name="share" />
                 Udostępnij
               </button>
               {shareMsg && <p className="muted" style={{ fontSize: '0.9rem' }}>{shareMsg}</p>}
               {g.mode === 'normal' && (
-                <button className="btn btn-gold btn-block" onClick={onNewCareer}>
+                <button className="btn btn-gold btn-block btn-ico" onClick={onNewCareer}>
+                  <Icon name="rotate" />
                   Nowa kariera w tym slocie
                 </button>
               )}
-              <button className="btn btn-ghost btn-block" onClick={onMenu}>
+              <button className="btn btn-ghost btn-block btn-ico" onClick={onMenu}>
+                <Icon name="home" />
                 Menu główne
               </button>
             </div>
