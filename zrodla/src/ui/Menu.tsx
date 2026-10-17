@@ -93,7 +93,7 @@ export default function Menu({
             </span>
             <div>
               <strong>Trenuj</strong>
-              <span>Wybierasz, co poprawić przed sezonem</span>
+              <span>co poprawisz przed sezonem</span>
             </div>
           </li>
           <li>
@@ -102,7 +102,7 @@ export default function Menu({
             </span>
             <div>
               <strong>Pilnuj kasy</strong>
-              <span>Klub, starty i życie kosztują</span>
+              <span>klub, starty i życie kosztują</span>
             </div>
           </li>
           <li>
@@ -111,7 +111,7 @@ export default function Menu({
             </span>
             <div>
               <strong>Walcz</strong>
-              <span>W ważnych momentach wybierasz plan</span>
+              <span>w ważnych chwilach wybierasz plan</span>
             </div>
           </li>
           <li>
@@ -120,7 +120,7 @@ export default function Menu({
             </span>
             <div>
               <strong>Idź w górę</strong>
-              <span>Gale, pasy i punkty LEGACY</span>
+              <span>gale, pasy, punkty LEGACY</span>
             </div>
           </li>
         </ol>
