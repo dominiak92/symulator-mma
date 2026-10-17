@@ -107,6 +107,8 @@ with sync_playwright() as p:
         elif pg.locator(".event-result").count():
             if once(f"er{season}"): snap(pg, f"s{season}-4-wydarzenie-wynik", problems)
             pg.get_by_role("button", name="Dalej", exact=True).click()
+        elif pg.locator(".press-modal").count():
+            pg.locator(".press-opt").first.click(); pg.wait_for_timeout(200)
         elif pg.locator(".offer-modal").count():
             pg.get_by_role("button", name="Przyjmuję walkę").click(); pg.wait_for_timeout(200)
         elif pg.locator(".fight-intro").count():

@@ -65,11 +65,14 @@ for (let i = 0; i < N; i++) {
         case 'season': {
           const run = s.run!;
           const cur = run.fights[run.fights.length - 1];
-          if (run.offer) {
+          if (run.press) {
+            checkText('konferencja', run.press.pressQuote);
+            s = G.pressAnswer(s, rng.pick(['calm', 'provoke', 'insult'] as const));
+          } else if (run.offer) {
             checkText('oferta walki', run.offer.note);
             checkText('rywal', run.offer.opp.lastName);
             const r = rng.next();
-            s = r < 0.15 && !G.declineBlocked(s) ? G.declineOffer(s) : r < 0.3 && !run.offer.negotiated ? G.negotiateOffer(s) : r < 0.4 ? G.acceptAllOffers(s) : G.acceptOffer(s);
+            s = r < 0.15 && !G.declineBlocked(s) ? G.declineOffer(s) : r < 0.3 && !run.offer.negotiated ? G.negotiateOffer(s) : r < 0.4 ? G.acceptAllOffers(s, rng.pick(['std', 'rival', 'hard'] as const)) : G.acceptOffer(s, rng.pick(['std', 'rival', 'hard'] as const));
             for (const n of s.run?.notes ?? []) checkText('notka', n);
           } else if (cur?.sim.pending) {
             checkText('decyzja', cur.sim.pending.text);
@@ -93,6 +96,7 @@ for (let i = 0; i < N; i++) {
           s = G.pickContract(s, rng.pick(av.length ? av : [0]));
           const cl = m.clubs.map((c, j) => (G.clubAvailability(s, c).ok ? j : -1)).filter((j) => j >= 0);
           s = G.pickClub(s, rng.pick(cl.length ? cl : [0]));
+          if (rng.chance(0.15)) s = G.changeDivision(s, rng.pick(G.divisionOptions(s)));
           if (rng.chance(0.3)) s = G.setManager(s, rng.chance(0.2) ? null : rng.pick(MANAGERS).id);
           for (const w of G.marketWarnings(s)) checkText('ostrzeżenie', w);
           if (rng.chance(0.01)) s = G.retire(s);

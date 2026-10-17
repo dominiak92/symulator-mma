@@ -1,6 +1,9 @@
 // Porównanie strategii gracza — szukanie luk w ekonomii i balansie.
 // Uruchom: npx tsx scripts/balance.ts [liczba karier na strategię]
 import {
+  changeDivision,
+  divisionOptions,
+  pressAnswer,
   cheaperClub,
   downgradeClub,
   acceptOffer,
@@ -53,13 +56,16 @@ type Policy = {
   club?: 'cheap' | 'best' | 'smart';
   pitch?: boolean;
   events?: 'safe' | 'risky' | 'first';
-  contract?: 'promo' | 'stay' | 'freak';
+  contract?: 'promo' | 'stay' | 'freak' | 'cap2';
   fightPick?: 'best' | 'risky' | 'smart' | 'normal';
   camps?: boolean;
   academy?: boolean;
   offers?: 'accept' | 'picky' | 'negotiate';
   manager?: 'none' | 'best' | 'cheap';
   fights?: 'min' | 'max';
+  prep?: 'std' | 'rival' | 'hard';
+  press?: 'calm' | 'provoke' | 'insult';
+  division?: -1 | 1;
 };
 
 const weakest = (s: GameState) => [...STAT_KEYS].sort((a, b) => s.stats[a] - s.stats[b])[0];
@@ -137,11 +143,12 @@ function play(seed: number, p: Policy) {
       case 'season': {
         const run = s.run!;
         const cur = run.fights[run.fights.length - 1];
-        if (run.offer) {
+        if (run.press) s = pressAnswer(s, p.press ?? 'calm');
+        else if (run.offer) {
           const o = run.offer;
           if (p.offers === 'negotiate' && !o.negotiated) s = negotiateOffer(s);
           else if (p.offers === 'picky' && !declineBlocked(s) && o.purse < s.contract.purse * 0.95 && (run.declines ?? 0) < 2) s = declineOffer(s);
-          else s = acceptOffer(s);
+          else s = acceptOffer(s, p.prep ?? 'std');
         } else if (cur?.sim.pending) {
           const opts = [...cur.sim.pending.options];
           const st = cur.sim.pending.status;
@@ -167,7 +174,7 @@ function play(seed: number, p: Policy) {
         const m = s.market!;
         let ci = -1;
         if (p.contract === 'freak') ci = m.contracts.findIndex((c) => c.available && c.kind === 'freak');
-        if (ci < 0 && p.contract !== 'stay') ci = m.contracts.findIndex((c) => c.available && c.kind === 'promotion');
+        if (ci < 0 && p.contract !== 'stay') ci = m.contracts.findIndex((c) => c.available && c.kind === 'promotion' && (p.contract !== 'cap2' || c.tier <= 2));
         if (ci < 0) ci = m.contracts.findIndex((c) => c.available && c.kind !== 'freak');
         if (ci < 0) ci = m.contracts.findIndex((c) => c.available);
         s = pickContract(s, ci);
@@ -191,6 +198,11 @@ function play(seed: number, p: Policy) {
           }
         });
         s = pickClub(s, bi);
+        if (p.division && s.tier >= 1) {
+          const opts = divisionOptions(s);
+          const want = p.division < 0 ? opts[0] : opts[opts.length - 1];
+          s = changeDivision(s, want);
+        }
         if (p.manager && s.tier >= 1) {
           const av = MANAGERS.filter((mg) => !managerBlocked(s, mg));
           if (p.manager === 'none') s = setManager(s, null);
@@ -216,6 +228,7 @@ const POLICIES_ALL: Policy[] = [
   { name: 'zawsze 1. wybór', events: 'first' },
   { name: 'nie awansuje', contract: 'stay' },
   { name: 'freak fighty', contract: 'freak' },
+  { name: 'zostaje w Polsce', contract: 'cap2' },
   { name: 'ryzyko w walce', fightPick: 'risky' },
   { name: 'zwykłe opcje w walce', fightPick: 'normal' },
   { name: 'walka pod sytuację', fightPick: 'smart' },
@@ -234,6 +247,12 @@ const POLICIES_ALL: Policy[] = [
   { name: 'walki: max', fights: 'max' },
   { name: 'walki: min', fights: 'min' },
   { name: 'pełny gracz', manager: 'best', offers: 'negotiate', camps: true, academy: true, fightPick: 'smart' },
+  { name: 'obóz pod rywala', prep: 'rival' },
+  { name: 'ciężki obóz', prep: 'hard' },
+  { name: 'konferencja: ostro', press: 'insult' },
+  { name: 'konferencja: riposta', press: 'provoke' },
+  { name: 'zbija wagę', division: -1 },
+  { name: 'kategoria wyżej', division: 1 },
   { name: 'obozy', camps: true },
   { name: 'akademia', academy: true },
   { name: 'obozy+akademia', camps: true, academy: true },

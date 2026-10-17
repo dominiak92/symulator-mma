@@ -20,7 +20,8 @@ function play(seed: number, start: string, difficulty: 'normal' | 'hard') {
       case 'event': s = s.event!.picked !== undefined ? G.continueAfterEvent(s) : G.chooseEvent(s, 0); break;
       case 'season': {
         const run = s.run!; const cur = run.fights[run.fights.length - 1];
-        if (run.offer) s = G.acceptOffer(s);
+        if (run.press) s = G.pressAnswer(s, 'calm');
+        else if (run.offer) s = G.acceptOffer(s);
         else if (cur?.sim.pending) s = G.decide(s, [...cur.sim.pending.options].sort((a, b) => b.chance - a.chance)[0].key);
         else if (run.done) s = G.toSummary(s); else s = G.seasonSkip(s);
         break;

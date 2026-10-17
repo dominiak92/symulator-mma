@@ -23,6 +23,8 @@ with sync_playwright() as p:
     for step in range(600):
         if season >= SEASONS: break
         main = pg.locator('.main').inner_text() if pg.locator('.main').count() else ''
+        if pg.locator('.press-modal').count():
+            shot(pg, 'konferencja'); pg.locator('.press-opt').nth(1).click(); pg.wait_for_timeout(300); continue
         if pg.locator('.offer-modal').count():
             shot(pg, 'oferta')
             if step % 3 == 0 and pg.get_by_role('button', name='Chcę więcej').count() and pg.get_by_role('button', name='Chcę więcej').is_enabled():
@@ -59,12 +61,11 @@ with sync_playwright() as p:
             pg.wait_for_timeout(1500); shot(pg, 'sezon-koniec'); pg.get_by_role('button', name='Podsumowanie sezonu').click(); pg.wait_for_timeout(600); continue
         if pg.get_by_role('button', name='Dalej: rynek').count():
             shot(pg, 'podsumowanie'); pg.get_by_role('button', name='Dalej: rynek').click(); pg.wait_for_timeout(600); continue
-        if pg.locator('.mgr-acc').count() or pg.get_by_role('button', name='Podpisuję').count():
+        if pg.locator('.mgr-section').count() or pg.get_by_role('button', name='Podpisuję').count():
             shot(pg, 'rynek')
-            if pg.locator('.mgr-acc').count():
-                pg.locator('.mgr-acc summary').click(); pg.wait_for_timeout(200)
-                pg.locator('.mgr-acc').scroll_into_view_if_needed(); shot(pg, 'rynek-menedzer')
-                opts = pg.locator('.mgr-opt'); 
+            if pg.locator('.mgr-section').count():
+                pg.locator('.mgr-section').scroll_into_view_if_needed(); pg.wait_for_timeout(300); shot(pg, 'rynek-menedzer')
+                opts = pg.locator('.mgr-section .club-offer')
                 if opts.count() > 1: opts.nth(1).click(); pg.wait_for_timeout(200)
             pg.locator('.offer').first.click()
             pg.get_by_role('button', name='Podpisuję').click(); pg.wait_for_timeout(600); season += 1; continue

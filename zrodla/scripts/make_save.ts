@@ -1,6 +1,6 @@
 // Tworzy zapis gry na danym etapie (do testów UI): npx tsx scripts/make_save.ts <wiek> <plik.json> [pieniądze]
 // Gra botem do zadanego wieku i zatrzymuje się na ekranie treningu.
-import { acceptOffer, budgetBalance, canStartSeason, chooseEvent, clubAvailability, confirmMarket, continueAfterEvent, decide, doTraining, loanOffer, newGame, pickClub, pickContract, randomProfile, seasonSkip, startSeason, takeBreakYear, takeLoan, toMarket, toSummary } from '../src/engine/game';
+import { pressAnswer, acceptOffer, budgetBalance, canStartSeason, chooseEvent, clubAvailability, confirmMarket, continueAfterEvent, decide, doTraining, loanOffer, newGame, pickClub, pickContract, randomProfile, seasonSkip, startSeason, takeBreakYear, takeLoan, toMarket, toSummary } from '../src/engine/game';
 import { createRng } from '../src/engine/rng';
 import { STAT_KEYS } from '../src/engine/data';
 import { writeFileSync } from 'node:fs';
@@ -23,7 +23,8 @@ for (let seed = 1; seed < 400; seed++) {
       case 'event': s = s.event!.picked !== undefined ? continueAfterEvent(s) : chooseEvent(s, 0); break;
       case 'season': {
         const run = s.run!; const cur = run.fights[run.fights.length - 1];
-        if (run.offer) s = acceptOffer(s);
+        if (run.press) s = pressAnswer(s, 'calm');
+        else if (run.offer) s = acceptOffer(s);
         else if (cur?.sim.pending) s = decide(s, [...cur.sim.pending.options].sort((a, b) => b.chance - a.chance)[0].key);
         else if (run.done) s = toSummary(s); else s = seasonSkip(s);
         break;
