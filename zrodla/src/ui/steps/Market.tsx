@@ -321,11 +321,11 @@ function focusWord(f: number) {
 }
 
 const MGR_LOOK: Record<string, { bg: string; fg: string; ini: string }> = {
-  zdzisiek: { bg: '#78350f', fg: '#fde68a', ini: 'WZ' },
-  okulary: { bg: '#18181b', fg: '#f5b700', ini: 'FO' },
-  spinacz: { bg: '#0c4a6e', fg: '#e0f2fe', ini: 'AS' },
-  paradygmat: { bg: '#581c87', fg: '#f5d0fe', ini: 'PS' },
-  dominacja: { bg: '#7f1d1d', fg: '#fecaca', ini: 'DM' },
+  zdzisiek: { bg: '#78350f', fg: '#fde68a', ini: 'MK' },
+  okulary: { bg: '#18181b', fg: '#f5b700', ini: 'KW' },
+  spinacz: { bg: '#0c4a6e', fg: '#e0f2fe', ini: 'AN' },
+  paradygmat: { bg: '#581c87', fg: '#f5d0fe', ini: 'HM' },
+  dominacja: { bg: '#7f1d1d', fg: '#fecaca', ini: 'AX' },
 };
 
 function MgrAvatar({ id }: { id: string | null }) {
@@ -358,6 +358,19 @@ function ManagerPick({ game: g, setGame }: StepProps) {
           Bierze procent od gaż. W zamian wyższe stawki, łatwiejsze negocjacje, szybszy awans w rankingu i sponsorzy.
         </p>
       )}
+      {!openList && (
+        <div className="mgr-compact">
+          <MgrAvatar id={cur?.id ?? null} />
+          <div className="mgr-c-txt">
+            <b>{cur ? cur.name : 'Bez menedżera'}</b>
+            <small>{cur ? `bierze ${Math.round(cur.cut * 100)}% · gaże +${Math.round((cur.purse - 1) * 100)}%` : 'sam negocjujesz, cała gaża twoja'}</small>
+          </div>
+          <button className="btn btn-small btn-ghost" onClick={() => setOpenList(true)} aria-expanded={false}>
+            {cur ? 'Zmień' : `Oferty · ${open.length}`}
+          </button>
+        </div>
+      )}
+      {openList && (
       <div role="radiogroup" aria-label="Menedżer" className="club-pick">
         {(openList || !cur) && (
         <button className="offer club-offer" role="radio" aria-checked={!cur} onClick={() => pick(null)}>
@@ -427,10 +440,13 @@ function ManagerPick({ game: g, setGame }: StepProps) {
           </button>
         ))}
       </div>
-      <button className="more-btn" onClick={() => setOpenList((x) => !x)} aria-expanded={openList}>
-        <Icon name={openList ? 'x' : 'briefcase'} size={15} />
-        {openList ? 'Zwiń listę menedżerów' : cur ? `Zmień menedżera · ${open.length} ${plural(open.length, 'oferta', 'oferty', 'ofert')}` : `Zobacz oferty menedżerów · ${open.length}`}
-      </button>
+      )}
+      {openList && (
+        <button className="more-btn" onClick={() => setOpenList(false)} aria-expanded={true}>
+          <Icon name="x" size={15} />
+          Zwiń listę menedżerów
+        </button>
+      )}
       {openList && locked.length > 0 && (
         <details className="acc" style={{ marginTop: 8 }}>
           <summary>

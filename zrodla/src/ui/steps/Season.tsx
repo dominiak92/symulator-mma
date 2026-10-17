@@ -826,22 +826,36 @@ function OfferCard({ g, o, n, total, setGame }: { g: GameState; o: FightOffer; n
   const prevRef = useRef({ id: o.opp.id, purse: o.purse, bonus: o.winBonus, neg: !!o.negotiated });
   useEffect(() => {
     const p = prevRef.current;
-    if (p.id !== o.opp.id) setFx({ kind: 'swap' });
+    if (p.id !== o.opp.id) {
+      setFx({ kind: 'swap' });
+      setPrep('std');
+    }
     else if (o.purse > p.purse) {
       setFx({ kind: 'up', from: p.purse, fromBonus: p.bonus });
       sfxCash();
     } else if (o.negotiated && !p.neg) setFx({ kind: 'flat' });
     prevRef.current = { id: o.opp.id, purse: o.purse, bonus: o.winBonus, neg: !!o.negotiated };
   }, [o.opp.id, o.purse, o.winBonus, o.negotiated]);
-  const call = (kind: 'neg' | 'decline', fn: () => GameState) => {
+  // akcja po „telefonie” działa na najświeższym stanie i tylko, jeśli to wciąż ta sama oferta
+  const latest = useRef(g);
+  latest.current = g;
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => {
+    if (timer.current) clearTimeout(timer.current);
+  }, []);
+  const call = (kind: 'neg' | 'decline', fn: (x: GameState) => GameState) => {
     if (asking) return;
     sfxClick();
     const slow = loadSettings().animations && !reduced();
-    if (!slow) return setGame(fn());
+    if (!slow) return setGame(fn(g));
     setAsking(kind);
-    setTimeout(() => {
+    const id = o.opp.id;
+    timer.current = setTimeout(() => {
+      timer.current = null;
       setAsking(null);
-      setGame(fn());
+      const cur = latest.current;
+      if (cur.run?.offer?.opp.id !== id) return;
+      setGame(fn(cur));
     }, kind === 'neg' ? 1100 : 950);
   };
   const pc = prepCost(g, o);
@@ -987,13 +1001,13 @@ function OfferCard({ g, o, n, total, setGame }: { g: GameState; o: FightOffer; n
             {o.tuneup ? 'Biorę tę walkę' : 'Przyjmuję walkę'}
           </button>
           {o.tuneup ? (
-            <button className="btn btn-ghost btn-block btn-ico" disabled={!!asking} onClick={() => call('decline', () => declineOffer(g))}>
+            <button className="btn btn-ghost btn-block btn-ico" disabled={!!asking} onClick={() => call('decline', declineOffer)}>
               <Icon name="x" size={15} />
               {asking === 'decline' ? 'Odmawiasz…' : 'Wolę walkę w federacji'}
             </button>
           ) : (
           <div className="ofr-row">
-            <button className={`btn btn-ghost btn-small btn-ico ${asking === 'neg' ? 'is-asking' : ''}`} disabled={o.negotiated || !!asking} onClick={() => call('neg', () => negotiateOffer(g))}>
+            <button className={`btn btn-ghost btn-small btn-ico ${asking === 'neg' ? 'is-asking' : ''}`} disabled={o.negotiated || !!asking} onClick={() => call('neg', negotiateOffer)}>
               <Icon name="coins" size={15} />
               {asking === 'neg' ? (
                 <span className="calling">
@@ -1007,14 +1021,14 @@ function OfferCard({ g, o, n, total, setGame }: { g: GameState; o: FightOffer; n
                 `Chcę więcej · ${chanceWord(neg)}`
               )}
             </button>
-            <button className="btn btn-ghost btn-small btn-ico" disabled={!!blocked || !!asking} title={blocked ?? undefined} onClick={() => call('decline', () => declineOffer(g))}>
+            <button className="btn btn-ghost btn-small btn-ico" disabled={!!blocked || !!asking} title={blocked ?? undefined} onClick={() => call('decline', declineOffer)}>
               <Icon name="x" size={15} />
               {asking === 'decline' ? 'Odrzucasz…' : 'Odrzucam'}
             </button>
           </div>
           )}
           {total - n > 0 && !o.tuneup && (
-            <button className="link-btn ofr-auto" onClick={() => setGame(acceptAllOffers(g, prep))}>
+            <button className="link-btn ofr-auto" disabled={!!asking} onClick={() => setGame(acceptAllOffers(g, prep))}>
               Przyjmuj też kolejne oferty w tym sezonie
             </button>
           )}
@@ -1030,7 +1044,7 @@ export default function Season({ game, setGame }: StepProps) {
   const run = g.run!;
   const settings = loadSettings();
   const animate = settings.animations && !reduced();
-  const [spinning, setSpinning] = useState(animate && run.fights.length === 0);
+  const [spinning, setSpinning] = useState(animate && run.fights.length === 0 && !run.offer && !run.press && !run.formSeen);
   const [fast, setFast] = useState(false);
   const [openIdx, setOpenIdx] = useState<Set<number>>(new Set());
   const gameRef = useRef(g);
@@ -1234,7 +1248,12 @@ export default function Season({ game, setGame }: StepProps) {
           {lastRes === 'L' && <i>▼</i>}
         </div>
       </div>
-      <FormReel g={g} spinning={spinning} onDone={() => setSpinning(false)} />
+      <FormReel g={g} spinning={spinning} onDone={() => {
+          setSpinning(false);
+          setPaused(true);
+          const cur = gameRef.current;
+          if (cur.run && !cur.run.formSeen) setGame({ ...cur, run: { ...cur.run, formSeen: true } });
+        }} />
 
       <CoachTip id="season">
         Walka toczy się sama, a w ważnym momencie trener zapyta cię o plan. Dalej przejdziesz przyciskiem na dole.
@@ -1284,7 +1303,7 @@ export default function Season({ game, setGame }: StepProps) {
 
       {!run.done && !waiting && !introOpen && !run.offer && !run.press && (
         <div className="play-ctrl" role="group" aria-label="Tempo sezonu">
-          {!last && paused && anim && !spinning && (
+                    {!last && paused && anim && !spinning && (
             <button className="icon-pill next" onClick={advance}>
               Pierwsza walka
               <Icon name="play" size={12} />
@@ -1299,7 +1318,7 @@ export default function Season({ game, setGame }: StepProps) {
           )}
           <button className={`icon-pill ${fast ? 'on' : ''}`} onClick={() => setFast((x) => !x)} aria-pressed={fast} aria-label={fast ? 'Wolniej' : 'Szybciej'}>
             <Icon name="ff" size={16} />
-            {nextReady && anim ? '' : fast ? 'Szybko' : 'Szybciej'}
+            {(nextReady || (!last && paused && !spinning)) && anim ? '' : fast ? 'Szybko' : 'Szybciej'}
           </button>
           <button
             className="icon-pill"
@@ -1311,7 +1330,7 @@ export default function Season({ game, setGame }: StepProps) {
             }}
           >
             <Icon name="skip" size={14} />
-            {nextReady && anim ? '' : 'Pomiń'}
+            {(nextReady || (!last && paused && !spinning)) && anim ? '' : 'Pomiń'}
           </button>
         </div>
       )}
@@ -1326,7 +1345,7 @@ export default function Season({ game, setGame }: StepProps) {
       )}
 
       {run.press && !run.done && createPortal(<PressCard g={g} o={run.press} setGame={setGame} />, document.body)}
-      {run.offer && !run.done && createPortal(<OfferCard g={g} o={run.offer} n={run.fights.length + 1} total={run.planned} setGame={setGame} />, document.body)}
+      {run.offer && !run.done && createPortal(<OfferCard key={run.fights.length} g={g} o={run.offer} n={run.fights.length + 1} total={run.planned} setGame={setGame} />, document.body)}
       {introOpen &&
         last &&
         createPortal(
