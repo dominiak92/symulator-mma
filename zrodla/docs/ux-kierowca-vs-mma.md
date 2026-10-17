@@ -43,3 +43,13 @@ Grałem w kierowca.rybicki.ai (v1.9.8.1) przez 2 sezony na desktopie (Chrome). Z
 - **Typografia**: tekst główny 15 px, drobny 12–13 px, nagłówki mniejsze na telefonie.
 - **Toasty** przeniesione na dół ekranu na telefonie, nad przyciskiem.
 - Wszystkie animacje respektują `prefers-reduced-motion` i ustawienie „Animacje”.
+
+## Runda 2: ikony, samouczek, audyt zasłaniania
+
+- **Ikony** (`src/ui/Icon.tsx`, podgląd pod adresem `#ikony`): jeden zestaw liniowy. Umiejętności mają własne piktogramy: rękawica (stójka), dwóch zawodników w klinczu (zapasy), pas BJJ (parter), serce z tętnem (kondycja), tarcza (szczęka), tarcza strzelnicza (taktyka).
+- **Samouczek** (`src/ui/Tutorial.tsx`): 5 slajdów przed pierwszą karierą (można przesuwać palcem i pominąć). Dostępny też z menu głównego („Jak grać → Samouczek”) i z menu w grze.
+- **Podpowiedzi trenera**: krótka ramka przy każdym etapie pierwszego sezonu. Każda pokazuje się raz, można ją zamknąć albo wyłączyć wszystkie (ustawienia → „Podpowiedzi trenera” włącza je od nowa).
+- **Strona główna**: widoczna sekcja „Jak grać” w 4 krokach.
+- **HUD**: jeden pasek statystyk z ikonami zamiast 4 osobnych pudełek, ciągły pasek postępu sezonu na dolnej krawędzi.
+- **Naprawione zasłanianie**: powiadomienia o osiągnięciach są teraz u góry (nie zasłaniają przycisków ani wyborów i nie zasłaniają przycisku menu); nagłówek arkuszy nie przykrywa pierwszej linijki; kafle w podsumowaniu na wąskich ekranach układają się 2×2.
+- `scripts/viewport_tour.py`: przechodzi grę na prawdziwym widoku telefonu, robi zrzuty góra/środek/dół każdego ekranu i automatycznie wypisuje zasłonięte lub ucięte elementy.
