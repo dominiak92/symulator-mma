@@ -89,3 +89,10 @@ Zmiany w walce: szanse rosną coraz wolniej przy dużej przewadze (tanh), lepszy
 - **Plakaty**: plakat każdej gali zawodowej (miasto, hala, cała karta walk) i każdego turnieju amatorskiego (miasto, kategoria, drabinka).
 
 Balans (120 karier na strategię): przyjmowanie ofert, negocjowanie i wybredność dają podobne wyniki. Najlepszy menedżer daje dużo więcej pieniędzy, ale trudniejszych rywali (mniej pasów). Maksymalna liczba walk to więcej pieniędzy przy podobnym legacy, minimalna jest słabsza. Pełny gracz (menedżer, negocjacje, obozy, akademia, walka pod sytuację) wypada najlepiej. Słabe strony do dalszej pracy: trenowanie wyłącznie kondycji albo szczęki nie opłaca się, a najtańszy klub i kredyty ponad stan prowadzą do spirali długów.
+
+## Runda 6: waga, obóz pod rywala, konferencje, balans szczebli
+
+- **Kategoria wagowa** (rynek, od zawodowstwa): naturalna albo sąsiednie. Zbijanie: +4 do formy, ale ryzyko nieudanego ważenia (7–25%, kara 25% gaży i −5 formy) i większe zużycie. Kategoria wyżej: −4 do formy, bez ryzyka, mniejsze zużycie. Zmiana zeruje ranking.
+- **Obóz przed walką** (na ofercie): zwykły, pod rywala (+4, koszt 20% gaży), ciężki (+3, większe zużycie i ryzyko urazu).
+- **Konferencja** przed dużą walką (karta główna, rywal, pas, freak): spokojnie (+reputacja), riposta (60%: +3, inaczej −3), po bandzie (45%: +4, inaczej kara i −4; zasięgi rosną, reputacja spada).
+- **Balans szczebli**: zostawanie w Polsce dawało więcej niż wyjazd do Europy. Europa płaci teraz więcej (gaże 40–160 tys.), tańszy sztab, większa premia legacy za najwyższy szczebel (0/40/120/300/550), kolejne pasy w kraju są warte mniej.
