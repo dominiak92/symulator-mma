@@ -6320,3 +6320,50 @@ details.intro-notes[open] summary::before { content: '▸'; transform: rotate(90
 .step .form-strip .form-mod.good { background: rgba(47, 211, 140, 0.12); }
 .step .form-strip .form-mod.bad { background: rgba(225, 29, 72, 0.12); }
 @media (max-width: 400px) { .step .form-strip small, .season-step .form-strip small { display: none; } }
+
+/* ---------- Odejście na szczycie ---------- */
+.top-exit { border: 1px solid color-mix(in srgb, var(--gold) 55%, transparent); background: color-mix(in srgb, var(--gold) 10%, transparent); border-radius: 12px; padding: 10px 12px; margin: 10px 0; }
+.top-exit-head { display: flex; align-items: center; gap: 8px; color: var(--gold); flex-wrap: wrap; }
+.top-exit-head b { font-weight: 800; }
+.top-exit-head span { margin-left: auto; font-weight: 800; font-variant-numeric: tabular-nums; }
+.top-exit ul { margin: 6px 0 0; padding-left: 18px; font-size: 0.9rem; color: var(--muted, inherit); }
+.top-exit li { margin: 2px 0; }
+
+/* ---------- Zużycie organizmu ---------- */
+.hud .hs:has(.wear-mini) { position: relative; }
+.hud .hs .wear-mini { position: absolute; left: 8px; right: 8px; bottom: 3px; display: block; max-width: 60px; height: 3px; border-radius: 3px; background: color-mix(in srgb, var(--muted) 25%, transparent); overflow: hidden; }
+.wear-mini i { display: block; height: 100%; border-radius: inherit; background: var(--good, #22c55e); }
+.wear-mini.warn i { background: var(--gold); }
+.wear-mini.bad i { background: var(--bad, #ef4444); }
+.wear-bar { margin-top: 12px; }
+.wear-head { display: flex; justify-content: space-between; font-size: 0.85rem; }
+.wear-head span { color: var(--muted); }
+.wear-track { position: relative; height: 6px; border-radius: 6px; background: color-mix(in srgb, var(--muted) 22%, transparent); margin: 5px 0 4px; overflow: hidden; }
+.wear-track i { display: block; height: 100%; border-radius: inherit; background: var(--good, #22c55e); transition: width 0.4s ease; }
+.wear-bar.warn .wear-track i { background: var(--gold); }
+.wear-bar.bad .wear-track i { background: var(--bad, #ef4444); }
+.wear-bar.bad .wear-head b { color: var(--bad, #ef4444); }
+.wear-mark { position: absolute; top: 0; bottom: 0; width: 2px; background: color-mix(in srgb, var(--text) 45%, transparent); }
+.wear-bar small { color: var(--muted); font-size: 0.78rem; line-height: 1.35; display: block; }
+.ofr-note.weight-warn { display: flex; gap: 8px; align-items: flex-start; color: var(--gold); background: var(--gold-soft); border-radius: 10px; padding: 8px 10px; }
+.ofr-note.weight-warn.hot { color: var(--bad); background: var(--bad-soft); }
+.ofr-note.weight-warn svg { flex: none; margin-top: 2px; }
+.ofr-hook { display: flex; gap: 8px; align-items: flex-start; margin: 10px 0 0; padding: 9px 11px; border-radius: 10px; font-size: 0.9rem; font-weight: 600; color: var(--text); background: color-mix(in srgb, var(--red) 18%, transparent); border: 1px solid color-mix(in srgb, var(--red) 45%, transparent); }
+.ofr-hook svg { flex: none; margin-top: 2px; color: var(--red); }
+
+/* ---------- Wykres kariery (koniec) ---------- */
+.career-chart { display: flex; flex-direction: column; gap: 8px; }
+.cc-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+.cc-tabs button { flex: 1 1 0; min-width: 0; padding: 7px 8px; border-radius: var(--r-md); border: 1px solid var(--line); background: var(--panel-2); color: var(--muted); font: 600 0.85rem var(--body); cursor: pointer; }
+.cc-tabs button.on { border-color: var(--cyan); background: var(--cyan-soft); color: var(--text); }
+.cc-axis-note { text-align: center; font-size: 0.72rem; color: var(--faint); margin-top: -4px; }
+.cc-moments { list-style: none; margin: 4px 0 0; padding: 0; display: grid; gap: 6px; }
+.cc-moments li { display: grid; grid-template-columns: 22px 1fr; align-items: center; gap: 10px; font-size: 0.92rem; }
+.cc-body { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 8px; row-gap: 0; min-width: 0; }
+.cc-num { width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; font-size: 0.72rem; font-weight: 800; color: var(--bg-deep); background: var(--cyan); }
+.cc-moments li.gold .cc-num { background: var(--gold); }
+.cc-moments li.bad .cc-num { background: var(--bad); }
+.cc-when { color: var(--faint); font-size: 0.8rem; white-space: nowrap; }
+.cc-text { min-width: 0; }
+.career-chart > svg { max-width: 640px; width: 100%; margin: 0 auto; }
+@media (min-width: 900px) { .career-chart { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 10px 24px; align-items: start; } .cc-tabs { grid-column: 1 / -1; max-width: 420px; } .cc-axis-note { grid-column: 1; } .career-chart > svg { grid-column: 1; grid-row: 2; } .cc-moments { grid-column: 2; grid-row: 2 / span 2; align-self: center; } }
