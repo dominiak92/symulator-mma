@@ -53,3 +53,20 @@ Grałem w kierowca.rybicki.ai (v1.9.8.1) przez 2 sezony na desktopie (Chrome). Z
 - **HUD**: jeden pasek statystyk z ikonami zamiast 4 osobnych pudełek, ciągły pasek postępu sezonu na dolnej krawędzi.
 - **Naprawione zasłanianie**: powiadomienia o osiągnięciach są teraz u góry (nie zasłaniają przycisków ani wyborów i nie zasłaniają przycisku menu); nagłówek arkuszy nie przykrywa pierwszej linijki; kafle w podsumowaniu na wąskich ekranach układają się 2×2.
 - `scripts/viewport_tour.py`: przechodzi grę na prawdziwym widoku telefonu, robi zrzuty góra/środek/dół każdego ekranu i automatycznie wypisuje zasłonięte lub ucięte elementy.
+
+## Runda 3: balans i luki (wyniki `scripts/balance.ts`)
+
+Porównanie strategii bota (100–120 karier na strategię):
+
+| Luka | Przed | Po poprawce |
+|---|---|---|
+| Trenowanie tylko stójki | legacy 2261 vs 1254 (bazowy) | 1681 vs 1207; zapasy 1506, parter 1574 |
+| Wieczna amatorka | 9,3 pasa amatorskiego, legacy jak u zawodowca | amatorka kończy się w wieku 24 lat, kolejne pasy tego samego szczebla są mniej warte |
+| Freak fighty co roku | 7,3 mln zł, najlepszy wynik | 2,0 mln zł, wynik słabszy od drogi sportowej |
+| Kredyty bez końca | brak konsekwencji | jeden kredyt naraz, sufit kwoty, rok przerwy w pracy |
+| Przepaść kosztów po awansie na krajówkę | ponad 1 rok przerwy na karierę | pół etatu na krajówce poza top 3 rankingu |
+| Granie do 40. bez względu na wyniki | legacy tylko rośnie | porażki po 34. roku życia obniżają legacy |
+
+Zmiany w walce: szanse rosną coraz wolniej przy dużej przewadze (tanh), lepszy zapaśnik obala pod ciosem, z góry można kończyć (ground and pound, duszenie), poddania zdarzają się częściej, bicie z pleców jest trudniejsze.
+
+`scripts/fuzz.ts` przechodzi setki karier z losowymi decyzjami i szuka „undefined”, NaN, nierozwiniętych szablonów, statystyk poza zakresem i wyjątków.
