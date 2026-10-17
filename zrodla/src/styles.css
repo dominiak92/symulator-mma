@@ -4036,6 +4036,7 @@ h3.pt-ico .ico {
   display: inline-flex;
   align-items: center;
   gap: 4px;
+  white-space: nowrap;
 }
 .offer .terms small .ico {
   color: var(--cyan);
@@ -5393,7 +5394,17 @@ button.hs:active,
   display: grid;
   gap: 8px;
 }
-.dag-head { display: flex; align-items: center; gap: 6px; color: var(--gold); }
+.dag-head {
+  display: flex; align-items: center; gap: 6px; color: var(--gold);
+  background: none; border: 0; padding: 0; font: inherit; text-align: left; cursor: pointer; width: 100%;
+}
+.dag-head b { flex: 1 1 auto; min-width: 0; }
+.dag-teaser { font-size: 0.74rem; color: var(--muted); white-space: nowrap; }
+.dag-chev { transition: transform 0.2s ease; color: var(--muted); }
+.dagestan.open .dag-chev { transform: rotate(90deg); }
+.dagestan.locked { border-color: var(--line); background: none; }
+.dagestan.locked .dag-head { color: var(--muted); }
+.dagestan.open > *:not(.dag-head) { animation: rowIn 0.25s ease-out both; }
 .dag-head b { font-family: var(--display); letter-spacing: 0.02em; }
 .dag-gains { display: flex; flex-wrap: wrap; gap: 4px; }
 .paused-note {
@@ -5924,7 +5935,7 @@ button.hs:active,
   border: 1px solid rgba(225, 29, 72, 0.35);
   font-size: 0.9rem;
   line-height: 1.4;
-  animation: alertIn 0.4s 0.5s ease-out both;
+  animation: alertIn 0.35s 0.12s ease-out both;
 }
 .press-quote .ico { color: var(--bad); flex: none; margin-top: 3px; }
 .press-quote small { display: block; margin-top: 4px; color: var(--muted); font-size: 0.72rem; }
@@ -5934,3 +5945,14 @@ button.hs:active,
 .press-opt .title { font-weight: 700; }
 .press-opt .desc { font-size: 0.78rem; }
 .press-insult { border-color: rgba(225, 29, 72, 0.4); }
+
+/* runda 7: delikatne wejścia */
+.ledger-row { animation: rowIn 0.3s calc(min(var(--i, 0), 8) * 0.04s) ease-out both; }
+.ledger-row.total { animation-delay: 0.3s; }
+.train-bar .now { animation: barGrow 0.55s ease-out both; }
+.money-big { display: inline-block; animation: popIn 0.35s ease-out both; }
+@media (max-width: 360px) {
+  .ofr-row { grid-template-columns: 1.4fr 1fr; }
+  .ofr-row .btn { font-size: 0.86rem; padding-inline: 8px; }
+  .offer .terms { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
