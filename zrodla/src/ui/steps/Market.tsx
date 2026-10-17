@@ -7,6 +7,7 @@ import type { StepProps } from '../Game';
 import { Emblem, clubCrest, crestFor } from '../Emblem';
 import { useState } from 'react';
 import { Icon, STAT_ICON } from '../Icon';
+import { CoachTip } from '../Tutorial';
 
 const KIND: Record<Contract['kind'], { label: string; tone: string; icon: string }> = {
   stay: { label: 'zostajesz', tone: '', icon: 'home' },
@@ -48,6 +49,9 @@ export default function Market({ game, setGame }: StepProps) {
           Masz {lat(g.age)}. Wybierz galę, niżej klub.
         </p>
 
+        <CoachTip id="market">
+        Wybierz galę na ten rok, a niżej klub. Lepszy klub to szybszy rozwój, ale wyższe składki.
+      </CoachTip>
         <div role="radiogroup" aria-label="Kontrakt" style={{ marginTop: 14 }}>
           {available.map((c) => {
             const idx = m.contracts.indexOf(c);
@@ -104,7 +108,7 @@ export default function Market({ game, setGame }: StepProps) {
                     <span>
                       <small>
                       <Icon name="receipt" size={11} />
-                      Koszty startów
+                      Opłaty
                     </small>
                       <b>{money(c.entryCost)}</b>
                     </span>

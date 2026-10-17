@@ -5,6 +5,7 @@ import type { StepProps } from '../Game';
 import { GG } from '../brand';
 import { Icon, STAT_ICON } from '../Icon';
 import type { StatKey } from '../../engine/types';
+import { CoachTip } from '../Tutorial';
 
 export function Chips({ chips }: { chips: Chip[] }) {
   if (!chips.length) return null;
@@ -69,6 +70,11 @@ export default function EventStep({ game, setGame }: StepProps) {
         {ev.text}
       </p>
 
+      {picked === undefined && (
+        <CoachTip id="event">
+        Wybór z procentem to ryzyko: ✓ zyskasz, ✗ stracisz. Wybór bez procentu działa na pewno.
+      </CoachTip>
+      )}
       {picked === undefined ? (
         <div className="choice-list" style={{ marginTop: 16 }}>
           {ev.choices.map((c, i) => {

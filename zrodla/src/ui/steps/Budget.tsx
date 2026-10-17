@@ -5,6 +5,7 @@ import { money, plural } from '../../format';
 import type { StepProps } from '../Game';
 import { Emblem, SponsorLogo, clubCrest } from '../Emblem';
 import { Icon, STAT_ICON } from '../Icon';
+import { CoachTip } from '../Tutorial';
 
 export default function Budget({ game, setGame }: StepProps) {
   const g = game;
@@ -33,6 +34,9 @@ export default function Budget({ game, setGame }: StepProps) {
 
       <div className="kicker">Budżet</div>
       <h2>Za co płacisz w tym roku</h2>
+      <CoachTip id="budget">
+        Tyle wydasz w tym sezonie. W amatorce nikt nie płaci, gaże przyjdą z zawodowstwem.
+      </CoachTip>
       <div className="money-line">
         <span className="muted pt-ico">
           <Icon name="coins" size={16} />

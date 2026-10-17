@@ -6,6 +6,7 @@ import { PeersTable } from '../Sheets';
 import { Belt, Confetti, CountUp, Fighter, Medal } from '../Art';
 import { clubCrest } from '../Emblem';
 import { Icon } from '../Icon';
+import { CoachTip } from '../Tutorial';
 
 export default function Summary({ game, setGame, onPeers }: StepProps & { onPeers: () => void }) {
   const g = game;
@@ -91,6 +92,9 @@ export default function Summary({ game, setGame, onPeers }: StepProps & { onPeer
         </div>
       </div>
 
+      <CoachTip id="summary">
+        Tak poszedł sezon. Dotknij sekcji na dole, żeby zobaczyć szczegóły.
+      </CoachTip>
       <p className="story">{s.story}</p>
 
       <div className="grade-bars">

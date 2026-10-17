@@ -10,6 +10,7 @@ import { GG } from '../brand';
 import { Belt, Confetti, Fighter, Medal } from '../Art';
 import { clubCrest } from '../Emblem';
 import { Icon, STAT_ICON } from '../Icon';
+import { CoachTip } from '../Tutorial';
 
 const reduced = () => typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 
@@ -339,7 +340,9 @@ function LiveCard({ g, f, start, animate, setGame }: { g: GameState; f: FightRep
           </div>
           <h3>{pending.title}</h3>
           <p className="decision-text">{pending.text}</p>
-          {g.history.length < 3 && <p className="hint">Procent to szansa powodzenia. Bezpieczny wybór wchodzi częściej, ale daje mniej.</p>}
+          <CoachTip id="decision">
+        Procent to szansa, że plan wejdzie. Bezpieczny wybór wchodzi częściej, ryzyko może skończyć walkę.
+      </CoachTip>
           <div className="choice-list">
             {pending.options.map((o) => (
               <OptionButton key={o.key} o={o} onPick={() => setGame(decide(g, o.key))} />
@@ -463,9 +466,9 @@ export default function Season({ game, setGame }: StepProps) {
 
   return (
     <section className="step season-step">
+      <div className="kicker season-kicker">{amateur ? 'Turnieje amatorskie' : g.contract.kind === 'freak' ? g.contract.fed : g.fed}</div>
       <div className="season-head">
         <div className="season-title">
-          <div className="kicker">{amateur ? 'Turnieje amatorskie' : g.contract.kind === 'freak' ? g.contract.fed : g.fed}</div>
           <h2>Sezon {g.season}</h2>
         </div>
         {!run.done && !waiting && (
@@ -501,6 +504,9 @@ export default function Season({ game, setGame }: StepProps) {
         </div>
       </div>
 
+      <CoachTip id="season">
+        Walki lecą same. <Icon name="ff" size={13} /> przyspiesza, a „Pomiń” od razu pokazuje wyniki.
+      </CoachTip>
       {run.intro.length > 0 && (
         <details className="intro-notes">
           <summary>{amateur ? 'Plan sezonu: turnieje' : 'Przed sezonem'}</summary>

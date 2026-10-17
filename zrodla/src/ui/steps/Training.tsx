@@ -5,6 +5,7 @@ import { clubLimits, doTraining, introText, trainingForecast } from '../../engin
 import type { StepProps } from '../Game';
 import { lat } from '../../format';
 import { Icon, STAT_ICON } from '../Icon';
+import { CoachTip } from '../Tutorial';
 
 export default function Training({ game, setGame }: StepProps) {
   const [pick, setPick] = useState<StatKey | null>(null);
@@ -38,6 +39,9 @@ export default function Training({ game, setGame }: StepProps) {
       <p className="muted small" style={{ marginTop: 4 }}>
         Wybrana umiejętność urośnie najbardziej.{g.age >= 31 ? ' Po trzydziestce organizm bierze już mniej.' : ''}
       </p>
+      <CoachTip id="training">
+        Wybierz umiejętność na obóz. Zielona liczba to wynik po nim. U góry masz <b>OVR</b> (ogólną siłę), budżet, rekord i wiek.
+      </CoachTip>
       {clubLimits(g) && <div className="warn">{g.club.name} niewiele cię już nauczy. Lepszy klub wybierzesz na rynku po sezonie.</div>}
       <div className="choice-list train-list" style={{ marginTop: 12 }} role="radiogroup" aria-label="Trening">
         {STAT_KEYS.map((k) => {
