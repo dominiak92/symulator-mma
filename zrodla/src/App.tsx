@@ -1,4 +1,5 @@
 import { Icon, IconGallery } from './ui/Icon';
+import { FighterGallery } from './ui/Art';
 import { Tutorial, tutorialSeen } from './ui/Tutorial';
 import { useCallback, useEffect, useState } from 'react';
 import type { GameState } from './engine/types';
@@ -140,6 +141,7 @@ export default function App() {
 
   if (typeof location !== 'undefined' && location.hash === '#herby') return <EmblemGallery />;
   if (typeof location !== 'undefined' && location.hash === '#ikony') return <IconGallery />;
+  if (typeof location !== 'undefined' && location.hash === '#zawodnicy') return <FighterGallery />;
   return (
     <>
       <div className="cage-top" aria-hidden="true" />
