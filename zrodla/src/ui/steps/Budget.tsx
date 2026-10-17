@@ -1,5 +1,5 @@
 import { STAT_LABELS } from '../../engine/data';
-import { ACADEMY_LEVELS, academyName, academyNext, investAcademy, OVERDRAFT, PITCH_SLOTS, pitchBlocked, pitchChance, pitchPay, pitchSponsor, breakPreview, budgetBalance, budgetLines, canStartSeason, expectedPurses, loanOffer, loanRefusal, startSeason, takeBreakYear, takeLoan } from '../../engine/game';
+import { fightRange, plannedFights, setWantFights, ACADEMY_LEVELS, academyName, academyNext, investAcademy, OVERDRAFT, PITCH_SLOTS, pitchBlocked, pitchChance, pitchPay, pitchSponsor, breakPreview, budgetBalance, budgetLines, canStartSeason, expectedPurses, loanOffer, loanRefusal, startSeason, takeBreakYear, takeLoan } from '../../engine/game';
 import { useState } from 'react';
 import type { StatKey } from '../../engine/types';
 import { money, plural } from '../../format';
@@ -26,6 +26,8 @@ export default function Budget({ game, setGame }: StepProps) {
   const pitchDone = !!g.pitch && g.pitch.season === g.season;
   const blocked = pitchBlocked(g);
   const purses = expectedPurses(g);
+  const range = fightRange(g);
+  const want = plannedFights(g);
   const gains = Object.entries(g.lastGains).filter(([, v]) => (v ?? 0) > 0) as [StatKey, number][];
 
   return (
@@ -199,10 +201,31 @@ export default function Budget({ game, setGame }: StepProps) {
 
       {purses > 0 && g.contract.kind !== 'freak' && (
         <p className="muted" style={{ marginTop: 12 }}>
-          Do tego gaże: {money(g.contract.purse)} za walkę
-          {g.contract.winBonus ? ` plus ${money(g.contract.winBonus)} premii za wygraną` : ''}. W planie {g.contract.fights}{' '}
-          {plural(g.contract.fights, 'walka', 'walki', 'walk')}.
+          Do tego gaże: ok. {money(g.contract.purse)} za walkę
+          {g.contract.winBonus ? ` plus ${money(g.contract.winBonus)} premii za wygraną` : ''}. Każdą ofertę walki możesz przyjąć, negocjować albo odrzucić.
         </p>
+      )}
+      {range && (
+        <div className="fights-pick">
+          <span className="pt-ico">
+            <Icon name="calendar" size={15} />
+            Ile walk w tym sezonie?
+          </span>
+          <div className="seg" role="radiogroup" aria-label="Liczba walk">
+            {Array.from({ length: range[1] - range[0] + 1 }, (_, i) => range[0] + i).map((n) => (
+              <button key={n} role="radio" aria-checked={want === n} className={want === n ? 'on' : ''} onClick={() => setGame(setWantFights(g, n))}>
+                {n}
+              </button>
+            ))}
+          </div>
+          <small className="faint">
+            {want > 3
+              ? 'Więcej gaż, ale czwarta i piąta walka w roku to zmęczenie i większe ryzyko kontuzji.'
+              : want < g.contract.fights
+                ? 'Mniej walk: organizm odpocznie, ale ranking i konto rosną wolniej.'
+                : `${want} ${plural(want, 'walka', 'walki', 'walk')} w sezonie to standard w tym kontrakcie.`}
+          </small>
+        </div>
       )}
       {g.contract.kind === 'freak' && (
         <p className="muted" style={{ marginTop: 12 }}>

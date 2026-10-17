@@ -1,6 +1,7 @@
 import { STAT_LABELS, TIER_LEVEL } from '../../engine/data';
 import { ovr } from '../../engine/fighter';
-import { clubAvailability, clubLimits, confirmMarket, marketWarnings, pickClub, pickContract, retire } from '../../engine/game';
+import { clubAvailability, clubLimits, confirmMarket, marketWarnings, pickClub, pickContract, retire, setManager } from '../../engine/game';
+import { MANAGERS, currentManager, managerBlocked } from '../../engine/managers';
 import type { Contract } from '../../engine/types';
 import { lat, money, plural } from '../../format';
 import type { StepProps } from '../Game';
@@ -255,6 +256,8 @@ export default function Market({ game, setGame }: StepProps) {
           </details>
         )}
 
+        {g.tier >= 1 && <ManagerPick game={g} setGame={setGame} />}
+
         {warnings.map((w, i) => (
           <div className="warn" key={i}>
             {w}
@@ -288,5 +291,82 @@ export default function Market({ game, setGame }: StepProps) {
         </div>
       </section>
     </>
+  );
+}
+
+function focusWord(f: number) {
+  return f >= 0.9 ? 'zawsze ma dla ciebie czas' : f >= 0.75 ? 'zwykle ma czas' : f >= 0.6 ? 'często zajęty innymi' : 'ma wielu zawodników';
+}
+
+function ManagerPick({ game: g, setGame }: StepProps) {
+  const cur = currentManager(g);
+  const open = MANAGERS.filter((m) => !managerBlocked(g, m));
+  const locked = MANAGERS.filter((m) => managerBlocked(g, m));
+  return (
+    <details className="acc mgr-acc" style={{ marginTop: 10 }}>
+      <summary>
+        <span>
+          <Icon name="briefcase" size={15} />
+          Menedżer
+        </span>
+        <b>{cur ? `${cur.name} · ${Math.round(cur.cut * 100)}%` : 'sam prowadzisz karierę'}</b>
+      </summary>
+      <div className="acc-body">
+        <p className="muted small" style={{ marginTop: 0 }}>
+          Menedżer bierze procent od każdej gaży. W zamian wyższe stawki, mocniejsi rywale (szybciej w górę rankingu), łatwiejsze negocjacje i awanse. Duże agencje mają też innych zawodników.
+        </p>
+        <div role="radiogroup" aria-label="Menedżer" className="mgr-list">
+          <button className="offer mgr-opt" role="radio" aria-checked={!cur} onClick={() => setGame(setManager(g, null))}>
+            <span className="mgr-top">
+              <b>Sam sobie menedżerem</b>
+              <span className="tag">0%</span>
+            </span>
+            <span className="offer-note">Cała gaża twoja. Telefon dzwoni rzadziej.</span>
+          </button>
+          {open.map((m) => (
+            <button key={m.id} className="offer mgr-opt" role="radio" aria-checked={cur?.id === m.id} onClick={() => setGame(setManager(g, m.id))}>
+              <span className="mgr-top">
+                <b>{m.name}</b>
+                <span className="tag gold">{Math.round(m.cut * 100)}%</span>
+              </span>
+              <span className="offer-note">{m.desc}</span>
+              <span className="mgr-stats">
+                <span>
+                  <Icon name="coins" size={12} />
+                  gaże +{Math.round((m.purse - 1) * 100)}%
+                </span>
+                <span>
+                  <Icon name="trophy" size={12} />
+                  rywale {m.quality >= 2 ? 'z czołówki' : m.quality === 1 ? 'mocniejsi' : 'jak dotąd'}
+                </span>
+                {m.sponsor >= 8 && (
+                  <span>
+                    <Icon name="shirt" size={12} />
+                    sponsorzy
+                  </span>
+                )}
+                <span>
+                  <Icon name="clock" size={12} />
+                  {focusWord(m.focus)}
+                </span>
+              </span>
+            </button>
+          ))}
+        </div>
+        {locked.length > 0 && (
+          <div className="locked-clubs" style={{ marginTop: 8 }}>
+            {locked.map((m) => (
+              <div key={m.id} className="locked-club">
+                <Icon name="briefcase" size={18} />
+                <span>
+                  <b>{m.name}</b>
+                  <small>{managerBlocked(g, m)}</small>
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </details>
   );
 }
