@@ -96,3 +96,13 @@ Balans (120 karier na strategię): przyjmowanie ofert, negocjowanie i wybrednoś
 - **Obóz przed walką** (na ofercie): zwykły, pod rywala (+4, koszt 20% gaży), ciężki (+3, większe zużycie i ryzyko urazu).
 - **Konferencja** przed dużą walką (karta główna, rywal, pas, freak): spokojnie (+reputacja), riposta (60%: +3, inaczej −3), po bandzie (45%: +4, inaczej kara i −4; zasięgi rosną, reputacja spada).
 - **Balans szczebli**: zostawanie w Polsce dawało więcej niż wyjazd do Europy. Europa płaci teraz więcej (gaże 40–160 tys.), tańszy sztab, większa premia legacy za najwyższy szczebel (0/40/120/300/550), kolejne pasy w kraju są warte mniej.
+
+## Runda 7: przegląd całości
+
+- Szansa w wydarzeniach i przy sponsorach słowami z kropkami (jak w walkach), procent w podpowiedzi.
+- Budżet: liczba walk i ostrzeżenie o minusie zaraz pod rachunkiem; sponsor i akademia niżej jako dodatki.
+- Dagestan zwinięty do jednej linii (koszt albo „jeszcze nie”), rozwija się po dotknięciu.
+- Rynek: „Premia” zamiast zawijającego się „Za wygraną”; na 320 px warunki w 2 kolumnach.
+- Oferta na 320 px: przyciski negocjacji nie łamią się w trzy linie.
+- Animacje: rachunek wjeżdża wierszami, paski treningu rosną, kwota na koncie wskakuje; cytat z konferencji pojawia się szybciej.
+- Balans: obelga na konferencji wygrywa w 40% (było 45%); kategoria wyżej −2 do walki (było −4) i wolniejsze zużycie organizmu.
