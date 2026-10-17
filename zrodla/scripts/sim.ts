@@ -2,6 +2,8 @@
 // Uruchom: npx tsx scripts/sim.ts [liczba] [profil]
 import {
   budgetBalance,
+  canStartSeason,
+  takeBreakYear,
   choiceChance,
   chooseEvent,
   clubAvailability,
@@ -41,14 +43,19 @@ function play(seed: number) {
   let guard = 0;
   let decisions = 0;
   let events = 0;
+  let breaks = 0;
   while (s.phase !== 'ended' && guard++ < 2000) {
     switch (s.phase) {
       case 'training':
         s = doTraining(s, botTrain(s));
         break;
       case 'budget':
-        if (s.money + budgetBalance(s) < 0 && loanOffer(s) && s.loans.length < 2) s = takeLoan(s);
-        s = startSeason(s);
+        if (s.money + budgetBalance(s) < 0 && loanOffer(s)) s = takeLoan(s);
+        if (canStartSeason(s)) s = startSeason(s);
+        else {
+          breaks++;
+          s = takeBreakYear(s);
+        }
         break;
       case 'event': {
         const ev = s.event!;
@@ -116,7 +123,7 @@ function play(seed: number) {
     }
   }
   if (guard >= 2000) throw new Error('pętla bez końca, seed ' + seed + ' faza ' + s.phase);
-  return { s, decisions, events };
+  return { s, decisions, events, breaks };
 }
 
 const t0 = Date.now();
@@ -139,6 +146,7 @@ console.log('śr. zarobki', avg((r) => r.s.totalEarned), '| kasa na koniec', avg
 console.log('rekord amatorski W', avg((r) => r.s.amRecord.w), 'L', avg((r) => r.s.amRecord.l), '| medale', avg((r) => r.s.medals.gold + r.s.medals.silver + r.s.medals.bronze), '| złota', avg((r) => r.s.medals.gold));
 const deb = res.filter((r) => r.s.proDebut);
 console.log('debiut zawodowy:', ((deb.length / res.length) * 100).toFixed(1) + '%', '| śr. wiek debiutu', (deb.reduce((a, r) => a + r.s.proDebut!.age, 0) / Math.max(1, deb.length)).toFixed(1));
+console.log('lat przerwy (praca):', avg((r) => r.breaks), '| karier z przerwą:', ((res.filter((r) => r.breaks > 0).length / res.length) * 100).toFixed(1) + '%', '| śr. aktywnych kredytów na koniec', avg((r) => r.s.loans.length));
 console.log('koniec przed 25. rokiem życia:', ((res.filter((r) => r.s.age < 25).length / res.length) * 100).toFixed(1) + '%');
 console.log('max szczebel:\n  ' + dist((r) => String(r.s.peakTier)));
 console.log('werdykty:\n  ' + dist((r) => r.s.ending?.verdict ?? '?'));

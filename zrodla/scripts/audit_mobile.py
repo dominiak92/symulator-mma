@@ -8,6 +8,17 @@ import os
 import sys
 from playwright.sync_api import sync_playwright
 
+def handle_money(pg):
+    """Na ekranie budżetu bez pieniędzy: kredyt, a jak bank odmawia, rok przerwy."""
+    if pg.get_by_role("button", name="Biorę kredyt").count():
+        pg.get_by_role("button", name="Biorę kredyt").click(); pg.wait_for_timeout(150)
+        return True
+    if pg.get_by_role("button", name="Rok przerwy").count():
+        pg.get_by_role("button", name="Rok przerwy").click(); pg.wait_for_timeout(100)
+        pg.get_by_role("button", name="Tak, idę do pracy").click(); pg.wait_for_timeout(150)
+        return True
+    return False
+
 URL = sys.argv[1]
 OUT = sys.argv[2]
 W = int(sys.argv[3]) if len(sys.argv) > 3 else 360
@@ -132,6 +143,9 @@ with sync_playwright() as p:
             season += 1
             if season >= SEASONS:
                 break
+        elif page.get_by_role("button", name="Brakuje pieniędzy na sezon").count():
+            snap(page, f"s{season}-brak-kasy")
+            if not handle_money(page): break
         elif page.locator(".cta-bar .btn").count():
             btn = page.locator(".cta-bar .btn").first
             label = btn.inner_text().lower()

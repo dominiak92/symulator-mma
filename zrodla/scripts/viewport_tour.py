@@ -5,6 +5,17 @@ Użycie: python3 scripts/viewport_tour.py URL katalog szerokość sezony [wysoko
 import sys, os
 from playwright.sync_api import sync_playwright
 
+def handle_money(pg):
+    """Na ekranie budżetu bez pieniędzy: kredyt, a jak bank odmawia, rok przerwy."""
+    if pg.get_by_role("button", name="Biorę kredyt").count():
+        pg.get_by_role("button", name="Biorę kredyt").click(); pg.wait_for_timeout(150)
+        return True
+    if pg.get_by_role("button", name="Rok przerwy").count():
+        pg.get_by_role("button", name="Rok przerwy").click(); pg.wait_for_timeout(100)
+        pg.get_by_role("button", name="Tak, idę do pracy").click(); pg.wait_for_timeout(150)
+        return True
+    return False
+
 URL, OUT, W, SEASONS = sys.argv[1], sys.argv[2], int(sys.argv[3]), int(sys.argv[4])
 H = int(sys.argv[5]) if len(sys.argv) > 5 else 780
 os.makedirs(OUT, exist_ok=True)
@@ -88,12 +99,19 @@ with sync_playwright() as p:
             pg.locator(".train-opt").nth(season % 6).click(); pg.wait_for_timeout(150)
             if once(f"tp{season}") and season == 0: snap(pg, f"s{season}-1b-trening-wybor", problems)
             pg.locator(".cta-bar .btn").first.click()
+        elif pg.get_by_role("button", name="Brakuje pieniędzy na sezon").count():
+            if not handle_money(pg): break
         elif pg.get_by_role("button", name="Zaczynam sezon").count():
             if once(f"b{season}"): snap(pg, f"s{season}-2-budzet", problems)
             pg.get_by_role("button", name="Zaczynam sezon").click()
         elif pg.locator(".event-result").count():
             if once(f"er{season}"): snap(pg, f"s{season}-4-wydarzenie-wynik", problems)
             pg.get_by_role("button", name="Dalej", exact=True).click()
+        elif pg.locator(".fight-intro").count():
+            if once("intro"): snap(pg, "s0-4b-zapowiedz", problems)
+            pg.locator(".fi-go").click()
+        elif pg.locator(".icon-pill.next").count() and not pg.locator(".decision .choice").count():
+            pg.locator(".icon-pill.next").click()
         elif pg.locator(".decision .choice").count():
             if once(f"d{season}"): snap(pg, f"s{season}-5-decyzja", problems)
             pg.locator(".decision .choice").first.click()

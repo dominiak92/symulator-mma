@@ -6,6 +6,17 @@ import sys
 import os
 from playwright.sync_api import sync_playwright
 
+def handle_money(pg):
+    """Na ekranie budżetu bez pieniędzy: kredyt, a jak bank odmawia, rok przerwy."""
+    if pg.get_by_role("button", name="Biorę kredyt").count():
+        pg.get_by_role("button", name="Biorę kredyt").click(); pg.wait_for_timeout(150)
+        return True
+    if pg.get_by_role("button", name="Rok przerwy").count():
+        pg.get_by_role("button", name="Rok przerwy").click(); pg.wait_for_timeout(100)
+        pg.get_by_role("button", name="Tak, idę do pracy").click(); pg.wait_for_timeout(150)
+        return True
+    return False
+
 URL = sys.argv[1] if len(sys.argv) > 1 else "http://127.0.0.1:5173/"
 OUT = sys.argv[2] if len(sys.argv) > 2 else "shots"
 SEASONS = int(sys.argv[3]) if len(sys.argv) > 3 else 2
@@ -107,6 +118,8 @@ with sync_playwright() as p:
                 shot(page, "04-training")
             page.locator(".train-opt").nth((season * 2) % 6).click()
             page.locator(".cta-bar .btn").first.click()
+        elif page.get_by_role("button", name="Brakuje pieniędzy na sezon").count():
+            if not handle_money(page): break
         elif page.get_by_role("button", name="Zaczynam sezon", exact=True).count():
             if season == 0:
                 shot(page, "05-budget")
@@ -119,6 +132,12 @@ with sync_playwright() as p:
             if first_time(f"ev{season}"):
                 shot(page, f"06-event-s{season+1}")
             page.locator(".step .choice").first.click()
+        elif page.locator(".fight-intro").count():
+            if first_time("intro"):
+                shot(page, "08a-zapowiedz")
+            page.locator(".fi-go").click()
+        elif page.locator(".icon-pill.next").count() and not page.locator(".decision .choice").count():
+            page.locator(".icon-pill.next").click()
         elif page.locator(".decision").count():
             if first_time(f"dec{season}"):
                 shot(page, f"08-decision-s{season+1}")
