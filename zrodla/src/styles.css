@@ -3947,3 +3947,235 @@ details.intro-notes p {
 .toast.reveal {
   animation: dalejUp 0.4s cubic-bezier(0.2, 1.4, 0.4, 1) both;
 }
+
+/* =====================================================================
+   Ikony
+   ===================================================================== */
+.ico {
+  flex-shrink: 0;
+  display: inline-block;
+  vertical-align: -0.15em;
+}
+.btn-ico {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.pt-ico,
+.ctx-ico,
+.test-stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.kicker.pt-ico {
+  display: flex;
+}
+.label.pt-ico {
+  display: flex;
+}
+.label.pt-ico .ico,
+.kicker .ico,
+h3.pt-ico .ico {
+  color: var(--cyan);
+}
+.panel-title .pt-ico .ico {
+  color: var(--cyan);
+}
+.hud-chip small {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.hud-chip small .ico {
+  color: var(--cyan);
+  opacity: 0.9;
+}
+.dock button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 4px;
+}
+.dock button .ico {
+  color: var(--cyan);
+}
+.stat-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.stat-name .ico {
+  color: var(--cyan);
+}
+.stat-ico {
+  display: inline-grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: var(--cyan-soft);
+  color: var(--cyan);
+  flex-shrink: 0;
+}
+.train-opt[aria-checked='true'] .stat-ico {
+  background: var(--cyan);
+  color: #021720;
+}
+.train-opt .opt-label {
+  gap: 8px;
+}
+.tile-ico {
+  display: inline-grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: var(--cyan-soft);
+  color: var(--cyan);
+  margin-bottom: 4px;
+}
+.menu-tile.primary .tile-ico {
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+}
+.menu-tile:hover .tile-ico {
+  transform: scale(1.06);
+}
+.tile-ico {
+  transition: transform 0.15s;
+}
+.ledger-ico {
+  display: inline-grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  flex-shrink: 0;
+  background: var(--panel-2);
+}
+.ledger-ico.minus {
+  color: var(--bad);
+  background: var(--bad-soft);
+}
+.ledger-ico.plus {
+  color: var(--good);
+  background: var(--good-soft);
+}
+.club-sub {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 10px;
+}
+.club-sub span {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  white-space: nowrap;
+}
+.club-sub .ico {
+  color: var(--faint);
+}
+.offer .terms small {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.offer .terms small .ico {
+  color: var(--cyan);
+}
+.tile small {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.tile small .ico {
+  color: var(--cyan);
+}
+.acc summary span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.acc summary span .ico {
+  color: var(--cyan);
+}
+.mi.good {
+  color: var(--good);
+}
+.mi.bad {
+  color: var(--bad);
+}
+.mi.purple {
+  color: #b892ff;
+}
+.mi.neutral {
+  color: var(--gold);
+}
+.moment .mt-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.form-strip > .ico {
+  align-self: center;
+}
+.rec-pill > .ico {
+  color: var(--cyan);
+}
+.icon-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+.stamp strong {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.stamp-foot > * {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.res-badge.X .ico {
+  color: var(--faint);
+}
+.goal-check {
+  display: grid;
+  place-items: center;
+}
+.goals-head small {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.goals-head small .ico {
+  color: var(--gold);
+}
+.money-line .pt-ico .ico {
+  color: var(--gold);
+}
+.menu-list .btn-ico {
+  justify-content: flex-start;
+}
+.menu-list .btn-ico .ico {
+  color: var(--cyan);
+}
+.menu-list .btn-primary .ico,
+.menu-list .btn-gold .ico {
+  color: inherit;
+}
+.menu-tile:has(.tile-ico) {
+  grid-template-columns: auto minmax(0, 1fr);
+  column-gap: 14px;
+  align-items: center;
+}
+.menu-tile .tile-ico {
+  grid-row: span 2;
+  margin: 0;
+}
