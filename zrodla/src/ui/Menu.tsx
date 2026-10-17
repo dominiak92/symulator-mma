@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { dailyDone } from '../storage';
 import { dailySeed } from '../engine/rng';
 import Logo, { SHOP_URL } from './Logo';
@@ -32,10 +33,11 @@ export default function Menu({
   const left = weekEndsIn();
   const done = dailyDone();
   const doneToday = done && done.label === label;
+  const [goalsOpen, setGoalsOpen] = useState(false);
   return (
     <main className="menu">
       <img className="menu-deco" src={GG.icon} alt="" aria-hidden="true" />
-      <header className="poster">
+      <header className="menu-hero">
         <div className="menu-brand">
           <a href={`${SHOP_URL}menu_logo`} target="_blank" rel="noopener" aria-label="Ground Game, sklep">
             <Logo className="gg-logo big" variant="wordmark" />
@@ -52,7 +54,7 @@ export default function Menu({
           <span className="vs-word">VS</span>
           <Fighter seed="RywalZRocznika7" corner="red" size={110} mirror />
         </div>
-        <p>Zaczynasz w wieku 16 lat na turniejach amatorskich. Medale, debiut zawodowy, gale regionalne, pas mistrza Polski, a może i świata. Reszta zależy od ciebie.</p>
+        <p>Od turniejów amatorskich w wieku 16 lat do pasa mistrza świata. Reszta zależy od ciebie.</p>
       </header>
 
       <div className="menu-grid">
@@ -76,7 +78,7 @@ export default function Menu({
         </button>
       </div>
 
-      <section className="how">
+      <section className="how compact">
         <div className="how-head">
           <h2>Jak grać</h2>
           <button className="btn btn-ghost btn-small btn-ico" onClick={onTutorial}>
@@ -87,46 +89,46 @@ export default function Menu({
         <ol className="how-steps">
           <li>
             <span className="how-ico">
-              <Icon name="dumbbell" size={20} />
+              <Icon name="dumbbell" size={18} />
             </span>
             <div>
               <strong>Trenuj</strong>
-              <span>Przed sezonem wybierasz, co poprawić: stójkę, zapasy, parter, kondycję, szczękę albo taktykę.</span>
+              <span>Wybierasz, co poprawić przed sezonem</span>
             </div>
           </li>
           <li>
             <span className="how-ico">
-              <Icon name="coins" size={20} />
+              <Icon name="coins" size={18} />
             </span>
             <div>
               <strong>Pilnuj kasy</strong>
-              <span>Klub, starty i życie kosztują. Losowe wydarzenia mogą pomóc albo zaszkodzić.</span>
+              <span>Klub, starty i życie kosztują</span>
             </div>
           </li>
           <li>
             <span className="how-ico">
-              <Icon name="glove" size={20} />
+              <Icon name="glove" size={18} />
             </span>
             <div>
               <strong>Walcz</strong>
-              <span>Walki toczą się na żywo. W ważnych momentach wybierasz plan: bezpiecznie, na punkty albo po kończenie.</span>
+              <span>W ważnych momentach wybierasz plan</span>
             </div>
           </li>
           <li>
             <span className="how-ico">
-              <Icon name="trophy" size={20} />
+              <Icon name="trophy" size={18} />
             </span>
             <div>
               <strong>Idź w górę</strong>
-              <span>Po sezonie wybierasz galę i klub. Medale, debiut, awanse, pas. Na koniec karta kariery z punktami LEGACY.</span>
+              <span>Gale, pasy i punkty LEGACY</span>
             </div>
           </li>
         </ol>
       </section>
 
-      <section className="goals">
-        <div className="goals-head">
-          <div>
+      <section className={`goals compact${goalsOpen ? ' open' : ''}`}>
+        <button className="goals-sum" aria-expanded={goalsOpen} onClick={() => setGoalsOpen(!goalsOpen)}>
+          <span className="gs-item">
             <small>
               <Icon name="flame" size={12} />
               Seria
@@ -134,8 +136,8 @@ export default function Menu({
             <b>
               {gs.streak} {gs.streak === 1 ? 'dzień' : 'dni'}
             </b>
-          </div>
-          <div>
+          </span>
+          <span className="gs-item">
             <small>
               <Icon name="target" size={12} />
               Cele dnia
@@ -143,65 +145,79 @@ export default function Menu({
             <b>
               {gs.dailyDone.length}/{goals.daily.length}
             </b>
-          </div>
-          <p className="muted small">Sprawdzane na koniec kariery. Seria rośnie, gdy kończysz karierę codziennie.</p>
-        </div>
-        <ul className="goal-list">
-          {goals.daily.map((g) => {
-            const done = gs.dailyDone.includes(g.id);
-            return (
-              <li key={g.id} className={done ? 'done' : ''}>
+          </span>
+          <span className="gs-item">
+            <small>
+              <Icon name="star" size={12} />
+              Tydzień
+            </small>
+            <b className={gs.weeklyDone ? 'ok' : ''}>{gs.weeklyDone ? 'zrobione' : `${left.days} d ${left.hours} h`}</b>
+          </span>
+          <span className="gs-more">
+            {goalsOpen ? 'Zwiń' : 'Cele'}
+            <span className="gs-chev" aria-hidden="true">▸</span>
+          </span>
+        </button>
+        {goalsOpen && (
+          <>
+            <p className="muted small goals-note">Sprawdzane na koniec kariery. Seria rośnie, gdy kończysz karierę codziennie.</p>
+            <ul className="goal-list">
+              {goals.daily.map((g) => {
+                const done = gs.dailyDone.includes(g.id);
+                return (
+                  <li key={g.id} className={done ? 'done' : ''}>
+                    <span className="goal-check" aria-hidden="true">
+                      {done ? <Icon name="check" size={14} /> : ''}
+                    </span>
+                    <div>
+                      <strong>{g.title}</strong>
+                      <span>{g.desc}</span>
+                    </div>
+                  </li>
+                );
+              })}
+              <li className={`weekly ${gs.weeklyDone ? 'done' : ''}`}>
                 <span className="goal-check" aria-hidden="true">
-                  {done ? <Icon name="check" size={14} /> : ''}
+                  {gs.weeklyDone ? <Icon name="check" size={14} /> : <Icon name="star" size={13} />}
                 </span>
                 <div>
-                  <strong>{g.title}</strong>
-                  <span>{g.desc}</span>
+                  <strong>{goals.weekly.title}</strong>
+                  <span>{goals.weekly.desc}</span>
                 </div>
+                <small>
+                  wyzwanie tygodnia · {left.days} d {left.hours} h
+                </small>
               </li>
-            );
-          })}
-          <li className={`weekly ${gs.weeklyDone ? 'done' : ''}`}>
-            <span className="goal-check" aria-hidden="true">
-              {gs.weeklyDone ? <Icon name="check" size={14} /> : <Icon name="star" size={13} />}
-            </span>
-            <div>
-              <strong>{goals.weekly.title}</strong>
-              <span>{goals.weekly.desc}</span>
-            </div>
-            <small>
-              wyzwanie tygodnia · {left.days} d {left.hours} h
-            </small>
-          </li>
-        </ul>
+            </ul>
+          </>
+        )}
       </section>
 
-      <div className="menu-grid small">
-        <button className="menu-tile" onClick={onAchievements}>
+      <nav className="menu-mini" aria-label="Więcej">
+        <button onClick={onAchievements}>
           <span className="tile-ico">
-            <Icon name="trophy" size={20} />
+            <Icon name="trophy" size={18} />
           </span>
           <strong>Osiągnięcia</strong>
-          <span>
-            {ach}/{ACHIEVEMENTS.length} zdobytych, kolekcja między karierami
-          </span>
+          <small>
+            {ach}/{ACHIEVEMENTS.length}
+          </small>
         </button>
-        <button className="menu-tile" onClick={onMuseum}>
+        <button onClick={onMuseum}>
           <span className="tile-ico">
-            <Icon name="museum" size={20} />
+            <Icon name="museum" size={18} />
           </span>
-          <strong>Muzeum kariery</strong>
-          <span>{museum.length ? `${museum.length} ${plural(museum.length, 'kariera', 'kariery', 'karier')}, rekord ${museum.find((m) => m.ranked)?.legacy ?? 0} pkt` : 'Rekordy i werdykty twoich karier'}</span>
+          <strong>Muzeum</strong>
+          <small>{museum.length ? `${museum.length} ${plural(museum.length, 'kariera', 'kariery', 'karier')}` : 'pusto'}</small>
         </button>
-        <button className="menu-tile" onClick={onSettings}>
+        <button onClick={onSettings}>
           <span className="tile-ico">
-            <Icon name="sliders" size={20} />
+            <Icon name="sliders" size={18} />
           </span>
           <strong>Ustawienia</strong>
-          <span>Dźwięki, animacje, podpowiedzi i zapis</span>
+          <small>dźwięk, zapis</small>
         </button>
-      </div>
-
+      </nav>
 
       <a className="shop-link" style={{ maxWidth: 760 }} href={`${SHOP_URL}menu`} target="_blank" rel="noopener">
         <img className="shop-logo" src={GG.stacked} alt="" aria-hidden="true" />
