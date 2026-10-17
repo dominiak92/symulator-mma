@@ -33,7 +33,7 @@ function play(seed: number, start: StartProfile = 'osiedle', pickFirst = true): 
         break;
       case 'budget':
         if (s.money + budgetBalance(s) < 0 && loanOffer(s)) s = takeLoan(s);
-        s = startSeason(s);
+        s = G2.canStartSeason(s) ? startSeason(s) : G2.takeBreakYear(s);
         break;
       case 'event':
         s = s.event!.picked === undefined ? chooseEvent(s, pickFirst ? 0 : s.event!.choices.length - 1) : continueAfterEvent(s);
@@ -147,5 +147,34 @@ describe('typografia', () => {
   it('wiąże jednoliterowe słowa i liczby z jednostkami', () => {
     const t = polishTypography('Mama wyjęła z koperty w szafie 3,8 tys. zł i 16 lat · R2 3:12');
     expect(t).toBe('Mama wyjęła z koperty w szafie 3,8 tys. zł i 16 lat · R2 3:12');
+  });
+});
+
+import * as G2 from '../src/engine/game';
+describe('obozy i akademia', () => {
+  it('amator nie pojedzie na obóz ani nie otworzy akademii', () => {
+    const s = newGame({ slot: 1, mode: 'normal', seed: 7, profile: G2.randomProfile(createRng(7)) });
+    expect(G2.campBlocked(s)).not.toBeNull();
+    expect(G2.academyNext(s)!.blocked).not.toBeNull();
+    const t = doTraining(s, 'stand', 'tajlandia');
+    expect(t.money).toBe(s.money);
+    expect(t.camp).toBeNull();
+  });
+  it('obóz kosztuje i podnosi umiejętności, akademia daje przychód', () => {
+    const s = newGame({ slot: 1, mode: 'normal', seed: 8, profile: G2.randomProfile(createRng(8)) });
+    s.tier = 2;
+    s.age = 25;
+    s.money = 500000;
+    const camp = G2.CAMPS[0];
+    const room = s.potential[camp.main] - s.stats[camp.main];
+    const t = doTraining(s, 'iq', camp.id);
+    expect(t.money).toBe(500000 - G2.campCost(s));
+    expect(t.camp).toBe(camp.id);
+    if (room > 3) expect(t.stats[camp.main]).toBeGreaterThan(s.stats[camp.main]);
+    const before = budgetBalance(t);
+    const a = G2.investAcademy(t);
+    expect(a.academy).toBe(1);
+    expect(a.money).toBe(t.money - G2.ACADEMY_LEVELS[0].cost);
+    expect(budgetBalance(a)).toBeGreaterThan(before);
   });
 });
