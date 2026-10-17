@@ -32,6 +32,7 @@ export default function Market({ game, setGame }: StepProps) {
   const g = game;
   const m = g.market!;
   const [confirmRetire, setConfirmRetire] = useState(false);
+  const [clubsOpen, setClubsOpen] = useState(false);
   const warnings = marketWarnings(g);
   const available = m.contracts.filter((c) => c.available);
   const watching = m.contracts.filter((c) => !c.available);
@@ -193,9 +194,19 @@ export default function Market({ game, setGame }: StepProps) {
           {m.clubs.map((c, idx) => {
             const av = clubAvailability(g, c);
             if (!av.ok) return null;
+            if (!clubsOpen && idx !== m.pickedClub) return null;
             const current = c.id === g.club.id;
             return (
-              <button key={c.id} className="offer club-offer" role="radio" aria-checked={m.pickedClub === idx} onClick={() => setGame(pickClub(g, idx))}>
+              <button
+                key={c.id}
+                className="offer club-offer"
+                role="radio"
+                aria-checked={m.pickedClub === idx}
+                onClick={() => {
+                  setGame(pickClub(g, idx));
+                  setClubsOpen(false);
+                }}
+              >
                 <span className="offer-top">
                   <span className="fed-row">
                     <Emblem spec={clubCrest(c)} size={34} title={c.name} />
@@ -236,7 +247,16 @@ export default function Market({ game, setGame }: StepProps) {
             );
           })}
         </div>
-        {m.clubs.some((c) => !clubAvailability(g, c).ok) && (
+        {(() => {
+          const others = m.clubs.filter((c, i) => i !== m.pickedClub && clubAvailability(g, c).ok).length;
+          return others > 0 ? (
+            <button className="more-btn" onClick={() => setClubsOpen((x) => !x)} aria-expanded={clubsOpen}>
+              <Icon name={clubsOpen ? 'x' : 'list'} size={15} />
+              {clubsOpen ? 'Zwiń listę klubów' : `Zmień klub · ${others} ${plural(others, 'inny', 'inne', 'innych')} do wyboru`}
+            </button>
+          ) : null;
+        })()}
+        {clubsOpen && m.clubs.some((c) => !clubAvailability(g, c).ok) && (
           <details className="acc" style={{ marginTop: 8 }}>
             <summary>
               <span>Kluby poza zasięgiem</span>
@@ -319,6 +339,11 @@ function ManagerPick({ game: g, setGame }: StepProps) {
   const cur = currentManager(g);
   const open = MANAGERS.filter((m) => !managerBlocked(g, m));
   const locked = MANAGERS.filter((m) => managerBlocked(g, m));
+  const [openList, setOpenList] = useState(false);
+  const pick = (id: string | null) => {
+    setGame(setManager(g, id));
+    setOpenList(false);
+  };
   return (
     <section className="step mgr-section">
       <h3 className="pt-ico" style={{ marginBottom: 4 }}>
@@ -326,11 +351,14 @@ function ManagerPick({ game: g, setGame }: StepProps) {
         Menedżer
         {!cur && open.length > 1 && <span className="tag gold mgr-new">nowe oferty</span>}
       </h3>
-      <p className="muted small" style={{ margin: '0 0 10px' }}>
-        Bierze procent od gaż. W zamian wyższe stawki, łatwiejsze negocjacje, szybszy awans w rankingu i sponsorzy.
-      </p>
+      {openList && (
+        <p className="muted small" style={{ margin: '0 0 10px' }}>
+          Bierze procent od gaż. W zamian wyższe stawki, łatwiejsze negocjacje, szybszy awans w rankingu i sponsorzy.
+        </p>
+      )}
       <div role="radiogroup" aria-label="Menedżer" className="club-pick">
-        <button className="offer club-offer" role="radio" aria-checked={!cur} onClick={() => setGame(setManager(g, null))}>
+        {(openList || !cur) && (
+        <button className="offer club-offer" role="radio" aria-checked={!cur} onClick={() => pick(null)}>
           <span className="offer-top">
             <span className="fed-row">
               <MgrAvatar id={null} />
@@ -352,8 +380,11 @@ function ManagerPick({ game: g, setGame }: StepProps) {
             </span>
           )}
         </button>
-        {open.map((m) => (
-          <button key={m.id} className="offer club-offer" role="radio" aria-checked={cur?.id === m.id} onClick={() => setGame(setManager(g, m.id))}>
+        )}
+        {open
+          .filter((m) => openList || cur?.id === m.id)
+          .map((m) => (
+          <button key={m.id} className="offer club-offer" role="radio" aria-checked={cur?.id === m.id} onClick={() => pick(m.id)}>
             <span className="offer-top">
               <span className="fed-row">
                 <MgrAvatar id={m.id} />
@@ -394,7 +425,11 @@ function ManagerPick({ game: g, setGame }: StepProps) {
           </button>
         ))}
       </div>
-      {locked.length > 0 && (
+      <button className="more-btn" onClick={() => setOpenList((x) => !x)} aria-expanded={openList}>
+        <Icon name={openList ? 'x' : 'briefcase'} size={15} />
+        {openList ? 'Zwiń listę menedżerów' : cur ? `Zmień menedżera · ${open.length} ${plural(open.length, 'oferta', 'oferty', 'ofert')}` : `Zobacz oferty menedżerów · ${open.length}`}
+      </button>
+      {openList && locked.length > 0 && (
         <details className="acc" style={{ marginTop: 8 }}>
           <summary>
             <span>Menedżerowie poza zasięgiem</span>

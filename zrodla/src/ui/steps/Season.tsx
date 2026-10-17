@@ -321,14 +321,19 @@ function LiveCard({ g, f, start, animate, setGame }: { g: GameState; f: FightRep
         </span>
       </div>
 
-      <div className="vs">
-        <div className={`vs-side me ${done && f.result === 'L' && finish ? 'ko' : ''} ${done && won ? 'win' : ''}`} style={d(stampAt)}>
-          <Fighter seed={`${g.profile.firstName}${g.profile.lastName}`} corner="blue" shorts={myShorts} size={84} belt={g.rank === 0 && !f.amateur} hurt={done && f.result === 'L' && finish} />
-          <b>{g.profile.lastName}</b>
-          <small>{recStr(mainRecord(g))}</small>
+      <div className="vs-hero live-vs">
+        <div className={`vh-side me ${done && f.result === 'L' && finish ? 'ko' : ''} ${done && won ? 'win' : ''}`} style={d(stampAt)}>
+          <div className="vh-art">
+            <Fighter seed={`${g.profile.firstName}${g.profile.lastName}`} corner="blue" shorts={myShorts} size={80} belt={g.rank === 0 && !f.amateur} hurt={done && f.result === 'L' && finish} />
+          </div>
+          <div className="vh-plate">
+            <small>{g.profile.firstName}</small>
+            <b>{g.profile.lastName}</b>
+            <span>{recStr(mainRecord(g))}</span>
+          </div>
         </div>
-        <div className="vs-mid">
-          <span className="vs-word">VS</span>
+        <div className="vh-mid live-mid">
+          <span className="vh-vs">VS</span>
           <div className="rounds" aria-label={`Runda ${played} z ${rounds}`}>
             {Array.from({ length: rounds }, (_, i) => {
               const r = i + 1;
@@ -342,13 +347,20 @@ function LiveCard({ g, f, start, animate, setGame }: { g: GameState; f: FightRep
             })}
           </div>
         </div>
-        <div className={`vs-side opp ${done && won && finish ? 'ko' : ''} ${done && f.result === 'L' ? 'win' : ''}`} style={d(stampAt)}>
-          <Fighter seed={`${f.opp.firstName}${f.opp.lastName}`} corner="red" size={84} mirror hurt={done && won && finish} />
-          <b>{f.opp.lastName}</b>
-          <small>
-            {f.opp.flag} {f.opp.freak ? f.opp.freak : `${recStr(f.opp.record)} · ${STYLE_LABELS[f.opp.style].toLowerCase()}`}
-            {!f.amateur && !f.opp.freak && rankLabel(f.opp.rank) ? ` · ${rankLabel(f.opp.rank)}` : ''}
-          </small>
+        <div className={`vh-side opp ${done && won && finish ? 'ko' : ''} ${done && f.result === 'L' ? 'win' : ''}`} style={d(stampAt)}>
+          <div className="vh-art">
+            <Fighter seed={`${f.opp.firstName}${f.opp.lastName}`} corner="red" size={80} mirror hurt={done && won && finish} />
+          </div>
+          <div className="vh-plate">
+            <small>
+              {f.opp.flag} {f.opp.nickname ? `„${f.opp.nickname}”` : f.opp.firstName}
+            </small>
+            <b>{f.opp.lastName}</b>
+            <span>
+              {f.opp.freak ? f.opp.freak : `${recStr(f.opp.record)} · ${STYLE_LABELS[f.opp.style].toLowerCase()}`}
+              {!f.amateur && !f.opp.freak && rankLabel(f.opp.rank) ? ` · ${rankLabel(f.opp.rank)}` : ''}
+            </span>
+          </div>
         </div>
       </div>
 
@@ -730,6 +742,7 @@ function OfferCard({ g, o, n, total, setGame }: { g: GameState; o: FightOffer; n
           <Icon name="target" size={14} />
           {opp.freak ? 'Freak fight. Kamery, hałas i cyrk.' : SCOUT[opp.style]}
         </p>
+        <CoachTip id="offer">Na zawodowstwie każda walka to oferta. Przyjmij ją, spróbuj wynegocjować więcej albo odrzuć i poczekaj na lepszą.</CoachTip>
         <div className="ofr-actions">
           <button ref={goRef} className="btn btn-primary btn-block btn-ico" onClick={() => setGame(acceptOffer(g))}>
             <Icon name="glove" />
@@ -968,7 +981,7 @@ export default function Season({ game, setGame }: StepProps) {
       <FormReel g={g} spinning={spinning} />
 
       <CoachTip id="season">
-        Przed każdą walką zobaczysz rywala (na zawodowstwie z ofertą i gażą, którą możesz przyjąć albo odrzucić). Walka toczy się sama, a w ważnym momencie trener zapyta cię o plan. Po walce przejdziesz dalej przyciskiem na dole.
+        Walka toczy się sama, a w ważnym momencie trener zapyta cię o plan. Dalej przejdziesz przyciskiem na dole.
       </CoachTip>
       {run.intro.length > 0 && (
         <details className="intro-notes">
