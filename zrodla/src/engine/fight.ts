@@ -574,7 +574,7 @@ function buildDecisionRaw(rng: Rng, ctx: FightCtx, sim: FightSim): DecisionPoint
       title: 'Plan na walkę',
       text: `Dziesięć minut do wyjścia. Trener siada obok i pyta o plan. ${styleNote(ctx.opp)}`,
       options: [
-        option('plan_stand', 'normal', 'Bijemy się w stójce', 'Na nogach, szukamy czystych trafień.', 'stand', me.stand, op.stand * 0.6 + op.iq * 0.4, base, 'przewaga w stójce od pierwszej rundy', 'łatwiej nadziać się na kontrę'),
+        option('plan_stand', 'normal', 'Bijemy się w stójce', 'Na nogach, szukamy czystych trafień.', 'stand', me.stand, op.stand * 0.6 + op.iq * 0.4, base, 'obijasz go od pierwszej rundy', 'łatwiej nadziać się na kontrę'),
         option('plan_wrest', 'normal', 'Obalamy i dociskamy', 'Zapasy, kontrola z góry, rundy na punkty.', 'wrest', me.wrest, op.wrest, base, 'kontrolujesz rundy z góry', 'tracisz siły na nieudanych wejściach'),
         option('plan_bjj', 'risk', 'Szukamy poddania', 'Sprowadzamy do parteru i polujemy na szyję.', 'bjj', me.bjj, op.bjj * 0.8 + op.wrest * 0.2, base - 4, 'szansa na szybkie poddanie', 'lądujesz pod nim'),
       ],
@@ -657,7 +657,7 @@ function buildDecisionRaw(rng: Rng, ctx: FightCtx, sim: FightSim): DecisionPoint
       title: 'Narożnik pyta',
       text: `Przerwa przed ${next}. rundą. Wyrównana walka. Trener pyta, gdzie czujesz przewagę.`,
       options: [
-        option('mid_stand', 'normal', 'Podkręcasz tempo w stójce', 'Więcej kombinacji, więcej ryzyka.', 'stand', me.stand, op.stand * 0.6 + op.iq * 0.4, base, 'zabierasz mu rundę', 'łapiesz kontrę'),
+        option('mid_stand', 'normal', 'Podkręcasz tempo w stójce', 'Więcej kombinacji, więcej ryzyka.', 'stand', me.stand, op.stand * 0.6 + op.iq * 0.4, base, 'obijasz go i zabierasz mu rundę', 'łapiesz kontrę'),
         option('mid_wrest', 'normal', 'Schodzisz do nóg i obalasz', 'Zapasy i kontrola przy siatce.', 'wrest', me.wrest, op.wrest, base, 'rundy z góry', 'tracisz siły'),
         safe('mid_safe', 'Trzymasz plan', 'Robisz swoje, bez kombinowania.', 'mała przewaga', 'nic się nie zmienia'),
       ],
@@ -742,7 +742,7 @@ function cornerFallback(sim: FightSim, me: Eff, op: Eff, n: string, next: number
     title: `Przerwa przed ${next}. rundą`,
     text: `${line} „${n} ${sim.opp.stam < 70 ? 'zwalnia' : 'jest świeży'}, ty ${sim.me.stam < 70 ? 'też czujesz już nogi' : 'masz jeszcze paliwo'}. Gdzie go łamiemy?”`,
     options: [
-      option(`cr_stand${next}`, 'normal', 'Stójka, więcej kombinacji', 'Podkręcasz ręce, szukasz czystych trafień.', 'stand', me.stand, op.stand * 0.6 + op.iq * 0.4, base, 'zabierasz mu rundę', 'łapiesz kontrę'),
+      option(`cr_stand${next}`, 'normal', 'Stójka, więcej kombinacji', 'Podkręcasz ręce, szukasz czystych trafień.', 'stand', me.stand, op.stand * 0.6 + op.iq * 0.4, base, 'obijasz go, rośnie szansa na skończenie', 'łapiesz kontrę'),
       option(`cr_wrest${next}`, 'normal', 'Zapasy i kontrola', 'Obalenia, siatka, ciężar ciała.', 'wrest', me.wrest, op.wrest, base, 'runda z góry', 'tracisz siły na wejściach'),
       safe(`cr_safe${next}`, 'Trzymasz plan', 'Robisz swoje i oddychasz.', 'mała przewaga i odpoczynek', 'nic się nie zmienia'),
     ],
@@ -844,6 +844,42 @@ export function applyDecision(rng: Rng, ctx: FightCtx, sim: FightSim, rep: Fight
       sim.me.stam = clamp(sim.me.stam - 12, 0, 100);
       text = say(POOL.riskFail);
       effect = 'obrywasz i tracisz rundę';
+    }
+  } else if (kind === 'normal' && opt.stat === 'stand') {
+    // stójka: obijasz rywala (łatwiej go potem skończyć), ale nieudana próba to kontra
+    if (out === 'super') {
+      sim.momentum += 12;
+      sim.opp.dmg += 16;
+      text = say(POOL.normalSuper);
+      effect = 'rywal mocno obity';
+    } else if (out === 'success') {
+      sim.momentum += 5;
+      sim.opp.dmg += 10;
+      text = say(POOL.normalOk);
+      effect = 'obijasz go, ma rozbity nos';
+    } else {
+      sim.momentum -= 5;
+      sim.me.dmg += 8;
+      text = say(POOL.normalFail);
+      effect = 'łapiesz kontrę';
+    }
+  } else if (kind === 'normal' && (opt.stat === 'wrest' || opt.stat === 'cardio' || opt.stat === 'iq')) {
+    // zapasy, tempo, taktyka: pewne punkty i zmęczony rywal; nieudana próba kosztuje tylko siły
+    if (out === 'super') {
+      sim.momentum += 15;
+      sim.opp.stam = clamp(sim.opp.stam - 16, 0, 100);
+      text = say(POOL.normalSuper);
+      effect = 'runda twoja bez dyskusji';
+    } else if (out === 'success') {
+      sim.momentum += 9;
+      sim.opp.stam = clamp(sim.opp.stam - 10, 0, 100);
+      text = say(POOL.normalOk);
+      effect = 'punkty dla ciebie, rywal słabnie';
+    } else {
+      sim.momentum -= 3;
+      sim.me.stam = clamp(sim.me.stam - 10, 0, 100);
+      text = say(POOL.normalFail);
+      effect = 'tracisz siły na nieudanych próbach';
     }
   } else if (kind === 'normal') {
     if (out === 'super') {
