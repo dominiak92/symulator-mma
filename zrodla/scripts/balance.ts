@@ -1,6 +1,8 @@
 // Porównanie strategii gracza — szukanie luk w ekonomii i balansie.
 // Uruchom: npx tsx scripts/balance.ts [liczba karier na strategię]
 import {
+  cheaperClub,
+  downgradeClub,
   acceptOffer,
   declineBlocked,
   declineOffer,
@@ -100,6 +102,7 @@ function play(seed: number, p: Policy) {
           s = takeLoan(s);
           loans++;
         }
+        if (!canStartSeason(s) && cheaperClub(s)) s = downgradeClub(s);
         if (canStartSeason(s)) s = startSeason(s);
         else {
           breaks++;
@@ -220,6 +223,9 @@ const POLICIES_ALL: Policy[] = [
   { name: 'tylko parter', train: () => 'bjj' },
   { name: 'tylko kondycja', train: () => 'cardio' },
   { name: 'tylko taktyka', train: () => 'iq' },
+  { name: 'stójka+kondycja', train: (s) => (s.season % 2 ? 'stand' : 'cardio') },
+  { name: 'stójka+szczęka', train: (s) => (s.season % 2 ? 'stand' : 'chin') },
+  { name: 'stójka+parter', train: (s) => (s.season % 2 ? 'stand' : 'bjj') },
   { name: 'oferty: wybredny', offers: 'picky' },
   { name: 'oferty: negocjuje', offers: 'negotiate' },
   { name: 'menedżer: najlepszy', manager: 'best' },
