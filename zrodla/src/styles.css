@@ -2601,7 +2601,7 @@ h3,
 [id='live-fight'],
 [id='decision'],
 .step {
-  scroll-margin-top: calc(var(--hud-h) + 8px);
+  scroll-margin-top: 12px;
 }
 
 /* nagłówek sezonu */
@@ -2647,22 +2647,6 @@ h3,
   }
 }
 
-/* przyklejony pasek: forma + bilans */
-.season-bar {
-  position: sticky;
-  top: calc(var(--hud-h) + 6px);
-  z-index: 6;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  margin: 0 0 12px;
-  padding: 6px 6px 6px 10px;
-  border-radius: 999px;
-  background: rgba(8, 8, 10, 0.92);
-  border: 1px solid var(--line);
-  backdrop-filter: blur(6px);
-}
 .form-strip {
   display: flex;
   align-items: baseline;
@@ -4683,4 +4667,128 @@ h3.pt-ico .ico {
 }
 .season-head {
   align-items: center;
+}
+
+/* =====================================================================
+   Mniej rzeczy na ekranie: chowana belka, klikalne statystyki,
+   sterowanie sezonem na dole
+   ===================================================================== */
+.hud {
+  transition: transform 0.28s ease;
+  will-change: transform;
+}
+@media (max-width: 899px) {
+  .hud.hud-hidden {
+    transform: translateY(calc(-100% - 4px));
+  }
+}
+.hud-who {
+  appearance: none;
+  border: 0;
+  background: none;
+  padding: 0;
+  margin: 0;
+  color: inherit;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+  cursor: pointer;
+  border-radius: 8px;
+}
+.hud-who .hud-name {
+  display: grid;
+}
+.hud-who .hud-name > span {
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+@media (min-width: 900px) {
+  .hud-who {
+    display: contents;
+  }
+}
+button.hs {
+  appearance: none;
+  background: none;
+  border: 0;
+  border-left: 1px solid var(--line);
+  color: inherit;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+button.hs:active,
+.hud-who:active {
+  background: var(--panel-2);
+}
+.hs:first-child {
+  border-left: 0;
+}
+
+/* nagłówek sezonu bez przyklejania */
+.season-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+.season-step .form-strip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 12px;
+  padding: 0;
+  font-size: 0.85rem;
+}
+.season-step .form-strip small {
+  display: inline;
+}
+.season-step .form-val {
+  font-size: 0.95rem;
+}
+.rec-pill {
+  border: 1px solid var(--line);
+}
+
+/* tempo sezonu: mała pigułka na dole ekranu */
+.play-ctrl {
+  position: sticky;
+  bottom: calc(10px + env(safe-area-inset-bottom));
+  z-index: 5;
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  width: max-content;
+  margin: 14px auto 0;
+  padding: 5px;
+  border-radius: 999px;
+  background: rgba(8, 8, 10, 0.9);
+  border: 1px solid var(--line);
+  backdrop-filter: blur(6px);
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.9);
+}
+.play-ctrl .icon-pill {
+  height: 34px;
+  font-size: 0.78rem;
+  animation: none;
+}
+.debut-note {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  margin: 10px 0 0;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: var(--gold-soft);
+  color: var(--text);
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+.debut-note .ico {
+  color: var(--gold);
+  margin-top: 2px;
 }

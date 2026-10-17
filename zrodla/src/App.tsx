@@ -94,7 +94,7 @@ export default function App() {
 
   useEffect(() => {
     if (!toasts.length) return;
-    const t = setTimeout(() => setToasts((x) => x.slice(1)), toasts.length > 1 ? 2200 : 3500);
+    const t = setTimeout(() => setToasts((x) => x.slice(1)), toasts.length > 1 ? 1800 : 2800);
     return () => clearTimeout(t);
   }, [toasts]);
 
