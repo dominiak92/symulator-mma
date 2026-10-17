@@ -1,5 +1,6 @@
 import type { EventChoice, GameState } from './types';
 import { BELT_NAMES } from './data';
+import { EXTRA_EVENTS } from './events_extra';
 
 export interface EventDef {
   id: string;
@@ -1067,6 +1068,7 @@ export const EVENTS: EventDef[] = [
       { label: 'Odmawiasz', desc: 'Kubki to nie twój styl.', effects: {} },
     ],
   },
+  ...EXTRA_EVENTS,
 ];
 
 export function eventWeight(e: EventDef, s: GameState): number {

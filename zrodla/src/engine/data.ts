@@ -290,6 +290,7 @@ export const NAMES_PL: NamePool = {
     'Kamil', 'Damian', 'Patryk', 'Mateusz', 'Kacper', 'Szymon', 'Dawid', 'Krystian', 'Marcin', 'Łukasz',
     'Michał', 'Bartek', 'Adrian', 'Sebastian', 'Paweł', 'Piotr', 'Konrad', 'Rafał', 'Arkadiusz', 'Norbert',
     'Grzegorz', 'Mariusz', 'Daniel', 'Tomasz', 'Hubert', 'Oskar', 'Igor', 'Wiktor', 'Dominik', 'Przemek',
+    'Jakub', 'Filip', 'Wojciech', 'Jarosław', 'Zbigniew', 'Radosław', 'Sławomir', 'Bartosz', 'Artur', 'Krzysztof', 'Maciej', 'Robert', 'Andrzej', 'Jacek', 'Karol', 'Kordian', 'Janusz', 'Leszek', 'Ireneusz', 'Bogdan', 'Marek', 'Waldemar', 'Remigiusz', 'Eryk', 'Fabian', 'Olaf', 'Ksawery', 'Antoni', 'Tymon', 'Bruno',
   ],
   last: [
     'Nowak', 'Kowalczyk', 'Wiśniewski', 'Wójcik', 'Kamiński', 'Lewandowski', 'Zieliński', 'Szymański',
@@ -298,6 +299,7 @@ export const NAMES_PL: NamePool = {
     'Malinowski', 'Jaworski', 'Adamczyk', 'Dudek', 'Nowicki', 'Pietrzak', 'Wieczorek', 'Sikora', 'Baran',
     'Rutkowski', 'Michalak', 'Szewczyk', 'Ostrowski', 'Tomaszewski', 'Pietrzyk', 'Duda', 'Zalewski',
     'Wróblewski', 'Jasiński', 'Marciniak', 'Bąk', 'Kaczmarczyk', 'Sadowski', 'Zawadzki', 'Chmielewski',
+    'Kubiak', 'Sobczak', 'Wilk', 'Lis', 'Kaczor', 'Kot', 'Bielecki', 'Kalinowski', 'Górski', 'Mazurek', 'Czarnecki', 'Sowa', 'Kołodziej', 'Wawrzyniak', 'Szulc', 'Ziółkowski', 'Borkowski', 'Gajewski', 'Laskowski', 'Mroczek', 'Cieślak', 'Kurek', 'Wrona', 'Kruk', 'Sroka', 'Dziedzic', 'Pająk', 'Wróbel-Kosmala', 'Sosnowski', 'Szczepański', 'Kowalewski', 'Głowacki', 'Urbański', 'Gołębiowski', 'Przybylski', 'Rogalski', 'Kozak', 'Siwiec', 'Furman', 'Kowal', 'Bednarz', 'Kasprzak', 'Tokarski', 'Ślusarczyk', 'Bocian', 'Żak', 'Leśniak', 'Grzelak', 'Kulesza', 'Ptak',
   ],
 };
 
@@ -331,12 +333,14 @@ export const NICKNAMES = [
   'Gladiator', 'Rzeźnik', 'Łoś', 'Rekin', 'Kobra', 'Anakonda', 'Turbo', 'Diesel', 'Mały', 'Góral', 'Baca',
   'Książę', 'Generał', 'Dynamit', 'Grom', 'Huragan', 'Zadyma', 'Bazooka', 'Kamikaze', 'Hydraulik', 'Ksiądz',
   'Ogórek', 'Kiełbasa', 'Hrabia', 'Wiking', 'Sęk', 'Kret', 'Bober', 'Żubr', 'Sokół', 'Ryś',
+  'Szwagier', 'Sołtys', 'Prezes', 'Kombajn', 'Traktor', 'Pączek', 'Czołg', 'Rambo', 'Komornik', 'Mechanik', 'Taksówkarz', 'Dzięcioł', 'Borsuk', 'Jeż', 'Kowboj', 'Szeryf', 'Miś', 'Zbój', 'Janosik', 'Harnaś', 'Lord', 'Barbarzyńca', 'Wulkan', 'Lawina', 'Kafar', 'Dźwig', 'Siekiera', 'Kilof', 'Świder', 'Kaskader', 'Bramkarz', 'Strażak', 'Listonosz', 'Kaloryfer', 'Betoniarka', 'Pierożek', 'Chrzan', 'Pikachu', 'Nocny Marek', 'Gołąb',
 ];
 
 export const INTL_NICKNAMES = [
   'The Hammer', 'Bad Boy', 'The Machine', 'Iceman', 'Cyborg', 'The Spider', 'Bonecrusher', 'The Eagle',
   'Hurricane', 'The Natural', 'Mad Dog', 'Thunder', 'The Prodigy', 'El Diablo', 'Tank', 'The Reaper',
   'Kid Dynamite', 'Showtime', 'The Assassin', 'Wolverine',
+  'The Problem', 'No Love', 'The Count', 'The Eraser', 'The Gentleman', 'Big Ben', 'Lightning', 'The Bull', 'Scorpion King', 'Tarzan', 'The Professor', 'Chaos', 'The Butcher', 'Ironside', 'The Viking', 'Night Train', 'Hitman', 'Jackhammer', 'The Surgeon', 'Captain',
 ];
 
 export const FREAK_TYPES = [
@@ -350,6 +354,21 @@ export const FREAK_TYPES = [
   { title: 'tiktoker od tańców', nick: 'Trend' },
   { title: 'poseł na urlopie', nick: 'Immunitet' },
   { title: 'kulturysta po czterdziestce', nick: 'Pompka' },
+  { title: 'uczestnik randkowego reality show', nick: 'Amant' },
+  { title: 'cukiernik z TikToka', nick: 'Babeczka' },
+  { title: 'trener personalny celebrytów', nick: 'Coach' },
+  { title: 'youtuber od survivalu', nick: 'Przetrwaniec' },
+  { title: 'prezenter pogody', nick: 'Niż' },
+  { title: 'kulturysta „naturalny” (podobno)', nick: 'Natural' },
+  { title: 'wokalista disco polo', nick: 'Refren' },
+  { title: 'youtuber, który nigdy nie walczył', nick: 'Teoretyk' },
+  { title: 'mówca motywacyjny', nick: 'Mindset' },
+  { title: 'mistrz w jedzeniu pierogów', nick: 'Farsz' },
+  { title: 'były członek boysbandu', nick: 'Falset' },
+  { title: 'kierowca tira z TikToka', nick: 'Kabina' },
+  { title: 'radny gminy', nick: 'Uchwała' },
+  { title: 'barber gwiazd', nick: 'Fade' },
+  { title: 'zawodowy gracz komputerowy', nick: 'Kamper' },
 ];
 
 // --- Kluby (fikcyjne) ---
@@ -387,6 +406,20 @@ export const CLUB_TEMPLATES: ClubTemplate[] = [
   { name: 'Phuket Top Camp', city: 'Tajlandia', quality: 4, cost: 45000, specialty: 'stand', injuryMod: 1.1, desc: 'Muay thai dwa razy dziennie w 35 stopniach. Wracasz opalony i ostry jak brzytwa.', minTier: 2, crest: { shape: 'diamond', bg: '#c2410c', fg: '#fef3c7', icon: 'palm', text: 'PTC' } },
   { name: 'American Top Dog', city: 'Floryda, USA', quality: 5, cost: 140000, specialty: 'iq', injuryMod: 0.8, desc: 'Światowa czołówka. Pasy wiszą na ścianie, rachunek też robi wrażenie.', minTier: 3, crest: { shape: 'hex', bg: '#0f766e', fg: '#fde047', icon: 'sun', text: 'ATD' } },
   { name: 'Altitude Fight Lab', city: 'Kolorado, USA', quality: 5, cost: 120000, specialty: 'cardio', injuryMod: 0.8, desc: 'Obóz w górach, sztab naukowców i kondycja z kosmosu.', minTier: 3, crest: { shape: 'shield', bg: '#1f2937', fg: '#93c5fd', icon: 'mountain', text: 'AFL' } },
+  { name: 'Garaż u Zbyszka', city: '{home}', quality: 1, cost: 0, specialty: 'cardio', injuryMod: 1.25, desc: 'Mata rozłożona między kosiarką a starym fiatem. Zbyszek oglądał każdą galę w telewizji i ma swoje teorie.', minTier: 0, crest: { shape: 'badge', bg: '#78350f', fg: '#fde68a', icon: 'wrench', text: 'GZ' } },
+  { name: 'LZS Kłos Fight', city: '{home}', quality: 1, cost: 500, specialty: 'wrest', injuryMod: 1.15, desc: 'Ludowy Zespół Sportowy. Mata leży w świetlicy po dożynkach, a sołtys przychodzi kibicować na sparingi.', minTier: 0, crest: { shape: 'shield', bg: '#3f6212', fg: '#fef08a', icon: 'wheat', text: 'LZS' } },
+  { name: 'Akademia Kimura Kraków', city: 'Kraków', quality: 2, cost: 5000, specialty: 'bjj', injuryMod: 1.0, desc: 'Kimona, maty i zdjęcia brazylijskich mistrzów na ścianie. Trener mówi „oss” nawet do kuriera.', minTier: 0, crest: { shape: 'circle', bg: '#f8fafc', fg: '#1e3a8a', icon: 'fist', text: 'AK' } },
+  { name: 'Dziki Zachód Szczecin', city: 'Szczecin', quality: 2, cost: 4500, specialty: 'chin', injuryMod: 1.15, desc: 'Port, wiatr i sparingi bez przerw na wodę. Kto przetrwa tu rok, nie boi się już niczego.', minTier: 0, crest: { shape: 'badge', bg: '#1c1917', fg: '#fb923c', icon: 'boar', text: 'DZ' } },
+  { name: 'Arachnion Olsztyn', city: 'Olsztyn', quality: 3, cost: 8500, specialty: 'wrest', injuryMod: 0.95, desc: 'Klub z jeziorami za oknem i zapaśnikami na każdej macie. Biegi wokół jeziora o świcie gratis.', minTier: 1, crest: { shape: 'hex', bg: '#0f172a', fg: '#a3e635', icon: 'snake', text: 'AO' } },
+  { name: 'Lubelskie Lwy', city: 'Lublin', quality: 3, cost: 9500, specialty: 'chin', injuryMod: 0.95, desc: 'Twarde sparingi i jeszcze twardszy trener. Po treningu wszyscy idą na cebularza.', minTier: 1, crest: { shape: 'shield', bg: '#7f1d1d', fg: '#fcd34d', icon: 'crown', text: 'LL' } },
+  { name: 'Gracje Barra Rio', city: 'Rio de Janeiro', quality: 4, cost: 38000, specialty: 'bjj', injuryMod: 0.9, desc: 'Kimona, plaża i churrasco po treningu. Każdy tu jest czyimś kuzynem, a każdy kuzyn ma czarny pas.', minTier: 2, crest: { shape: 'diamond', bg: '#15803d', fg: '#fde047', icon: 'wave', text: 'GB' } },
+  { name: 'Straight Blarney Gym', city: 'Dublin', quality: 4, cost: 36000, specialty: 'stand', injuryMod: 0.9, desc: 'Trener mówi, że nie ma talentu, jest tylko obsesja. Po sparingach cała ekipa idzie do pubu na wodę.', minTier: 2, crest: { shape: 'shield', bg: '#166534', fg: '#f8fafc', icon: 'mug', text: 'SBG' } },
+  { name: 'All-Gwiazdy Sztokholm', city: 'Sztokholm', quality: 4, cost: 34000, specialty: 'iq', injuryMod: 0.85, desc: 'Skandynawski spokój, analiza wideo i sauna po każdym treningu. Nikt tu nie krzyczy.', minTier: 2, crest: { shape: 'circle', bg: '#1d4ed8', fg: '#fde047', icon: 'star', text: 'AG' } },
+  { name: 'Miasto Kickboxing', city: 'Auckland', quality: 4, cost: 48000, specialty: 'stand', injuryMod: 0.85, desc: 'Najluźniejsza sala na świecie: muzyka, taniec na rozgrzewce i stójka jak z filmu. Lot trwa 30 godzin.', minTier: 2, crest: { shape: 'diamond', bg: '#0a0a0a', fg: '#f472b6', icon: 'bolt', text: 'MK' } },
+  { name: 'Team Alfa Samiec', city: 'Sacramento, USA', quality: 5, cost: 95000, specialty: 'wrest', injuryMod: 0.85, desc: 'Wszyscy niewysocy, wszyscy zapaśnicy, wszyscy z rozjaśnionymi włosami. Obalenia uczą tu jak alfabetu.', minTier: 3, crest: { shape: 'badge', bg: '#111827', fg: '#facc15', icon: 'wolf', text: 'TAS' } },
+  { name: 'Orły Machaczkała', city: 'Dagestan', quality: 5, cost: 85000, specialty: 'wrest', injuryMod: 0.9, desc: 'Rozgrzewka to noszenie się na barana pod górę. Ojca głównego trenera lepiej nie denerwować.', minTier: 3, crest: { shape: 'shield', bg: '#1e3a8a', fg: '#f8fafc', icon: 'eagle', text: 'OM' } },
+  { name: 'Jackman-Wonk', city: 'Albuquerque, USA', quality: 5, cost: 115000, specialty: 'iq', injuryMod: 0.8, desc: 'Trener rozpisuje walki na tablicy jak partię szachów. Sala na wysokości 1600 m, oddycha się ciężko.', minTier: 3, crest: { shape: 'hex', bg: '#7c2d12', fg: '#fef3c7', icon: 'mountain', text: 'JW' } },
+  { name: 'Kill Klif FC', city: 'Floryda, USA', quality: 5, cost: 105000, specialty: 'cardio', injuryMod: 0.85, desc: 'Upał, sprinty po plaży i sparingi z połową topowej dziesiątki świata. Klimatyzacja tylko w szatni.', minTier: 3, crest: { shape: 'circle', bg: '#0e7490', fg: '#fef9c3', icon: 'sun', text: 'KK' } },
 ];
 
 // nom: jak w wyniku walki; form: KO w narzędniku („trafia lewym sierpowym”), poddania w bierniku („zapina gilotynę”)

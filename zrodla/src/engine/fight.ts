@@ -16,7 +16,8 @@ import { clamp } from './fighter';
 // ---------- Szanse (jawne, pokazywane graczowi) ----------
 
 export function chanceFrom(atk: number, def: number, mod = 0): number {
-  return Math.round(clamp(50 + (atk - def) * 1.7 + mod, 5, 95));
+  // duże przewagi rosną coraz wolniej: specjalista od jednej rzeczy nie wygrywa wszystkiego
+  return Math.round(clamp(50 + 46 * Math.tanh((atk - def) / 27) + mod, 5, 95));
 }
 
 export function distFrom(p: number): [number, number, number] {
@@ -224,10 +225,13 @@ function simulateRound(rng: Rng, ctx: FightCtx, sim: FightSim, rep: FightReport)
     let p: number;
     let defStat: number;
     switch (action) {
-      case 'strike':
-        defStat = D.stand * 0.6 + D.iq * 0.4;
-        p = chanceFrom(A.stand, defStat, mod);
+      case 'strike': {
+        defStat = D.stand * 0.55 + D.iq * 0.45;
+        // leżąc pod rywalem trudno bić: kara za uderzanie z dołu
+        const underneath = who === 'me' ? groundOpp > 0 : groundMe > 0;
+        p = chanceFrom(A.stand, defStat, mod - (underneath ? 14 : 0));
         break;
+      }
       case 'takedown':
         defStat = D.wrest * 0.85 + D.cardio * 0.15;
         p = chanceFrom(A.wrest, defStat, mod);
@@ -251,6 +255,17 @@ function simulateRound(rng: Rng, ctx: FightCtx, sim: FightSim, rep: FightReport)
       if (action === 'takedown') {
         aSide.stam -= 4;
         add(-0.5);
+      } else if (action === 'strike' && D.wrest > A.wrest + 10 && rng.chance(0.35)) {
+        // lepszy zapaśnik schodzi pod ciosem i obala
+        aSide.stam -= 5;
+        add(-1.5);
+        if (who === 'me') {
+          groundOpp++;
+          groundMe = 0;
+        } else {
+          groundMe++;
+          groundOpp = 0;
+        }
       } else if (action === 'strike' && rng.chance(0.35)) {
         aSide.dmg += rng.int(3, 7);
         add(-1);
@@ -264,12 +279,12 @@ function simulateRound(rng: Rng, ctx: FightCtx, sim: FightSim, rep: FightReport)
 
     const big = out === 'super';
     if (action === 'strike') {
-      dSide.dmg += big ? rng.int(16, 26) : rng.int(6, 12);
+      dSide.dmg += big ? rng.int(14, 22) : rng.int(6, 11);
       add(big ? 4 : 2);
       if (big || (dSide.dmg >= 55 && rng.chance(0.45))) {
         // nokdaun - test na skończenie
         const chin = who === 'me' ? D.chin : D.chin; // D to broniący
-        const pf = Math.round(clamp(27 + (A.stand - chin) * 1.4 + dSide.dmg * 0.45, 6, 90));
+        const pf = Math.round(clamp(14 + (A.stand - chin) * 0.7 + dSide.dmg * 0.55, 5, 85));
         const fin = rng.chance(pf / 100);
         const d = rng.pick(WIN_DETAILS.KO);
         const detail = d.nom;
@@ -308,12 +323,22 @@ function simulateRound(rng: Rng, ctx: FightCtx, sim: FightSim, rep: FightReport)
       }
     } else if (action === 'takedown') {
       dSide.stam -= big ? 10 : 6;
+      dSide.dmg += rng.int(2, 5); // presja z góry
       add(big ? 3 : 2);
-      if (who === 'me') groundMe++;
-      else groundOpp++;
-      if (big && A.bjj > A.stand + 3) {
+      if (who === 'me') {
+        groundMe++;
+        groundOpp = 0;
+      } else {
+        groundOpp++;
+        groundMe = 0;
+      }
+      // z góry można kończyć: po mocnym obaleniu zawsze, po zwykłym czasem (im dłużej kontrolujesz, tym częściej)
+      const control = who === 'me' ? groundMe : groundOpp;
+      const transition = big || rng.chance(0.2 + control * 0.1);
+      const tf = big ? 1 : 0.7;
+      if (transition && A.bjj > A.stand + 3) {
         // przejście do pleców i duszenie
-        const pf = Math.round(clamp(26 + (A.bjj - D.bjj) * 1.5 + (100 - dSide.stam) * 0.3, 5, 80));
+        const pf = Math.round(clamp((26 + (A.bjj - D.bjj) * 1.5 + (100 - dSide.stam) * 0.3) * tf, 5, 80));
         if (rng.chance(pf / 100)) {
           const detail = 'duszenie zza pleców';
           addMoment(rep, who === 'me'
@@ -322,10 +347,10 @@ function simulateRound(rng: Rng, ctx: FightCtx, sim: FightSim, rep: FightReport)
           finishFight(rep, sim, who, 'Poddanie', detail);
           break;
         }
-      } else if (big) {
+      } else if (transition) {
         // ground and pound
-        dSide.dmg += rng.int(8, 15);
-        const pf = Math.round(clamp(8 + (A.stand + A.wrest - D.chin * 2) * 0.6 + dSide.dmg * 0.4, 4, 70));
+        dSide.dmg += big ? rng.int(8, 15) : rng.int(4, 9);
+        const pf = Math.round(clamp((10 + (A.wrest * 1.2 + A.stand * 0.8 - D.chin * 2) * 0.6 + dSide.dmg * 0.45) * tf, 4, 70));
         if (rng.chance(pf / 100)) {
           if (who === 'me') {
             addMoment(rep, {
@@ -357,8 +382,8 @@ function simulateRound(rng: Rng, ctx: FightCtx, sim: FightSim, rep: FightReport)
     } else if (action === 'sub') {
       dSide.stam -= 6;
       add(big ? 3 : 1.5);
-      if (big || (dSide.stam < 30 && rng.chance(0.35))) {
-        const pf = Math.round(clamp(34 + (A.bjj - D.bjj) * 1.6 + (100 - dSide.stam) * 0.35, 6, 88));
+      if (big || rng.chance(dSide.stam < 30 ? 0.5 : 0.3)) {
+        const pf = Math.round(clamp((34 + (A.bjj - D.bjj) * 1.6 + (100 - dSide.stam) * 0.35) * (big ? 1 : 0.8), 6, 88));
         const fin = rng.chance(pf / 100);
         const d = rng.pick(WIN_DETAILS.SUB);
         const detail = d.nom;
@@ -601,13 +626,48 @@ function buildDecision(rng: Rng, ctx: FightCtx, sim: FightSim): DecisionPoint | 
 }
 
 const POOL = {
-  riskOk: ['Wchodzi! {n} cofa się pod siatkę i szuka ratunku.', 'Trafiasz. {n} pierwszy raz w tej walce wygląda na przestraszonego.'],
-  riskFail: ['{n} tylko na to czekał. Łapiesz kontrę i teraz to ty masz problem.', 'Nie wyszło. Tracisz pozycję i zbierasz kilka mocnych ciosów.'],
-  normalOk: ['Plan działa. Ta runda jest twoja.', 'Robisz swoje, a {n} nie ma na to odpowiedzi.'],
-  normalSuper: ['Wszystko idzie jak z nut. {n} wygląda, jakby chciał już do domu.'],
-  normalFail: ['{n} czyta to bez problemu. Trzeba szukać czegoś innego.', 'Nie klei się. {n} był na to przygotowany.'],
-  safeOk: ['Spokojnie, bez szaleństw. Zbierasz punkty.', 'Trzymasz dystans i nie dajesz mu niczego za darmo.'],
-  safeFail: ['Za ostrożnie. Sędziowie widzą, że {n} jest aktywniejszy.'],
+  riskOk: [
+    'Wchodzi! {n} cofa się pod siatkę i szuka ratunku.',
+    'Trafiasz. {n} pierwszy raz w tej walce wygląda na przestraszonego.',
+    'Hala wstaje z miejsc. {n} chwieje się i łapie cię w klincz, żeby przetrwać.',
+    'Ryzyko się opłaciło. {n} krwawi z łuku i patrzy na zegar.',
+    'Narożnik krzyczy „jeszcze!”. {n} ledwo trzyma gardę.',
+  ],
+  riskFail: [
+    '{n} tylko na to czekał. Łapiesz kontrę i teraz to ty masz problem.',
+    'Nie wyszło. Tracisz pozycję i zbierasz kilka mocnych ciosów.',
+    'Za szeroko. {n} wchodzi w środek i trafia cię czysto.',
+    'Przeszarżowałeś. Ręce opadają, a {n} to widzi.',
+  ],
+  normalOk: [
+    'Plan działa. Ta runda jest twoja.',
+    'Robisz swoje, a {n} nie ma na to odpowiedzi.',
+    'Spokojnie i konsekwentnie. Sędziowie zapisują rundę dla ciebie.',
+    'Trener w przerwie tylko kiwa głową. Tak ma być.',
+    '{n} zaczyna się frustrować i szukać pomysłu, którego nie ma.',
+  ],
+  normalSuper: [
+    'Wszystko idzie jak z nut. {n} wygląda, jakby chciał już do domu.',
+    'Runda jak z podręcznika. {n} wraca do narożnika ze spuszczoną głową.',
+    'Dominacja. Komentator mówi, że „to jest lekcja MMA”.',
+  ],
+  normalFail: [
+    '{n} czyta to bez problemu. Trzeba szukać czegoś innego.',
+    'Nie klei się. {n} był na to przygotowany.',
+    'Trener w przerwie łapie się za głowę. Plan nie działa.',
+    '{n} odpowiada na każdą twoją akcję. Ta runda dla niego.',
+  ],
+  safeOk: [
+    'Spokojnie, bez szaleństw. Zbierasz punkty.',
+    'Trzymasz dystans i nie dajesz mu niczego za darmo.',
+    'Pracujesz na nogach, kąsasz i odchodzisz. {n} bije powietrze.',
+    'Nudno dla kibiców, skutecznie dla sędziów.',
+  ],
+  safeFail: [
+    'Za ostrożnie. Sędziowie widzą, że {n} jest aktywniejszy.',
+    'Hala gwiżdże na pasywność. Ta runda raczej dla niego.',
+    'Czekasz na swój moment, ale {n} zbiera punkty.',
+  ],
 };
 
 export function applyDecision(rng: Rng, ctx: FightCtx, sim: FightSim, rep: FightReport, key: string) {
