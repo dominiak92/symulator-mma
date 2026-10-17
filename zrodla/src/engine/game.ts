@@ -459,16 +459,16 @@ function offerShadyDeal(rng: Rng, s: GameState) {
   const mgr = currentManager(s);
   if (!rng.chance(tight ? 0.6 : mgr ? 0.14 : 0.06)) return;
   const d = rng.pick(SHADY_SPONSORS);
-  const base = [0, 7000, 22000, 50000, 110000][s.tier];
-  const perSeason = Math.round((base * (1 + s.media / 90) * (0.85 + rng.next() * 0.3)) / 500) * 500;
+  const base = [0, 3500, 11000, 26000, 60000][s.tier];
+  const perSeason = Math.round((base * (1 + s.media / 150) * (0.85 + rng.next() * 0.3)) / 500) * 500;
   s.shadyDeal = {
     season: s.season,
     name: d.name,
     product: d.product,
     pitch: d.pitch,
     perSeason,
-    seasons: 2,
-    rep: -rng.int(4, 7),
+    seasons: rng.chance(0.5) ? 1 : 2,
+    rep: -rng.int(5, 8),
     media: 2,
     from: mgr ? mgr.name : 'Kolega z siłowni',
     status: 'open',
@@ -1536,9 +1536,9 @@ export function buildTuneup(rng: Rng, s: GameState): FightOffer {
   const prof = STYLE_PROFILE[opp.style];
   opp.stats = mapStats((k) => clamp(Math.round(lvl + prof[k] * 0.6 + rng.int(-3, 3)), 8, 99));
   const w = rng.int(5, 12);
-  opp.record = { w, l: w + rng.int(8, 16), d: rng.int(0, 2) };
+  opp.record = { w, l: w + rng.int(8, 16), d: 0 };
   opp.rank = null;
-  const purse = Math.round((s.contract.purse * (0.45 + rng.next() * 0.15)) / 100) * 100;
+  const purse = Math.round((s.contract.purse * (0.6 + rng.next() * 0.15)) / 100) * 100;
   const mgr = currentManager(s);
   const who = mgr ? mgr.name : 'Znajomy promotor';
   const skad = pool.country === 'Słowacja' ? 'ze Słowacji' : 'z Czech';
@@ -1919,7 +1919,7 @@ export function negotiateOffer(s0: GameState): GameState {
       o.negotiated = true;
       o.note = `Organizator podnosi gażę do ${o.purse.toLocaleString('pl-PL')} zł.`;
     } else if (!o.title && rng.chance(0.35)) {
-      offerGone(rng, s, 0, `Organizator nie podniósł stawki i wziął do walki z ${o.opp.lastName} kogoś innego.`);
+      offerGone(rng, s, 0, `Organizator nie podniósł stawki i oddał tę walkę komuś innemu (rywal: ${o.opp.firstName} ${o.opp.lastName}).`);
     } else {
       o.negotiated = true;
       o.note = 'Organizator nie da ani złotówki więcej. Bierzesz albo nie.';
@@ -1945,7 +1945,7 @@ export function declineOffer(s0: GameState): GameState {
   run.declines = (run.declines ?? 0) + 1;
   // grymaszenie kosztuje: promotorzy mają długą pamięć
   if (run.declines >= 2) s.rep = clamp(s.rep - 2, 0, 100);
-  withRng(s, (rng) => offerGone(rng, s, 0.2 + 0.15 * (run.declines! - 1), `Odrzucasz walkę z ${o.opp.firstName} ${o.opp.lastName}.`));
+  withRng(s, (rng) => offerGone(rng, s, 0.2 + 0.15 * (run.declines! - 1), `Odrzucasz ofertę (rywal: ${o.opp.firstName} ${o.opp.lastName}).`));
   return s;
 }
 
@@ -2173,7 +2173,7 @@ function finalizeFight(rng: Rng, s: GameState, rep: FightReport) {
   }
   if (rep.tuneup) {
     // obijanie słabeuszy: środowisko widzi, co robisz
-    s.rep = clamp(s.rep - (res === 'W' ? 4 : 8), 0, 100);
+    s.rep = clamp(s.rep - (res === 'W' ? 2 : 6), 0, 100);
     if (res !== 'W') s.media = clamp(s.media - 4, 0, 100);
     s.flags.tuneups = (s.flags.tuneups ?? 0) + 1;
   }
