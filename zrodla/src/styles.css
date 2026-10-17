@@ -48,9 +48,12 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
+html,
+body {
+  overflow-x: clip;
+}
 body {
   min-height: 100vh;
-  overflow-x: hidden;
 }
 
 button {
@@ -4393,9 +4396,11 @@ h3.pt-ico .ico {
   font-size: 0.9rem;
 }
 .tut-opt span {
-  font-family: var(--display);
-  font-size: 1.3rem;
+  font-size: 0.78rem;
   font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
 }
 .tut-opt i {
   grid-column: 1 / -1;
@@ -5254,4 +5259,161 @@ button.hs:active,
   .tut-slide h2 {
     font-size: 1.2rem;
   }
+}
+
+/* duże karty wyniku: łagodniejsze wejście, bez wychodzenia poza ekran */
+@keyframes popIn {
+  0% { opacity: 0; transform: scale(1.06); }
+  100% { opacity: 1; transform: none; }
+}
+.event-result,
+.pitch-result { animation: popIn 0.35s cubic-bezier(0.2, 1.4, 0.4, 1) both; }
+.event-result.res-fail,
+.pitch-result.ko { animation: popIn 0.35s cubic-bezier(0.2, 1.4, 0.4, 1) both, shake 0.4s 0.35s; }
+
+/* desktop: pasek boczny przyklejony pod belką, powiadomienia w obrębie kolumny gry */
+@media (min-width: 900px) {
+  .sidebar {
+    position: sticky;
+    top: calc(var(--hud-h) + 12px);
+    max-height: calc(100vh - var(--hud-h) - 24px);
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--line) transparent;
+    padding-bottom: 4px;
+  }
+  .toasts {
+    right: max(16px, calc((100vw - 1140px) / 2 + 16px));
+    top: calc(var(--hud-h) + 10px);
+  }
+}
+.main h2:focus { outline: none; }
+
+/* akademia */
+.pitch.acad { margin-top: 10px; }
+.acad-offer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.acad-txt { display: grid; gap: 2px; min-width: 0; flex: 1 1 180px; }
+.acad-txt strong { font-size: 0.92rem; }
+.acad-txt span { color: var(--muted); font-size: 0.8rem; line-height: 1.35; }
+
+/* obozy zagraniczne */
+.camps {
+  margin-top: 14px;
+  padding: 12px;
+  border: 1px dashed var(--line);
+  border-radius: var(--r-sm);
+  display: grid;
+  gap: 8px;
+}
+.camps-head { display: flex; align-items: center; gap: 6px; }
+.camps-head .faint { margin-left: auto; }
+.camp-list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.choice.camp-opt { padding: 8px; gap: 4px; align-content: start; }
+.camp-name { font-weight: 700; font-size: 0.9rem; }
+.camp-gain { display: flex; gap: 8px; font-size: 0.78rem; color: var(--good); font-weight: 700; }
+.camp-gain span { display: inline-flex; align-items: center; gap: 2px; }
+.camp-gain .faint { color: var(--faint); }
+.camp-opt .desc { font-size: 0.74rem; line-height: 1.3; }
+@media (max-width: 420px) {
+  .camp-opt .desc { display: none; }
+}
+
+/* decyzje: szansa słowami, stawka, stan walki */
+.chance-word {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.chance-word .dots { display: inline-flex; gap: 3px; }
+.chance-word .dots i {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--line);
+}
+.chance-word.tone-good { color: var(--good); }
+.chance-word.tone-mid { color: var(--gold); }
+.chance-word.tone-bad { color: var(--bad); }
+.chance-word.tone-good .dots i.on { background: var(--good); }
+.chance-word.tone-mid .dots i.on { background: var(--gold); }
+.chance-word.tone-bad .dots i.on { background: var(--bad); }
+.opt-stake {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.86rem;
+  padding: 4px 8px;
+  border-radius: 8px;
+  width: fit-content;
+}
+.opt-stake b { font-weight: 700; }
+.stake-risk { background: rgba(255, 77, 109, 0.12); color: #ff8aa0; }
+.stake-normal { background: rgba(245, 183, 0, 0.12); color: var(--gold); }
+.stake-safe { background: rgba(0, 174, 239, 0.12); color: var(--cyan); }
+.fight-status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 8px 0 4px;
+}
+.fight-status .fs {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.76rem;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  color: var(--muted);
+}
+.fight-status .fs.good { color: var(--good); border-color: rgba(47, 211, 140, 0.4); }
+.fight-status .fs.bad { color: var(--bad); border-color: rgba(255, 77, 109, 0.4); }
+
+/* rehabilitacja i Dagestan */
+.rehab-card {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  margin-top: 12px;
+  padding: 14px;
+  border-radius: var(--r-sm);
+  background: rgba(255, 77, 109, 0.08);
+  border: 1px solid rgba(255, 77, 109, 0.35);
+  color: var(--bad);
+}
+.rehab-card b { color: var(--text); display: block; }
+.rehab-card b::first-letter { text-transform: uppercase; }
+.dagestan {
+  margin-top: 10px;
+  padding: 12px;
+  border-radius: var(--r-sm);
+  border: 1px solid rgba(245, 183, 0, 0.35);
+  background: linear-gradient(135deg, rgba(245, 183, 0, 0.08), transparent 60%);
+  display: grid;
+  gap: 8px;
+}
+.dag-head { display: flex; align-items: center; gap: 6px; color: var(--gold); }
+.dag-head b { font-family: var(--display); letter-spacing: 0.02em; }
+.dag-gains { display: flex; flex-wrap: wrap; gap: 4px; }
+.paused-note {
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  opacity: 0.75;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.16);
 }
