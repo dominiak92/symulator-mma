@@ -5837,3 +5837,45 @@ button.hs:active,
   .pst-card li:nth-child(n + 3):not(.me) { display: none; }
   .pst-head h2 { font-size: 1.9rem; }
 }
+
+/* bieżąca walka: ten sam pojedynek z tabliczkami */
+.live-vs { margin: 6px 0 4px; }
+.live-vs .vh-art .fighter-art { animation: none; }
+.live.anim .live-vs .vh-side.me .vh-art,
+.live.anim .live-vs .vh-side.opp .vh-art { animation: none; }
+.live.anim:not(.done) .live-vs .fighter-art { animation: bob 0.9s ease-in-out infinite; }
+.live.anim:not(.done) .live-vs .opp .fighter-art { animation-delay: -0.45s; }
+.live-vs .vh-side.win .fighter-art { animation: winHop 0.6s var(--d, 0ms) ease-out both; }
+.live-vs .vh-side.ko .fighter-art { animation: koTilt 0.6s var(--d, 0ms) ease-in both; }
+.live-vs .vh-side.opp.ko .fighter-art { animation-name: koTiltR; }
+.live:not(.anim) .live-vs .fighter-art { animation-duration: 0s !important; animation-delay: 0s !important; }
+.live-vs .vh-side.win .vh-plate { box-shadow: 0 0 0 2px var(--gold) inset; }
+.live-vs .vh-side.ko .vh-plate { filter: grayscale(0.7) brightness(0.8); }
+.live-vs .vh-vs { animation: none; font-size: 1.7rem; }
+.live-mid { padding-bottom: 30px; gap: 6px; }
+.live-mid .rounds { display: flex; gap: 4px; }
+@media (max-width: 340px) {
+  .cta-bar .btn-block { font-size: 0.95rem; white-space: nowrap; }
+}
+
+/* rozwijanie list na rynku */
+.more-btn {
+  appearance: none;
+  width: 100%;
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 12px;
+  border-radius: var(--r-sm);
+  border: 1px dashed var(--line);
+  background: transparent;
+  color: var(--cyan);
+  font: inherit;
+  font-weight: 600;
+  font-size: 0.88rem;
+  cursor: pointer;
+}
+.more-btn:hover { border-color: var(--cyan); }
+.club-pick > .offer { animation: alertIn 0.25s ease-out both; }
