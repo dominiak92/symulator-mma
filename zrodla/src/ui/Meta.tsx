@@ -1,3 +1,4 @@
+import { sfxClick, unlockAudio } from './sound';
 import { useState } from 'react';
 import { ACHIEVEMENTS } from '../engine/achievements';
 import { TIER_NAMES } from '../engine/data';
@@ -124,6 +125,15 @@ export function SettingsScreen({ onBack }: { onBack: () => void }) {
     setSt(n);
     saveSettings(n);
   };
+  const toggleSound = () => {
+    const n = { ...st, sound: !st.sound };
+    setSt(n);
+    saveSettings(n);
+    if (n.sound) {
+      unlockAudio();
+      sfxClick();
+    }
+  };
   const toggleTips = () => {
     const n = { ...st, tips: !st.tips, tipsSeen: st.tips ? st.tipsSeen : [] };
     setSt(n);
@@ -137,6 +147,13 @@ export function SettingsScreen({ onBack }: { onBack: () => void }) {
           <span className={`tag ${st.animations ? 'good' : ''}`}>{st.animations ? 'włączone' : 'wyłączone'}</span>
         </span>
         <span className="desc">Zapowiedzi walk, rundy na żywo i efekty po wygranej. Po wyłączeniu sezon rozgrywa się od razu.</span>
+      </button>
+      <button className="choice" role="switch" aria-checked={st.sound} onClick={toggleSound} style={{ marginTop: 8 }}>
+        <span className="title">
+          Dźwięki
+          <span className={`tag ${st.sound ? 'good' : ''}`}>{st.sound ? 'włączone' : 'wyłączone'}</span>
+        </span>
+        <span className="desc">Cicho, tylko w ważnych momentach: gong, nokaut, doping, kasa.</span>
       </button>
       <button className="choice" role="switch" aria-checked={st.tips} onClick={toggleTips} style={{ marginTop: 8 }}>
         <span className="title">

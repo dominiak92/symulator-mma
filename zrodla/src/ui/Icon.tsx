@@ -180,6 +180,18 @@ const P: Record<string, ReactNode> = {
   ),
   dumbbell: <path d="M6.5 6.5v11M17.5 6.5v11M3.5 9.5v5M20.5 9.5v5M6.5 12h11" />,
   bolt: <path d="M13 2.5L4.5 13.5h6.5l-1 8 8.5-11h-6.5z" />,
+  volume: (
+    <>
+      <path d="M4 9.5v5h3.5L12 18.5v-13L7.5 9.5z" />
+      <path d="M15.5 9.5a3.5 3.5 0 0 1 0 5M18 7a7 7 0 0 1 0 10" />
+    </>
+  ),
+  mute: (
+    <>
+      <path d="M4 9.5v5h3.5L12 18.5v-13L7.5 9.5z" />
+      <path d="M16 10l4.5 4.5M20.5 10L16 14.5" />
+    </>
+  ),
   receipt: (
     <>
       <path d="M6 3h12v18l-3-2-3 2-3-2-3 2z" />

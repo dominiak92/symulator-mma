@@ -16,6 +16,8 @@ import { GG } from './brand';
 import { Icon, STAT_ICON } from './Icon';
 import { Medal } from './Art';
 import { Tutorial } from './Tutorial';
+import { sfxClick, unlockAudio } from './sound';
+import { loadSettings, saveSettings } from '../storage';
 import { Emblem, SponsorLogo, clubCrest, crestFor } from './Emblem';
 
 const PHASES: Phase[] = ['training', 'budget', 'event', 'season', 'summary', 'market'];
@@ -298,6 +300,7 @@ export default function Game({
                     <Icon name="users" />
                     Twój rocznik
                   </button>
+                  <SoundToggle />
                   <button
                     className="btn btn-ghost btn-block btn-ico"
                     onClick={() => {
@@ -330,6 +333,29 @@ export default function Game({
         </div>
       )}
     </>
+  );
+}
+
+function SoundToggle() {
+  const [on, setOn] = useState(() => loadSettings().sound);
+  return (
+    <button
+      className="btn btn-ghost btn-block btn-ico"
+      role="switch"
+      aria-checked={on}
+      onClick={() => {
+        const st = loadSettings();
+        saveSettings({ ...st, sound: !on });
+        setOn(!on);
+        if (!on) {
+          unlockAudio();
+          sfxClick();
+        }
+      }}
+    >
+      <Icon name={on ? 'volume' : 'mute'} />
+      Dźwięki: {on ? 'włączone' : 'wyłączone'}
+    </button>
   );
 }
 
