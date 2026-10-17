@@ -580,6 +580,73 @@ function maybeAutoSponsor(rng: Rng, s: GameState): string | null {
 }
 
 // ---------------------------------------------------------------------------
+// Sponsor na własną rękę: raz na sezon możesz sam napisać do firmy
+// ---------------------------------------------------------------------------
+
+export type PitchSlot = 'spodenki' | 'plecy' | 'social';
+
+export const PITCH_SLOTS: { id: PitchSlot; label: string; desc: string; base: number; pay: number; clause: string }[] = [
+  { id: 'spodenki', label: 'Logo na spodenkach', desc: 'Najlepiej widać w klatce, firmy płacą najwięcej, ale trudno przekonać.', base: 0.28, pay: 1, clause: 'logo na spodenkach' },
+  { id: 'plecy', label: 'Plecy rashguarda na ważeniu', desc: 'Łatwiej się zgodzą, ale zapłacą mniej.', base: 0.45, pay: 0.55, clause: 'logo na plecach na ważeniu i face to face' },
+  { id: 'social', label: 'Posty na Instagramie', desc: 'Liczą się zasięgi. Im więcej mediów, tym większa szansa.', base: 0.15, pay: 0.75, clause: 'trzy posty w sezonie z kodem rabatowym' },
+];
+
+const PITCH_FAIL = [
+  'odpisuje, że w tym roku cały budżet poszedł na festyn gminny.',
+  'nie odpisuje. Wiadomość wisi z dwoma szarymi ptaszkami.',
+  'odpisuje, że „sporty walki to nie ich klimat”.',
+  'chce cię wesprzeć, ale tylko barterem: karton batonów proteinowych.',
+  'prosi o kontakt za rok, „jak będzie więcej wyników”.',
+  'odpisuje, że ich prezes kibicuje twojemu rywalowi.',
+];
+
+export function sponsorCap(s: GameState) {
+  return 2 + s.tier;
+}
+
+/** Czy można dziś szukać sponsora (null = można). */
+export function pitchBlocked(s: GameState): string | null {
+  if (s.pitch && s.pitch.season === s.season) return 'W tym sezonie już szukałeś. Kolejna próba za rok.';
+  if (s.sponsors.length >= sponsorCap(s)) return 'Masz już tylu sponsorów, ilu da się zmieścić na stroju.';
+  return null;
+}
+
+export function pitchChance(s: GameState, slot: PitchSlot): number {
+  const sl = PITCH_SLOTS.find((x) => x.id === slot)!;
+  const mediaW = slot === 'social' ? 1 / 70 : 1 / 160;
+  let c = sl.base + s.media * mediaW + s.rep / 350 + s.tier * 0.05 - s.sponsors.length * 0.1;
+  if ((s.flags.freakStigma ?? 0) > 0 && slot !== 'social') c -= 0.05;
+  if (s.profile.difficulty === 'hard') c *= 0.8;
+  return Math.round(clamp(c, 0.05, 0.85) * 100);
+}
+
+export function pitchPay(s: GameState, slot: PitchSlot): number {
+  const sl = PITCH_SLOTS.find((x) => x.id === slot)!;
+  const base = [2000, 5000, 14000, 35000, 90000][s.tier];
+  return Math.round((base * sl.pay * (0.7 + s.media / 80)) / 500) * 500;
+}
+
+export function pitchSponsor(s0: GameState, slot: PitchSlot): GameState {
+  const s = clone(s0);
+  if (pitchBlocked(s)) return s;
+  withRng(s, (rng) => {
+    const ch = pitchChance(s, slot) / 100;
+    const sl = PITCH_SLOTS.find((x) => x.id === slot)!;
+    const free = SPONSOR_NAMES.filter((n) => !s.sponsors.some((x) => x.name === n));
+    const name = rng.pick(free.length ? free : SPONSOR_NAMES);
+    if (rng.chance(ch)) {
+      const per = Math.round((pitchPay(s, slot) * (0.85 + rng.next() * 0.3)) / 500) * 500;
+      s.sponsors.push({ id: uid(rng, 's'), name, perSeason: per, seasonsLeft: rng.int(1, 2), clause: sl.clause });
+      s.pitch = { season: s.season, ok: true, name, slot, text: `${name} się zgadza! ${fmtMoney(per).slice(1)} na sezon za ${sl.clause}.` };
+      log(s, `Nowy sponsor: ${name}.`);
+    } else {
+      s.pitch = { season: s.season, ok: false, name, slot, text: `${name} ${rng.pick(PITCH_FAIL)}` };
+    }
+  });
+  return s;
+}
+
+// ---------------------------------------------------------------------------
 // Start sezonu: płatności, wydarzenia, forma
 // ---------------------------------------------------------------------------
 
@@ -1343,7 +1410,6 @@ export function toSummary(s0: GameState): GameState {
   const d = fights.filter((f) => f.result === 'D').length;
   const total = Math.max(1, w + l + d);
   const moneyDelta = s.money - (s.flags.moneyStart ?? run.startMoney);
-  const ovrTo = ovr(s.stats);
   const beltWon = fights.some((f) => f.title && !f.defense && f.result === 'W') || (run.tourneys ?? []).some((t) => t.championship && t.medal === 'gold');
   const amateur = !!run.tourneys;
 
@@ -1387,6 +1453,12 @@ export function toSummary(s0: GameState): GameState {
   else if (badForm) lines.push('Forma nie dopisywała, a mimo to wyniki się zgadzały.');
   if (!amateur && s.rank !== null && s.rank > 0) lines.push(`Kończysz rok na ${s.rank}. miejscu w rankingu.`);
 
+  if (s.contract.kind === 'freak' && !amateur) {
+    withRng(s, (rng) => {
+      for (const k of ['stand', 'wrest', 'bjj', 'cardio'] as StatKey[]) s.stats[k] = clamp(s.stats[k] - rng.int(1, 3), 1, 99);
+    });
+    lines.push('Zamiast obozu były konferencje, nagrania i sparingi z youtuberami. Forma sportowa poszła w dół.');
+  }
   const summary: SeasonSummary = {
     season: s.season,
     year: s.year,
@@ -1402,7 +1474,7 @@ export function toSummary(s0: GameState): GameState {
     beltWon,
     moneyDelta,
     ovrFrom: s.flags.ovrStart ?? run.startOvr,
-    ovrTo,
+    ovrTo: ovr(s.stats),
     form: run.form.label,
     grade,
     bars,
@@ -1458,6 +1530,7 @@ function ageOneYear(rng: Rng, s: GameState) {
   s.media = clamp(s.media - (s.media > 40 ? 3 : 1), 0, 100);
   s.contractSeasonsLeft -= 1;
   s.flags.debt = s.money < -15000 ? 1 : 0;
+  if ((s.flags.freakStigma ?? 0) > 0) s.flags.freakStigma -= 1;
 }
 
 export function checkEnd(s: GameState): string | null {
@@ -1479,7 +1552,8 @@ function contractFor(rng: Rng, s: GameState, tier: number, kind: Contract['kind'
   const rk = startRank === null ? 0 : startRank === 0 ? 1.2 : 1 - startRank / (RANK_SIZE[tier] + 1);
   const mediaF = 1 + s.media / 120;
   const hard = s.profile.difficulty === 'hard' ? 0.85 : 1;
-  const purse = Math.round(((lo + (hi - lo) * Math.max(0, rk) ** 1.6) * mediaF * hard) / 500) * 500;
+  const stigma = kind !== 'freak' && (s.flags.freakStigma ?? 0) > 0 ? 0.8 : 1;
+  const purse = Math.round(((lo + (hi - lo) * Math.max(0, rk) ** 1.6) * mediaF * hard * stigma) / 500) * 500;
   return {
     id: uid(rng, 'k'),
     tier,
@@ -1595,7 +1669,9 @@ export function buildMarket(rng: Rng, s: GameState) {
 
   // freak
   if (s.tier >= 1 && (s.media >= 28 || rng.chance(0.1)) && rng.chance(s.freakFights > 0 ? 0.35 : 0.45)) {
-    const purse = Math.round((40000 + s.media * s.media * 60 + rng.int(0, 40000)) / 1000) * 1000;
+    // im więcej freak fightów, tym mniej płacą (widownia się nudzi)
+    const fatigue = Math.pow(0.75, s.flags.freakSeasons ?? 0);
+    const purse = Math.round(((20000 + s.media * s.media * 28 + rng.int(0, 20000)) * fatigue) / 1000) * 1000;
     contracts.push({
       id: uid(rng, 'k'),
       tier: s.tier,
@@ -1607,7 +1683,10 @@ export function buildMarket(rng: Rng, s: GameState) {
       winBonus: Math.round(purse * 0.3),
       entryCost: 0,
       startRank: null,
-      note: 'Raperzy, youtuberzy i celebryci. Kasa duża, ale środowisko będzie kręcić nosem.',
+      note:
+        (s.flags.freakSeasons ?? 0) > 0
+          ? 'Znowu cyrk. Widownia już cię zna, więc płacą mniej niż ostatnio.'
+          : 'Raperzy, youtuberzy i celebryci. Kasa duża, ale sportowo to rok w plecy.',
       available: true,
     });
   }
@@ -1678,7 +1757,10 @@ export function marketWarnings(s: GameState): string[] {
     if (p.kind === 'noPromotion' && c?.kind === 'promotion') out.push(`Łamiesz słowo. ${p.text}`);
     if (p.kind === 'stayClub' && club && club.id !== s.club.id) out.push(`Łamiesz słowo. ${p.text}`);
   }
-  if (c?.kind === 'freak') out.push('Freak fight: duże pieniądze i zasięgi, ale w środowisku stracisz szacunek.');
+  if (c?.kind === 'freak')
+    out.push(
+      `Freak fight: duże pieniądze i zasięgi, ale ${s.tier > 0 && s.rank !== null ? 'wypadasz z rankingu federacji, ' : ''}zamiast obozu masz konferencje (umiejętności spadną), a przez dwa lata federacje zapłacą ci mniej.`,
+    );
   return out;
 }
 
@@ -1720,6 +1802,14 @@ export function confirmMarket(s0: GameState): GameState {
   }
   if (c.kind === 'freak' && !s.flags.freakLogged) {
     s.flags.freakLogged = 1;
+  }
+  if (c.kind === 'freak') {
+    s.flags.freakSeasons = (s.flags.freakSeasons ?? 0) + 1;
+    s.flags.freakStigma = 2;
+    if (s.tier > 0 && s.rank !== null) {
+      s.rank = null;
+      log(s, `${s.fed} skreśla cię z rankingu po przejściu do freak fightów.`);
+    }
   }
   s.contract = c;
   s.contractSeasonsLeft = c.seasons;

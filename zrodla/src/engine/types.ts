@@ -349,6 +349,8 @@ export interface GameState {
   wear: number; // 0..100
   injury: Injury | null;
   sponsors: Sponsor[];
+  /** wynik ostatniego szukania sponsora na własną rękę */
+  pitch?: { season: number; ok: boolean; text: string; name?: string; slot: string } | null;
   loans: Loan[];
   promises: Promise[];
   brokenPromises: number;
