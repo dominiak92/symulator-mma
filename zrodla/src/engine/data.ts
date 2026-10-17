@@ -1,0 +1,423 @@
+import type { Stats, StatKey, Style, StartProfile, TourneyStage, WeightKey } from './types';
+
+export const STAT_LABELS: Record<StatKey, string> = {
+  stand: 'Stójka',
+  wrest: 'Zapasy',
+  bjj: 'Parter',
+  cardio: 'Kondycja',
+  chin: 'Szczęka',
+  iq: 'Taktyka',
+};
+
+export const STAT_DESC: Record<StatKey, string> = {
+  stand: 'boks, kopnięcia, nokauty',
+  wrest: 'obalenia i obrona przed nimi',
+  bjj: 'duszenia, dźwignie, walka z dołu',
+  cardio: 'jak długo masz paliwo',
+  chin: 'ile przyjmiesz, zanim zgaśnie światło',
+  iq: 'czytanie walki i nerwy',
+};
+
+export const STAT_KEYS: StatKey[] = ['stand', 'wrest', 'bjj', 'cardio', 'chin', 'iq'];
+
+export const STYLE_LABELS: Record<Style, string> = {
+  boxer: 'Bokser',
+  kickboxer: 'Kickbokser',
+  wrestler: 'Zapaśnik',
+  grappler: 'Parterowiec',
+  brawler: 'Zadymiarz',
+  allround: 'Wszechstronny',
+};
+
+export const STYLE_DESC: Record<Style, string> = {
+  boxer: 'Szybkie ręce i dobra garda. Na plecach czuje się jak ryba na piasku.',
+  kickboxer: 'Kopie z dystansu i wchodzi kolanem. Obalenia to jego słaby punkt.',
+  wrestler: 'Wchodzi w nogi, dociska do siatki i męczy. Na nogach raczej toporny.',
+  grappler: 'Na macie jak w domu, szuka szyi i ręki. Stójka do poprawy.',
+  brawler: 'Twarda głowa, ciężka ręka, planu B nie ma.',
+  allround: 'Wszystkiego po trochu. Bez dziur, ale i bez wielkiej broni.',
+};
+
+// Profil statystyk stylu (dodawany do bazy)
+export const STYLE_PROFILE: Record<Style, Stats> = {
+  boxer: { stand: 10, wrest: -3, bjj: -6, cardio: 2, chin: 1, iq: 3 },
+  kickboxer: { stand: 9, wrest: -6, bjj: -4, cardio: 3, chin: -1, iq: 2 },
+  wrestler: { stand: -5, wrest: 11, bjj: 2, cardio: 4, chin: 0, iq: 0 },
+  grappler: { stand: -6, wrest: 3, bjj: 12, cardio: 0, chin: -2, iq: 2 },
+  brawler: { stand: 6, wrest: -3, bjj: -7, cardio: -3, chin: 9, iq: -5 },
+  allround: { stand: 2, wrest: 2, bjj: 2, cardio: 1, chin: 0, iq: 1 },
+};
+
+export const STAT_TRAINING_DESC: Record<StatKey, string> = {
+  stand: 'Worki, tarcze, sparingi bokserskie. Więcej nokautów.',
+  wrest: 'Wejścia w nogi, obrona obaleń, praca przy siatce.',
+  bjj: 'Duszenia, dźwignie i wstawanie z pleców.',
+  cardio: 'Interwały i sprinty pod górkę. Trzecia runda jak pierwsza.',
+  chin: 'Szyja, garda, obrona. Trudniej cię wyłączyć.',
+  iq: 'Analiza nagrań i taktyka. Lepsze decyzje w walce.',
+};
+
+// --- Kategorie wagowe ---
+export interface WeightDef {
+  label: string; // waga półśrednia
+  short: string; // półśrednia
+  kg: number;
+  mod: Partial<Stats>;
+}
+
+export const WEIGHTS: Record<WeightKey, WeightDef> = {
+  piorkowa: { label: 'Waga piórkowa', short: 'piórkowa', kg: 66, mod: { cardio: 3, chin: -2 } },
+  lekka: { label: 'Waga lekka', short: 'lekka', kg: 70, mod: { cardio: 2, chin: -1 } },
+  polsrednia: { label: 'Waga półśrednia', short: 'półśrednia', kg: 77, mod: {} },
+  srednia: { label: 'Waga średnia', short: 'średnia', kg: 84, mod: { chin: 1, cardio: -1 } },
+  polciezka: { label: 'Waga półciężka', short: 'półciężka', kg: 93, mod: { chin: 2, stand: 1, cardio: -2 } },
+  ciezka: { label: 'Waga ciężka', short: 'ciężka', kg: 120, mod: { chin: 3, stand: 2, cardio: -4 } },
+};
+
+export const WEIGHT_KEYS: WeightKey[] = ['piorkowa', 'lekka', 'polsrednia', 'srednia', 'polciezka', 'ciezka'];
+
+// --- Turnieje amatorskie ---
+export const STAGE_LABELS: Record<TourneyStage, string> = {
+  qf: 'Ćwierćfinał',
+  sf: 'Półfinał',
+  f: 'Finał',
+  b: 'Walka o brąz',
+};
+
+export const AMATEUR_TOURNEYS = ['Puchar Polski MMA', 'Mistrzostwa Polski MMA'];
+export const TOURNEY_CITIES = ['Gliwice', 'Łódź', 'Puławy', 'Warszawa', 'Grodzisk Mazowiecki', 'Lublin', 'Poznań', 'Wrocław'];
+
+export function amateurDivision(age: number, amFights: number): string {
+  if (amFights < 3) return 'pierwszy krok';
+  if (age < 18) return 'kadeci';
+  if (age < 21) return 'juniorzy';
+  return 'seniorzy';
+}
+
+export interface StartProfileDef {
+  label: string;
+  desc: string;
+  mult: number | null; // null = bez rankingu
+  money: number;
+  talent: [number, number];
+  intro: string;
+}
+
+export const START_PROFILES: Record<StartProfile, StartProfileDef> = {
+  osiedle: {
+    label: 'Chłopak z osiedla',
+    desc: 'Talent jak wypadnie, w kieszeni pusto.',
+    mult: 1,
+    money: 1500,
+    talent: [0.15, 0.85],
+    intro:
+      'Masz 16 lat. Mama wyjęła z koperty w szafie trzy stówy na pierwsze rękawice. Ojciec mówi, że to sport dla patusów, ale na pierwszy trening i tak cię podwozi.',
+  },
+  biznes: {
+    label: 'Syn biznesmena',
+    desc: 'Kasa i znajomości są, talent jak wypadnie.',
+    mult: 1,
+    money: 45000,
+    talent: [0.1, 0.75],
+    intro:
+      'Masz 16 lat. Ojciec ma trzy hurtownie paneli i kolegę, który zna kogoś z federacji. Na pierwszy trening podjeżdżasz Audi. Na macie nikogo to nie obchodzi.',
+  },
+  junior: {
+    label: 'Zapaśnik z kadry juniorów',
+    desc: 'Talent ponad średnią i zapasy we krwi. Kasy tyle, ile trzeba.',
+    mult: 0.6,
+    money: 5000,
+    talent: [0.55, 0.9],
+    intro:
+      'Masz 16 lat i złoto mistrzostw Polski juniorów w zapasach. Trener z sekcji ma żal, że zamieniasz matę na klatkę. Ty już wiesz swoje.',
+  },
+  wybraniec: {
+    label: 'Wybraniec',
+    desc: 'Talent nie z tej ziemi. Pasy same się pchają, ale punkty LEGACY się nie liczą.',
+    mult: null,
+    money: 10000,
+    talent: [0.92, 1],
+    intro:
+      'Masz 16 lat. Na pierwszym sparingu przewracasz trenera. Na drugim jego brata. Na trzecim pod klubem stoi gość w kurtce dużej federacji i nagrywa cię telefonem.',
+  },
+};
+
+export const DIFFICULTY = {
+  normal: { label: 'Normalny', desc: 'Tak, jak to sobie wymyśliliśmy.', mult: 1 },
+  hard: { label: 'Trudny', desc: 'Sponsorzy skąpią, rywale są twardsi.', mult: 1.1 },
+};
+
+export const SEASON_FORMS: { label: string; mod: number; w: number; tone: 'good' | 'bad' | 'neutral' | 'purple' }[] = [
+  { label: 'Sezon życia', mod: 9, w: 5, tone: 'purple' },
+  { label: 'Świetna forma', mod: 5, w: 12, tone: 'good' },
+  { label: 'Dobra forma', mod: 2, w: 23, tone: 'good' },
+  { label: 'Normalna forma', mod: 0, w: 30, tone: 'neutral' },
+  { label: 'Słabszy rok', mod: -4, w: 20, tone: 'bad' },
+  { label: 'Kryzys', mod: -8, w: 10, tone: 'bad' },
+];
+
+export const GOOD_FORMS = ['Sezon życia', 'Świetna forma'];
+export const BAD_FORMS = ['Słabszy rok', 'Kryzys'];
+
+export const VOIVODESHIPS = [
+  'Dolnośląskie',
+  'Kujawsko-pomorskie',
+  'Lubelskie',
+  'Lubuskie',
+  'Łódzkie',
+  'Małopolskie',
+  'Mazowieckie',
+  'Opolskie',
+  'Podkarpackie',
+  'Podlaskie',
+  'Pomorskie',
+  'Śląskie',
+  'Świętokrzyskie',
+  'Warmińsko-mazurskie',
+  'Wielkopolskie',
+  'Zachodniopomorskie',
+];
+
+export const HOMETOWNS: Record<string, string[]> = {
+  Dolnośląskie: ['Wrocław', 'Wałbrzych', 'Legnica', 'Oława'],
+  'Kujawsko-pomorskie': ['Bydgoszcz', 'Toruń', 'Włocławek', 'Inowrocław'],
+  Lubelskie: ['Lublin', 'Zamość', 'Biała Podlaska', 'Puławy'],
+  Lubuskie: ['Zielona Góra', 'Gorzów Wielkopolski', 'Sulechów', 'Żary'],
+  Łódzkie: ['Łódź', 'Piotrków Trybunalski', 'Pabianice', 'Kutno'],
+  Małopolskie: ['Kraków', 'Tarnów', 'Nowy Sącz', 'Zakopane'],
+  Mazowieckie: ['Warszawa', 'Radom', 'Płock', 'Siedlce'],
+  Opolskie: ['Opole', 'Kędzierzyn-Koźle', 'Nysa', 'Brzeg'],
+  Podkarpackie: ['Rzeszów', 'Przemyśl', 'Krosno', 'Mielec'],
+  Podlaskie: ['Białystok', 'Suwałki', 'Łomża', 'Augustów'],
+  Pomorskie: ['Gdańsk', 'Gdynia', 'Słupsk', 'Wejherowo'],
+  Śląskie: ['Katowice', 'Bytom', 'Częstochowa', 'Rybnik'],
+  Świętokrzyskie: ['Kielce', 'Ostrowiec Świętokrzyski', 'Skarżysko-Kamienna', 'Sandomierz'],
+  'Warmińsko-mazurskie': ['Olsztyn', 'Elbląg', 'Ełk', 'Giżycko'],
+  Wielkopolskie: ['Poznań', 'Kalisz', 'Konin', 'Piła'],
+  Zachodniopomorskie: ['Szczecin', 'Koszalin', 'Świnoujście', 'Stargard'],
+};
+
+// --- Federacje (fikcyjne) ---
+export const TIER_NAMES = ['Amatorka', 'Gale regionalne', 'Polska federacja', 'Europa', 'Światowa federacja'];
+
+export const TIER_FEDS: string[][] = [
+  ['Mistrzostwa MMA amatorów'],
+  // parodie jak auta w GTA: brzmią znajomo, ale to nie te gale
+  ['Babel MMA', 'Armada Fight Night', 'Thunderbolt Fight League'],
+  ['XSW – Ekstremalne Starcia Wojowników', 'FAN – Fight Absolute Night'],
+  ['Cage Worriers', 'Hexagon MMA', 'Brava CF'],
+  ['UFL – Ultimate Fighting League'],
+];
+
+export const FREAK_FEDS = ['Flame MMA', 'Primo MMA', 'Hype League', 'Klout MMA'];
+
+export const BELT_NAMES = [
+  'Mistrz Polski amatorów',
+  'Pas gali regionalnej',
+  'Pas mistrza Polski',
+  'Pas mistrza Europy',
+  'Pas mistrza świata',
+];
+
+export const RANK_SIZE = [10, 10, 15, 15, 15];
+
+// Średni poziom statystyk rywala na szczeblu
+export const TIER_LEVEL = [28, 40, 54, 66, 78];
+
+// Gaże (zł) za walkę na szczeblu, [min, max] przy zerowym rankingu do top 1
+export const TIER_PURSE: [number, number][] = [
+  [0, 0],
+  [1500, 6000],
+  [12000, 60000],
+  [25000, 120000],
+  [90000, 900000],
+];
+
+export const TIER_FIGHTS = [4, 3, 3, 3, 2];
+export const TIER_ENTRY = [1200, 800, 0, 0, 0]; // opłaty startowe, dojazdy, badania na sezon
+export const TIER_SHORT = ['AMA', 'REG', 'PL', 'EU', 'ŚW'];
+
+// skrót federacji do nazwy gali (XSW 47)
+export function galaPrefix(fed: string): string {
+  if (fed.includes(' – ')) return fed.split(' – ')[0];
+  return fed;
+}
+
+// miasto wojewódzkie, od którego regionalne gale biorą nazwę (np. „Fight Night Rzeszów 12”)
+export const REGION_CITY: Record<string, string> = {
+  Dolnośląskie: 'Wrocław',
+  'Kujawsko-pomorskie': 'Bydgoszcz',
+  Lubelskie: 'Lublin',
+  Lubuskie: 'Zielona Góra',
+  Łódzkie: 'Łódź',
+  Małopolskie: 'Kraków',
+  Mazowieckie: 'Warszawa',
+  Opolskie: 'Opole',
+  Podkarpackie: 'Rzeszów',
+  Podlaskie: 'Białystok',
+  Pomorskie: 'Gdańsk',
+  Śląskie: 'Katowice',
+  Świętokrzyskie: 'Kielce',
+  'Warmińsko-mazurskie': 'Olsztyn',
+  Wielkopolskie: 'Poznań',
+  Zachodniopomorskie: 'Szczecin',
+};
+
+export function regionalFedName(base: string, region: string): string {
+  return `${base} ${REGION_CITY[region] ?? region}`;
+}
+
+// koszty życia: do 18 lat rodzice, potem rośnie
+export function livingCost(age: number): number {
+  if (age < 19) return 0;
+  if (age < 22) return 14000;
+  if (age < 26) return 26000;
+  return 36000;
+}
+
+// --- Imiona i nazwiska ---
+export interface NamePool {
+  country: string;
+  flag: string;
+  first: string[];
+  last: string[];
+}
+
+export const NAMES_PL: NamePool = {
+  country: 'Polska',
+  flag: '🇵🇱',
+  first: [
+    'Kamil', 'Damian', 'Patryk', 'Mateusz', 'Kacper', 'Szymon', 'Dawid', 'Krystian', 'Marcin', 'Łukasz',
+    'Michał', 'Bartek', 'Adrian', 'Sebastian', 'Paweł', 'Piotr', 'Konrad', 'Rafał', 'Arkadiusz', 'Norbert',
+    'Grzegorz', 'Mariusz', 'Daniel', 'Tomasz', 'Hubert', 'Oskar', 'Igor', 'Wiktor', 'Dominik', 'Przemek',
+  ],
+  last: [
+    'Nowak', 'Kowalczyk', 'Wiśniewski', 'Wójcik', 'Kamiński', 'Lewandowski', 'Zieliński', 'Szymański',
+    'Woźniak', 'Dąbrowski', 'Kozłowski', 'Jankowski', 'Mazur', 'Kwiatkowski', 'Krawczyk', 'Piotrowski',
+    'Grabowski', 'Pawlak', 'Michalski', 'Zając', 'Wróbel', 'Jabłoński', 'Majewski', 'Olszewski', 'Stępień',
+    'Malinowski', 'Jaworski', 'Adamczyk', 'Dudek', 'Nowicki', 'Pietrzak', 'Wieczorek', 'Sikora', 'Baran',
+    'Rutkowski', 'Michalak', 'Szewczyk', 'Ostrowski', 'Tomaszewski', 'Pietrzyk', 'Duda', 'Zalewski',
+    'Wróblewski', 'Jasiński', 'Marciniak', 'Bąk', 'Kaczmarczyk', 'Sadowski', 'Zawadzki', 'Chmielewski',
+  ],
+};
+
+export const NAMES_EU: NamePool[] = [
+  { country: 'Niemcy', flag: '🇩🇪', first: ['Lukas', 'Jonas', 'Maximilian', 'Felix', 'Tobias', 'Niklas'], last: ['Becker', 'Hoffmann', 'Schäfer', 'Krüger', 'Wagner', 'Braun', 'Vogel'] },
+  { country: 'Czechy', flag: '🇨🇿', first: ['Jakub', 'Ondřej', 'Tomáš', 'Vojtěch', 'Matěj', 'Lukáš'], last: ['Dvořák', 'Novotný', 'Procházka', 'Kučera', 'Veselý', 'Horák'] },
+  { country: 'Francja', flag: '🇫🇷', first: ['Mathieu', 'Kevin', 'Yanis', 'Théo', 'Julien', 'Karim'], last: ['Lefèvre', 'Moreau', 'Girard', 'Benali', 'Rousseau', 'Fontaine'] },
+  { country: 'Anglia', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', first: ['Liam', 'Callum', 'Jack', 'Kyle', 'Reece', 'Danny'], last: ['Walsh', 'Hughes', 'Barker', 'Fletcher', 'Doyle', 'Turner'] },
+  { country: 'Irlandia', flag: '🇮🇪', first: ['Seán', 'Ciarán', 'Darragh', 'Cillian', 'Eoin'], last: ['Byrne', "O'Brien", 'Kavanagh', 'Gallagher', 'Brennan'] },
+  { country: 'Szwecja', flag: '🇸🇪', first: ['Erik', 'Oskar', 'Viktor', 'Anton', 'Linus'], last: ['Lindqvist', 'Bergström', 'Holm', 'Ekström', 'Nyberg'] },
+  { country: 'Gruzja', flag: '🇬🇪', first: ['Giorgi', 'Levan', 'Davit', 'Irakli', 'Nika'], last: ['Beridze', 'Kapanadze', 'Tsiklauri', 'Gelashvili', 'Jabua'] },
+  { country: 'Hiszpania', flag: '🇪🇸', first: ['Álvaro', 'Pablo', 'Sergio', 'Iker', 'Raúl'], last: ['Navarro', 'Romero', 'Castillo', 'Ortega', 'Delgado'] },
+  { country: 'Ukraina', flag: '🇺🇦', first: ['Andrij', 'Ołeh', 'Maksym', 'Bohdan', 'Taras'], last: ['Kowalenko', 'Szewczenko', 'Bondarenko', 'Tkaczuk', 'Melnyk'] },
+  { country: 'Holandia', flag: '🇳🇱', first: ['Daan', 'Sem', 'Bram', 'Ruben', 'Jesse'], last: ['de Vries', 'van Dijk', 'Bakker', 'Visser', 'Smit'] },
+];
+
+export const NAMES_WORLD: NamePool[] = [
+  { country: 'USA', flag: '🇺🇸', first: ['Tyler', 'Brandon', 'Jake', 'Marcus', 'Cody', 'Derrick', 'Trey'], last: ['Johnson', 'Miller', 'Carter', 'Hayes', 'Brooks', 'Reed', 'Coleman'] },
+  { country: 'Brazylia', flag: '🇧🇷', first: ['Thiago', 'Rafael', 'Gilberto', 'Fabrício', 'Jailton', 'Renato'], last: ['Silva', 'Santos', 'Oliveira', 'Souza', 'Barbosa', 'Nunes', 'Moraes'] },
+  { country: 'Dagestan', flag: '🇷🇺', first: ['Magomed', 'Islam', 'Abubakar', 'Shamil', 'Zaur'], last: ['Gadzhiev', 'Abdulaev', 'Magomedov', 'Aliev', 'Omarov'] },
+  { country: 'Meksyk', flag: '🇲🇽', first: ['Diego', 'Alejandro', 'Brandon', 'Jesús', 'Yair'], last: ['Ramírez', 'Hernández', 'Guzmán', 'Torres', 'Vargas'] },
+  { country: 'Australia', flag: '🇦🇺', first: ['Jai', 'Brody', 'Kai', 'Lachlan', 'Mitch'], last: ['Whittaker', 'Ryan', 'Morrison', 'Kerr', 'Doolan'] },
+  { country: 'Nigeria', flag: '🇳🇬', first: ['Kamaru', 'Israel', 'Chidi', 'Emeka', 'Tunde'], last: ['Adeyemi', 'Okafor', 'Eze', 'Balogun', 'Nwosu'] },
+  { country: 'Japonia', flag: '🇯🇵', first: ['Kai', 'Ryo', 'Takeru', 'Yuto', 'Shinji'], last: ['Tanaka', 'Horiguchi', 'Sato', 'Kimura', 'Nakamura'] },
+  { country: 'Kazachstan', flag: '🇰🇿', first: ['Shavkat', 'Yerlan', 'Nurlan', 'Arman', 'Daulet'], last: ['Rakhimov', 'Seitkali', 'Zhumagulov', 'Akhmetov', 'Bekov'] },
+];
+
+export const NICKNAMES = [
+  'Pitbull', 'Młot', 'Cichy', 'Kosa', 'Byk', 'Dzik', 'Grizzly', 'Snajper', 'Tytan', 'Pirania', 'Wilk', 'Skorpion',
+  'Buldożer', 'Żelazny', 'Kowal', 'Tajfun', 'Bestia', 'Szakal', 'Spokojny', 'Profesor', 'Doktor', 'Kat',
+  'Gladiator', 'Rzeźnik', 'Łoś', 'Rekin', 'Kobra', 'Anakonda', 'Turbo', 'Diesel', 'Mały', 'Góral', 'Baca',
+  'Książę', 'Generał', 'Dynamit', 'Grom', 'Huragan', 'Zadyma', 'Bazooka', 'Kamikaze', 'Hydraulik', 'Ksiądz',
+  'Ogórek', 'Kiełbasa', 'Hrabia', 'Wiking', 'Sęk', 'Kret', 'Bober', 'Żubr', 'Sokół', 'Ryś',
+];
+
+export const INTL_NICKNAMES = [
+  'The Hammer', 'Bad Boy', 'The Machine', 'Iceman', 'Cyborg', 'The Spider', 'Bonecrusher', 'The Eagle',
+  'Hurricane', 'The Natural', 'Mad Dog', 'Thunder', 'The Prodigy', 'El Diablo', 'Tank', 'The Reaper',
+  'Kid Dynamite', 'Showtime', 'The Assassin', 'Wolverine',
+];
+
+export const FREAK_TYPES = [
+  { title: 'raper z Radomia', nick: 'Rymowany' },
+  { title: 'youtuber od pranków', nick: 'Prankster' },
+  { title: 'były strongman', nick: 'Lodówka' },
+  { title: 'gwiazda reality show', nick: 'Celebryta' },
+  { title: 'influencer fitness', nick: 'Klata' },
+  { title: 'streamer od gier', nick: 'Lagujący' },
+  { title: 'były piłkarz IV ligi', nick: 'Spalony' },
+  { title: 'tiktoker od tańców', nick: 'Trend' },
+  { title: 'poseł na urlopie', nick: 'Immunitet' },
+  { title: 'kulturysta po czterdziestce', nick: 'Pompka' },
+];
+
+// --- Kluby (fikcyjne) ---
+export interface ClubTemplate {
+  name: string;
+  city: string;
+  quality: number;
+  cost: number;
+  specialty: StatKey;
+  injuryMod: number;
+  desc: string;
+  minTier: number;
+  crest: CrestSpec;
+}
+
+export type CrestShape = 'shield' | 'circle' | 'hex' | 'diamond' | 'badge';
+export interface CrestSpec {
+  shape: CrestShape;
+  bg: string;
+  fg: string;
+  icon: string;
+  text?: string;
+}
+
+// Kluby fikcyjne. Część to parodie znanych polskich teamów w stylu aut z GTA: brzmią znajomo, ale to nie te kluby.
+export const CLUB_TEMPLATES: ClubTemplate[] = [
+  { name: 'Remiza Team', city: '{home}', quality: 1, cost: 0, specialty: 'chin', injuryMod: 1.2, desc: 'Mata w remizie OSP, worek po dziadku. Trener kiedyś stał na bramce w dyskotece.', minTier: 0, crest: { shape: 'shield', bg: '#b91c1c', fg: '#fde68a', icon: 'flame', text: 'RT' } },
+  { name: 'Sparta Fight Club', city: '{home}', quality: 2, cost: 3000, specialty: 'stand', injuryMod: 1.0, desc: 'Sala w piwnicy pod blokiem, ale ring, klatka i trener z licencją są.', minTier: 0, crest: { shape: 'circle', bg: '#1e3a8a', fg: '#facc15', icon: 'fist', text: 'SFC' } },
+  { name: 'Hutnik Bytom', city: 'Bytom', quality: 2, cost: 4000, specialty: 'wrest', injuryMod: 1.1, desc: 'Sekcja zapasów przy starym klubie hutniczym. Kondycję robi się tu przez cierpienie.', minTier: 0, crest: { shape: 'shield', bg: '#18181b', fg: '#f97316', icon: 'gear', text: 'KSH' } },
+  { name: 'Meduza Łódź', city: 'Łódź', quality: 3, cost: 9000, specialty: 'bjj', injuryMod: 0.9, desc: 'Czarne pasy na każdej macie, sala w starej przędzalni. Tu nauczą cię dusić.', minTier: 1, crest: { shape: 'hex', bg: '#581c87', fg: '#f5f5f5', icon: 'wave', text: 'MŁ' } },
+  { name: 'Berzerker Brothers', city: 'Wrocław', quality: 3, cost: 11000, specialty: 'stand', injuryMod: 0.9, desc: 'Mocna stójka, twarde sparingi z zawodowcami i dietetyczka, która odbiera telefon.', minTier: 1, crest: { shape: 'circle', bg: '#166534', fg: '#fca5a5', icon: 'bolt', text: 'BB' } },
+  { name: 'WZA Fight Team', city: 'Warszawa', quality: 4, cost: 28000, specialty: 'wrest', injuryMod: 0.85, desc: 'Czołowy klub w kraju. Na treningach mijasz się z mistrzami największych gal.', minTier: 2, crest: { shape: 'shield', bg: '#111827', fg: '#01aeee', icon: 'star', text: 'WZA' } },
+  { name: 'Barracuda Top Team', city: 'Gdynia', quality: 4, cost: 25000, specialty: 'cardio', injuryMod: 0.85, desc: 'Obozy nad morzem, bieganie po plaży o szóstej rano i przygotowanie motoryczne na serio.', minTier: 2, crest: { shape: 'circle', bg: '#0c4a6e', fg: '#f8fafc', icon: 'wave', text: 'BTT' } },
+  { name: 'Czerwony Wąż', city: 'Poznań', quality: 4, cost: 24000, specialty: 'iq', injuryMod: 0.85, desc: 'Klub od lat robiący mistrzów. Tu uczą, jak wygrywać walki głową, a nie tylko pięściami.', minTier: 2, crest: { shape: 'hex', bg: '#991b1b', fg: '#fef2f2', icon: 'snake', text: 'CW' } },
+  { name: 'Phuket Top Camp', city: 'Tajlandia', quality: 4, cost: 45000, specialty: 'stand', injuryMod: 1.1, desc: 'Muay thai dwa razy dziennie w 35 stopniach. Wracasz opalony i ostry jak brzytwa.', minTier: 2, crest: { shape: 'diamond', bg: '#c2410c', fg: '#fef3c7', icon: 'palm', text: 'PTC' } },
+  { name: 'American Top Dog', city: 'Floryda, USA', quality: 5, cost: 140000, specialty: 'iq', injuryMod: 0.8, desc: 'Światowa czołówka. Pasy wiszą na ścianie, rachunek też robi wrażenie.', minTier: 3, crest: { shape: 'hex', bg: '#0f766e', fg: '#fde047', icon: 'sun', text: 'ATD' } },
+  { name: 'Altitude Fight Lab', city: 'Kolorado, USA', quality: 5, cost: 120000, specialty: 'cardio', injuryMod: 0.8, desc: 'Obóz w górach, sztab naukowców i kondycja z kosmosu.', minTier: 3, crest: { shape: 'shield', bg: '#1f2937', fg: '#93c5fd', icon: 'mountain', text: 'AFL' } },
+];
+
+// nom: jak w wyniku walki; form: KO w narzędniku („trafia lewym sierpowym”), poddania w bierniku („zapina gilotynę”)
+export interface FinishDetail {
+  nom: string;
+  form: string;
+}
+
+export const WIN_DETAILS: { KO: FinishDetail[]; SUB: FinishDetail[] } = {
+  KO: [
+    { nom: 'prawy prosty', form: 'prawym prostym' },
+    { nom: 'lewy sierpowy', form: 'lewym sierpowym' },
+    { nom: 'kopnięcie na głowę', form: 'kopnięciem na głowę' },
+    { nom: 'kolano z wyskoku', form: 'kolanem z wyskoku' },
+    { nom: 'łokieć z klinczu', form: 'łokciem z klinczu' },
+    { nom: 'prawa kontra', form: 'prawą kontrą' },
+    { nom: 'seria przy siatce', form: 'serią przy siatce' },
+    { nom: 'podbródkowy', form: 'podbródkowym' },
+    { nom: 'kopnięcie na wątrobę', form: 'kopnięciem na wątrobę' },
+    { nom: 'lewy hak', form: 'lewym hakiem' },
+  ],
+  SUB: [
+    { nom: 'duszenie zza pleców', form: 'duszenie zza pleców' },
+    { nom: 'gilotyna', form: 'gilotynę' },
+    { nom: 'trójkąt nogami', form: 'trójkąt nogami' },
+    { nom: 'omoplata', form: 'omoplatę' },
+    { nom: "duszenie d'arce", form: "duszenie d'arce" },
+    { nom: 'kimura', form: 'kimurę' },
+    { nom: 'anakonda', form: 'anakondę' },
+    { nom: 'trójkąt rękami', form: 'trójkąt rękami' },
+    { nom: 'dźwignia na kolano', form: 'dźwignię na kolano' },
+    { nom: 'balacha', form: 'balachę' },
+  ],
+};
