@@ -261,7 +261,10 @@ export default function Budget({ game, setGame }: StepProps) {
               <span>{g.shadyDeal.product}</span>
             </div>
           </div>
-          <p className="shady-pitch">{g.shadyDeal.pitch}</p>
+          <div className="shady-task">
+            <small>Co musisz robić</small>
+            <p className="shady-pitch">{g.shadyDeal.pitch}</p>
+          </div>
           <div className="shady-fx">
             <span className="tag good">
               <Icon name="coins" size={12} />+{money(g.shadyDeal.perSeason)} na sezon
@@ -275,7 +278,7 @@ export default function Budget({ game, setGame }: StepProps) {
           {g.shadyDeal.status === 'taken' ? (
             <p className="shady-done">
               <Icon name="check" size={14} />
-              Podpisane. Kasa jest już w rachunku powyżej, a koledzy z klubu już wysyłają memy.
+              Podpisane. Kasa jest już w rachunku powyżej. Koledzy z klubu już robią z tego memy, a mama pyta, czy wszystko u ciebie w porządku.
             </p>
           ) : (
             <div className="shady-act">
