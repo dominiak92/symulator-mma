@@ -229,7 +229,7 @@ export const EVENTS: EventDef[] = [
     title: 'Menedżer w okularach',
     once: true,
     weight: 6,
-    cond: (s) => s.tier >= 1 && s.tier <= 2 && s.record.w >= 3,
+    cond: (s) => s.tier >= 1 && s.tier <= 2 && s.record.w >= 3 && !s.manager && !s.flags.manager,
     text: () =>
       'Po gali podchodzi facet w okularach przeciwsłonecznych, choć jest 23:00. Mówi, że „zna wszystkich w federacji” i chce 20% od każdej gaży.',
     choices: () => [
