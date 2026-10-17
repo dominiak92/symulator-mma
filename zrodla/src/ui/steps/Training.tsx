@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import type { StatKey } from '../../engine/types';
 import { STAT_KEYS, STAT_LABELS, STAT_TRAINING_DESC } from '../../engine/data';
-import { CAMPS, campBlocked, campCost, campGain, clubLimits, DAGESTAN_GAINS, dagestanBlocked, dagestanCost, doTraining, goDagestan, introText, rehabCost, rehabYear, trainingForecast } from '../../engine/game';
+import { CAMPS, campBlocked, campCost, campGain, clubLimits, doTraining, EXPEDITIONS, expeditionBlocked, expeditionCost, goExpedition, introText, rehabCost, rehabYear, trainingForecast, type Expedition } from '../../engine/game';
+import type { GameState } from '../../engine/types';
 import { money } from '../../format';
 import type { StepProps } from '../Game';
 import { lat } from '../../format';
@@ -15,10 +16,10 @@ export default function Training({ game, setGame }: StepProps) {
   const showCamps = g.tier >= 2;
   const campLock = campBlocked(g);
   const camp = !campLock ? CAMPS.find((c) => c.id === campId) ?? null : null;
-  const [dagConfirm, setDagConfirm] = useState(false);
-  const [dagOpen, setDagOpen] = useState(false);
-  const dagLock = dagestanBlocked(g);
-  const showDag = g.tier >= 1 && !g.flags.dagestan && g.age <= 30;
+  const exps = EXPEDITIONS.filter((e) => (e.id === 'dagestan' ? !g.flags.dagestan : !g.flags[`exp_${e.id}`]));
+  const showExp = g.tier >= 1 && exps.length > 0;
+  const expOpen = exps.filter((e) => !expeditionBlocked(g, e)).length;
+  const [tab, setTab] = useState<'season' | 'exp'>('season');
   const first = g.season === 1;
   const last = g.seasons[g.seasons.length - 1];
 
@@ -78,6 +79,23 @@ export default function Training({ game, setGame }: StepProps) {
           </p>
         )
       )}
+      {showExp && (
+        <div className="train-tabs" role="tablist" aria-label="Rodzaj przygotowań">
+          <button role="tab" aria-selected={tab === 'season'} className={tab === 'season' ? 'on' : ''} onClick={() => setTab('season')}>
+            <Icon name="dumbbell" size={15} />
+            Sezon
+          </button>
+          <button role="tab" aria-selected={tab === 'exp'} className={tab === 'exp' ? 'on' : ''} onClick={() => setTab('exp')}>
+            <Icon name="pin" size={15} />
+            Wyjazdy na lata
+            <span className="tt-count">{expOpen || exps.length}</span>
+          </button>
+        </div>
+      )}
+      {tab === 'exp' && showExp ? (
+        <ExpeditionTab g={g} exps={exps} setGame={setGame} />
+      ) : (
+        <>
       <div className="kicker pt-ico" style={{ marginTop: first ? 16 : 8 }}>
         <Icon name="dumbbell" size={14} />
         Okres przygotowawczy
@@ -162,62 +180,111 @@ export default function Training({ game, setGame }: StepProps) {
           )}
         </section>
       )}
-      {showDag && (
-        <section className={`dagestan${dagOpen ? ' open' : ''}${dagLock ? ' locked' : ''}`}>
-          <button className="dag-head" aria-expanded={dagOpen} onClick={() => setDagOpen(!dagOpen)}>
-            <Icon name="pin" size={15} />
-            <b>2-3 years Dagestan and forget</b>
-            <span className="dag-teaser">{dagLock ? 'jeszcze nie' : money(dagestanCost(g))}</span>
-            <span className="dag-chev" aria-hidden="true">▸</span>
-          </button>
-          {dagOpen && (
-            <>
-          <p className="muted small" style={{ margin: 0 }}>
-            Trzy sezony w górach zamiast walk. Wracasz o wiele mocniejszy (zwłaszcza zapasy i kondycja), ale starszy o 3 lata, bez rankingu i kontraktu, a kibice o tobie zapominają.
-          </p>
-          <div className="dag-gains">
-            {(Object.keys(DAGESTAN_GAINS) as StatKey[])
-              .filter((k) => DAGESTAN_GAINS[k][1] >= 4)
-              .map((k) => (
-                <span key={k} className="tag good">
-                  <Icon name={STAT_ICON[k]} size={12} />
-                  {STAT_LABELS[k]} +{DAGESTAN_GAINS[k][0]}–{DAGESTAN_GAINS[k][1]}
-                </span>
-              ))}
-          </div>
-          {dagLock ? (
-            <p className="faint small" style={{ margin: 0 }}>
-              {dagLock}
-            </p>
-          ) : dagConfirm ? (
-            <div className="row" style={{ gap: 6, flexWrap: 'wrap' }}>
-              <span className="small" style={{ flex: '1 1 100%' }}>
-                Na pewno? To {money(dagestanCost(g))} i trzy lata bez walk. Wrócisz w wieku {g.age + 3} lat.
-              </span>
-              <button className="btn btn-small btn-ghost" onClick={() => setDagConfirm(false)}>
-                Zostaję
-              </button>
-              <button className="btn btn-small btn-gold btn-ico" onClick={() => setGame(goDagestan(g))}>
-                <Icon name="check" size={15} />
-                Lecę w góry
-              </button>
-            </div>
-          ) : (
-            <button className="btn btn-small btn-ghost btn-ico" style={{ width: 'fit-content' }} onClick={() => setDagConfirm(true)}>
-              <Icon name="pin" size={15} />
-              Wyjazd za {money(dagestanCost(g))}
-            </button>
-          )}
-            </>
-          )}
-        </section>
-      )}
       <div className="cta-bar">
         <button className="btn btn-primary btn-block btn-ico" disabled={!pick} onClick={() => pick && setGame(doTraining(g, pick, camp?.id))}>
           {pick && <Icon name={STAT_ICON[pick]} />}
           {pick ? `Trenuję: ${STAT_LABELS[pick].toLowerCase()}${camp ? ` · ${camp.name}` : ''}` : 'Wybierz, co trenujesz'}
         </button>
       </div>
+        </>
+      )}
     </section>
+  );
+}
+
+function ExpeditionCard({ g, e, setGame }: { g: GameState; e: Expedition; setGame: StepProps['setGame'] }) {
+  const [confirm, setConfirm] = useState(false);
+  const lock = expeditionBlocked(g, e);
+  const cost = expeditionCost(g, e);
+  const m = g.age >= 28 ? 0.7 : 1;
+  const gains = (Object.keys(e.gains) as StatKey[]).sort((a, b) => e.gains[b][1] - e.gains[a][1]).slice(0, 4);
+  const rng = (k: StatKey) => `+${Math.round(e.gains[k][0] * m)}–${Math.round(e.gains[k][1] * m)}`;
+  const seasons = e.years === 1 ? '1 sezon' : `${e.years} sezony`;
+  return (
+    <article className={`exp-card exp-${e.id}${lock ? ' locked' : ''}`}>
+      <header className="exp-head">
+        <span className="exp-ico">
+          <Icon name="pin" size={18} />
+        </span>
+        <div className="exp-title">
+          <b>{e.name}</b>
+          <small>{e.place}</small>
+        </div>
+        <span className="exp-years">{seasons}</span>
+      </header>
+      <p className="exp-desc">{e.desc}</p>
+      <div className="exp-gains">
+        {gains.map((k) => (
+          <span key={k} className="exp-gain">
+            <Icon name={STAT_ICON[k]} size={13} />
+            <span>{STAT_LABELS[k]}</span>
+            <b>{rng(k)}</b>
+          </span>
+        ))}
+      </div>
+      <p className="exp-plus">
+        <Icon name="trend" size={13} />
+        <span>
+          Podnosi limit talentu:{' '}
+          {(Object.keys(e.ceiling) as StatKey[])
+            .map((k) => STAT_LABELS[k].toLowerCase())
+            .join(', ')}
+          .
+        </span>
+      </p>
+      <p className="exp-minus">
+        <Icon name="x" size={13} />
+        <span>
+          {e.minus} Wracasz w wieku {g.age + e.years} lat.
+        </span>
+      </p>
+      <footer className="exp-foot">
+        {lock ? (
+          <span className="exp-lock">{lock}</span>
+        ) : confirm ? (
+          <>
+            <span className="exp-q">Na pewno? {money(cost)} i {seasons} bez walk.</span>
+            <button className="btn btn-small btn-ghost" onClick={() => setConfirm(false)}>
+              Zostaję
+            </button>
+            <button className="btn btn-small btn-gold btn-ico" onClick={() => setGame(goExpedition(g, e.id))}>
+              <Icon name="check" size={15} />
+              Jadę
+            </button>
+          </>
+        ) : (
+          <>
+            <span className="exp-cost">
+              <Icon name="coins" size={14} />
+              {money(cost)}
+            </span>
+            <button className="btn btn-small btn-ghost btn-ico" onClick={() => setConfirm(true)}>
+              <Icon name="pin" size={15} />
+              Wyjeżdżam
+            </button>
+          </>
+        )}
+      </footer>
+    </article>
+  );
+}
+
+function ExpeditionTab({ g, exps, setGame }: { g: GameState; exps: Expedition[]; setGame: StepProps['setGame'] }) {
+  return (
+    <div className="exp-tab">
+      <div className="kicker pt-ico" style={{ marginTop: 8 }}>
+        <Icon name="pin" size={14} />
+        Zamiast walk
+      </div>
+      <h2>Wyjazd na lata</h2>
+      <p className="muted small" style={{ marginTop: 4 }}>
+        Kilka sezonów samego treningu za granicą. Wracasz dużo mocniejszy, ale starszy, bez rankingu i kontraktu. Każdy wyjazd raz na karierę.
+      </p>
+      <div className="exp-list">
+        {exps.map((e) => (
+          <ExpeditionCard key={e.id} g={g} e={e} setGame={setGame} />
+        ))}
+      </div>
+    </div>
   );
 }

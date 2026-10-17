@@ -4,7 +4,7 @@ import type { CardSpot, DecisionOption, DecisionPoint, FightOffer, FightReport, 
 import { galaPrefix, SEASON_FORMS, STAGE_LABELS, STAT_LABELS, STYLE_LABELS } from '../../engine/data';
 import { PRESS_OPTIONS, pressAnswer, prepCost, acceptAllOffers, acceptOffer, declineBlocked, declineOffer, decide, mainRecord, negotiateChance, negotiateOffer, recStr, seasonNext, seasonSkip, toSummary } from '../../engine/game';
 import { activeManager, currentManager } from '../../engine/managers';
-import { sfxClick, sfxCrowd, sfxGong, sfxLoss, sfxThud } from '../sound';
+import { sfxCash, sfxClick, sfxCrowd, sfxGong, sfxLoss, sfxThud } from '../sound';
 import { OUTCOME_LABEL } from '../../engine/fight';
 import { money } from '../../format';
 import { loadSettings } from '../../storage';
@@ -25,30 +25,107 @@ const SPOT: Record<CardSpot, string> = { wstępna: 'karta wstępna', główna: '
 
 const d = (ms: number): CSSProperties => ({ ['--d' as string]: `${Math.max(0, ms)}ms` });
 
-function FormReel({ g, spinning }: { g: GameState; spinning: boolean }) {
+/** Losowanie formy: bęben zwalnia jak w automacie i staje na wylosowanej formie. */
+function FormReel({ g, spinning, onDone }: { g: GameState; spinning: boolean; onDone: () => void }) {
   const form = g.run!.form;
-  const [idx, setIdx] = useState(0);
+  const target = Math.max(0, SEASON_FORMS.findIndex((f) => f.label === form.label));
+  const [step, setStep] = useState<{ idx: number; ms: number }>({ idx: (target + 2) % SEASON_FORMS.length, ms: 60 });
+  const [landed, setLanded] = useState(!spinning);
+  const doneRef = useRef(onDone);
+  doneRef.current = onDone;
   useEffect(() => {
-    if (!spinning) return;
-    const id = setInterval(() => setIdx((i) => (i + 1) % SEASON_FORMS.length), 90);
-    return () => clearInterval(id);
+    if (!spinning) {
+      setLanded(true);
+      return;
+    }
+    const N = 18;
+    const n = SEASON_FORMS.length;
+    let i = 0;
+    let t: ReturnType<typeof setTimeout>;
+    const tick = () => {
+      i++;
+      const ms = Math.round(55 + 330 * Math.pow(i / N, 3));
+      // ostatni krok trafia dokładnie w wylosowaną formę
+      const idx = (target - (N - i) + n * 10) % n;
+      setStep({ idx, ms });
+      if (i < N) t = setTimeout(tick, ms);
+      else {
+        t = setTimeout(() => {
+          setLanded(true);
+          t = setTimeout(() => doneRef.current(), 2200);
+        }, ms);
+      }
+    };
+    t = setTimeout(tick, 250);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [spinning]);
-  const label = spinning ? SEASON_FORMS[idx].label : form.label;
-  const tone = spinning ? 'neutral' : form.tone;
-  return (
-    <div className="form-strip">
-      <Icon name="flame" size={15} className={`tone-${tone}`} />
-      <small>Forma</small>
-      <span className={`form-val tone-${tone} ${spinning ? 'spin' : 'lock'}`} aria-live="polite">
-        {label}
+  const show = landed ? form : SEASON_FORMS[step.idx];
+  const tone = landed ? form.tone : 'neutral';
+  const reel = (
+    <span className="form-window">
+      <span
+        key={landed ? 'final' : step.idx + '-' + step.ms}
+        className={`form-val tone-${tone} ${landed ? 'lock' : 'tick'}`}
+        style={{ ['--tick' as string]: `${Math.max(50, step.ms - 10)}ms` }}
+        aria-live="polite"
+      >
+        {show.label}
       </span>
-      {!spinning && form.mod !== 0 && (
-        <span className={`form-mod ${form.mod > 0 ? 'good' : 'bad'}`}>
-          {form.mod > 0 ? '+' : '−'}
-          {Math.abs(form.mod)} pkt
-        </span>
-      )}
-    </div>
+    </span>
+  );
+  const mod = landed && form.mod !== 0 && (
+    <span className={`form-mod ${form.mod > 0 ? 'good' : 'bad'}`}>
+      {form.mod > 0 ? '+' : '−'}
+      {Math.abs(form.mod)} pkt
+    </span>
+  );
+  const meaning =
+    form.mod >= 8
+      ? 'Wszystko się układa. Każda walka w tym sezonie będzie łatwiejsza.'
+      : form.mod > 0
+        ? 'Organizm dobrze reaguje na treningi. Masz lekką przewagę w walkach.'
+        : form.mod === 0
+          ? 'Ani lepiej, ani gorzej. O wszystkim zdecyduje klatka.'
+          : form.mod <= -8
+            ? 'Coś jest nie tak. Każda walka w tym sezonie będzie trudniejsza.'
+            : 'Słabszy rok. Rywale będą mieć lekką przewagę.';
+  return (
+    <>
+      <div className={`form-strip ${landed ? 'landed' : 'rolling'} tone-${tone}`}>
+        <Icon name="flame" size={15} className={`tone-${tone}`} />
+        <small>Forma</small>
+        {reel}
+        {mod}
+      </div>
+      {spinning &&
+        createPortal(
+          <div
+            className={`form-modal ${landed ? 'landed' : 'rolling'} tone-${tone}`}
+            role="dialog"
+            aria-label="Losowanie formy"
+            onClick={() => {
+              if (landed) doneRef.current();
+              else {
+                setLanded(true);
+                setTimeout(() => doneRef.current(), 1400);
+              }
+            }}
+          >
+            <div className="fm-card">
+              <span className="fm-kicker">
+                <Icon name="flame" size={14} />
+                Sezon {g.season} · forma
+              </span>
+              <div className="fm-reel">{reel}</div>
+              <div className="fm-mod">{mod}</div>
+              <p className="fm-text">{landed ? meaning : 'Jak organizm zniesie ten rok?'}</p>
+              <small className="fm-hint">{landed ? 'dotknij, żeby przejść dalej' : 'dotknij, żeby pominąć'}</small>
+            </div>
+          </div>,
+          document.body,
+        )}
+    </>
   );
 }
 
@@ -706,6 +783,31 @@ function PressCard({ g, o, setGame }: { g: GameState; o: FightOffer; setGame: (s
   );
 }
 
+/** Kwota, która płynnie dolicza się do nowej wartości. */
+function CountUp({ value, from }: { value: number; from: number | null }) {
+  const [v, setV] = useState(from ?? value);
+  useEffect(() => {
+    if (from === null || from === value) {
+      setV(value);
+      return;
+    }
+    const t0 = performance.now();
+    const dur = 900;
+    let raf = 0;
+    const step = (t: number) => {
+      const k = Math.min(1, (t - t0) / dur);
+      const e = 1 - Math.pow(1 - k, 3);
+      setV(Math.round((from + (value - from) * e) / 100) * 100);
+      if (k < 1) raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+  }, [value, from]);
+  return <>{money(v)}</>;
+}
+
+type OfferFx = { kind: 'up'; from: number; fromBonus: number } | { kind: 'flat' } | { kind: 'swap' } | null;
+
 /** Oferta walki (zawodowcy): rywal, gaża i decyzja gracza. */
 function OfferCard({ g, o, n, total, setGame }: { g: GameState; o: FightOffer; n: number; total: number; setGame: (s: GameState) => void }) {
   const opp = o.opp;
@@ -714,6 +816,30 @@ function OfferCard({ g, o, n, total, setGame }: { g: GameState; o: FightOffer; n
     goRef.current?.focus({ preventScroll: true });
   }, [o.opp.id, o.purse]);
   const [prep, setPrep] = useState<'std' | 'rival' | 'hard'>('std');
+  // telefon do organizatora: chwila napięcia, potem widoczny efekt
+  const [asking, setAsking] = useState<'neg' | 'decline' | null>(null);
+  const [fx, setFx] = useState<OfferFx>(null);
+  const prevRef = useRef({ id: o.opp.id, purse: o.purse, bonus: o.winBonus, neg: !!o.negotiated });
+  useEffect(() => {
+    const p = prevRef.current;
+    if (p.id !== o.opp.id) setFx({ kind: 'swap' });
+    else if (o.purse > p.purse) {
+      setFx({ kind: 'up', from: p.purse, fromBonus: p.bonus });
+      sfxCash();
+    } else if (o.negotiated && !p.neg) setFx({ kind: 'flat' });
+    prevRef.current = { id: o.opp.id, purse: o.purse, bonus: o.winBonus, neg: !!o.negotiated };
+  }, [o.opp.id, o.purse, o.winBonus, o.negotiated]);
+  const call = (kind: 'neg' | 'decline', fn: () => GameState) => {
+    if (asking) return;
+    sfxClick();
+    const slow = loadSettings().animations && !reduced();
+    if (!slow) return setGame(fn());
+    setAsking(kind);
+    setTimeout(() => {
+      setAsking(null);
+      setGame(fn());
+    }, kind === 'neg' ? 1100 : 950);
+  };
   const pc = prepCost(g, o);
   const canRival = g.money >= pc;
   const mgr = currentManager(g);
@@ -726,7 +852,7 @@ function OfferCard({ g, o, n, total, setGame }: { g: GameState; o: FightOffer; n
   const spot = o.spot ? SPOT[o.spot] : '';
   return (
     <div className="fight-intro offer-modal" role="dialog" aria-modal="true" aria-label={head}>
-      <div className={`fi-card ${o.title ? 'title-bout' : ''}`}>
+      <div className={`fi-card ${o.title ? 'title-bout' : ''} ${asking ? 'asking' : ''} ${fx ? `fx-${fx.kind}` : ''}`}>
         <div className="fi-top">
           <span className="fi-num">{head}</span>
           <span className="fi-ctx">
@@ -734,8 +860,22 @@ function OfferCard({ g, o, n, total, setGame }: { g: GameState; o: FightOffer; n
             {spot ? ` · ${spot}` : ''}
           </span>
         </div>
-        {lastNote && !o.note && <p className="ofr-note">{lastNote}</p>}
-        <VsHero g={g} opp={opp} label={spot || 'walka'} belt={g.rank === 0} size={72} />
+        {lastNote && !o.note && (
+          <p key={`n-${opp.id}`} className={`ofr-note ${fx?.kind === 'swap' ? 'ofr-banner swap' : ''}`}>
+            {fx?.kind === 'swap' && (
+              <b className="ofr-banner-tag">
+                <Icon name="rotate" size={12} />
+                Nowa oferta
+              </b>
+            )}
+            <span className="ofr-banner-txt">{lastNote}</span>
+          </p>
+        )}
+        <div key={`vs-${opp.id}`} className={`ofr-vs ${fx?.kind === 'swap' ? 'vs-swap' : ''} ${asking === 'decline' ? 'declining' : ''}`}>
+          <VsHero g={g} opp={opp} label={spot || 'walka'} belt={g.rank === 0} size={72} />
+          {asking === 'decline' && <span className="ofr-stamp">Odrzucona</span>}
+          {fx?.kind === 'swap' && <span className="ofr-stamp new">Nowy rywal</span>}
+        </div>
         <div className="fi-tags">
           {o.rival && (
             <span className="tag red">
@@ -757,13 +897,18 @@ function OfferCard({ g, o, n, total, setGame }: { g: GameState; o: FightOffer; n
           {!opp.freak && opp.rank === null && <span className="tag">poza rankingiem</span>}
         </div>
         <div className="ofr-pay">
-          <div>
+          <div className={fx?.kind === 'up' ? 'pay-up' : ''}>
             <small>Gaża</small>
-            <b>{money(o.purse)}</b>
+            <b>
+              <CountUp value={o.purse} from={fx?.kind === 'up' ? fx.from : null} />
+            </b>
+            {fx?.kind === 'up' && <i className="pay-delta">▲ +{money(o.purse - fx.from)}</i>}
           </div>
-          <div>
+          <div className={fx?.kind === 'up' ? 'pay-up' : ''}>
             <small>Za wygraną</small>
-            <b>+{money(o.winBonus)}</b>
+            <b>
+              +<CountUp value={o.winBonus} from={fx?.kind === 'up' ? fx.fromBonus : null} />
+            </b>
           </div>
           {mgr && (
             <div>
@@ -773,7 +918,12 @@ function OfferCard({ g, o, n, total, setGame }: { g: GameState; o: FightOffer; n
           )}
         </div>
         {busy && <p className="ofr-note">{mgr!.name} w tym sezonie zajmuje się innymi. Ofertę przyniósł organizator.</p>}
-        {o.note && <p className="ofr-note strong">{o.note}</p>}
+        {o.note && (
+          <p key={o.note} className={`ofr-note strong ofr-banner ${fx?.kind === 'up' ? 'up' : fx?.kind === 'flat' ? 'flat' : ''}`}>
+            <Icon name={fx?.kind === 'up' ? 'trend' : fx?.kind === 'flat' ? 'x' : 'coins'} size={14} />
+            <span className="ofr-banner-txt">{o.note}</span>
+          </p>
+        )}
         <div className="prep">
           <small className="prep-title">Obóz przed walką</small>
           <div className="seg prep-seg" role="radiogroup" aria-label="Obóz przed walką">
@@ -800,18 +950,28 @@ function OfferCard({ g, o, n, total, setGame }: { g: GameState; o: FightOffer; n
         </div>
         <CoachTip id="offer">Na zawodowstwie każda walka to oferta. Przyjmij ją, spróbuj wynegocjować więcej albo odrzuć i poczekaj na lepszą.</CoachTip>
         <div className="ofr-actions">
-          <button ref={goRef} className="btn btn-primary btn-block btn-ico" onClick={() => setGame(acceptOffer(g, prep))}>
+          <button ref={goRef} className="btn btn-primary btn-block btn-ico" disabled={!!asking} onClick={() => setGame(acceptOffer(g, prep))}>
             <Icon name="glove" />
             Przyjmuję walkę
           </button>
           <div className="ofr-row">
-            <button className="btn btn-ghost btn-small btn-ico" disabled={o.negotiated} onClick={() => setGame(negotiateOffer(g))}>
+            <button className={`btn btn-ghost btn-small btn-ico ${asking === 'neg' ? 'is-asking' : ''}`} disabled={o.negotiated || !!asking} onClick={() => call('neg', () => negotiateOffer(g))}>
               <Icon name="coins" size={15} />
-              {o.negotiated ? 'Po negocjacjach' : `Chcę więcej · ${chanceWord(neg)}`}
+              {asking === 'neg' ? (
+                <span className="calling">
+                  Dzwonisz<i>.</i>
+                  <i>.</i>
+                  <i>.</i>
+                </span>
+              ) : o.negotiated ? (
+                'Po negocjacjach'
+              ) : (
+                `Chcę więcej · ${chanceWord(neg)}`
+              )}
             </button>
-            <button className="btn btn-ghost btn-small btn-ico" disabled={!!blocked} title={blocked ?? undefined} onClick={() => setGame(declineOffer(g))}>
+            <button className="btn btn-ghost btn-small btn-ico" disabled={!!blocked || !!asking} title={blocked ?? undefined} onClick={() => call('decline', () => declineOffer(g))}>
               <Icon name="x" size={15} />
-              Odrzucam
+              {asking === 'decline' ? 'Odrzucasz…' : 'Odrzucam'}
             </button>
           </div>
           {total - n > 0 && (
@@ -857,7 +1017,7 @@ export default function Season({ game, setGame }: StepProps) {
     // każde dotknięcie ekranu (poza sterowaniem sezonem, zapowiedzią i decyzją) zatrzymuje automat
     const onDown = (e: PointerEvent) => {
       const t = e.target as HTMLElement | null;
-      if (t?.closest?.('.play-ctrl, .fight-intro, .decision, .decision-sheet, .sheet, .icon-btn')) return;
+      if (t?.closest?.('.play-ctrl, .fight-intro, .decision, .decision-sheet, .sheet, .icon-btn, .form-modal')) return;
       stop();
     };
     window.addEventListener('pointerdown', onDown, { passive: true });
@@ -913,11 +1073,6 @@ export default function Season({ game, setGame }: StepProps) {
   const finishedNow = !!last?.sim.finished;
   const nextReady = finishedNow && !run.done && !introOpen;
 
-  useEffect(() => {
-    if (!spinning) return;
-    const t = setTimeout(() => setSpinning(false), 1100);
-    return () => clearTimeout(t);
-  }, [spinning]);
 
   const advance = () => {
     setPaused(false);
@@ -1034,7 +1189,7 @@ export default function Season({ game, setGame }: StepProps) {
           {lastRes === 'L' && <i>▼</i>}
         </div>
       </div>
-      <FormReel g={g} spinning={spinning} />
+      <FormReel g={g} spinning={spinning} onDone={() => setSpinning(false)} />
 
       <CoachTip id="season">
         Walka toczy się sama, a w ważnym momencie trener zapyta cię o plan. Dalej przejdziesz przyciskiem na dole.
