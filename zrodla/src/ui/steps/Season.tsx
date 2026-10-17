@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from
 import { createPortal } from 'react-dom';
 import type { CardSpot, DecisionOption, DecisionPoint, FightOffer, FightReport, GameState, Moment } from '../../engine/types';
 import { galaPrefix, SEASON_FORMS, STAGE_LABELS, STAT_LABELS, STYLE_LABELS } from '../../engine/data';
-import { acceptOffer, declineBlocked, declineOffer, decide, mainRecord, negotiateChance, negotiateOffer, recStr, seasonNext, seasonSkip, toSummary } from '../../engine/game';
+import { acceptAllOffers, acceptOffer, declineBlocked, declineOffer, decide, mainRecord, negotiateChance, negotiateOffer, recStr, seasonNext, seasonSkip, toSummary } from '../../engine/game';
 import { activeManager, currentManager } from '../../engine/managers';
 import { OUTCOME_LABEL } from '../../engine/fight';
 import { money } from '../../format';
@@ -67,10 +67,12 @@ function MomentView({ m, style, anim }: { m: Moment; style?: CSSProperties; anim
       <p>{m.text}</p>
       {m.stat && m.outcome && (
         <div className="test">
-          <span className={`tag ${m.outcome === 'fail' ? 'bad' : m.outcome === 'super' ? 'gold' : 'good'}`}>{OUTCOME_LABEL[m.outcome]}</span>
+          <span className={`tag ${m.outcome === 'fail' ? 'bad' : m.outcome === 'super' ? 'gold' : 'good'}`}>
+            {m.outcome === 'fail' && (m.chance ?? 0) >= 70 ? 'pech' : m.outcome !== 'fail' && (m.chance ?? 100) < 30 ? 'udało się wbrew szansom' : OUTCOME_LABEL[m.outcome]}
+          </span>
           <span className="faint">
             {STAT_LABELS[m.stat]}
-            {m.chance !== undefined ? ` · ${chanceWord(m.chance)}` : ''}
+            {m.chance !== undefined ? ` · szansa: ${chanceWord(m.chance)}` : ''}
           </span>
         </div>
       )}
@@ -730,6 +732,11 @@ function OfferCard({ g, o, n, total, setGame }: { g: GameState; o: FightOffer; n
               Odrzucam
             </button>
           </div>
+          {total - n > 0 && (
+            <button className="link-btn ofr-auto" onClick={() => setGame(acceptAllOffers(g))}>
+              Przyjmuj też kolejne oferty w tym sezonie
+            </button>
+          )}
           <p className="faint small ofr-help">{blocked ?? 'Po odmowie przyjdzie inna oferta albo nic. Grymaszenie psuje opinię u promotorów.'}</p>
         </div>
       </div>
