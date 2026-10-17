@@ -6374,3 +6374,7 @@ details.intro-notes[open] summary::before { content: '▸'; transform: rotate(90
 .text-size-seg { display: flex; gap: 6px; }
 .text-size-seg button { flex: 1 1 0; min-width: 0; padding: 8px 6px; border-radius: var(--r-md); border: 1px solid var(--line); background: var(--panel-2); color: var(--muted); font-family: var(--body); font-weight: 600; cursor: pointer; }
 .text-size-seg button.on { border-color: var(--cyan); background: var(--cyan-soft); color: var(--text); }
+.predict-note { display: flex; gap: 8px; align-items: flex-start; margin: 10px 0 0; padding: 8px 10px; border-radius: 10px; font-size: 0.85rem; line-height: 1.4; color: var(--gold); background: var(--gold-soft); }
+.predict-note.hot { color: var(--bad); background: var(--bad-soft); }
+.predict-note svg { flex: none; margin-top: 2px; }
+.goal-list li.now .goal-check { background: var(--cyan-soft); color: var(--cyan); border-color: var(--cyan); }
