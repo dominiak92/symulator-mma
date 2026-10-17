@@ -104,7 +104,7 @@ export default function Market({ game, setGame }: StepProps) {
                     <span>
                       <small>
                       <Icon name="trophy" size={11} />
-                      Za wygraną
+                      Premia
                     </small>
                       <b>+{money(c.winBonus)}</b>
                     </span>
@@ -479,7 +479,7 @@ function DivisionPick({ game: g, setGame }: StepProps) {
         {shift < 0
           ? `Przewaga warunków fizycznych w klatce, ale przed każdą walką ryzyko, że nie zrobisz wagi (ok. ${miss}%: kara z gaży i słabsza forma). Zbijanie męczy organizm.`
           : shift > 0
-            ? 'Bez zbijania wagi i bez ryzyka na ważeniu, ale rywale są więksi i silniejsi.'
+            ? 'Bez zbijania wagi: organizm wolniej się zużywa, kariera trwa dłużej. Ale rywale są więksi i silniejsi.'
             : 'Twoja naturalna waga. Bez premii i bez ryzyka.'}{' '}
         Zmiana kategorii zeruje ranking.
       </p>

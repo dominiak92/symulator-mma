@@ -6,6 +6,7 @@ import { GG } from '../brand';
 import { Icon, STAT_ICON } from '../Icon';
 import type { StatKey } from '../../engine/types';
 import { CoachTip } from '../Tutorial';
+import { ChanceTag, chanceTone } from '../Chance';
 
 export function Chips({ chips }: { chips: Chip[] }) {
   if (!chips.length) return null;
@@ -72,7 +73,7 @@ export default function EventStep({ game, setGame }: StepProps) {
 
       {picked === undefined && (
         <CoachTip id="event">
-        Wybór z procentem to ryzyko: ✓ zyskasz, ✗ stracisz. Wybór bez procentu działa na pewno.
+        Wybór z kropkami to ryzyko: ✓ zyskasz, ✗ stracisz. Wybór bez kropek działa na pewno.
       </CoachTip>
       )}
       {picked === undefined ? (
@@ -84,13 +85,13 @@ export default function EventStep({ game, setGame }: StepProps) {
               <button key={i} className="choice" onClick={() => setGame(chooseEvent(g, i))}>
                 <span className="opt-top">
                   <span className="opt-label">{c.label}</span>
-                  {risky && <span className={`chance-big tone-${ch! >= 65 ? 'good' : ch! >= 40 ? 'mid' : 'bad'}`}>{ch}%</span>}
+                  {risky && <ChanceTag p={ch!} />}
                 </span>
                 <span className="desc">{c.desc}</span>
                 {risky ? (
                   <>
                     <span className="opt-bar" aria-hidden="true">
-                      <i className={ch! >= 65 ? 'good' : ch! >= 40 ? 'mid' : 'bad'} style={{ width: `${ch}%` }} />
+                      <i className={chanceTone(ch!)} style={{ width: `${ch}%` }} />
                     </span>
                     <span className="ev-out">
                       <span className="ok">✓</span>

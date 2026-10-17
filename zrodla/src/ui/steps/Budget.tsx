@@ -1,6 +1,6 @@
 import { STAT_LABELS } from '../../engine/data';
 import { cheaperClub, downgradeClub, fightRange, plannedFights, setWantFights, ACADEMY_LEVELS, academyName, academyNext, investAcademy, OVERDRAFT, PITCH_SLOTS, pitchBlocked, pitchChance, pitchPay, pitchSponsor, breakPreview, budgetBalance, budgetLines, canStartSeason, expectedPurses, loanOffer, loanRefusal, startSeason, takeBreakYear, takeLoan } from '../../engine/game';
-import { useState } from 'react';
+import { useState, type CSSProperties } from 'react';
 import type { StatKey } from '../../engine/types';
 import { money, plural } from '../../format';
 import type { StepProps } from '../Game';
@@ -8,6 +8,7 @@ import { Emblem, SponsorLogo, clubCrest } from '../Emblem';
 import { Icon, STAT_ICON } from '../Icon';
 import { CoachTip } from '../Tutorial';
 import { sfxCash } from '../sound';
+import { ChanceTag } from '../Chance';
 
 export default function Budget({ game, setGame }: StepProps) {
   const g = game;
@@ -65,7 +66,7 @@ export default function Budget({ game, setGame }: StepProps) {
 
       <div className="ledger">
         {lines.map((l, i) => (
-          <div className="ledger-row" key={i}>
+          <div className="ledger-row" key={i} style={{ "--i": i } as CSSProperties}>
             <div className="ledger-label">
               {l.logo ? (
                 l.logo.kind === 'club' ? (
@@ -98,113 +99,6 @@ export default function Budget({ game, setGame }: StepProps) {
           <span className={`amt ${after >= 0 ? 'plus' : 'minus'}`}>{money(after)}</span>
         </div>
       </div>
-
-      <section className="pitch">
-        <div className="pitch-head">
-          <span className="ledger-ico plus">
-            <Icon name="briefcase" size={16} />
-          </span>
-          <div>
-            <b>Poszukaj sponsora</b>
-            <small>Raz na sezon możesz sam napisać do firm z okolicy.</small>
-          </div>
-        </div>
-        {pitchDone ? (
-          <div className={`pitch-result ${g.pitch!.ok ? 'ok' : 'ko'}`}>
-            {g.pitch!.ok && g.pitch!.name ? <SponsorLogo name={g.pitch!.name} size={34} /> : <Icon name="x" size={18} />}
-            <span>{g.pitch!.text}</span>
-          </div>
-        ) : blocked ? (
-          <p className="muted small" style={{ margin: 0 }}>
-            {blocked}
-          </p>
-        ) : pitchOpen ? (
-          <div className="pitch-opts">
-            {PITCH_SLOTS.map((sl) => {
-              const ch = pitchChance(g, sl.id);
-              return (
-                <button key={sl.id} className="choice pitch-opt" onClick={() => {
-                    const n = pitchSponsor(g, sl.id);
-                    if (n.pitch?.ok) sfxCash();
-                    setGame(n);
-                  }}>
-                  <span className="opt-top">
-                    <span className="opt-label">{sl.label}</span>
-                    <span className={`chance-big tone-${ch >= 50 ? 'good' : ch >= 30 ? 'mid' : 'bad'}`}>{ch}%</span>
-                  </span>
-                  <span className="desc">{sl.desc}</span>
-                  <span className="pitch-pay">
-                    <Icon name="coins" size={12} />
-                    ok. {money(pitchPay(g, sl.id))} na sezon
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        ) : (
-          <button className="btn btn-ghost btn-small btn-ico" onClick={() => setPitchOpen(true)}>
-            <Icon name="pen" size={15} />
-            Napisz do firm
-          </button>
-        )}
-      </section>
-
-      {showAcad && (
-        <section className="pitch acad">
-          <div className="pitch-head">
-            <span className="ledger-ico plus">
-              <Icon name="home" size={16} />
-            </span>
-            <div>
-              <b>{acad ? academyName(g) : 'Własna akademia'}</b>
-              <small>
-                {acad
-                  ? `Poziom ${acad} z ${ACADEMY_LEVELS.length}: ${ACADEMY_LEVELS[acad - 1].name}. Zarabia co sezon i zostaje po karierze.`
-                  : 'Inwestycja na lata: przychód co sezon i punkty legacy po karierze.'}
-              </small>
-            </div>
-          </div>
-          {acadNext &&
-            (acadNext.blocked ? (
-              <p className="muted small" style={{ margin: 0 }}>
-                {acad ? 'Rozbudowa: ' : ''}
-                {acadNext.name} za {money(acadNext.cost)}. {acadNext.blocked}
-              </p>
-            ) : (
-              <div className="acad-offer">
-                <div className="acad-txt">
-                  <strong>{acadNext.name}</strong>
-                  <span>
-                    {acadNext.note} · {money(acadNext.cost)} · ok. {money(acadNext.income)} na sezon
-                  </span>
-                </div>
-                {confirmAcad ? (
-                  <div className="row" style={{ gap: 6 }}>
-                    <button className="btn btn-small btn-ghost" onClick={() => setConfirmAcad(false)}>
-                      Nie
-                    </button>
-                    <button
-                      className="btn btn-small btn-gold btn-ico"
-                      onClick={() => {
-                        setConfirmAcad(false);
-                        sfxCash();
-                        setGame(investAcademy(g));
-                      }}
-                    >
-                      <Icon name="check" size={15} />
-                      Tak, inwestuję
-                    </button>
-                  </div>
-                ) : (
-                  <button className="btn btn-small btn-ghost btn-ico" onClick={() => setConfirmAcad(true)}>
-                    <Icon name={acad ? 'plus' : 'home'} size={15} />
-                    {acad ? 'Rozbuduj' : 'Otwórz'}
-                  </button>
-                )}
-              </div>
-            ))}
-        </section>
-      )}
 
       {purses > 0 && g.contract.kind !== 'freak' && (
         <p className="muted" style={{ marginTop: 12 }}>
@@ -313,6 +207,113 @@ export default function Budget({ game, setGame }: StepProps) {
             <p className="mt-note bad">Z takim minusem nie wystartujesz. Weź kredyt albo zrób rok przerwy.</p>
           )}
         </div>
+      )}
+
+      <section className="pitch">
+        <div className="pitch-head">
+          <span className="ledger-ico plus">
+            <Icon name="briefcase" size={16} />
+          </span>
+          <div>
+            <b>Poszukaj sponsora</b>
+            <small>Raz na sezon możesz sam napisać do firm z okolicy.</small>
+          </div>
+        </div>
+        {pitchDone ? (
+          <div className={`pitch-result ${g.pitch!.ok ? 'ok' : 'ko'}`}>
+            {g.pitch!.ok && g.pitch!.name ? <SponsorLogo name={g.pitch!.name} size={34} /> : <Icon name="x" size={18} />}
+            <span>{g.pitch!.text}</span>
+          </div>
+        ) : blocked ? (
+          <p className="muted small" style={{ margin: 0 }}>
+            {blocked}
+          </p>
+        ) : pitchOpen ? (
+          <div className="pitch-opts">
+            {PITCH_SLOTS.map((sl) => {
+              const ch = pitchChance(g, sl.id);
+              return (
+                <button key={sl.id} className="choice pitch-opt" onClick={() => {
+                    const n = pitchSponsor(g, sl.id);
+                    if (n.pitch?.ok) sfxCash();
+                    setGame(n);
+                  }}>
+                  <span className="opt-top">
+                    <span className="opt-label">{sl.label}</span>
+                    <ChanceTag p={ch} />
+                  </span>
+                  <span className="desc">{sl.desc}</span>
+                  <span className="pitch-pay">
+                    <Icon name="coins" size={12} />
+                    ok. {money(pitchPay(g, sl.id))} na sezon
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        ) : (
+          <button className="btn btn-ghost btn-small btn-ico" onClick={() => setPitchOpen(true)}>
+            <Icon name="pen" size={15} />
+            Napisz do firm
+          </button>
+        )}
+      </section>
+
+      {showAcad && (
+        <section className="pitch acad">
+          <div className="pitch-head">
+            <span className="ledger-ico plus">
+              <Icon name="home" size={16} />
+            </span>
+            <div>
+              <b>{acad ? academyName(g) : 'Własna akademia'}</b>
+              <small>
+                {acad
+                  ? `Poziom ${acad} z ${ACADEMY_LEVELS.length}: ${ACADEMY_LEVELS[acad - 1].name}. Zarabia co sezon i zostaje po karierze.`
+                  : 'Inwestycja na lata: przychód co sezon i punkty legacy po karierze.'}
+              </small>
+            </div>
+          </div>
+          {acadNext &&
+            (acadNext.blocked ? (
+              <p className="muted small" style={{ margin: 0 }}>
+                {acad ? 'Rozbudowa: ' : ''}
+                {acadNext.name} za {money(acadNext.cost)}. {acadNext.blocked}
+              </p>
+            ) : (
+              <div className="acad-offer">
+                <div className="acad-txt">
+                  <strong>{acadNext.name}</strong>
+                  <span>
+                    {acadNext.note} · {money(acadNext.cost)} · ok. {money(acadNext.income)} na sezon
+                  </span>
+                </div>
+                {confirmAcad ? (
+                  <div className="row" style={{ gap: 6 }}>
+                    <button className="btn btn-small btn-ghost" onClick={() => setConfirmAcad(false)}>
+                      Nie
+                    </button>
+                    <button
+                      className="btn btn-small btn-gold btn-ico"
+                      onClick={() => {
+                        setConfirmAcad(false);
+                        sfxCash();
+                        setGame(investAcademy(g));
+                      }}
+                    >
+                      <Icon name="check" size={15} />
+                      Tak, inwestuję
+                    </button>
+                  </div>
+                ) : (
+                  <button className="btn btn-small btn-ghost btn-ico" onClick={() => setConfirmAcad(true)}>
+                    <Icon name={acad ? 'plus' : 'home'} size={15} />
+                    {acad ? 'Rozbuduj' : 'Otwórz'}
+                  </button>
+                )}
+              </div>
+            ))}
+        </section>
       )}
 
       <div className="cta-bar">

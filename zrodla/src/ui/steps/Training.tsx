@@ -16,6 +16,7 @@ export default function Training({ game, setGame }: StepProps) {
   const campLock = campBlocked(g);
   const camp = !campLock ? CAMPS.find((c) => c.id === campId) ?? null : null;
   const [dagConfirm, setDagConfirm] = useState(false);
+  const [dagOpen, setDagOpen] = useState(false);
   const dagLock = dagestanBlocked(g);
   const showDag = g.tier >= 1 && !g.flags.dagestan && g.age <= 30;
   const first = g.season === 1;
@@ -162,11 +163,15 @@ export default function Training({ game, setGame }: StepProps) {
         </section>
       )}
       {showDag && (
-        <section className="dagestan">
-          <div className="dag-head">
+        <section className={`dagestan${dagOpen ? ' open' : ''}${dagLock ? ' locked' : ''}`}>
+          <button className="dag-head" aria-expanded={dagOpen} onClick={() => setDagOpen(!dagOpen)}>
             <Icon name="pin" size={15} />
             <b>2-3 years Dagestan and forget</b>
-          </div>
+            <span className="dag-teaser">{dagLock ? 'jeszcze nie' : money(dagestanCost(g))}</span>
+            <span className="dag-chev" aria-hidden="true">▸</span>
+          </button>
+          {dagOpen && (
+            <>
           <p className="muted small" style={{ margin: 0 }}>
             Trzy sezony w górach zamiast walk. Wracasz o wiele mocniejszy (zwłaszcza zapasy i kondycja), ale starszy o 3 lata, bez rankingu i kontraktu, a kibice o tobie zapominają.
           </p>
@@ -202,6 +207,8 @@ export default function Training({ game, setGame }: StepProps) {
               <Icon name="pin" size={15} />
               Wyjazd za {money(dagestanCost(g))}
             </button>
+          )}
+            </>
           )}
         </section>
       )}

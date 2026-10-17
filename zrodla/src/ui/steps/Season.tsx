@@ -14,6 +14,7 @@ import { Belt, Confetti, Fighter, Medal } from '../Art';
 import { Emblem, clubCrest, crestFor } from '../Emblem';
 import { Icon, STAT_ICON } from '../Icon';
 import { CoachTip } from '../Tutorial';
+import { chanceWord } from '../Chance';
 
 const reduced = () => typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 
@@ -141,10 +142,6 @@ function oppName(f: FightReport) {
   return `${o.firstName} ${o.lastName}`;
 }
 
-/** Szansa słowami zamiast procentu (procent zostaje w podpowiedzi). */
-function chanceWord(p: number) {
-  return p >= 72 ? 'prawie pewne' : p >= 56 ? 'raczej wyjdzie' : p >= 42 ? 'pół na pół' : p >= 28 ? 'ryzykowne' : 'rzut na taśmę';
-}
 const STAKE: Record<string, { icon: string; text: string }> = {
   risk: { icon: 'bolt', text: 'może skończyć walkę' },
   normal: { icon: 'trophy', text: 'wygrywasz rundę' },
