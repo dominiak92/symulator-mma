@@ -19,6 +19,8 @@ export function polishTypography(text: string): string {
   t = t.replace(/ ·/g, `${NB}·`);
   // myślnik nie zaczyna wiersza
   t = t.replace(/ ([–—])/g, `${NB}$1`);
+  // krótkie ostatnie słowo zdania w dłuższym tekście nie zostaje samo w linii (sierotka)
+  if (t.length > 40) t = t.replace(/ (\S{1,4}[.!?…]?)$/, `${NB}$1`);
   return t;
 }
 

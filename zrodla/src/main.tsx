@@ -10,7 +10,7 @@ import App from './App';
 import { installTypography } from './typography';
 
 const root = document.getElementById('root')!;
-installTypography(root);
+installTypography(document.body);
 createRoot(root).render(
   <StrictMode>
     <App />
