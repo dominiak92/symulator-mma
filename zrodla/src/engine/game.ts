@@ -517,10 +517,18 @@ export function budgetLines(s: GameState): BudgetLine[] {
         ? { label: 'Opłaty startowe i dojazdy', sub: 'Puchar i Mistrzostwa Polski', amount: -s.contract.entryCost, icon: 'receipt' }
         : { label: 'Badania, licencja, dojazdy', sub: s.contract.fed, amount: -s.contract.entryCost, icon: 'receipt' },
     );
-  // zawodowcy na wyższych szczeblach płacą sztab: trenera przygotowania, dietetyka, fizjo
-  const staff = [0, 0, 4000, 10000, 50000][s.tier];
+  // zawodowcy na wyższych szczeblach płacą sztab: trenera przygotowania i dietetyka
+  const staff = [0, 0, 2500, 6000, 30000][s.tier];
   if (staff > 0 && s.contract.kind !== 'freak')
-    lines.push({ label: 'Sztab', sub: 'trener przygotowania, dietetyk, fizjoterapeuta', amount: -staff, icon: 'users' });
+    lines.push({ label: 'Sztab', sub: 'trener przygotowania, dietetyk', amount: -staff, icon: 'users' });
+  // zaplecze do wyboru
+  if (backroomOpen(s)) {
+    for (const b of BACKROOM) {
+      if (!s.backroom?.[b.id]) continue;
+      const c = backroomCost(s, b.id);
+      lines.push({ label: b.name, sub: c === 0 ? 'pokrywa Ground Game Labs' : b.short, amount: -c, icon: b.icon });
+    }
+  }
   const job = s.tier <= 1 && s.age >= 19;
   // na krajówce wielu zawodników dalej dorabia na pół etatu
   const halfJob = s.tier === 2 && s.age >= 19 && (s.rank === null || s.rank > 3) && s.contract.kind !== 'freak';
@@ -578,6 +586,36 @@ export function investAcademy(s0: GameState): GameState {
   s.rep = clamp(s.rep + 2, 0, 100);
   s.media = clamp(s.media + 2, 0, 100);
   log(s, s.academy === 1 ? `Otwierasz ${academyName(s)}: ${n.name}.` : `${academyName(s)} rośnie: ${n.name}.`);
+  return s;
+}
+
+// ---------------------------------------------------------------------------
+// Zaplecze: fizjoterapeuta, lekarz, suplementy (opcjonalne, od polskiej federacji)
+// ---------------------------------------------------------------------------
+export type BackroomId = 'physio' | 'doctor' | 'supps';
+export const BACKROOM: { id: BackroomId; name: string; short: string; effect: string; icon: string; cost: number[] }[] = [
+  { id: 'physio', name: 'Fizjoterapeuta', short: 'masaże, rozluźnianie, taping', effect: 'Organizm wolniej się zużywa, kariera trwa dłużej.', icon: 'heart', cost: [0, 0, 3000, 7000, 20000] },
+  { id: 'doctor', name: 'Lekarz sportowy', short: 'badania i opieka przed walką', effect: 'Rzadsze kontuzje, a jeśli już, to lżejsze.', icon: 'bandage', cost: [0, 0, 5000, 12000, 30000] },
+  { id: 'supps', name: 'Suplementacja', short: 'odżywki, witaminy, elektrolity', effect: 'Lekko lepsza forma w każdej walce.', icon: 'flame', cost: [0, 0, 1500, 4000, 9000] },
+];
+export const LABS_SPONSOR = 'Ground Game Labs';
+export function hasLabs(s: GameState) {
+  return s.sponsors.some((x) => x.name === LABS_SPONSOR);
+}
+export function backroomOpen(s: GameState) {
+  return s.tier >= 2 && s.contract.kind !== 'freak';
+}
+export function backroomCost(s: GameState, id: BackroomId): number {
+  if (id === 'supps' && hasLabs(s)) return 0;
+  return BACKROOM.find((b) => b.id === id)!.cost[s.tier] ?? 0;
+}
+/** Aktywne zaplecze (tylko gdy w ogóle dostępne). */
+function hasBackroom(s: GameState, id: BackroomId) {
+  return backroomOpen(s) && !!s.backroom?.[id];
+}
+export function setBackroom(s0: GameState, id: BackroomId, on: boolean): GameState {
+  const s = clone(s0);
+  s.backroom = { ...(s.backroom ?? {}), [id]: on };
   return s;
 }
 
@@ -1213,6 +1251,7 @@ export function applyEffects(s: GameState, e: Effects, rng: Rng) {
   if (e.sponsor) {
     s.sponsors.push({ ...e.sponsor, id: uid(rng, 's') });
     s.flags[`sponsor:${e.sponsor.name}`] = 1;
+    if (e.sponsor.name === LABS_SPONSOR) s.backroom = { ...(s.backroom ?? {}), supps: true };
   }
   if (e.flag) s.flags[e.flag] = (s.flags[e.flag] ?? 0) + 1;
   if (e.flag === 'manager') s.manager = 'okulary';
@@ -1434,6 +1473,7 @@ function fightMods(s: GameState): number {
   if (cur.prep === 'rival') m += 4;
   if (cur.prep === 'hard') m += 3;
   m += cur.pressMod ?? 0;
+  if (hasBackroom(s, 'supps')) m += 2;
   return m;
 }
 
@@ -2180,7 +2220,7 @@ function finalizeFight(rng: Rng, s: GameState, rep: FightReport) {
 
   // zużycie i kontuzje
   const dmgTaken = rep.sim.me.dmg;
-  s.wear = clamp(s.wear + (dmgTaken / 10) * (rep.amateur ? 0.4 : 1) + (res === 'L' && (rep.method === 'KO/TKO' || rep.method === 'Lekarz') ? (rep.amateur ? 3 : 7) : 0) + (s.age >= 32 ? 1.5 : 0), 0, 100);
+  s.wear = clamp(s.wear + (dmgTaken / 10) * (rep.amateur ? 0.4 : 1) * (hasBackroom(s, 'physio') ? 0.7 : 1) + (res === 'L' && (rep.method === 'KO/TKO' || rep.method === 'Lekarz') ? (rep.amateur ? 3 : 7) : 0) + (s.age >= 32 ? 1.5 : 0), 0, 100);
   const extra = !rep.amateur && s.run ? Math.max(0, s.run.fights.length - 3) : 0;
   // zbijanie wagi i ciężki obóz męczą organizm
   if (!rep.amateur && weightShift(s) < 0) s.wear = clamp(s.wear + 1, 0, 100);
@@ -2188,8 +2228,8 @@ function finalizeFight(rng: Rng, s: GameState, rep: FightReport) {
   if (rep.prep === 'hard') s.wear = clamp(s.wear + 1, 0, 100);
   if (extra) s.wear = clamp(s.wear + 2 * extra, 0, 100);
   const injP = (extra * 0.03 + (rep.prep === 'hard' ? 0.03 : 0) + (dmgTaken > 50 ? 0.22 : dmgTaken > 30 ? 0.07 : 0.02) + s.wear / 600 + (s.age >= 32 ? 0.03 : 0)) * (rep.amateur ? 0.5 : 0.8);
-  if (!s.injury && rng.chance(injP)) {
-    const roll = rng.next();
+  if (!s.injury && rng.chance(injP * (hasBackroom(s, 'doctor') ? 0.65 : 1))) {
+    const roll = rng.next() * (hasBackroom(s, 'doctor') ? 0.8 : 1);
     if (roll < 0.6) {
       s.injury = { name: rng.pick(INJ_MINOR), seasons: 1, penalty: 4 };
       rep.moments.push({ round: rep.round, title: 'Kontuzja', text: `Po walce lekarz ma złe wieści: ${s.injury.name}. Da się walczyć, ale nie na sto procent.`, tone: 'bad' });

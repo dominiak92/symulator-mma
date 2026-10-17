@@ -800,6 +800,29 @@ export const EVENTS: EventDef[] = [
     ],
   },
 
+  {
+    id: 'gg_labs',
+    title: 'Ground Game Labs',
+    brand: 'labs',
+    once: true,
+    weight: 6,
+    cond: (s) => s.tier >= 2 && s.media >= 18 && !s.sponsors.some((x) => x.name === 'Ground Game Labs'),
+    text: () =>
+      'Odzywa się Ground Game Labs, linia odżywek Ground Game. Chcą, żebyś testował ich białko, elektrolity i kreatynę, a w zamian biorą na siebie całą twoją suplementację.',
+    choices: (s) => [
+      {
+        label: 'Wchodzisz w to',
+        desc: 'Shaker Labs na każdym treningu, suplementacja za darmo.',
+        effects: {
+          sponsor: { name: 'Ground Game Labs', perSeason: [0, 0, 2000, 5000, 10000][s.tier], seasonsLeft: 3, clause: 'suplementacja na koszt sponsora' },
+          media: 1,
+          note: 'suplementacja za darmo',
+        },
+      },
+      { label: 'Zostajesz przy swoich', desc: 'Przyzwyczaiłeś się do białka z hurtowni.', effects: {} },
+    ],
+  },
+
   // ---------- Wyższe szczeble i późna kariera ----------
   {
     id: 'londyn',

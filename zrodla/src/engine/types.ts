@@ -407,6 +407,8 @@ export interface GameState {
   wear: number; // 0..100
   injury: Injury | null;
   sponsors: Sponsor[];
+  /** zaplecze opłacane co sezon (od polskiej federacji): fizjo, lekarz, suplementy */
+  backroom?: { physio?: boolean; doctor?: boolean; supps?: boolean };
   /** wynik ostatniego szukania sponsora na własną rękę */
   pitch?: { season: number; ok: boolean; text: string; name?: string; slot: string } | null;
   /** dziwny sponsor podsunięty przez menedżera (oferta na ten sezon) */
