@@ -1624,13 +1624,22 @@ function rivalHook(p: Peer, title: boolean, defense: boolean, trilogy: boolean):
 }
 
 /** Czy menedżer (albo znajomy promotor) podsunie walkę na odbudowę rekordu. */
-function tuneupWanted(rng: Rng, s: GameState, idx: number): boolean {
+function tuneupWanted(rng: Rng, s: GameState, _idx: number): boolean {
   const run = s.run!;
   if (s.tier < 2 || s.contract.kind === 'freak' || run.tuneupOffered || run.autoAccept) return false;
   if (s.rank === 0) return false;
-  const bad = s.streak <= -1 || (s.rank === null && idx > 0) || (s.rank !== null && s.rank >= RANK_SIZE[s.tier] - 3);
-  if (!bad) return false;
-  return rng.chance(currentManager(s) ? 0.55 : 0.3);
+  // nie częściej niż co dwa lata
+  if (s.flags.lastTuneup && s.season - s.flags.lastTuneup < 2) return false;
+  // tylko prawdziwy dołek: seria porażek albo porażka na dnie rankingu / poza nim
+  const lowRank = s.rank === null || s.rank >= RANK_SIZE[s.tier] - 3;
+  const slump = s.streak <= -2 || (s.streak <= -1 && lowRank);
+  if (!slump) return false;
+  // po dobrym roku menedżer nie panikuje po jednej porażce
+  const last = s.lastSummary;
+  if (last && last.w > last.l && s.streak > -2) return false;
+  if (!rng.chance(currentManager(s) ? 0.5 : 0.25)) return false;
+  s.flags.lastTuneup = s.season;
+  return true;
 }
 
 export function buildTuneup(rng: Rng, s: GameState): FightOffer {
