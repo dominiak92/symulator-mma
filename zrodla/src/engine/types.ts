@@ -47,7 +47,7 @@ export interface Club {
   city: string;
   quality: number; // 1..5
   strength: number; // 0..100 (odpowiednik siły bolidu)
-  cost: number; // zł / sezon
+  cost: number; // zł / rok
   specialty: StatKey;
   injuryMod: number;
   desc: string;
@@ -59,10 +59,10 @@ export interface Contract {
   fed: string;
   kind: 'stay' | 'promotion' | 'demotion' | 'freak' | 'side';
   seasons: number;
-  fights: number; // walk w sezonie
+  fights: number; // walk w roku
   purse: number; // gaża za walkę
   winBonus: number;
-  entryCost: number; // koszty startów w sezonie (amatorka, regionalne)
+  entryCost: number; // koszty startów w roku (amatorka, regionalne)
   startRank: number | null;
   note: string;
   available: boolean; // false = "obserwują cię", nie stać cię
@@ -91,9 +91,9 @@ export interface Promise {
 
 export interface Injury {
   name: string;
-  seasons: number; // ile sezonów kary
+  seasons: number; // ile lat kary
   penalty: number; // odejmowane od testów (pkt %)
-  /** ile pełnych sezonów zawodnik pauzuje (rehabilitacja zamiast walk) */
+  /** ile pełnych lat zawodnik pauzuje (rehabilitacja zamiast walk) */
   out?: number;
 }
 
@@ -110,7 +110,7 @@ export interface Effects {
   promise?: Omit<Promise, 'id'>;
   sponsor?: Omit<Sponsor, 'id'>;
   flag?: string;
-  form?: number; // bonus do formy w tym sezonie
+  form?: number; // bonus do formy w tym roku
   loan?: { amount: number; installment: number; count: number };
   note?: string; // dodatkowy chip tekstowy
 }
@@ -277,19 +277,19 @@ export interface SeasonRun {
   offer?: FightOffer | null;
   /** konferencja przed galą czekająca na odpowiedź gracza */
   press?: FightOffer | null;
-  /** gracz przyjmuje resztę ofert w sezonie bez pytania */
+  /** gracz przyjmuje resztę ofert w roku bez pytania */
   autoAccept?: boolean;
   /** obóz używany przy automatycznie przyjmowanych ofertach */
   autoPrep?: 'std' | 'rival' | 'hard';
-  /** odrzucone oferty w tym sezonie */
+  /** odrzucone oferty w tym roku */
   declines?: number;
-  /** czy menedżer zajmuje się tobą w tym sezonie */
+  /** czy menedżer zajmuje się tobą w tym roku */
   mgrFocus?: boolean;
-  /** krótkie notki z sezonu (odrzucone oferty itp.) */
+  /** krótkie notki z roku (odrzucone oferty itp.) */
   notes?: string[];
   /** gracz zobaczył już losowanie formy (po przeładowaniu nie powtarzamy) */
   formSeen?: boolean;
-  /** czy w tym sezonie była już propozycja walki na odbudowę */
+  /** czy w tym roku była już propozycja walki na odbudowę */
   tuneupOffered?: boolean;
 }
 
@@ -409,11 +409,11 @@ export interface GameState {
   wear: number; // 0..100
   injury: Injury | null;
   sponsors: Sponsor[];
-  /** zaplecze opłacane co sezon (od polskiej federacji): fizjo, lekarz, suplementy */
+  /** zaplecze opłacane co roku (od polskiej federacji): fizjo, lekarz, suplementy */
   backroom?: { physio?: boolean; doctor?: boolean; supps?: boolean };
   /** wynik ostatniego szukania sponsora na własną rękę */
   pitch?: { season: number; ok: boolean; text: string; name?: string; slot: string } | null;
-  /** dziwny sponsor podsunięty przez menedżera (oferta na ten sezon) */
+  /** dziwny sponsor podsunięty przez menedżera (oferta na ten rok) */
   shadyDeal?: { season: number; name: string; product: string; perSeason: number; seasons: number; rep: number; media: number; pitch: string; from: string; status: 'open' | 'taken' | 'refused' } | null;
   loans: Loan[];
   /** kategoria, w której walczysz (domyślnie naturalna z profilu) */

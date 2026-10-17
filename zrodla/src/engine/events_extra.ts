@@ -2,7 +2,7 @@
 import type { EventDef } from './events';
 import type { GameState } from './types';
 
-/** Wybór wariantu tekstu zależny od sezonu, żeby powtarzalne zdarzenia nie brzmiały tak samo. */
+/** Wybór wariantu tekstu zależny od roku, żeby powtarzalne zdarzenia nie brzmiały tak samo. */
 const vary = (s: GameState, arr: string[]) => arr[(s.season * 7 + s.age * 3) % arr.length];
 
 const rivalOf = (s: GameState) => s.peers.find((p) => p.id === s.rivalId && !p.retired);
@@ -23,7 +23,7 @@ export const EXTRA_EVENTS: EventDef[] = [
     once: true,
     weight: 4,
     cond: (s) => s.tier === 0,
-    text: () => 'Dzień przed turniejem pęka ci kask. Kolega z klubu pożycza swój. Pachnie jak szatnia po trzech sezonach, ale innego nie ma.',
+    text: () => 'Dzień przed turniejem pęka ci kask. Kolega z klubu pożycza swój. Pachnie jak szatnia po trzech latach, ale innego nie ma.',
     choices: () => [
       { label: 'Bierzesz pożyczony', desc: 'Byle chronił.', effects: { form: -1, note: 'zapach zostaje na długo' } },
       { label: 'Kupujesz nowy', desc: 'Sklep sportowy otwiera się o dziewiątej.', effects: { money: -350, form: 1 } },
@@ -501,7 +501,7 @@ export const EXTRA_EVENTS: EventDef[] = [
         `${rn(s)} nagrywa relację spod twojej sali treningowej. „Puk, puk, jest ktoś odważny?”`,
       ]),
     choices: () => [
-      { label: 'Odpowiadasz i wyzywasz go', desc: 'Niech organizator zrobi tę walkę.', effects: { media: 4, rep: -1, flag: 'rivalCallout', note: 'w tym sezonie się spotkacie' } },
+      { label: 'Odpowiadasz i wyzywasz go', desc: 'Niech organizator zrobi tę walkę.', effects: { media: 4, rep: -1, flag: 'rivalCallout', note: 'w tym roku się spotkacie' } },
       { label: 'Nagrywasz parodię', desc: 'Śmiech to też broń.', effects: { media: 3, relations: 1 } },
       { label: 'Ignorujesz', desc: 'Odpowiesz w klatce.', effects: { rep: 2, form: 1 } },
     ],

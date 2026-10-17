@@ -10,7 +10,7 @@ export interface Manager {
   purse: number; // mnożnik gaż (gdy się tobą zajmuje)
   negotiate: number; // pkt % do negocjacji
   quality: number; // o ile wyżej w rankingu są proponowani rywale
-  focus: number; // szansa, że w danym sezonie zajmuje się tobą (a nie innymi z jego stajni)
+  focus: number; // szansa, że w danym roku zajmuje się tobą (a nie innymi z jego stajni)
   promo: number; // o ile niższa pozycja w rankingu wystarczy do awansu do lepszej federacji
   sponsor: number; // pkt % do szans na sponsora
   titleShot?: boolean; // potrafi wywalczyć walkę o pas z miejsca 2–3
@@ -96,7 +96,7 @@ export function currentManager(s: GameState): Manager | null {
   return s.flags.manager ? managerById('okulary') : null;
 }
 
-/** Menedżer, który w tym sezonie faktycznie się tobą zajmuje. */
+/** Menedżer, który w tym roku faktycznie się tobą zajmuje. */
 export function activeManager(s: GameState): Manager | null {
   const m = currentManager(s);
   if (!m) return null;

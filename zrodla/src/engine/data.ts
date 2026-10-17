@@ -150,7 +150,7 @@ export const DIFFICULTY = {
 };
 
 export const SEASON_FORMS: { label: string; mod: number; w: number; tone: 'good' | 'bad' | 'neutral' | 'purple' }[] = [
-  { label: 'Sezon życia', mod: 9, w: 5, tone: 'purple' },
+  { label: 'Forma życia', mod: 9, w: 5, tone: 'purple' },
   { label: 'Świetna forma', mod: 5, w: 12, tone: 'good' },
   { label: 'Dobra forma', mod: 2, w: 23, tone: 'good' },
   { label: 'Normalna forma', mod: 0, w: 30, tone: 'neutral' },
@@ -158,7 +158,7 @@ export const SEASON_FORMS: { label: string; mod: number; w: number; tone: 'good'
   { label: 'Kryzys', mod: -8, w: 10, tone: 'bad' },
 ];
 
-export const GOOD_FORMS = ['Sezon życia', 'Świetna forma'];
+export const GOOD_FORMS = ['Forma życia', 'Świetna forma', 'Sezon życia'];
 export const BAD_FORMS = ['Słabszy rok', 'Kryzys'];
 
 export const VOIVODESHIPS = [
@@ -220,7 +220,7 @@ export const FED_NOTES: Record<string, string> = {
   'UFL – Ultimate Fighting League': 'Najbardziej znana liga na świecie. Pieniądze i sława, ale rywale z samego topu.',
   'Balettor MMA': 'Amerykańska liga, co druga gala w kasynie. Płacą dobrze, a turnieje Grand Prix to szansa na szybki pas.',
   'TWO FC – Two Fighting Championship': 'Azja: Singapur, Bangkok, Manila. Hale na 20 tysięcy i ważenie z badaniem nawodnienia.',
-  'PLF – Professional League of Fighters': 'Liga sezonowa z play-offami. Wygrywasz turniej, dostajesz czek na milion.',
+  'PLF – Professional League of Fighters': 'Liga z turniejem i play-offami. Wygrywasz turniej, dostajesz czek na milion.',
 };
 
 /** Hale dla federacji z innych kontynentów (reszta bierze listę ze szczebla). */
@@ -303,7 +303,7 @@ export const TIER_PURSE: [number, number][] = [
 ];
 
 export const TIER_FIGHTS = [4, 3, 3, 3, 2];
-export const TIER_ENTRY = [1200, 800, 0, 0, 0]; // opłaty startowe, dojazdy, badania na sezon
+export const TIER_ENTRY = [1200, 800, 0, 0, 0]; // opłaty startowe, dojazdy, badania na rok
 export const TIER_SHORT = ['AMA', 'REG', 'PL', 'EU', 'ŚW'];
 
 // skrót federacji do nazwy gali (XSW 47)

@@ -52,7 +52,7 @@ export const REP_EVENTS: EventDef[] = [
     text: () => 'Wychodzisz z urodzin kolegi. Przed lokalem dwóch pijanych zaczepia chłopaka, który nie wygląda, jakby umiał się bronić.',
     choices: () => [
       { label: 'Rozdzielasz ich spokojnie', desc: 'Stajesz pomiędzy i rozmawiasz.', test: 'iq', success: { rep: 2, note: 'obeszło się bez ciosów' }, fail: { rep: -1, wear: 2, note: 'policja spisuje wszystkich' }, successText: 'Wystarcza, że staniesz pomiędzy i spokojnie powiesz kilka słów. Pijani odchodzą, a chłopak dziękuje ci łamiącym się głosem.', failText: 'Jeden z pijanych rzuca się na ciebie. Kończy się przepychanką, a policja spisuje wszystkich, także ciebie.' },
-      { label: 'Dzwonisz po policję', desc: 'Od tego są. Tylko że w środowisku szybko się rozniesie.', effects: { rep: -6, note: 'w klubie mówią, że kablujesz' } },
+      { label: 'Dzwonisz po policję', desc: 'Od tego oni są.', effects: { rep: -6 } },
       { label: 'Idziesz do domu', desc: 'To nie twoja sprawa.', effects: {} },
     ],
   },

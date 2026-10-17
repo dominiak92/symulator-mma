@@ -225,7 +225,7 @@ export const EVENTS: EventDef[] = [
     ],
   },
 
-  // ---------- Start kariery: sparing kontrolny u trenera (kolejkowany przy pierwszym sezonie) ----------
+  // ---------- Start kariery: sparing kontrolny u trenera (kolejkowany przy pierwszym roku) ----------
   {
     id: 'sparing_kontrolny',
     title: 'Sparing kontrolny',
@@ -314,7 +314,7 @@ export const EVENTS: EventDef[] = [
     title: 'Kolano',
     weight: 4,
     cond: (s) => s.age >= 21 && !s.injury,
-    text: () => 'Na ostatnim sparingu przed sezonem kolano strzela jak gałąź. Lekarz mówi o łąkotce.',
+    text: () => 'Na ostatnim sparingu przed startem kolano strzela jak gałąź. Lekarz mówi o łąkotce.',
     choices: () => [
       { label: 'Operacja', desc: 'Kosztuje i trochę potrwa, ale kolano będzie jak nowe.', effects: { money: -12000, form: -3, healInjury: true } },
       { label: 'Walczysz na blokadzie', desc: 'Jakoś to będzie.', effects: { injury: { name: 'kolano na blokadzie', seasons: 1, penalty: 5 }, wear: 6 } },
@@ -472,7 +472,7 @@ export const EVENTS: EventDef[] = [
     cond: (s) => s.age >= 25 && s.money > 30000,
     text: () => 'Doradca w banku przekonuje, że „mieszkanie to najlepsza inwestycja” i proponuje kredyt na 30 lat.',
     choices: () => [
-      { label: 'Podpisujesz', desc: 'Własne cztery kąty. Raty co sezon.', effects: { money: -25000, loan: { amount: 0, installment: 9000, count: 6 }, relations: 3, note: 'wkład własny + raty' } },
+      { label: 'Podpisujesz', desc: 'Własne cztery kąty. Raty co roku.', effects: { money: -25000, loan: { amount: 0, installment: 9000, count: 6 }, relations: 3, note: 'wkład własny + raty' } },
       { label: 'Wynajmujesz dalej', desc: 'Elastyczność przede wszystkim.', effects: {} },
     ],
   },
@@ -601,7 +601,7 @@ export const EVENTS: EventDef[] = [
     once: true,
     weight: 4,
     cond: (s) => s.club.cost > 0 && s.tier <= 2,
-    text: () => 'Właściciel klubu proponuje ci darmowe składki na ten sezon. Warunek: zostajesz u niego jeszcze przez dwa sezony.',
+    text: () => 'Właściciel klubu proponuje ci darmowe składki na ten rok. Warunek: zostajesz u niego jeszcze przez dwa lata.',
     choices: (s) => [
       {
         label: 'Obiecujesz',
@@ -617,12 +617,12 @@ export const EVENTS: EventDef[] = [
     once: true,
     weight: 5,
     cond: (s) => s.tier <= 2 && s.tier < 4,
-    text: (s) => `Firma z twojego regionu chce dołożyć do sezonu. Stawia jeden warunek: po sezonie ${s.tier === 0 ? 'nie przechodzisz jeszcze na zawodowstwo' : 'nie przechodzisz do większej federacji'}.`,
+    text: (s) => `Firma z twojego regionu chce dołożyć się do twoich startów. Stawia jeden warunek: na koniec roku ${s.tier === 0 ? 'nie przechodzisz jeszcze na zawodowstwo' : 'nie przechodzisz do większej federacji'}.`,
     choices: (s) => [
       {
         label: 'Podpisujesz umowę',
-        desc: 'Pieniądze od razu. Jeśli po sezonie pójdziesz wyżej, złamiesz słowo.',
-        effects: { money: [5000, 8000, 20000][s.tier] ?? 8000, relations: 1, promise: { text: 'Obiecałeś, że po tym sezonie nie pójdziesz wyżej.', untilSeason: s.season, kind: 'noPromotion' } },
+        desc: 'Pieniądze od razu. Jeśli na koniec roku pójdziesz wyżej, złamiesz słowo.',
+        effects: { money: [5000, 8000, 20000][s.tier] ?? 8000, relations: 1, promise: { text: 'Obiecałeś, że po tym roku nie pójdziesz wyżej.', untilSeason: s.season, kind: 'noPromotion' } },
       },
       { label: 'Dziękujesz i odmawiasz', desc: 'Nie masz żadnych zobowiązań.', effects: {} },
     ],
@@ -683,7 +683,7 @@ export const EVENTS: EventDef[] = [
       return `${p.firstName} ${p.lastName}, z którym znacie się jeszcze z amatorki, wrzuca filmik: „On się mnie po prostu boi”.`;
     },
     choices: () => [
-      { label: 'Przyjmujesz wyzwanie', desc: 'W tym sezonie musicie się spotkać.', effects: { media: 3, flag: 'peerCallout' } },
+      { label: 'Przyjmujesz wyzwanie', desc: 'W tym roku musicie się spotkać.', effects: { media: 3, flag: 'peerCallout' } },
       { label: 'Ignorujesz', desc: 'Nie dajesz mu rozgłosu.', effects: { rep: 1 } },
     ],
   },
@@ -694,8 +694,8 @@ export const EVENTS: EventDef[] = [
     cond: (s) => s.age >= 34,
     text: () => 'Przy niedzielnym obiedzie rodzina zaczyna temat: „Może już wystarczy? Głowa jedna, a ty coraz wolniej mówisz”.',
     choices: () => [
-      { label: 'Jeszcze jeden sezon', desc: 'Czujesz, że masz jeszcze coś do udowodnienia.', effects: { relations: -3 } },
-      { label: 'Kończysz po tym sezonie', desc: 'Ostatni taniec.', effects: { relations: 4, flag: 'lastSeason', note: 'ostatni sezon kariery' } },
+      { label: 'Jeszcze jeden rok', desc: 'Czujesz, że masz jeszcze coś do udowodnienia.', effects: { relations: -3 } },
+      { label: 'Kończysz po tym roku', desc: 'Ostatni taniec.', effects: { relations: 4, flag: 'lastSeason', note: 'ostatni rok kariery' } },
     ],
   },
   {
@@ -731,7 +731,7 @@ export const EVENTS: EventDef[] = [
     title: 'Nadgarstek',
     weight: 3,
     cond: (s) => !s.injury && s.age >= 19,
-    text: () => 'Na worku coś trzasnęło w nadgarstku. Ręka puchnie jak bułka. Do pierwszej walki sezonu zostało sześć tygodni.',
+    text: () => 'Na worku coś trzasnęło w nadgarstku. Ręka puchnie jak bułka. Do pierwszej walki roku zostało sześć tygodni.',
     choices: () => [
       { label: 'Odpuszczasz sparingi i leczysz', desc: 'Fizjoterapeuta, lód, cierpliwość.', effects: { money: -3000, form: -2, healInjury: true } },
       { label: 'Zaciskasz zęby', desc: 'Usztywniasz taśmą i jedziesz dalej.', effects: { injury: { name: 'nadgarstek', seasons: 1, penalty: 4 }, stats: { iq: 1 } } },
@@ -861,7 +861,7 @@ export const EVENTS: EventDef[] = [
     once: true,
     weight: 5,
     cond: (s) => s.tier >= 3,
-    text: () => 'Pierwsza walka sezonu w Londynie. Federacja kupiła ci lot z przesiadką w Dubaju i hotel przy lotnisku. Możesz dopłacić za wcześniejszy przylot.',
+    text: () => 'Pierwsza walka roku w Londynie. Federacja kupiła ci lot z przesiadką w Dubaju i hotel przy lotnisku. Możesz dopłacić za wcześniejszy przylot.',
     choices: () => [
       { label: 'Lecisz tydzień wcześniej', desc: 'Aklimatyzacja, spokojny sen, własny dietetyk.', effects: { money: -9000, form: 2 } },
       { label: 'Lecisz z federacją', desc: 'Jet lag to dla słabych.', effects: { form: -2 } },

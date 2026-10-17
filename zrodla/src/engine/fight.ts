@@ -55,7 +55,7 @@ export interface FightCtx {
   me: Stats; // efektywne statystyki gracza (po zużyciu)
   meName: string;
   opp: Fighter;
-  form: number; // modyfikator formy sezonu (pkt %)
+  form: number; // modyfikator formy roku (pkt %)
   penalty: number; // kontuzja (pkt %)
   allowDecision: boolean;
   decisionChance: number;

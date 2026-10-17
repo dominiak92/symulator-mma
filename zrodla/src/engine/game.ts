@@ -555,13 +555,13 @@ export function budgetLines(s: GameState): BudgetLine[] {
     });
   for (const l of s.loans) lines.push({ label: 'Rata kredytu', sub: `${l.left === 1 ? 'ostatnia rata' : `zostało ${l.left} ${pl(l.left, 'rata', 'raty', 'rat')}`}`, amount: -l.installment, icon: 'card' });
   for (const sp of s.sponsors)
-    lines.push({ label: sp.name, sub: `${sp.clause} · ${sp.seasonsLeft === 1 ? 'ostatni sezon' : `jeszcze ${sp.seasonsLeft} ${pl(sp.seasonsLeft, 'sezon', 'sezony', 'sezonów')}`}`, amount: sp.perSeason, logo: { kind: 'sponsor', name: sp.name } });
+    lines.push({ label: sp.name, sub: `${sp.clause} · ${sp.seasonsLeft === 1 ? 'ostatni rok' : `jeszcze ${sp.seasonsLeft} ${pl(sp.seasonsLeft, 'rok', 'lata', 'lat')}`}`, amount: sp.perSeason, logo: { kind: 'sponsor', name: sp.name } });
   if (s.academy) lines.push({ label: academyName(s), sub: `twoja akademia · ${ACADEMY_LEVELS[s.academy - 1].name}`, amount: academyIncome(s), icon: 'home' });
   if (s.age < 19 && s.relations >= 3) lines.push({ label: 'Rodzice dokładają', sub: 'z trzynastki', amount: 2000 + s.relations * 300, icon: 'heart' });
   return lines;
 }
 
-// Własna akademia: inwestycja na późną karierę (przychód co sezon i punkty legacy)
+// Własna akademia: inwestycja na późną karierę (przychód co roku i punkty legacy)
 export const ACADEMY_LEVELS = [
   { cost: 150000, income: 10000, name: 'sala w wynajętej hali', note: 'grupy dzieci i amatorów' },
   { cost: 400000, income: 25000, name: 'własny klub z klatką', note: 'sekcja zawodnicza i obozy letnie' },
@@ -642,7 +642,7 @@ export function expectedPurses(s: GameState) {
 
 /** Ile maksymalnie da bank na danym szczeblu kariery. */
 const LOAN_CAP = [20000, 40000, 120000, 300000, 800000];
-/** Do ilu złotych na minusie można jeszcze wejść w sezon (debet). */
+/** Do ilu złotych na minusie można jeszcze zacząć rok (debet). */
 export const OVERDRAFT = 5000;
 
 /** Czemu bank nie da kredytu (null = da). */
@@ -700,13 +700,13 @@ export function downgradeClub(s0: GameState): GameState {
   return s;
 }
 
-/** Ile zostanie po sezonie z danym klubem (do ostrzeżenia na rynku). */
+/** Ile zostanie po roku z danym klubem (do ostrzeżenia na rynku). */
 export function projectedAfter(s: GameState, clubCost: number): number {
   const base = s.money + budgetBalance(s) + s.club.cost - clubCost;
   return base + Math.round(expectedPurses(s) * 0.8);
 }
 
-/** Czy można wejść w sezon z tym budżetem. */
+/** Czy można zacząć rok z tym budżetem. */
 export function canStartSeason(s: GameState) {
   return s.money + budgetBalance(s) >= -OVERDRAFT;
 }
@@ -728,7 +728,7 @@ export function breakPreview(s: GameState) {
 }
 
 /**
- * Rok przerwy: zamiast sezonu idziesz do pracy. Zarabiasz, spłacasz raty,
+ * Rok przerwy: zamiast roku idziesz do pracy. Zarabiasz, spłacasz raty,
  * ale efekty obozu przepadają, a umiejętności spadają. Wypadasz z rankingu.
  */
 export function takeBreakYear(s0: GameState): GameState {
@@ -862,7 +862,7 @@ export function rehabYear(s0: GameState): GameState {
   return s;
 }
 
-// Wyjazdy na lata: sezony treningu zamiast walk (Dagestan, Floryda, Trondheim)
+// Wyjazdy na lata: lata treningu zamiast walk (Dagestan, Floryda, Trondheim)
 export interface Expedition {
   id: 'dagestan' | 'floryda' | 'trondheim';
   name: string;
@@ -893,7 +893,7 @@ export const EXPEDITIONS: Expedition[] = [
     media: -12,
     rep: 4,
     wear: -10,
-    desc: 'Dwa sezony w górach (trzeci rok to powrót do formy). Zapasy pięć razy dziennie, bez internetu i bez cukru.',
+    desc: 'Dwa lata w górach (trzeci to powrót do formy). Zapasy pięć razy dziennie, bez internetu i bez cukru.',
     minus: 'Kibice o tobie zapominają, wracasz bez rankingu.',
     log: 'Dwa lata w Dagestanie. Zapasy, góry i cisza.',
     stories: [
@@ -914,7 +914,7 @@ export const EXPEDITIONS: Expedition[] = [
     media: -4,
     rep: 3,
     wear: -6,
-    desc: 'Dwa sezony w największej amerykańskiej stajni. Sparingi z mistrzami i trenerzy od wszystkiego.',
+    desc: 'Dwa lata w największej amerykańskiej stajni. Sparingi z mistrzami i trenerzy od wszystkiego.',
     minus: 'Najdroższy wyjazd. Wracasz bez rankingu, ale z filmikami z sali.',
     log: 'Dwa lata na Florydzie. Upał, sparingi i trenerzy od wszystkiego.',
     stories: [
@@ -934,9 +934,9 @@ export const EXPEDITIONS: Expedition[] = [
     media: -2,
     rep: 2,
     wear: -10,
-    desc: 'Jeden sezon na północy: biegi po śniegu, sauna, przerębel i sparingi z Norwegami, którzy nigdy się nie męczą.',
+    desc: 'Jeden rok na północy: biegi po śniegu, sauna, przerębel i sparingi z Norwegami, którzy nigdy się nie męczą.',
     minus: 'Rok bez walk i bez gaż. Ranking przepada.',
-    log: 'Sezon w Trondheim. Śnieg, sauna i kondycja nie z tej ziemi.',
+    log: 'Rok w Trondheim. Śnieg, sauna i kondycja nie z tej ziemi.',
     stories: [
       'Rok w Trondheim. Słońce widziałeś może dwa razy, za to biegałeś po śniegu codziennie. Wracasz z płucami, które nie znają zmęczenia.',
       'Sauna, przerębel, sparing i znowu sauna. Norwegowie mówią mało, ale biją równo przez pięć rund. Teraz ty też tak umiesz.',
@@ -1102,7 +1102,7 @@ function maybeAutoSponsor(rng: Rng, s: GameState): string | null {
 }
 
 // ---------------------------------------------------------------------------
-// Sponsor na własną rękę: raz na sezon możesz sam napisać do firmy
+// Sponsor na własną rękę: raz na rok możesz sam napisać do firmy
 // ---------------------------------------------------------------------------
 
 export type PitchSlot = 'spodenki' | 'plecy' | 'social';
@@ -1110,7 +1110,7 @@ export type PitchSlot = 'spodenki' | 'plecy' | 'social';
 export const PITCH_SLOTS: { id: PitchSlot; label: string; desc: string; base: number; pay: number; clause: string }[] = [
   { id: 'spodenki', label: 'Logo na spodenkach', desc: 'Najlepiej widać w klatce, firmy płacą najwięcej, ale trudno przekonać.', base: 0.28, pay: 1, clause: 'logo na spodenkach' },
   { id: 'plecy', label: 'Plecy rashguarda na ważeniu', desc: 'Łatwiej się zgodzą, ale zapłacą mniej.', base: 0.45, pay: 0.55, clause: 'logo na plecach na ważeniu i face to face' },
-  { id: 'social', label: 'Posty na Instagramie', desc: 'Liczą się zasięgi. Im więcej mediów, tym większa szansa.', base: 0.15, pay: 0.75, clause: 'trzy posty w sezonie z kodem rabatowym' },
+  { id: 'social', label: 'Posty na Instagramie', desc: 'Liczą się zasięgi. Im więcej mediów, tym większa szansa.', base: 0.15, pay: 0.75, clause: 'trzy posty w roku z kodem rabatowym' },
 ];
 
 const PITCH_FAIL = [
@@ -1134,7 +1134,7 @@ export function sponsorCap(s: GameState) {
 
 /** Czy można dziś szukać sponsora (null = można). */
 export function pitchBlocked(s: GameState): string | null {
-  if (s.pitch && s.pitch.season === s.season) return 'W tym sezonie już szukałeś. Kolejna próba za rok.';
+  if (s.pitch && s.pitch.season === s.season) return 'W tym roku już szukałeś. Kolejna próba za rok.';
   if (s.sponsors.length >= sponsorCap(s)) return 'Masz już tylu sponsorów, ilu da się zmieścić na stroju.';
   return null;
 }
@@ -1165,7 +1165,7 @@ export function pitchSponsor(s0: GameState, slot: PitchSlot): GameState {
     if (rng.chance(ch)) {
       const per = Math.round((pitchPay(s, slot) * (0.85 + rng.next() * 0.3)) / 500) * 500;
       s.sponsors.push({ id: uid(rng, 's'), name, perSeason: per, seasonsLeft: rng.int(1, 2), clause: sl.clause });
-      s.pitch = { season: s.season, ok: true, name, slot, text: `${name} się zgadza! ${fmtMoney(per).slice(1)} na sezon za ${sl.clause}.` };
+      s.pitch = { season: s.season, ok: true, name, slot, text: `${name} się zgadza! ${fmtMoney(per).slice(1)} na rok za ${sl.clause}.` };
       log(s, `Nowy sponsor: ${name}.`);
     } else {
       s.pitch = { season: s.season, ok: false, name, slot, text: `${name} ${rng.pick(PITCH_FAIL)}` };
@@ -1175,7 +1175,7 @@ export function pitchSponsor(s0: GameState, slot: PitchSlot): GameState {
 }
 
 // ---------------------------------------------------------------------------
-// Start sezonu: płatności, wydarzenia, forma
+// Start roku: płatności, wydarzenia, forma
 // ---------------------------------------------------------------------------
 
 export function startSeason(s0: GameState): GameState {
@@ -1247,7 +1247,7 @@ export function chooseEvent(s0: GameState, idx: number): GameState {
 
 export function continueAfterEvent(s0: GameState): GameState {
   const s = clone(s0);
-  // po sparingu na starcie kariery idziemy na obóz przygotowawczy, a nie do sezonu
+  // po sparingu na starcie kariery idziemy na obóz przygotowawczy, a nie do roku
   if (s0.event?.id === 'sparing_kontrolny' && !s0.run && s0.eventQueue.length === 0 && s0.event.picked !== undefined) {
     s.event = null;
     s.phase = 'training';
@@ -1327,8 +1327,8 @@ export function effectChips(e: Effects | undefined, s?: GameState): Chip[] {
   if (e.wear) out.push({ text: `zużycie ${sg(e.wear)}`, tone: e.wear > 0 ? 'bad' : 'good', icon: 'bandage' });
   if (e.injury) out.push({ text: `kontuzja: ${e.injury.name}`, tone: 'bad', icon: 'bandage' });
   if (e.healInjury) out.push({ text: 'kontuzja wyleczona', tone: 'good', icon: 'heart' });
-  if (e.sponsor) out.push({ text: `sponsor ${fmtMoney(e.sponsor.perSeason).slice(1)} na sezon`, tone: 'good', icon: 'briefcase' });
-  if (e.promise) out.push({ text: `obietnica do sezonu ${e.promise.untilSeason}`, tone: 'neutral', icon: 'pen' });
+  if (e.sponsor) out.push({ text: `sponsor ${fmtMoney(e.sponsor.perSeason).slice(1)} na rok`, tone: 'good', icon: 'briefcase' });
+  if (e.promise) out.push({ text: `obietnica do roku ${e.promise.untilSeason}`, tone: 'neutral', icon: 'pen' });
   if (e.loan && e.loan.installment) out.push({ text: `raty ${e.loan.count} × ${fmtMoney(e.loan.installment).slice(1)}`, tone: 'bad', icon: 'card' });
   if (e.note) out.push({ text: e.note, tone: 'neutral' });
   void s;
@@ -1336,7 +1336,7 @@ export function effectChips(e: Effects | undefined, s?: GameState): Chip[] {
 }
 
 // ---------------------------------------------------------------------------
-// Sezon
+// Rok
 // ---------------------------------------------------------------------------
 
 function divisionPerson(div: string) {
@@ -1384,7 +1384,7 @@ function beginRun(s: GameState) {
     const intro: string[] = [];
     let tourneys: Tourney[] | undefined;
     if (isAmateurRun(s)) {
-      // awans z zawodów wojewódzkich: po medalu albo po dwóch sezonach (jedna walka nie przekreśla kariery)
+      // awans z zawodów wojewódzkich: po medalu albo po dwóch latach (jedna walka nie przekreśla kariery)
       if (amLevel(s) === 0 && ((s.flags.amPromote ?? 0) > 0 || (s.flags.amLocalSeasons ?? 0) >= 2)) {
         s.flags.amLevel = 1;
         s.flags.amPromote = 0;
@@ -1398,17 +1398,17 @@ function beginRun(s: GameState) {
     }
     const sp = maybeAutoSponsor(rng, s);
     if (sp) intro.push(`Nowy sponsor na spodenkach: ${sp}.`);
-    if (s.injury) intro.push(`Wchodzisz w sezon z kontuzją: ${s.injury.name}. Każda szansa jest o ${s.injury.penalty} pkt mniejsza.`);
-    if (bonus > 0) intro.push(`To, co działo się przed sezonem, dodaje ci pewności: forma +${bonus}.`);
-    if (bonus < 0) intro.push(`To, co działo się przed sezonem, siedzi ci w głowie: forma −${Math.abs(bonus)}.`);
+    if (s.injury) intro.push(`Zaczynasz rok z kontuzją: ${s.injury.name}. Każda szansa jest o ${s.injury.penalty} pkt mniejsza.`);
+    if (bonus > 0) intro.push(`To, co działo się przed startem, dodaje ci pewności: forma +${bonus}.`);
+    if (bonus < 0) intro.push(`To, co działo się przed startem, siedzi ci w głowie: forma −${Math.abs(bonus)}.`);
     const planned = plannedFights(s);
     const mgr = currentManager(s);
     const mgrFocus = mgr ? rng.chance(mgr.focus) : undefined;
     if (mgr && s.tier > 0) {
-      if (mgrFocus) intro.push(`${mgr.name} załatwia ci walki w tym sezonie (bierze ${Math.round(mgr.cut * 100)}% gaży).`);
-      else intro.push(`${mgr.name} cały sezon zajmuje się ${mgr.stable ? rng.pick(mgr.stable) : 'innymi zawodnikami'}. Na ciebie nie ma czasu, ale procent bierze.`);
+      if (mgrFocus) intro.push(`${mgr.name} załatwia ci walki w tym roku (bierze ${Math.round(mgr.cut * 100)}% gaży).`);
+      else intro.push(`${mgr.name} cały rok zajmuje się ${mgr.stable ? rng.pick(mgr.stable) : 'innymi zawodnikami'}. Na ciebie nie ma czasu, ale procent bierze.`);
     }
-    if (planned > 3) intro.push(`${planned} walki w sezonie: więcej gaż, ale pod koniec organizm nie nadąża.`);
+    if (planned > 3) intro.push(`${planned} walki w roku: więcej gaż, ale pod koniec organizm nie nadąża.`);
     s.run = {
       tourneys,
       tIdx: 0,
@@ -1529,7 +1529,7 @@ function fightCtx(s: GameState, opp: Fighter): FightCtx {
     me: effectiveStats(s),
     meName: fullName(s),
     opp,
-    // czwarta i piąta walka w sezonie: organizm nie nadąża
+    // czwarta i piąta walka w roku: organizm nie nadąża
     form: s.run!.form.mod - Math.max(0, s.run!.fights.length - 3) * 5 + (s.run!.planned < s.contract.fights && s.contract.kind !== 'freak' ? 3 : 0) + fightMods(s),
     penalty: s.injury?.penalty ?? 0,
     allowDecision: true,
@@ -1573,7 +1573,7 @@ function finishTime(rng: Rng, rep: FightReport) {
   return `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`;
 }
 
-/** Rozgrywa kolejną walkę sezonu (albo do decyzji). */
+/** Rozgrywa kolejną walkę roku (albo do decyzji). */
 /** Oferta kolejnej walki (zawodowcy): rywal, miejsce w karcie i gaża. */
 function buildOffer(rng: Rng, s: GameState, idx: number): FightOffer {
   const { opp, title, defense, grudge, peer } = pickOpponent(rng, s, idx);
@@ -1854,7 +1854,7 @@ export function decide(s0: GameState, key: string): GameState {
   return s;
 }
 
-/** Szybko: rozgrywa wszystko do następnej decyzji albo końca sezonu. */
+/** Szybko: rozgrywa wszystko do następnej decyzji albo końca roku. */
 export function seasonSkip(s0: GameState): GameState {
   let s = s0;
   for (let i = 0; i < 14; i++) {
@@ -1890,7 +1890,7 @@ export function declineBlocked(s: GameState): string | null {
   return null;
 }
 
-/** Przyjmuje tę ofertę i wszystkie kolejne w tym sezonie. */
+/** Przyjmuje tę ofertę i wszystkie kolejne w tym roku. */
 export function acceptAllOffers(s0: GameState, prep: 'std' | 'rival' | 'hard' = 'std'): GameState {
   const s = acceptOffer(s0, prep);
   if (s.run) {
@@ -1978,13 +1978,13 @@ export function acceptOffer(s0: GameState, prep: 'std' | 'rival' | 'hard' = 'std
   return s;
 }
 
-/** Odpada oferta: albo przychodzi następna, albo w tym sezonie będzie jedna walka mniej. */
+/** Odpada oferta: albo przychodzi następna, albo w tym roku będzie jedna walka mniej. */
 function offerGone(rng: Rng, s: GameState, lostP: number, text: string) {
   const run = s.run!;
   run.notes = run.notes ?? [];
   if (rng.chance(lostP)) {
     run.planned -= 1;
-    run.notes.push(`${text} Innej oferty nie ma, w tym sezonie jedna walka mniej.`);
+    run.notes.push(`${text} Innej oferty nie ma, w tym roku jedna walka mniej.`);
     run.offer = null;
     if (run.fights.length >= run.planned) run.done = true;
     else run.offer = buildOffer(rng, s, run.fights.length);
@@ -2036,7 +2036,7 @@ export function declineOffer(s0: GameState): GameState {
   return s;
 }
 
-/** Ile walk chcesz stoczyć w sezonie (przed startem sezonu). */
+/** Ile walk chcesz stoczyć w roku (przed startem roku). */
 export function fightRange(s: GameState): [number, number] | null {
   if (s.tier === 0 || s.contract.kind === 'freak') return null;
   const f = s.contract.fights;
@@ -2284,12 +2284,12 @@ function finalizeFight(rng: Rng, s: GameState, rep: FightReport) {
     } else if (roll < 0.88 || rep.amateur) {
       s.injury = { name: rng.pick(INJ_SEVERE), seasons: 2, penalty: 5 };
       s.flags.injuryStop = 1;
-      rep.moments.push({ round: rep.round, title: 'Poważna kontuzja', text: `Diagnoza: ${s.injury.name}. Lekarz skreśla cię do końca sezonu.`, tone: 'bad' });
-      log(s, `Poważna kontuzja: ${s.injury.name}. Koniec sezonu.`);
+      rep.moments.push({ round: rep.round, title: 'Poważna kontuzja', text: `Diagnoza: ${s.injury.name}. Lekarz skreśla cię do końca roku.`, tone: 'bad' });
+      log(s, `Poważna kontuzja: ${s.injury.name}. Koniec roku.`);
     } else {
       s.injury = { name: rng.pick(INJ_OUT), seasons: 2, penalty: 6, out: 1 };
       s.flags.injuryStop = 1;
-      rep.moments.push({ round: rep.round, title: 'Uraz na rok', text: `Diagnoza: ${s.injury.name}. Operacja i cały następny sezon rehabilitacji.`, tone: 'bad' });
+      rep.moments.push({ round: rep.round, title: 'Uraz na rok', text: `Diagnoza: ${s.injury.name}. Operacja i cały następny rok rehabilitacji.`, tone: 'bad' });
       log(s, `Uraz na cały rok: ${s.injury.name}.`);
     }
   }
@@ -2439,7 +2439,7 @@ function headlineFor(rep: FightReport): string {
 }
 
 // ---------------------------------------------------------------------------
-// Podsumowanie sezonu
+// Podsumowanie roku
 // ---------------------------------------------------------------------------
 
 const fmtK = (n: number) => `${n >= 0 ? '+' : '−'}${Math.abs(Math.round(n / 1000)).toLocaleString('pl-PL')} tys. zł`;
@@ -2472,7 +2472,7 @@ export function toSummary(s0: GameState): GameState {
   const medalPts = (run.tourneys ?? []).reduce((a, t) => a + (t.medal === 'gold' ? 14 : t.medal === 'silver' ? 8 : t.medal === 'bronze' ? 5 : 0), 0);
   const score = bars[0].value * 0.5 + bars[1].value * 0.3 + bars[2].value * 0.1 + bars[3].value * 0.1 + (beltWon ? 25 : 0) + medalPts;
   const grade =
-    score >= 80 ? 'Sezon wybitny' : score >= 62 ? 'Udany sezon' : score >= 45 ? 'Przeciętny sezon' : score >= 28 ? 'Sezon do zapomnienia' : 'Katastrofa';
+    score >= 80 ? 'Rok wybitny' : score >= 62 ? 'Udany rok' : score >= 45 ? 'Przeciętny rok' : score >= 28 ? 'Rok do zapomnienia' : 'Katastrofa';
 
   const finishes = fights.filter((f) => f.result === 'W' && (f.method === 'KO/TKO' || f.method === 'Poddanie')).length;
   const lines: string[] = [];
@@ -2481,11 +2481,11 @@ export function toSummary(s0: GameState): GameState {
     for (const t of run.tourneys!) lines.push(`${t.name}: ${tourneyResultText(t)}.`);
     if (beltWon) lines.push('Jesteś mistrzem Polski amatorów i w klubie wszyscy już o tym wiedzą.');
   } else if (beltWon) lines.push(`Rok, w którym zdobyłeś pas. ${fedShort} ma nowego mistrza.`);
-  else if (w === total && total > 1) lines.push(`Sezon bez porażki, ${w} na ${total}.`);
+  else if (w === total && total > 1) lines.push(`Rok bez porażki, ${w} na ${total}.`);
   else if (l === total) lines.push(`Rok do wymazania. ${l} ${pl(l, 'porażka', 'porażki', 'porażek')} i ani jednego powodu do radości.`);
   else lines.push(`Bilans roku: ${w}-${l}${d ? `-${d}` : ''}.`);
   if (!amateur && fights.length === 0) {
-    lines.push('Cały sezon bez walki. Organizatorzy zapominają nazwiska szybciej, niż myślisz.');
+    lines.push('Cały rok bez walki. Organizatorzy zapominają nazwiska szybciej, niż myślisz.');
     if (s.rank !== null && s.rank > 0) s.rank = s.rank + 3 > RANK_SIZE[s.tier] ? null : s.rank + 3;
   }
   if (finishes >= 2) lines.push(`${finishes} ${pl(finishes, 'walkę', 'walki', 'walk')} skończyłeś przed czasem.`);
@@ -2589,7 +2589,7 @@ function ageOneYear(rng: Rng, s: GameState) {
 export function checkEnd(s: GameState): string | null {
   if (s.age >= 40) return 'Czterdziestka na karku. Komisja lekarska nie przedłuża ci licencji.';
   if (s.wear >= 100) return 'Lekarze nie dają ci zgody na kolejne walki. Za dużo przyjętych ciosów.';
-  if ((s.flags.lastSeason ?? 0) > 0) return 'Obiecałeś rodzinie, że to ostatni sezon. Dotrzymujesz słowa.';
+  if ((s.flags.lastSeason ?? 0) > 0) return 'Obiecałeś rodzinie, że to ostatni rok. Dotrzymujesz słowa.';
   if (s.age >= 27 && s.finishes.koLosses >= 5 && s.history.slice(-4).filter((h) => h.result === 'L' && h.method === 'KO/TKO').length >= 3)
     return 'Trzy nokauty w czterech walkach. Trener rzuca ręcznik, tym razem za całą karierę.';
   if (s.money < -80000 && s.age >= 24 && s.tier <= 1) return 'Długi cię przygniotły. Wyjeżdżasz do pracy w Holandii i do klatki już nie wracasz.';
@@ -2645,7 +2645,7 @@ export function buildMarket(rng: Rng, s: GameState) {
 
   // zostajesz
   const stay = contractFor(rng, s, s.tier, 'stay', s.rank);
-  stay.note = s.tier === 0 ? (amLevel(s) === 0 ? 'Jeszcze rok turniejów amatorskich, najpierw zawody wojewódzkie.' : 'Jeszcze rok turniejów amatorskich: Amatorski Puchar i Mistrzostwa Polski.') : s.rank === 0 ? 'Bronisz pasa. Mistrza się nie wypuszcza.' : 'Kolejny sezon w tej samej federacji.';
+  stay.note = s.tier === 0 ? (amLevel(s) === 0 && !(s.flags.amPromote ?? 0) && (s.flags.amLocalSeasons ?? 0) < 2 ? 'Jeszcze rok turniejów amatorskich, najpierw zawody wojewódzkie.' : amLevel(s) === 0 ? 'Awans z zawodów wojewódzkich: w tym roku Amatorski Puchar i Mistrzostwa Polski.' : 'Jeszcze rok turniejów amatorskich: Amatorski Puchar i Mistrzostwa Polski.') : s.rank === 0 ? 'Bronisz pasa. Mistrza się nie wypuszcza.' : 'Kolejny rok w tej samej federacji.';
   if (cut) {
     stay.available = false;
     stay.reason = 'federacja nie przedłuża z tobą kontraktu';
@@ -2853,12 +2853,12 @@ export function marketWarnings(s: GameState): string[] {
     if (p.kind === 'stayClub' && club && club.id !== s.club.id) out.push(`Łamiesz słowo. ${p.text}`);
   }
   if (club && club.id !== s.club.id && club.cost > 0) {
-    // szacunek: kasa teraz + gaże i sponsorzy − składki i życie w nowym sezonie
+    // szacunek: kasa teraz + gaże i sponsorzy − składki i życie w nowym roku
     const living = livingCost(s.age + 1);
     const purses = c ? (c.purse + c.winBonus * 0.5) * c.fights * (1 - (currentManager(s)?.cut ?? 0)) : 0;
     const left = s.money + s.sponsors.reduce((a, b) => a + b.perSeason, 0) + purses - club.cost - living - (c?.entryCost ?? 0) - s.loans.reduce((a, l) => a + l.installment, 0);
     if (left < 0)
-      out.push(`Uwaga na budżet: ze składkami ${club.cost.toLocaleString('pl-PL')} zł i kosztami życia po sezonie zabraknie ci ok. ${Math.round(-left / 1000).toLocaleString('pl-PL')} tys. zł. Grozi kredyt albo rok przerwy.`);
+      out.push(`Uwaga na budżet: ze składkami ${club.cost.toLocaleString('pl-PL')} zł i kosztami życia na koniec roku zabraknie ci ok. ${Math.round(-left / 1000).toLocaleString('pl-PL')} tys. zł. Grozi kredyt albo rok przerwy.`);
   }
   if (c?.kind === 'freak')
     out.push(
@@ -3012,7 +3012,7 @@ export function careerStory(s: GameState): string {
   const first = s.history[0];
   const belts = s.belts.length;
   const fights = s.history.length;
-  parts.push(`${s.seasons.length} ${pl(s.seasons.length, 'sezon', 'sezony', 'sezonów')}, ${fights} ${pl(fights, 'walka', 'walki', 'walk')}.`);
+  parts.push(`${s.seasons.length} ${pl(s.seasons.length, 'rok', 'lata', 'lat')}, ${fights} ${pl(fights, 'walka', 'walki', 'walk')}.`);
   if (s.amRecord.w + s.amRecord.l + s.amRecord.d > 0) {
     const m = medalCount(s);
     parts.push(`W amatorce ${recStr(s.amRecord)}${m ? ` i ${m} ${pl(m, 'medal', 'medale', 'medali')}` : ''}.`);
@@ -3055,7 +3055,7 @@ export function momentTone(m: Moment): Moment['tone'] {
 }
 
 // ---------------------------------------------------------------------------
-// Tabela rankingu (fikcyjni zawodnicy, stabilni w obrębie sezonu i szczebla)
+// Tabela rankingu (fikcyjni zawodnicy, stabilni w obrębie roku i szczebla)
 // ---------------------------------------------------------------------------
 
 export interface RankRow {

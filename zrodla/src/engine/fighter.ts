@@ -188,7 +188,7 @@ export function progressPeer(rng: Rng, p: Peer) {
     p.stats[k] = clamp(Math.round(p.stats[k] + Math.max(0, target - p.stats[k]) * rate + rng.int(-1, 1)), 5, 99);
     if (p.age >= 32) p.stats[k] = clamp(p.stats[k] - rng.int(0, 2), 5, 99);
   }
-  // sezon zawodnika z rocznika
+  // rok zawodnika z rocznika
   const fights = [4, 3, 3, 3, 2][p.tier];
   const level = TIER_LEVEL[p.tier];
   const o = ovr(p.stats);

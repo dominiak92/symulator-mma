@@ -5,7 +5,7 @@ import type { GameState } from './types';
 
 const vary = (s: GameState, arr: string[]) => arr[(s.season * 5 + s.age) % arr.length];
 
-/** Ile mniej więcej zarabiasz w sezonie (gaże + premie + sponsorzy). */
+/** Ile mniej więcej zarabiasz w roku (gaże + premie + sponsorzy). */
 export function seasonIncome(s: GameState): number {
   const floor = [2500, 9000, 40000, 120000, 300000][s.tier] ?? 2500;
   if (s.tier === 0) return floor;
