@@ -2,6 +2,7 @@ import { activeManager, currentManager, managerBlocked, managerById } from './ma
 import { createRng, type Rng } from './rng';
 import type {
   FightOffer,
+  WeightKey,
   Club,
   Contract,
   Effects,
@@ -122,7 +123,35 @@ export function medalCount(s: GameState) {
 }
 
 export function weightLabel(s: GameState) {
-  return WEIGHTS[s.profile.weight ?? 'polsrednia'].label;
+  return WEIGHTS[divisionKey(s)].label;
+}
+export function divisionKey(s: GameState): WeightKey {
+  return s.division ?? s.profile.weight ?? 'polsrednia';
+}
+/** −1 = zbijasz wagę (kategoria niżej), +1 = walczysz kategorię wyżej. */
+export function weightShift(s: GameState): number {
+  return WEIGHT_KEYS.indexOf(divisionKey(s)) - WEIGHT_KEYS.indexOf(s.profile.weight ?? 'polsrednia');
+}
+/** Kategorie, do których można przejść (sąsiednie wokół naturalnej). */
+export function divisionOptions(s: GameState): WeightKey[] {
+  const n = WEIGHT_KEYS.indexOf(s.profile.weight ?? 'polsrednia');
+  return [n - 1, n, n + 1].filter((i) => i >= 0 && i < WEIGHT_KEYS.length).map((i) => WEIGHT_KEYS[i]);
+}
+/** Szansa, że nie zrobisz wagi przy zbijaniu (%). */
+export function weightMissChance(s: GameState): number {
+  if (weightShift(s) >= 0) return 0;
+  return Math.round(clamp(7 + Math.max(0, s.age - 28) * 1.2 + (s.stats.cardio < 35 ? 4 : 0), 5, 25));
+}
+export function changeDivision(s0: GameState, key: WeightKey): GameState {
+  if (!divisionOptions(s0).includes(key) || key === divisionKey(s0) || s0.tier < 1) return s0;
+  const s = clone(s0);
+  s.division = key;
+  if (s.rank !== null) {
+    s.rank = null;
+    s.titleDefenses = 0;
+  }
+  log(s, `Zmiana kategorii: ${WEIGHTS[key].label.toLowerCase()}.`);
+  return s;
 }
 
 export function rankStr(rank: number | null, tier?: number) {
@@ -436,7 +465,7 @@ export function budgetLines(s: GameState): BudgetLine[] {
         : { label: 'Badania, licencja, dojazdy', sub: s.contract.fed, amount: -s.contract.entryCost, icon: 'receipt' },
     );
   // zawodowcy na wyższych szczeblach płacą sztab: trenera przygotowania, dietetyka, fizjo
-  const staff = [0, 0, 4000, 15000, 50000][s.tier];
+  const staff = [0, 0, 4000, 10000, 50000][s.tier];
   if (staff > 0 && s.contract.kind !== 'freak')
     lines.push({ label: 'Sztab', sub: 'trener przygotowania, dietetyk, fizjoterapeuta', amount: -staff, icon: 'users' });
   const job = s.tier <= 1 && s.age >= 19;
@@ -1254,13 +1283,26 @@ function pickOpponent(rng: Rng, s: GameState, idx: number): { opp: Fighter; titl
   return { opp: generateOpponent(rng, tier, r, hard), title: false, defense: false, peer: null };
 }
 
+/** Premie i kary bieżącej walki: kategoria wagowa, ważenie, obóz pod rywala. */
+function fightMods(s: GameState): number {
+  const cur = s.run?.fights[s.run.fights.length - 1];
+  if (!cur || cur.amateur) return 0;
+  const sh = weightShift(s);
+  let m = sh < 0 ? 4 : sh > 0 ? -4 : 0;
+  if (cur.weightMiss) m -= 5;
+  if (cur.prep === 'rival') m += 4;
+  if (cur.prep === 'hard') m += 3;
+  m += cur.pressMod ?? 0;
+  return m;
+}
+
 function fightCtx(s: GameState, opp: Fighter): FightCtx {
   return {
     me: effectiveStats(s),
     meName: fullName(s),
     opp,
     // czwarta i piąta walka w sezonie: organizm nie nadąża
-    form: s.run!.form.mod - Math.max(0, s.run!.fights.length - 3) * 5 + (s.run!.planned < s.contract.fights && s.contract.kind !== 'freak' ? 3 : 0),
+    form: s.run!.form.mod - Math.max(0, s.run!.fights.length - 3) * 5 + (s.run!.planned < s.contract.fights && s.contract.kind !== 'freak' ? 3 : 0) + fightMods(s),
     penalty: s.injury?.penalty ?? 0,
     allowDecision: true,
     decisionChance: 0.55,
@@ -1335,12 +1377,16 @@ export function seasonNext(s0: GameState): GameState {
   if (!run || run.done) return s;
   const cur = run.fights[run.fights.length - 1];
   if (cur && !cur.sim.finished) return s; // czeka na decyzję
-  if (run.offer) return s; // czeka na odpowiedź na ofertę
+  if (run.offer || run.press) return s; // czeka na ofertę albo konferencję
   withRng(s, (rng) => {
     const idx = run.fights.length;
     if (!isAmateurRun(s)) {
       const o = buildOffer(rng, s, idx);
-      if (run.autoAccept) startFight(rng, s, o);
+      if (run.autoAccept) {
+        const p = run.autoPrep ?? 'std';
+        o.prep = p === 'rival' && s.money < prepCost(s, o) ? 'std' : p;
+        startFight(rng, s, o);
+      }
       else run.offer = o;
       return;
     }
@@ -1447,6 +1493,27 @@ function startFight(rng: Rng, s: GameState, o: FightOffer) {
       earned: 0,
     };
     if (!amateur) rep.poster = makePoster(rng, s, rep);
+    if (!amateur) {
+      rep.prep = o.prep ?? 'std';
+      if (o.pressNote) {
+        rep.pressMod = o.pressMod ?? 0;
+        rep.moments.push({ round: 0, title: 'Konferencja', text: o.pressNote, tone: (o.pressMod ?? 0) > 0 ? 'good' : (o.pressMod ?? 0) < 0 ? 'bad' : 'neutral' });
+      }
+      if (rep.prep === 'rival') {
+        const cost = prepCost(s, o);
+        s.money -= cost;
+        rep.moments.push({ round: 0, title: 'Obóz pod rywala', text: `Sparingpartnerzy w stylu rywala i godziny nagrań. Kosztuje ${cost.toLocaleString('pl-PL')} zł, ale znasz każdy jego nawyk.`, tone: 'good' });
+      } else if (rep.prep === 'hard') {
+        rep.moments.push({ round: 0, title: 'Ciężki obóz', text: 'Dwa treningi dziennie przez sześć tygodni. Forma jest, ale ciało jest zmęczone.', tone: 'neutral' });
+      }
+      if (!freak && weightShift(s) < 0 && rng.chance(weightMissChance(s) / 100)) {
+        rep.weightMiss = true;
+        const fine = Math.round((rep.purse * 0.25) / 100) * 100;
+        rep.purse -= fine;
+        s.rep = clamp(s.rep - 2, 0, 100);
+        rep.moments.push({ round: 0, title: 'Nie zrobiłeś wagi', text: `Waga pokazuje o 1,2 kg za dużo. ${fine.toLocaleString('pl-PL')} zł z gaży idzie do rywala, a ty wchodzisz do klatki wysuszony.`, tone: 'bad' });
+      }
+    }
     run.fights.push(rep);
     if (!amateur && !freak && !s.proDebut)
       rep.moments.push({
@@ -1520,7 +1587,7 @@ export function seasonSkip(s0: GameState): GameState {
     if (!run || run.done) break;
     const cur = run.fights[run.fights.length - 1];
     if (cur && cur.sim.pending) break;
-    if (run.offer) break;
+    if (run.offer || run.press) break;
     s = seasonNext(s);
     if (s.run?.offer) break;
   }
@@ -1549,17 +1616,89 @@ export function declineBlocked(s: GameState): string | null {
 }
 
 /** Przyjmuje tę ofertę i wszystkie kolejne w tym sezonie. */
-export function acceptAllOffers(s0: GameState): GameState {
-  const s = acceptOffer(s0);
-  if (s.run) s.run.autoAccept = true;
+export function acceptAllOffers(s0: GameState, prep: 'std' | 'rival' | 'hard' = 'std'): GameState {
+  const s = acceptOffer(s0, prep);
+  if (s.run) {
+    s.run.autoAccept = true;
+    s.run.autoPrep = prep;
+  }
   return s;
 }
 
-export function acceptOffer(s0: GameState): GameState {
+// Konferencja przed galą: tylko przy dużych walkach (karta główna, rywal, pas)
+export function pressEligible(o: FightOffer) {
+  return !!(o.title || o.rival || o.spot === 'główna' || o.spot === 'wieczoru' || o.opp.freak);
+}
+const PRESS_QUOTES = [
+  'Ten {n} to zawodnik z przypadku. W klatce zobaczy, jak wygląda prawdziwe MMA.',
+  'Szanuję każdego rywala. {n} to wyjątek.',
+  'Po tej walce {n} wróci do roznoszenia ulotek.',
+  'Widziałem jego walki. Zasnąłem w drugiej rundzie, w klatce będzie tak samo, tylko on zaśnie.',
+  'Mój trener powiedział, że {n} ma szczękę ze szkła. Sprawdzę.',
+  'Niech {n} lepiej przyniesie ręcznik. Przyda się, żeby rzucić go na ring.',
+  'Nie wiem nawet, jak on się nazywa. Za tydzień też nikt nie będzie wiedział.',
+];
+export type PressAnswer = 'calm' | 'provoke' | 'insult';
+export const PRESS_OPTIONS: { key: PressAnswer; label: string; desc: string }[] = [
+  { key: 'calm', label: 'Spokojnie i z klasą', desc: 'Szacunek, zero emocji. Kibice cenią.' },
+  { key: 'provoke', label: 'Odbijasz piłeczkę', desc: 'Ostra riposta. Może wyprowadzić go z równowagi albo ciebie.' },
+  { key: 'insult', label: 'Jedziesz po bandzie', desc: 'Zasięgi gwarantowane. Federacja może ukarać, a nerwy mogą puścić.' },
+];
+
+export function pressAnswer(s0: GameState, key: PressAnswer): GameState {
+  const s = clone(s0);
+  const o = s.run?.press;
+  if (!o) return s0;
+  s.run!.press = null;
+  withRng(s, (rng) => {
+    if (key === 'calm') {
+      s.rep = clamp(s.rep + 2, 0, 100);
+      o.pressMod = 1;
+      o.pressNote = rng.pick(['Spokojnie odpowiadasz, że w sobotę wszystko się wyjaśni. Dziennikarze kiwają głowami.', 'Mówisz o szacunku i ciężkiej pracy. Nudne, ale profesjonalne.']);
+    } else if (key === 'provoke') {
+      s.media = clamp(s.media + 2, 0, 100);
+      if (rng.chance(0.6)) {
+        o.pressMod = 3;
+        o.pressNote = rng.pick(['Twoja riposta trafia. Rywal czerwienieje i nie wie, co odpowiedzieć. Sala się śmieje.', 'Odbijasz piłeczkę tak, że rywal schodzi ze sceny wściekły. To ty kontrolujesz emocje.']);
+      } else {
+        o.pressMod = -3;
+        o.pressNote = rng.pick(['Rywal ma odpowiedź na wszystko. To ciebie wyprowadził z równowagi.', 'Wdajesz się w przepychankę słowną i przegrywasz ją. Wracasz do hotelu zły.']);
+      }
+    } else {
+      s.media = clamp(s.media + 3, 0, 100);
+      s.rep = clamp(s.rep - 3, 0, 100);
+      if (rng.chance(0.45)) {
+        o.pressMod = 4;
+        o.pressNote = 'Klip z konferencji ma milion wyświetleń. Rywal przez cały tydzień myśli tylko o tobie, a nie o planie na walkę.';
+      } else {
+        const fine = [0, 1000, 3000, 8000, 20000][s.tier] ?? 3000;
+        s.money -= fine;
+        o.pressMod = -4;
+        o.pressNote = `Przesadzasz. Federacja nakłada ${fine.toLocaleString('pl-PL')} zł kary, a ty przez tydzień nie śpisz z nerwów.`;
+      }
+    }
+    startFight(rng, s, o);
+  });
+  return s;
+}
+
+export function prepCost(_s: GameState, o: FightOffer): number {
+  return Math.max(500, Math.round((o.purse * 0.2) / 100) * 100);
+}
+
+export function acceptOffer(s0: GameState, prep: 'std' | 'rival' | 'hard' = 'std'): GameState {
   const s = clone(s0);
   const o = s.run?.offer;
   if (!o) return s0;
+  o.prep = prep === 'rival' && s.money < prepCost(s, o) ? 'std' : prep;
   s.run!.offer = null;
+  if (pressEligible(o) && !s.run!.autoAccept) {
+    withRng(s, (rng) => {
+      o.pressQuote = rng.pick(PRESS_QUOTES).replace('{n}', s.profile.lastName);
+    });
+    s.run!.press = o;
+    return s;
+  }
   withRng(s, (rng) => startFight(rng, s, o));
   return s;
 }
@@ -1833,8 +1972,12 @@ function finalizeFight(rng: Rng, s: GameState, rep: FightReport) {
   const dmgTaken = rep.sim.me.dmg;
   s.wear = clamp(s.wear + (dmgTaken / 10) * (rep.amateur ? 0.4 : 1) + (res === 'L' && (rep.method === 'KO/TKO' || rep.method === 'Lekarz') ? (rep.amateur ? 3 : 7) : 0) + (s.age >= 32 ? 1.5 : 0), 0, 100);
   const extra = !rep.amateur && s.run ? Math.max(0, s.run.fights.length - 3) : 0;
+  // zbijanie wagi i ciężki obóz męczą organizm
+  if (!rep.amateur && weightShift(s) < 0) s.wear = clamp(s.wear + 1, 0, 100);
+  if (!rep.amateur && weightShift(s) > 0) s.wear = clamp(s.wear - 0.5, 0, 100);
+  if (rep.prep === 'hard') s.wear = clamp(s.wear + 1, 0, 100);
   if (extra) s.wear = clamp(s.wear + 2 * extra, 0, 100);
-  const injP = (extra * 0.03 + (dmgTaken > 50 ? 0.22 : dmgTaken > 30 ? 0.07 : 0.02) + s.wear / 600 + (s.age >= 32 ? 0.03 : 0)) * (rep.amateur ? 0.5 : 0.8);
+  const injP = (extra * 0.03 + (rep.prep === 'hard' ? 0.03 : 0) + (dmgTaken > 50 ? 0.22 : dmgTaken > 30 ? 0.07 : 0.02) + s.wear / 600 + (s.age >= 32 ? 0.03 : 0)) * (rep.amateur ? 0.5 : 0.8);
   if (!s.injury && rng.chance(injP)) {
     const roll = rng.next();
     if (roll < 0.6) {
@@ -2488,10 +2631,11 @@ export function legacyScore(s: GameState): number {
     const t = Math.max(0, BELT_NAMES.findIndex((n) => b.name.startsWith(n)));
     const k = beltCount[t] ?? 0;
     beltCount[t] = k + 1;
-    pts += BELT_PTS[t] * (k === 0 ? 1 : t === 0 ? 0.2 : 0.6);
+    pts += BELT_PTS[t] * (k === 0 ? 1 : t === 0 ? 0.2 : t <= 2 ? 0.35 : 0.6);
   }
   pts += s.medals.gold * 12 + s.medals.silver * 6 + s.medals.bronze * 4;
-  pts += s.peakTier * 60;
+  // wyjście poza Polskę jest warte więcej niż kolejne pasy w kraju
+  pts += [0, 40, 120, 300, 550][s.peakTier] ?? 0;
   pts += Math.min(400, s.totalEarned / 25000);
   pts += s.media * 2;
   pts -= s.brokenPromises * 20;

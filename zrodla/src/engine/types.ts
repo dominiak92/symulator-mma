@@ -230,6 +230,11 @@ export interface FightReport {
   earned: number;
   /** ile wziął menedżer */
   mgrCut?: number;
+  /** obóz przed walką: zwykły, pod rywala, ciężki */
+  prep?: 'std' | 'rival' | 'hard';
+  /** nie zrobiłeś wagi */
+  weightMiss?: boolean;
+  pressMod?: number;
   /** plakat gali: miasto, hala i inne walki w karcie */
   poster?: { city: string; venue: string; bouts: { a: string; ar: string; b: string; br: string; tag: string }[] };
   winBonus?: number;
@@ -268,8 +273,12 @@ export interface SeasonRun {
   intro: string[];
   /** oferta kolejnej walki czekająca na decyzję gracza (zawodowcy) */
   offer?: FightOffer | null;
+  /** konferencja przed galą czekająca na odpowiedź gracza */
+  press?: FightOffer | null;
   /** gracz przyjmuje resztę ofert w sezonie bez pytania */
   autoAccept?: boolean;
+  /** obóz używany przy automatycznie przyjmowanych ofertach */
+  autoPrep?: 'std' | 'rival' | 'hard';
   /** odrzucone oferty w tym sezonie */
   declines?: number;
   /** czy menedżer zajmuje się tobą w tym sezonie */
@@ -289,6 +298,12 @@ export interface FightOffer {
   purse: number;
   winBonus: number;
   negotiated: boolean;
+  prep?: 'std' | 'rival' | 'hard';
+  /** wynik konferencji: premia do formy i opis */
+  pressMod?: number;
+  pressNote?: string;
+  /** cytat rywala na konferencji */
+  pressQuote?: string;
   /** komunikat po negocjacjach */
   note?: string;
 }
@@ -387,6 +402,8 @@ export interface GameState {
   /** wynik ostatniego szukania sponsora na własną rękę */
   pitch?: { season: number; ok: boolean; text: string; name?: string; slot: string } | null;
   loans: Loan[];
+  /** kategoria, w której walczysz (domyślnie naturalna z profilu) */
+  division?: WeightKey;
   /** menedżer (id) albo null, gdy sam prowadzisz karierę */
   manager?: string | null;
   /** odwieczny rywal z rocznika (id zawodnika) */
