@@ -194,6 +194,7 @@ export function Emblem({ spec, size = 40, title }: { spec: CrestSpec; size?: num
 
 /** Logo sponsora: Ground Game ma prawdziwe logo Bandy, reszta to fikcyjne odznaki. */
 export function SponsorLogo({ name, size = 28 }: { name: string; size?: number }) {
+  if (/ground game labs/i.test(name)) return <img className="sponsor-gg" src={GG.labs} alt="Ground Game Labs" style={{ height: size, width: 'auto' }} />;
   if (/ground game/i.test(name)) return <img className="sponsor-gg" src={GG.banda} alt="Ground Game Banda" style={{ height: size, width: 'auto' }} />;
   return <Emblem spec={crestFor(name, 'badge')} size={size} title={name} />;
 }

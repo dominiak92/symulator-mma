@@ -41,7 +41,7 @@ export default function Create({ slot, onBack, onStart }: { slot: number; onBack
           <h2>Nowa kariera</h2>
           <p className="muted small">Tak wygląda twój zawodnik. Zmień imię, a zmieni się też on.</p>
         </div>
-        <Fighter key={`${p.firstName.trim()}${p.lastName.trim()}`} className="pop" seed={`${p.firstName.trim()}${p.lastName.trim()}`} corner="blue" size={86} />
+        <Fighter weight={p.weight} key={`${p.firstName.trim()}${p.lastName.trim()}`} className="pop" seed={`${p.firstName.trim()}${p.lastName.trim()}`} corner="blue" size={86} />
       </div>
 
       <section className="form-section">

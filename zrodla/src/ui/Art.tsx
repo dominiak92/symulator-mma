@@ -82,6 +82,9 @@ function darken(hex: string, k: number) {
  * corner: 'blue' = ty, 'red' = rywal. shorts: kolor spodenek (np. kolor klubu).
  * Wygląd (fryzura, broda, budowa, tatuaże, blizny) wynika z ziarna, więc jest stały dla danej osoby.
  */
+/** Budowa ciała wg kategorii wagowej (0 chudy … 3 ciężki z brzuchem). */
+const WEIGHT_BUILD: Record<string, number> = { piorkowa: 0, lekka: 0, polsrednia: 1, srednia: 1, polciezka: 2, ciezka: 3 };
+
 export function Fighter({
   seed,
   corner = 'blue',
@@ -92,8 +95,11 @@ export function Fighter({
   hurt,
   className,
   style,
+  weight,
 }: {
   seed: string;
+  /** kategoria wagowa: piórkowa chuda … ciężka z brzuchem (nadpisuje losową budowę) */
+  weight?: string;
   corner?: 'blue' | 'red';
   shorts?: string;
   size?: number;
@@ -104,7 +110,9 @@ export function Fighter({
   style?: CSSProperties;
 }) {
   const uid = useId().replace(/[^a-zA-Z0-9]/g, '');
-  const l = lookFor(seed);
+  const base = lookFor(seed);
+  const l = weight && WEIGHT_BUILD[weight] !== undefined ? { ...base, build: WEIGHT_BUILD[weight] } : base;
+  const belly = l.build >= 3;
   const glove = corner === 'blue' ? '#01aeee' : '#e11d48';
   const gloveDark = corner === 'blue' ? '#0079a8' : '#9b0f33';
   const sh = shorts ?? (corner === 'blue' ? '#1f00fe' : '#3a0d18');
@@ -113,7 +121,10 @@ export function Fighter({
   const hairD = darken(l.hair, 0.75);
   const line = 'rgba(40,20,10,.28)';
   const ink = l.ink;
-  const w = [0, 3, 6][l.build]; // poszerzenie barków
+  // poszerzenie barków; przy kategorii wagowej wyraźniejsze różnice (chudy piórkowy, szeroki ciężki)
+  const byWeight = !!weight && WEIGHT_BUILD[weight] !== undefined;
+  const w = byWeight ? [-6, 0, 5, 9][l.build] : [0, 3, 6, 9][l.build];
+  const armW = byWeight ? [8.5, 11, 13, 14][l.build] : 11 + l.build;
   const has = (t: Tattoo) => l.tattoos.includes(t);
   const armL = `M${27 - w} 68 Q${15 - w} 82 26 90 Q32 92 36 64`;
   const armR = `M${73 + w} 68 Q${85 + w} 82 74 90 Q68 92 64 64`;
@@ -136,8 +147,15 @@ export function Fighter({
         <path d={`M${24 - w} 66 Q50 ${58 - w / 2} ${76 + w} 66 L${71 + w / 2} 106 Q50 110 ${29 - w / 2} 106 Z`} fill={`url(#sk${uid})`} stroke={skinDD} strokeOpacity=".5" strokeWidth=".8" />
         {/* klatka i brzuch */}
         <path d={`M${33 - w / 2} 72 Q41 78 49 72 M51 72 Q59 78 ${67 + w / 2} 72`} stroke={line} strokeWidth="1.7" fill="none" strokeLinecap="round" />
-        <path d="M50 74 L50 101" stroke={line} strokeWidth="1.3" fill="none" />
-        {l.build < 2 ? (
+        {!belly && <path d="M50 74 L50 101" stroke={line} strokeWidth="1.3" fill="none" />}
+        {belly ? (
+          <g>
+            <ellipse cx="50" cy="93" rx="23" ry="15" fill={`url(#sk${uid})`} stroke={skinDD} strokeOpacity=".4" strokeWidth=".8" />
+            <path d="M30 95 Q50 114 70 95" stroke={skinDD} strokeOpacity=".5" strokeWidth="1.5" fill="none" />
+            <path d="M36 80 Q42 83 47 80 M53 80 Q58 83 64 80" stroke={line} strokeWidth="1.3" fill="none" strokeLinecap="round" />
+            <path d="M49 96 q1 1.5 0 3" stroke={line} strokeWidth="1.2" fill="none" strokeLinecap="round" />
+          </g>
+        ) : l.build < 2 ? (
           <path d="M42 84 Q50 86.5 58 84 M42.5 92 Q50 94.5 57.5 92 M43.5 99 Q50 101 56.5 99" stroke={line} strokeWidth="1.3" fill="none" strokeLinecap="round" />
         ) : (
           <path d="M40 90 Q50 95 60 90" stroke={line} strokeWidth="1.4" fill="none" strokeLinecap="round" />
@@ -182,7 +200,8 @@ export function Fighter({
         {l.style === 'long' && <path d="M35 30 Q33 50 38 56 L42 50 Q38 40 40 28 Z M65 30 Q67 50 62 56 L58 50 Q62 40 60 28 Z" fill={l.hair} />}
         {l.style === 'bun' && <circle cx="50" cy="13" r="5.5" fill={l.hair} />}
         {/* głowa */}
-        <ellipse cx="50" cy="34" rx={15 + l.build * 0.6} ry="17" fill={l.skin} />
+        <ellipse cx="50" cy="34" rx={15 + l.build * 0.6} ry={17 + (belly ? 0.8 : 0)} fill={l.skin} />
+        {belly && <path d="M41 48 Q50 54 59 48" stroke={skinDD} strokeOpacity=".35" strokeWidth="1.2" fill="none" />}
         <ellipse cx="45" cy="27" rx="7" ry="5" fill="#fff" opacity=".08" />
         {/* zarost */}
         {l.beard === 'stubble' && <path d="M36 37 Q37 52 50 53 Q63 52 64 37 Q60 45 50 46 Q40 45 36 37 Z" fill={l.hair} opacity=".28" />}
@@ -245,10 +264,10 @@ export function Fighter({
         {/* ochraniacz na zęby */}
         {l.beard !== 'full' && <path d="M47 46.6 L53 46.6" stroke={glove} strokeWidth="1" strokeOpacity=".75" />}
         {/* ręce */}
-        <path d={armL} stroke={`url(#sk${uid})`} strokeWidth={11 + l.build} fill="none" strokeLinecap="round" strokeLinejoin="round" />
-        <path d={armR} stroke={`url(#sk${uid})`} strokeWidth={11 + l.build} fill="none" strokeLinecap="round" strokeLinejoin="round" />
-        {has('sleeveL') && <path d={armL} stroke={ink} strokeOpacity=".62" strokeWidth={8 + l.build} strokeDasharray="2.5 1.6 5 2" fill="none" strokeLinecap="butt" />}
-        {has('sleeveR') && <path d={armR} stroke={ink} strokeOpacity=".62" strokeWidth={8 + l.build} strokeDasharray="4 2 1.5 2" fill="none" strokeLinecap="butt" />}
+        <path d={armL} stroke={`url(#sk${uid})`} strokeWidth={armW} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+        <path d={armR} stroke={`url(#sk${uid})`} strokeWidth={armW} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+        {has('sleeveL') && <path d={armL} stroke={ink} strokeOpacity=".62" strokeWidth={armW - 3} strokeDasharray="2.5 1.6 5 2" fill="none" strokeLinecap="butt" />}
+        {has('sleeveR') && <path d={armR} stroke={ink} strokeOpacity=".62" strokeWidth={armW - 3} strokeDasharray="4 2 1.5 2" fill="none" strokeLinecap="butt" />}
         {has('forearmBands') && <path d="M30 86 l7 -1 M30.5 83.5 l6.5 -1" stroke={ink} strokeOpacity=".6" strokeWidth="1.4" strokeLinecap="round" />}
         {/* rękawice MMA: wyściółka, otwarte palce, rzep */}
         {[
@@ -386,6 +405,13 @@ export function FighterGallery() {
   const names = ['Kowalski', 'Nowak', 'Wiśniewski', 'Wójcik', 'Kamiński', 'Lewandowski', 'Zieliński', 'Szymański', 'Woźniak', 'Dąbrowski', 'Kozłowski', 'Jankowski', 'Mazur', 'Kwiatkowski', 'Krawczyk', 'Piotrowski', 'Grabowski', 'Nowakowski', 'Pawłowski', 'Michalski', 'Silva', "O'Brien", 'Petrov', 'Magomedov'];
   return (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, padding: 16, background: '#111' }}>
+      {Object.keys(WEIGHT_BUILD).map((wk) => (
+        <div key={wk} style={{ textAlign: 'center', color: '#aaa', fontSize: 11 }}>
+          <Fighter seed="JanKowalski" weight={wk} size={110} />
+          <div>{wk}</div>
+        </div>
+      ))}
+      <div style={{ flexBasis: '100%' }} />
       {names.map((n, i) => (
         <div key={n} style={{ textAlign: 'center', color: '#aaa', fontSize: 11 }}>
           <Fighter seed={`Jan${n}`} corner={i % 2 ? 'red' : 'blue'} size={110} mirror={i % 2 === 1} belt={i === 4} hurt={i === 7} />

@@ -1,7 +1,8 @@
+import { shownRecord, useHudHold } from './hudHold';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { GameState, Phase } from '../engine/types';
 import { STAT_KEYS, STAT_LABELS, STAT_DESC, START_PROFILES, STYLE_LABELS, TIER_NAMES, DIFFICULTY, WEIGHTS, amateurDivision } from '../engine/data';
-import { debutCheck, displayName, mainRecord, rankStr, rankingTable, recStr, tourneyResultText } from '../engine/game';
+import { debutCheck, displayName, rankStr, rankingTable, recStr, tourneyResultText } from '../engine/game';
 import { ovr } from '../engine/fighter';
 import { money, moneyShort } from '../format';
 import Training from './steps/Training';
@@ -159,14 +160,23 @@ export default function Game({
     return () => ro.disconnect();
   }, []);
   // miganie budżetu przy zmianie
-  const prevMoney = useRef(g.money);
+  const hold = useHudHold();
+  const shownMoney = g.money - (hold?.earned ?? 0);
+  const prevMoney = useRef(shownMoney);
   const [moneyFlash, setMoneyFlash] = useState<{ dir: 'up' | 'down'; n: number } | null>(null);
+  // krótka zwłoka: gdy wynik walki jest jeszcze ukryty, kwota na chwilę skacze tam i z powrotem
+  const latestMoney = useRef(shownMoney);
+  latestMoney.current = shownMoney;
   useEffect(() => {
-    if (g.money === prevMoney.current) return;
-    setMoneyFlash((f) => ({ dir: g.money > prevMoney.current ? 'up' : 'down', n: (f?.n ?? 0) + 1 }));
-    prevMoney.current = g.money;
-  }, [g.money]);
-  const rec = mainRecord(g);
+    const t = setTimeout(() => {
+      const cur = latestMoney.current;
+      if (cur === prevMoney.current) return;
+      setMoneyFlash((f) => ({ dir: cur > prevMoney.current ? 'up' : 'down', n: (f?.n ?? 0) + 1 }));
+      prevMoney.current = cur;
+    }, 80);
+    return () => clearTimeout(t);
+  }, [shownMoney]);
+  const rec = shownRecord(g, hold);
   const amateur = !g.proDebut;
   const medals = g.medals.gold + g.medals.silver + g.medals.bronze;
 
@@ -198,9 +208,9 @@ export default function Game({
           <div className="hud-stats">
             <div className="hs" title="Pieniądze na koncie">
               <small>Budżet</small>
-              <b key={moneyFlash?.n ?? 0} className={`${g.money < 0 ? 'neg' : ''} ${moneyFlash ? `flash-${moneyFlash.dir}` : ''}`}>
+              <b key={moneyFlash?.n ?? 0} className={`${shownMoney < 0 ? 'neg' : ''} ${moneyFlash ? `flash-${moneyFlash.dir}` : ''}`}>
                 <Icon name="coins" size={14} />
-                {moneyShort(g.money)}
+                {moneyShort(shownMoney)}
                 <i>zł</i>
               </b>
             </div>
