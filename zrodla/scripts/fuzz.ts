@@ -9,6 +9,8 @@ import type { GameState } from '../src/engine/types';
 
 const N = Number(process.argv[2] ?? 300);
 const problems = new Map<string, number>();
+const tune = { n: 0, w: 0 };
+const shady = { offered: 0 };
 const note = (k: string) => problems.set(k, (problems.get(k) ?? 0) + 1);
 const BAD = /undefined|NaN|\{n\}|\bnull\b|\[object|  +|\s[,.]/;
 
@@ -52,6 +54,12 @@ for (let i = 0; i < N; i++) {
           if (rng.chance(0.3) && !G.pitchBlocked(s)) s = G.pitchSponsor(s, rng.pick(['spodenki', 'plecy', 'social'] as const));
           if (s.pitch) checkText('sponsor', s.pitch.text);
           for (const l of G.budgetLines(s)) { checkText('budżet', l.label); checkText('budżet', l.sub); if (!Number.isFinite(l.amount)) note('budżet: NaN'); }
+          if (s.shadyDeal && s.shadyDeal.status === 'open') {
+            shady.offered++;
+            checkText('dziwny sponsor', s.shadyDeal.pitch);
+            checkText('dziwny sponsor', s.shadyDeal.product);
+            s = rng.chance(0.5) ? G.acceptShadyDeal(s) : G.refuseShadyDeal(s);
+          }
           if (rng.chance(0.3)) s = G.investAcademy(s);
           { const fr = G.fightRange(s); if (fr && rng.chance(0.5)) s = G.setWantFights(s, rng.int(fr[0], fr[1])); }
           if (s.money + G.budgetBalance(s) < 0 && G.loanOffer(s) && rng.chance(0.7)) s = G.takeLoan(s);
@@ -74,6 +82,7 @@ for (let i = 0; i < N; i++) {
             s = G.pressAnswer(s, rng.pick(['calm', 'provoke', 'insult'] as const));
           } else if (run.offer) {
             checkText('oferta walki', run.offer.note);
+            checkText('podpowiedź menedżera', run.offer.tip);
             checkText('rywal', run.offer.opp.lastName);
             const r = rng.next();
             s = r < 0.15 && !G.declineBlocked(s) ? G.declineOffer(s) : r < 0.3 && !run.offer.negotiated ? G.negotiateOffer(s) : r < 0.4 ? G.acceptAllOffers(s, rng.pick(['std', 'rival', 'hard'] as const)) : G.acceptOffer(s, rng.pick(['std', 'rival', 'hard'] as const));
@@ -83,6 +92,7 @@ for (let i = 0; i < N; i++) {
             for (const o of cur.sim.pending.options) { checkText('opcja', o.label); checkText('opcja', o.win); checkText('opcja', o.lose); }
             s = G.decide(s, rng.pick(cur.sim.pending.options).key);
           } else if (run.done) {
+            for (const f of run.fights) if (f.tuneup) { tune.n++; if (f.result === 'W') tune.w++; }
             for (const f of run.fights) for (const m of f.moments) { checkText(`moment ${m.title}`, m.text); checkText('moment', m.title); }
             s = G.toSummary(s);
             checkText('historia sezonu', s.lastSummary?.story);
@@ -118,6 +128,6 @@ for (let i = 0; i < N; i++) {
   }
 }
 // zdarzenia: czy każde ma tekst i wybory w różnych stanach
-console.log(`${N} karier, ${EVENTS.length} zdarzeń w puli`);
+console.log(`${N} karier, ${EVENTS.length} zdarzeń w puli; walki na odbudowę: ${tune.n} (wygrane ${tune.n ? Math.round((tune.w / tune.n) * 100) : 0}%), dziwni sponsorzy: ${shady.offered}`);
 const list = [...problems.entries()].sort((a, b) => b[1] - a[1]);
 console.log(list.length ? list.slice(0, 60).map(([k, v]) => `${v}× ${k}`).join('\n') : 'brak problemów');

@@ -67,7 +67,7 @@ type Policy = {
   prep?: 'std' | 'rival' | 'hard';
   press?: 'calm' | 'provoke' | 'insult';
   division?: -1 | 1;
-  exp?: 'dagestan' | 'floryda' | 'montreal';
+  exp?: 'dagestan' | 'floryda' | 'trondheim';
 };
 
 const weakest = (s: GameState) => [...STAT_KEYS].sort((a, b) => s.stats[a] - s.stats[b])[0];
@@ -265,7 +265,7 @@ const POLICIES_ALL: Policy[] = [
   { name: 'obozy', camps: true },
   { name: 'wyjazd: Dagestan', exp: 'dagestan' },
   { name: 'wyjazd: Floryda', exp: 'floryda' },
-  { name: 'wyjazd: Montreal', exp: 'montreal' },
+  { name: 'wyjazd: Trondheim', exp: 'trondheim' },
   { name: 'akademia', academy: true },
   { name: 'obozy+akademia', camps: true, academy: true },
 ];
