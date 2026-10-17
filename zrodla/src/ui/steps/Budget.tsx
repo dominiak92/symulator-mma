@@ -232,7 +232,7 @@ export default function Budget({ game, setGame }: StepProps) {
             <span className="tag good">
               <Icon name="coins" size={12} />+{money(g.shadyDeal.perSeason)} na sezon
             </span>
-            <span className="tag">{g.shadyDeal.seasons} sezony</span>
+            <span className="tag">{g.shadyDeal.seasons === 1 ? "1 sezon" : `${g.shadyDeal.seasons} sezony`}</span>
             <span className="tag red">
               <Icon name="star" size={12} />
               reputacja −{Math.abs(g.shadyDeal.rep)}

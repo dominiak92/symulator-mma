@@ -60,7 +60,7 @@ export default function Summary({ game, setGame, onPeers }: StepProps & { onPeer
           </small>
           <b>
             {s.ovrTo}
-            <i className={s.ovrTo > s.ovrFrom ? 'pos' : ''}>{signed(s.ovrTo - s.ovrFrom)}</i>
+            {s.ovrTo !== s.ovrFrom && <i className={s.ovrTo > s.ovrFrom ? 'pos' : ''}>{signed(s.ovrTo - s.ovrFrom)}</i>}
           </b>
         </div>
         <div className="tile">
@@ -119,7 +119,7 @@ export default function Summary({ game, setGame, onPeers }: StepProps & { onPeer
               Rozwój
             </span>
             <b className={s.ovrTo > s.ovrFrom ? 'pos' : ''}>
-              OVR {s.ovrFrom} → {s.ovrTo} ({signed(s.ovrTo - s.ovrFrom)})
+              {s.ovrTo === s.ovrFrom ? `OVR ${s.ovrTo}, bez zmian` : `OVR ${s.ovrFrom} → ${s.ovrTo} (${signed(s.ovrTo - s.ovrFrom)})`}
             </b>
           </summary>
           <div className="acc-body">

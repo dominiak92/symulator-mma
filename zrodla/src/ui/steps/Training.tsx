@@ -88,7 +88,7 @@ export default function Training({ game, setGame }: StepProps) {
           <button role="tab" aria-selected={tab === 'exp'} className={tab === 'exp' ? 'on' : ''} onClick={() => setTab('exp')}>
             <Icon name="pin" size={15} />
             Wyjazdy na lata
-            <span className="tt-count">{expOpen || exps.length}</span>
+            {expOpen > 0 && <span className="tt-count">{expOpen}</span>}
           </button>
         </div>
       )}
