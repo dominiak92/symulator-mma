@@ -140,7 +140,7 @@ function FormReel({ g, spinning, onDone }: { g: GameState; spinning: boolean; on
   );
 }
 
-function MomentView({ m, style, anim }: { m: Moment; style?: CSSProperties; anim?: boolean }) {
+function MomentView({ m, style, anim, single }: { m: Moment; style?: CSSProperties; anim?: boolean; single?: boolean }) {
   return (
     <div className={`moment ${m.tone} ${anim ? 'm-anim' : ''}`} style={style}>
       <div className="mt">
@@ -152,7 +152,7 @@ function MomentView({ m, style, anim }: { m: Moment; style?: CSSProperties; anim
           )}
           {m.title}
         </span>
-        {m.round > 0 ? <span className="faint mt-round">R{m.round}</span> : null}
+        {m.round > 0 && !single ? <span className="faint mt-round">R{m.round}</span> : null}
       </div>
       <p>{m.text}</p>
       {m.stat && m.outcome && (
@@ -320,7 +320,7 @@ function FightRow({ f, open, onToggle }: { f: FightReport; open: boolean; onTogg
       {open && f.moments.length > 0 && (
         <div className="moments">
           {f.moments.map((m, i) => (
-            <MomentView key={i} m={m} />
+            <MomentView key={i} m={m} single={f.sim.maxRounds === 1} />
           ))}
         </div>
       )}
@@ -502,7 +502,7 @@ function LiveCard({ g, f, start, animate, setGame }: { g: GameState; f: FightRep
           {f.moments.map((m, i) => {
             const fresh = animate && (m.round > start || (m.round === 0 && start === 0));
             const at = m.round === 0 ? 0 : t(m.round) + ROUND_MS * 0.5;
-            return <MomentView key={i} m={m} anim={fresh} style={fresh ? d(at) : undefined} />;
+            return <MomentView key={i} m={m} single={f.sim.maxRounds === 1} anim={fresh} style={fresh ? d(at) : undefined} />;
           })}
         </div>
       )}
