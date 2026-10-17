@@ -93,7 +93,7 @@ export default function Menu({
             </span>
             <div>
               <strong>Trenuj</strong>
-              <span>co poprawisz przed sezonem</span>
+              <span>co poprawisz przed startem</span>
             </div>
           </li>
           <li>

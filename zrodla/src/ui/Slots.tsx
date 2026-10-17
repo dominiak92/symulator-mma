@@ -41,7 +41,7 @@ export default function Slots({
                   <p className="muted">
                     {s.phase === 'ended'
                       ? `Koniec kariery · ${s.ending?.verdict} · ${recStr(s.proDebut ? s.record : s.amRecord)}`
-                      : `${lat(s.age)} · sezon ${s.season} · ${TIER_NAMES[s.tier]} · ${recStr(s.proDebut ? s.record : s.amRecord)}${s.proDebut ? '' : ' am.'} · OVR ${ovr(s.stats)}`}
+                      : `${lat(s.age)} · rok ${s.season} · ${TIER_NAMES[s.tier]} · ${recStr(s.proDebut ? s.record : s.amRecord)}${s.proDebut ? '' : ' am.'} · OVR ${ovr(s.stats)}`}
                   </p>
                 </div>
                 {confirm === n ? (

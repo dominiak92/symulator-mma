@@ -14,7 +14,7 @@ interface Slide {
 const SLIDES: Slide[] = [
   {
     title: 'Od amatora do mistrza',
-    text: 'Masz 16 lat i zaczynasz od turniejów amatorskich. Każdy rok to jeden sezon. Twoim celem jest pas mistrzowski i jak najlepsza kariera.',
+    text: 'Masz 16 lat i zaczynasz od turniejów amatorskich. Każdy rok to kilka walk i decyzji. Twoim celem jest pas mistrzowski i jak najlepsza kariera.',
     art: (
       <div className="tut-faceoff">
         <Fighter seed="TutorialHero" corner="blue" size={92} />
@@ -25,7 +25,7 @@ const SLIDES: Slide[] = [
   },
   {
     title: 'Trenuj z głową',
-    text: 'Masz sześć umiejętności. Przed sezonem wybierasz jedną, która urośnie najbardziej. OVR to twoja ogólna siła, czyli średnia wszystkich.',
+    text: 'Masz sześć umiejętności. Przed każdym rokiem wybierasz jedną, która urośnie najbardziej. OVR to twoja ogólna siła, czyli średnia wszystkich.',
     art: (
       <div className="tut-stats">
         {STAT_KEYS.map((k) => (
@@ -57,7 +57,7 @@ const SLIDES: Slide[] = [
   },
   {
     title: 'Kasa, gale i kluby',
-    text: 'Klub, starty i życie kosztują, a gaże przyjdą dopiero na zawodowstwie. Po każdym sezonie wybierasz galę i klub. Debiut zawodowy jest możliwy od 18 lat.',
+    text: 'Klub, starty i życie kosztują, a gaże przyjdą dopiero na zawodowstwie. Po każdym roku wybierasz galę i klub. Debiut zawodowy jest możliwy od 18 lat.',
     art: (
       <div className="tut-icons">
         <span>
@@ -166,7 +166,7 @@ export function CoachTip({ id, children }: { id: string; children: ReactNode }) 
     const st = loadSettings();
     return st.tips && !st.tipsSeen.includes(id);
   });
-  // raz pokazana podpowiedź nie wraca w kolejnych sezonach
+  // raz pokazana podpowiedź nie wraca w kolejnych latach
   useEffect(() => {
     if (!visible) return;
     const st = loadSettings();

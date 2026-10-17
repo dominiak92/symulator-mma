@@ -90,7 +90,7 @@ function HistoryRow({ h }: { h: HistoryEntry }) {
 
 export function HistoryList({ g, limit }: { g: GameState; limit?: number }) {
   const rows = [...g.history].reverse().slice(0, limit ?? 999);
-  if (!rows.length) return <p className="muted">Jeszcze żadnej walki. Pierwsza już w tym sezonie.</p>;
+  if (!rows.length) return <p className="muted">Jeszcze żadnej walki. Pierwsza już w tym roku.</p>;
   return (
     <div className="hist-list">
       {rows.map((h, i) => (

@@ -216,7 +216,7 @@ export default function Create({ slot, onBack, onStart }: { slot: number; onBack
         </button>
         <button className="btn btn-primary btn-ico" disabled={!valid} onClick={start}>
           <Icon name="dumbbell" />
-          Pierwszy trening
+          Zaczynam karierę
         </button>
       </div>
     </main>

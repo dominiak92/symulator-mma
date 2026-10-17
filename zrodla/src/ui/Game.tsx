@@ -25,7 +25,7 @@ const PHASES: Phase[] = ['training', 'budget', 'event', 'season', 'summary', 'ma
 const PHASE_LABEL: Record<Phase, string> = {
   training: 'Okres przygotowawczy',
   budget: 'Budżet',
-  event: 'Przed sezonem',
+  event: 'Przed startem',
   season: 'Walki',
   summary: 'Podsumowanie',
   market: 'Rynek',
@@ -75,7 +75,7 @@ export default function Game({
   }, [g.phase, g.season]);
 
   // blokada podwójnego stuknięcia: zaraz po zmianie ekranu przycisk w tym samym miejscu
-  // (np. „Trenuję” → „Zaczynam sezon”) nie może przyjąć drugiego kliknięcia
+  // (np. „Trenuję” → „Zaczynam rok”) nie może przyjąć drugiego kliknięcia
   const clickLock = useRef(0);
   useEffect(() => {
     clickLock.current = Date.now() + 450;
@@ -194,7 +194,7 @@ export default function Game({
                 <strong className="full">{displayName(g)}</strong>
                 <strong className="short">{shortName(g)}</strong>
                 <span>
-                  Sezon {g.season} · {careerLine(g)}
+                  Rok {g.season} · {careerLine(g)}
                 </span>
               </span>
             </button>
@@ -250,7 +250,7 @@ export default function Game({
           </div>
         </div>
         {g.phase !== 'ended' && (
-          <div className="hud-progress" role="progressbar" aria-valuemin={1} aria-valuemax={PHASES.length} aria-valuenow={phaseIdx + 1} aria-label={`Etap sezonu: ${PHASE_LABEL[g.phase]}`}>
+          <div className="hud-progress" role="progressbar" aria-valuemin={1} aria-valuemax={PHASES.length} aria-valuenow={phaseIdx + 1} aria-label={`Etap roku: ${PHASE_LABEL[g.phase]}`}>
             <i style={{ width: `${((phaseIdx + 1) / PHASES.length) * 100}%` }} />
           </div>
         )}
@@ -516,7 +516,7 @@ export function CareerPanel({ g, onRanking }: { g: GameState; onRanking?: () => 
         </div>
         {ts && (
           <div className="tourney-list">
-            {(g.phase === 'summary' || g.phase === 'market') && <small className="faint">Ostatni sezon</small>}
+            {(g.phase === 'summary' || g.phase === 'market') && <small className="faint">Ostatni rok</small>}
             {ts.map((t) => (
               <div key={t.name} className="tourney-item">
                 <span>{t.name.replace(' MMA', '')}</span>
@@ -529,7 +529,7 @@ export function CareerPanel({ g, onRanking }: { g: GameState; onRanking?: () => 
           {d.ok
             ? g.phase === 'market'
               ? 'Możesz przejść na zawodowstwo. Oferta jest na rynku.'
-              : 'Możesz już przejść na zawodowstwo. Oferta pojawi się na rynku po sezonie.'
+              : 'Możesz już przejść na zawodowstwo. Oferta pojawi się na rynku na koniec roku.'
             : `Warunek debiutu zawodowego: ${d.reason}.`}
         </p>
       </section>

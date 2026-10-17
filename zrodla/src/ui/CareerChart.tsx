@@ -2,7 +2,7 @@ import type { GameState } from '../engine/types';
 import { RANK_SIZE, TIER_SHORT } from '../engine/data';
 import { lat } from '../format';
 
-// Wykres kariery: każdy sezon to punkt na drabinie szczebli (wyżej = lepiej)
+// Wykres kariery: każdy rok to punkt na drabinie szczebli (wyżej = lepiej)
 function level(tier: number, rank: number | null) {
   const size = RANK_SIZE[tier];
   const inTier = rank === null ? 1 : rank === 0 ? 15 : 2 + ((size - rank) / size) * 12;
@@ -23,7 +23,7 @@ export default function CareerChart({ g }: { g: GameState }) {
   const sy = (y: number) => padT + (1 - y / maxY) * (H - padT - padB);
   const d = pts.map((p, i) => `${i ? 'L' : 'M'}${sx(p.x).toFixed(1)},${sy(p.y).toFixed(1)}`).join(' ');
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} width="100%" role="img" aria-label="Wykres kariery: szczebel i ranking w kolejnych sezonach" style={{ display: 'block' }}>
+    <svg viewBox={`0 0 ${W} ${H}`} width="100%" role="img" aria-label="Wykres kariery: szczebel i ranking w kolejnych latach" style={{ display: 'block' }}>
       {TIER_SHORT.map((t, i) => (
         <g key={t}>
           <rect x={padL} y={sy((i + 1) * 16)} width={W - padL - padR} height={sy(i * 16) - sy((i + 1) * 16)} fill={i % 2 ? 'rgba(255,255,255,0.025)' : 'transparent'} />
@@ -35,7 +35,7 @@ export default function CareerChart({ g }: { g: GameState }) {
       <path d={d} fill="none" stroke="var(--cyan)" strokeWidth="2.5" strokeLinejoin="round" />
       {pts.map((p) => (
         <circle key={p.x} cx={sx(p.x)} cy={sy(p.y)} r={p.champ ? 5 : 3} fill={p.champ ? 'var(--gold)' : 'var(--cyan)'}>
-          <title>{`Sezon ${p.x}, ${lat(p.age)}`}</title>
+          <title>{`Rok ${p.x}, ${lat(p.age)}`}</title>
         </circle>
       ))}
       {pts

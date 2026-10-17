@@ -146,7 +146,7 @@ export function SettingsScreen({ onBack }: { onBack: () => void }) {
           Animacje walk
           <span className={`tag ${st.animations ? 'good' : ''}`}>{st.animations ? 'włączone' : 'wyłączone'}</span>
         </span>
-        <span className="desc">Zapowiedzi walk, rundy na żywo i efekty po wygranej. Po wyłączeniu sezon rozgrywa się od razu.</span>
+        <span className="desc">Zapowiedzi walk, rundy na żywo i efekty po wygranej. Po wyłączeniu rok rozgrywa się od razu.</span>
       </button>
       <button className="choice" role="switch" aria-checked={st.sound} onClick={toggleSound} style={{ marginTop: 8 }}>
         <span className="title">
@@ -160,7 +160,7 @@ export function SettingsScreen({ onBack }: { onBack: () => void }) {
           Podpowiedzi trenera
           <span className={`tag ${st.tips ? 'good' : ''}`}>{st.tips ? 'włączone' : 'wyłączone'}</span>
         </span>
-        <span className="desc">Krótkie wskazówki przy każdym etapie sezonu. Po włączeniu pokażą się od nowa.</span>
+        <span className="desc">Krótkie wskazówki przy każdym etapie roku. Po włączeniu pokażą się od nowa.</span>
       </button>
       <p className="muted" style={{ marginTop: 16 }}>
         Gra zapisuje się automatycznie w tej przeglądarce. Wyczyszczenie danych strony usunie kariery, osiągnięcia i muzeum.
