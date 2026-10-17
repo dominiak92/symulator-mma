@@ -40,7 +40,8 @@ function play(seed: number, start: StartProfile = 'osiedle', pickFirst = true): 
         break;
       case 'season': {
         const cur = s.run!.fights[s.run!.fights.length - 1];
-        if (cur?.sim.pending) s = decide(s, cur.sim.pending.options[guard % cur.sim.pending.options.length].key);
+        if (s.run!.offer) s = G2.acceptOffer(s);
+        else if (cur?.sim.pending) s = decide(s, cur.sim.pending.options[guard % cur.sim.pending.options.length].key);
         else if (s.run!.done) s = toSummary(s);
         else s = seasonSkip(s);
         break;
