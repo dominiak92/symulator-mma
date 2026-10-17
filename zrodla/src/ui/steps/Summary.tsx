@@ -151,7 +151,7 @@ export default function Summary({ game, setGame, onPeers }: StepProps & { onPeer
       <div className="cta-bar float" style={{ ['--d' as string]: '500ms' }}>
         <button className="btn btn-primary btn-block btn-ico" onClick={() => setGame(toMarket(g))}>
           <Icon name="briefcase" />
-          Dalej: rynek
+          Dalej: kontrakty
         </button>
       </div>
     </section>

@@ -107,7 +107,7 @@ export default function Training({ game, setGame }: StepProps) {
       <CoachTip id="training">
         Wybierz umiejętność na obóz. Zielona liczba to wynik po nim. Na belce u góry masz <b>OVR</b> (ogólną siłę), budżet, rekord i wiek. Dotknij ich, żeby zobaczyć szczegóły.
       </CoachTip>
-      {clubLimits(g) && <div className="warn">{g.club.name} niewiele cię już nauczy. Lepszy klub wybierzesz na rynku na koniec roku.</div>}
+      {clubLimits(g) && <div className="warn">{g.club.name} niewiele cię już nauczy. Lepszy klub wybierzesz przy kontraktach na koniec roku.</div>}
       <div className="choice-list train-list" style={{ marginTop: 12 }} role="radiogroup" aria-label="Trening">
         {STAT_KEYS.map((k) => {
           const now = g.stats[k];

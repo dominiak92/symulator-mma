@@ -46,7 +46,7 @@ export default function Market({ game, setGame }: StepProps) {
       <section className="step">
         <div className="kicker pt-ico">
           <Icon name="briefcase" size={14} />
-          Rynek · rok {g.season} kariery
+          Kontrakty · rok {g.season} kariery
         </div>
         <h2>Gdzie walczysz w tym roku?</h2>
         <p className="muted small" style={{ marginTop: 4 }}>
