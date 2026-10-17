@@ -1,18 +1,23 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import type { CardSpot, DecisionOption, FightReport, GameState, Moment } from '../../engine/types';
 import { SEASON_FORMS, STAGE_LABELS, STAT_LABELS, STYLE_LABELS } from '../../engine/data';
-import { decide, recStr, seasonNext, seasonSkip, toSummary } from '../../engine/game';
+import { decide, mainRecord, recStr, seasonNext, seasonSkip, toSummary } from '../../engine/game';
 import { OUTCOME_LABEL } from '../../engine/fight';
 import { money } from '../../format';
 import { loadSettings } from '../../storage';
 import type { StepProps } from '../Game';
 import { GG } from '../brand';
-import { Dist } from './EventStep';
-import { MethodText, Segs } from '../Sheets';
+import { Belt, Confetti, Fighter, Medal } from '../Art';
+import { clubCrest } from '../Emblem';
 
 const reduced = () => typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 
+/** Ile trwa „rozegranie” jednej rundy w animacji (ms). */
+export const ROUND_MS = 480;
+
 const SPOT: Record<CardSpot, string> = { wstępna: 'karta wstępna', główna: 'karta główna', wieczoru: 'main event' };
+
+const d = (ms: number): CSSProperties => ({ ['--d' as string]: `${Math.max(0, ms)}ms` });
 
 function FormReel({ g, spinning }: { g: GameState; spinning: boolean }) {
   const form = g.run!.form;
@@ -25,31 +30,30 @@ function FormReel({ g, spinning }: { g: GameState; spinning: boolean }) {
   const label = spinning ? SEASON_FORMS[idx].label : form.label;
   const tone = spinning ? 'neutral' : form.tone;
   return (
-    <div className="form-reel">
-      <small>Forma w tym sezonie</small>
-      <div className="form-reel-row">
-        <div className="reel" aria-live="polite">
-          <span className={`tone-${tone}`}>{label}</span>
-        </div>
-        {!spinning && (
-          <span className={`form-mod ${form.mod > 0 ? 'good' : form.mod < 0 ? 'bad' : ''}`}>
-            {form.mod === 0 ? 'bez wpływu na szanse' : `${form.mod > 0 ? '+' : '−'}${Math.abs(form.mod)} pkt do każdej szansy`}
-          </span>
-        )}
-      </div>
+    <div className="form-strip">
+      <small>Forma</small>
+      <span className={`form-val tone-${tone} ${spinning ? 'spin' : 'lock'}`} aria-live="polite">
+        {label}
+      </span>
+      {!spinning && form.mod !== 0 && (
+        <span className={`form-mod ${form.mod > 0 ? 'good' : 'bad'}`}>
+          {form.mod > 0 ? '+' : '−'}
+          {Math.abs(form.mod)} pkt
+        </span>
+      )}
     </div>
   );
 }
 
-function MomentView({ m }: { m: Moment }) {
+function MomentView({ m, style, anim }: { m: Moment; style?: CSSProperties; anim?: boolean }) {
   return (
-    <div className={`moment ${m.tone}`}>
+    <div className={`moment ${m.tone} ${anim ? 'm-anim' : ''}`} style={style}>
       <div className="mt">
         <span className="mt-title">
           {m.brand && GG[m.brand as keyof typeof GG] && <img className="moment-brand" src={GG[m.brand as keyof typeof GG]} alt="" />}
           {m.title}
         </span>
-        {m.round > 0 ? <span className="faint mt-round">runda {m.round}</span> : null}
+        {m.round > 0 ? <span className="faint mt-round">R{m.round}</span> : null}
       </div>
       <p>{m.text}</p>
       {m.stat && m.outcome && (
@@ -57,9 +61,8 @@ function MomentView({ m }: { m: Moment }) {
           <span className={`tag ${m.outcome === 'fail' ? 'bad' : m.outcome === 'super' ? 'gold' : 'good'}`}>{OUTCOME_LABEL[m.outcome]}</span>
           <span className="faint">
             {STAT_LABELS[m.stat]}
-            {m.chance !== undefined ? `, szansa ${m.chance}%` : ''}
+            {m.chance !== undefined ? ` · ${m.chance}%` : ''}
           </span>
-          {m.effect && <span className="faint">· {m.effect}</span>}
         </div>
       )}
     </div>
@@ -68,7 +71,7 @@ function MomentView({ m }: { m: Moment }) {
 
 function rankLabel(r: number | null) {
   if (r === 0) return 'mistrz';
-  if (r === null) return 'poza rankingiem';
+  if (r === null) return '';
   return `#${r}`;
 }
 
@@ -77,33 +80,104 @@ function contextLine(f: FightReport) {
   return `${f.gala ?? f.fed}${f.spot ? ` · ${SPOT[f.spot]}` : ''}`;
 }
 
+/** Krótki opis sposobu zakończenia do wiersza. */
+export function methodShort(f: Pick<FightReport, 'method' | 'round'>) {
+  switch (f.method) {
+    case 'KO/TKO':
+      return `KO · R${f.round}`;
+    case 'Lekarz':
+      return `TKO · R${f.round}`;
+    case 'Poddanie':
+      return `poddanie · R${f.round}`;
+    case 'Remis':
+      return 'remis';
+    case 'Walkower':
+      return 'walkower';
+    case null:
+      return '';
+    default:
+      return 'decyzja';
+  }
+}
+
+function resWord(f: FightReport) {
+  if (f.method === 'Walkower') return f.amateur ? 'Walkower' : 'Odwołana';
+  if (f.result === 'W') return f.method === 'KO/TKO' || f.method === 'Lekarz' ? 'Nokaut!' : f.method === 'Poddanie' ? 'Poddał się!' : 'Wygrana';
+  if (f.result === 'L') return 'Porażka';
+  return 'Remis';
+}
+
+function oppName(f: FightReport) {
+  const o = f.opp;
+  return `${o.firstName} ${o.lastName}`;
+}
+
 function OptionButton({ o, onPick }: { o: DecisionOption; onPick: () => void }) {
+  const tone = o.chance >= 65 ? 'good' : o.chance >= 40 ? 'mid' : 'bad';
   return (
     <button className={`choice opt opt-${o.kind ?? 'normal'}`} onClick={onPick}>
       <span className="opt-top">
-        <span className="opt-label">
-          {o.label}
-          {o.kind === 'safe' && <span className="tag blue">bezpiecznie</span>}
-          {o.kind === 'risk' && <span className="tag red">ryzyko</span>}
-        </span>
-        <span className="chance-big">{o.chance}%</span>
+        <span className="opt-label">{o.label}</span>
+        <span className={`chance-big tone-${tone}`}>{o.chance}%</span>
       </span>
-      <span className="desc">{o.desc}</span>
+      <span className="opt-bar" aria-hidden="true">
+        <i className={tone} style={{ width: `${o.chance}%` }} />
+      </span>
       <span className="opt-out">
         <span className="ok">✓ {o.win}</span>
         <span className="ko">✗ {o.lose}</span>
       </span>
-      <Dist dist={o.dist} stat={STAT_LABELS[o.stat]} />
+      <span className="opt-meta">
+        {o.kind === 'safe' && <span className="tag blue">bezpiecznie</span>}
+        {o.kind === 'risk' && <span className="tag red">ryzyko</span>}
+        <span className="faint">test: {STAT_LABELS[o.stat].toLowerCase()}</span>
+      </span>
     </button>
   );
 }
 
-function FightCard({ g, f, open, onToggle, setGame }: { g: GameState; f: FightReport; open: boolean; onToggle: () => void; setGame: (s: GameState) => void }) {
+/** Zwinięty wiersz starszej walki. */
+function FightRow({ f, open, onToggle }: { f: FightReport; open: boolean; onToggle: () => void }) {
+  const res = f.result ?? 'X';
+  return (
+    <article className={`frow ${open ? 'open' : ''} ${f.title ? 'title-bout' : ''}`}>
+      <button className="frow-btn" onClick={onToggle} aria-expanded={open}>
+        <span className={`res-badge sm ${res}`}>{res === 'W' ? 'W' : res === 'L' ? 'P' : res === 'D' ? 'R' : '–'}</span>
+        <span className="frow-main">
+          <span className="frow-opp">{oppName(f)}</span>
+          <span className="frow-ctx">{contextLine(f)}</span>
+        </span>
+        <span className={`frow-how ${res}`}>{methodShort(f)}</span>
+        <span className="chev" aria-hidden="true">
+          {open ? '−' : '+'}
+        </span>
+      </button>
+      {open && f.moments.length > 0 && (
+        <div className="moments">
+          {f.moments.map((m, i) => (
+            <MomentView key={i} m={m} />
+          ))}
+        </div>
+      )}
+    </article>
+  );
+}
+
+/** Bieżąca walka: karta VS z rundami, pieczątką wyniku i decyzją. */
+function LiveCard({ g, f, start, animate, setGame }: { g: GameState; f: FightReport; start: number; animate: boolean; setGame: (s: GameState) => void }) {
   const pending = f.sim.pending;
   const done = f.sim.finished;
-  const opp = f.opp;
-  const res = done ? (f.result ?? 'X') : 'live';
-  const showMoments = open || !!pending;
+  const rounds = f.sim.maxRounds;
+  const played = done ? f.round : f.sim.round;
+  const t = (r: number) => (animate ? (r - start - 1) * ROUND_MS + 200 : 0);
+  const stampAt = animate ? (Math.max(played, start) - start) * ROUND_MS + 250 : 0;
+  const decisionAt = animate ? (f.sim.round - start) * ROUND_MS + 200 : 0;
+  const finish = f.method === 'KO/TKO' || f.method === 'Lekarz' || f.method === 'Poddanie';
+  const won = f.result === 'W';
+  const myShorts = clubCrest(g.club).bg;
+  const tourney = f.amateur && g.run?.tourneys?.find((x) => f.tourney?.startsWith(x.name));
+  const medal = done && tourney && tourney.stage === null && tourney.medal && (f.stage === 'f' || f.stage === 'b' || f.result === 'L') ? tourney.medal : null;
+  const belt = done && f.title && won;
   const rankMove =
     !f.amateur && !f.freak && done && f.result && f.rankAfter !== f.rankBefore
       ? f.rankAfter === 0
@@ -112,73 +186,96 @@ function FightCard({ g, f, open, onToggle, setGame }: { g: GameState; f: FightRe
           ? `wchodzisz do rankingu: #${f.rankAfter}`
           : f.rankAfter === null
             ? 'wypadasz z rankingu'
-            : `ranking: #${f.rankBefore} → #${f.rankAfter}`
+            : `ranking #${f.rankBefore} → #${f.rankAfter}`
       : null;
 
   return (
-    <article className={`fight ${pending ? 'pending' : ''} ${f.title ? 'title-bout' : ''} reveal`}>
-      <button className="fight-sum" onClick={onToggle} aria-expanded={showMoments} disabled={!!pending}>
-        <span className={`res-badge ${res}`}>{res === 'live' ? '' : res === 'W' ? 'W' : res === 'L' ? 'P' : res === 'D' ? 'R' : '–'}</span>
-        <span className="fight-main">
-          <span className="fight-ctx">
+    <article className={`live ${f.title ? 'title-bout' : ''} ${done ? `done res-${f.result ?? 'X'}` : ''} ${animate ? 'anim' : ''}`} id="live-fight">
+      <div className="live-ctx">
+        <span>{contextLine(f)}</span>
+        <span className="row" style={{ gap: 4 }}>
+          {f.title && <span className="tag gold">{f.defense ? 'obrona pasa' : 'o pas'}</span>}
+          {f.peer && <span className="tag blue">rocznik</span>}
+        </span>
+      </div>
+
+      <div className="vs">
+        <div className={`vs-side me ${done && f.result === 'L' && finish ? 'ko' : ''} ${done && won ? 'win' : ''}`} style={d(stampAt)}>
+          <Fighter seed={`${g.profile.firstName}${g.profile.lastName}`} corner="blue" shorts={myShorts} size={84} belt={g.rank === 0 && !f.amateur} hurt={done && f.result === 'L' && finish} />
+          <b>{g.profile.lastName}</b>
+          <small>{recStr(mainRecord(g))}</small>
+        </div>
+        <div className="vs-mid">
+          <span className="vs-word">VS</span>
+          <div className="rounds" aria-label={`Runda ${played} z ${rounds}`}>
+            {Array.from({ length: rounds }, (_, i) => {
+              const r = i + 1;
+              const lit = r <= played;
+              const end = done && finish && r === f.round;
+              return (
+                <span key={r} className={`rd ${lit ? (r > start ? 'lit-anim' : 'on') : ''} ${end ? 'end' : ''}`} style={d(t(r))}>
+                  {r}
+                </span>
+              );
+            })}
+          </div>
+        </div>
+        <div className={`vs-side opp ${done && won && finish ? 'ko' : ''} ${done && f.result === 'L' ? 'win' : ''}`} style={d(stampAt)}>
+          <Fighter seed={`${f.opp.firstName}${f.opp.lastName}`} corner="red" size={84} mirror hurt={done && won && finish} />
+          <b>{f.opp.lastName}</b>
+          <small>
+            {f.opp.flag} {f.opp.freak ? f.opp.freak : `${recStr(f.opp.record)} · ${STYLE_LABELS[f.opp.style].toLowerCase()}`}
+            {!f.amateur && !f.opp.freak && rankLabel(f.opp.rank) ? ` · ${rankLabel(f.opp.rank)}` : ''}
+          </small>
+        </div>
+      </div>
+
+      {done && (
+        <div className={`stamp ${f.result ?? 'X'} ${finish ? 'finish' : ''}`} style={d(stampAt)}>
+          <strong>{resWord(f)}</strong>
+          {f.method !== 'Walkower' && (
             <span>
-              <Segs parts={contextLine(f).split(' · ')} />
+              {methodShort(f) === 'decyzja' ? f.method?.replace('Decyzja ', 'decyzja ') : methodShort(f)}
+              {finish && f.time ? ` ${f.time}` : ''}
+              {f.cards && !finish && f.method !== 'Remis' ? ` · ${f.cards.map((c) => (won ? `${c[0]}–${c[1]}` : `${c[1]}–${c[0]}`)).join(', ')}` : ''}
             </span>
-            {f.title && <span className="tag gold">{f.defense ? 'obrona pasa' : 'walka o pas'}</span>}
-            {f.peer && <span className="tag blue">z rocznika</span>}
-            {f.bonus && <span className="tag gold">bonus</span>}
-          </span>
-          <span className="fight-opp">
-            {opp.flag} {opp.nickname ? `„${opp.nickname}” ` : ''}
-            {opp.firstName} {opp.lastName}
-          </span>
-          <span className="fight-meta">
-            {opp.freak ? opp.freak : `${recStr(opp.record)} · ${STYLE_LABELS[opp.style].toLowerCase()}${!f.amateur && opp.rank !== null ? ` · ${rankLabel(opp.rank)}` : ''}`}
-          </span>
-          <span className={`fight-how ${f.result ?? ''}`}>
-            {!done
-              ? 'walka trwa…'
-              : f.method === 'Walkower'
-                ? f.amateur
-                  ? 'walkower, przechodzisz dalej'
-                  : 'walka odwołana'
-                : (
-                    <>
-                      <MethodText lead={f.result === 'W' ? 'Wygrana' : f.result === 'L' ? 'Porażka' : 'Remis'} h={{ method: f.method!, round: f.round, time: f.time, detail: f.detail }} />
-                    </>
-                  )}
-          </span>
-          {done && (f.earned > 0 || rankMove) && (
-            <span className="fight-foot">
-              {f.earned > 0 && <span className="earned">+{money(f.earned)}</span>}
+          )}
+          {(f.earned > 0 || rankMove) && (
+            <span className="stamp-foot">
+              {f.earned > 0 && <b className="earned">+{money(f.earned)}</b>}
               {rankMove && <span>{rankMove}</span>}
             </span>
           )}
-        </span>
-        <span className="fight-side">
-          {!pending && f.moments.length > 0 && <span className="chev" aria-hidden="true">{showMoments ? '−' : '+'}</span>}
-        </span>
-      </button>
-      {showMoments && f.moments.length > 0 && (
-        <div className="moments">
-          {f.moments.map((m, i) => (
-            <MomentView key={i} m={m} />
-          ))}
         </div>
       )}
+
+      {(medal || belt) && (
+        <div className="trophy" style={d(stampAt + 350)}>
+          {belt ? <Belt size={150} /> : <Medal kind={medal as 'gold' | 'silver' | 'bronze'} size={58} />}
+          <span>{belt ? (f.defense ? 'Pas zostaje u ciebie' : 'Nowy mistrz!') : medal === 'gold' ? 'Złoto!' : medal === 'silver' ? 'Srebro' : 'Brąz'}</span>
+          {animate && (belt || medal === 'gold') && <Confetti />}
+        </div>
+      )}
+
+      {f.moments.length > 0 && (
+        <div className="moments">
+          {f.moments.map((m, i) => {
+            const fresh = animate && (m.round > start || (m.round === 0 && start === 0));
+            const at = m.round === 0 ? 0 : t(m.round) + ROUND_MS * 0.5;
+            return <MomentView key={i} m={m} anim={fresh} style={fresh ? d(at) : undefined} />;
+          })}
+        </div>
+      )}
+
       {pending && (
-        <div className="decision">
+        <div className="decision m-anim" style={d(decisionAt)} id="decision">
           <div className="decision-head">
             <span className="tag gold">Twoja decyzja</span>
             <span className="faint">przed rundą {pending.round}</span>
           </div>
           <h3>{pending.title}</h3>
           <p className="decision-text">{pending.text}</p>
-          {g.history.length < 4 && (
-            <p className="hint">
-              Procent to szansa, że się uda. Zależy od twoich umiejętności, rywala i formy. Bezpieczny wybór wchodzi częściej, ale daje mniej.
-            </p>
-          )}
+          {g.history.length < 3 && <p className="hint">Procent to szansa powodzenia. Bezpieczny wybór wchodzi częściej, ale daje mniej.</p>}
           <div className="choice-list">
             {pending.options.map((o) => (
               <OptionButton key={o.key} o={o} onPick={() => setGame(decide(g, o.key))} />
@@ -200,30 +297,60 @@ export default function Season({ game, setGame }: StepProps) {
   const [openIdx, setOpenIdx] = useState<Set<number>>(new Set());
   const gameRef = useRef(g);
   gameRef.current = g;
-  const endRef = useRef<HTMLDivElement>(null);
 
   const last = run.fights[run.fights.length - 1];
   const waiting = !!last?.sim.pending;
 
+  // od której rundy animować bieżącą walkę (po decyzji: od miejsca przerwania)
+  const prev = useRef<{ idx: number; round: number; fin: boolean } | null>(null);
+  const startRef = useRef(0);
+  if (last) {
+    const p = prev.current;
+    if (!p || p.idx !== last.idx) startRef.current = 0;
+    else if (p.round !== last.sim.round || p.fin !== last.sim.finished) startRef.current = p.round;
+    prev.current = { idx: last.idx, round: last.sim.round, fin: last.sim.finished };
+  }
+  const start = startRef.current;
+  const anim = animate && !fast;
+  const revealMs = !last ? 0 : last.sim.finished ? (Math.max(last.round, start) - start) * ROUND_MS + 700 : (last.sim.round - start) * ROUND_MS + 300;
+
   useEffect(() => {
     if (!spinning) return;
-    const t = setTimeout(() => setSpinning(false), 1300);
+    const t = setTimeout(() => setSpinning(false), 1100);
     return () => clearTimeout(t);
   }, [spinning]);
 
   useEffect(() => {
     if (spinning || run.done || waiting) return;
-    const delay = !animate ? 0 : fast ? 250 : run.fights.length === 0 ? 500 : 1300;
+    const delay = !animate ? 0 : fast ? 260 : run.fights.length === 0 ? 400 : revealMs + 1500;
     const t = setTimeout(() => setGame(seasonNext(gameRef.current)), delay);
     return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [spinning, run.done, waiting, run.fights.length, fast, animate, setGame]);
 
-  // przewiń do decyzji albo przycisku końca sezonu
+  // przewijanie: bieżąca walka → decyzja → koniec sezonu
   useEffect(() => {
-    if (!(waiting || run.done) || !endRef.current) return;
-    const el = waiting ? document.querySelector('.decision') : endRef.current;
-    el?.scrollIntoView({ behavior: animate ? 'smooth' : 'auto', block: waiting ? 'start' : 'end' });
-  }, [waiting, run.done, animate]);
+    if (!last) return;
+    const behavior: ScrollBehavior = animate ? 'smooth' : 'auto';
+    const el = document.getElementById('live-fight');
+    el?.scrollIntoView({ behavior, block: 'start' });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [last?.idx]);
+  useEffect(() => {
+    if (!waiting) return;
+    const t = setTimeout(
+      () => document.getElementById('decision')?.scrollIntoView({ behavior: animate ? 'smooth' : 'auto', block: 'start' }),
+      anim ? revealMs : 0,
+    );
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [waiting]);
+  useEffect(() => {
+    if (!run.done) return;
+    const t = setTimeout(() => window.scrollTo({ top: document.body.scrollHeight, behavior: animate ? 'smooth' : 'auto' }), anim ? revealMs : 0);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [run.done]);
 
   const toggle = (i: number) =>
     setOpenIdx((s) => {
@@ -233,10 +360,25 @@ export default function Season({ game, setGame }: StepProps) {
       return n;
     });
 
-  const w = run.fights.filter((f) => f.result === 'W').length;
-  const l = run.fights.filter((f) => f.result === 'L').length;
-  const d = run.fights.filter((f) => f.result === 'D').length;
+  // bilans aktualizuje się dopiero po „odsłonięciu” wyniku walki
+  const lastKey = last ? `${last.idx}-${last.sim.finished}` : '';
+  const [revealedKey, setRevealedKey] = useState(lastKey);
+  useEffect(() => {
+    if (!anim) {
+      setRevealedKey(lastKey);
+      return;
+    }
+    const t = setTimeout(() => setRevealedKey(lastKey), revealMs - 300);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lastKey, anim]);
+  const counted = revealedKey === lastKey ? run.fights : run.fights.slice(0, -1);
+  const w = counted.filter((f) => f.result === 'W').length;
+  const l = counted.filter((f) => f.result === 'L').length;
+  const dr = counted.filter((f) => f.result === 'D').length;
   const amateur = !!run.tourneys;
+  const recKey = `${w}-${l}-${dr}`;
+  const lastRes = last?.sim.finished && revealedKey === lastKey ? last.result : null;
 
   // co jeszcze przed nami
   const upcoming: string[] = [];
@@ -247,7 +389,7 @@ export default function Season({ game, setGame }: StepProps) {
         const t = ts[i];
         if (!t.stage) continue;
         if (i === (run.tIdx ?? 0) && last && !last.sim.finished) continue;
-        upcoming.push(`${STAGE_LABELS[t.stage]} · ${t.name}, ${t.city}`);
+        upcoming.push(`${STAGE_LABELS[t.stage]} · ${t.name.replace(' MMA', '')}`);
       }
     } else {
       const left = Math.max(0, run.planned - run.fights.length);
@@ -256,22 +398,19 @@ export default function Season({ game, setGame }: StepProps) {
   }
 
   return (
-    <section className="step">
-      <div className="step-head">
-        <div>
+    <section className="step season-step">
+      <div className="season-head">
+        <div className="season-title">
+          <div className="kicker">{amateur ? 'Turnieje amatorskie' : g.contract.kind === 'freak' ? g.contract.fed : g.fed}</div>
           <h2>Sezon {g.season}</h2>
-          <p className="muted">
-            {amateur ? 'Turnieje amatorskie' : g.contract.kind === 'freak' ? g.contract.fed : g.fed} · bilans {w}-{l}
-            {d ? `-${d}` : ''}
-          </p>
         </div>
         {!run.done && !waiting && (
-          <div className="row">
-            <button className="btn btn-ghost btn-small" onClick={() => setFast((x) => !x)} aria-pressed={fast}>
-              {fast ? 'Wolniej' : 'Szybciej'}
+          <div className="season-ctrl">
+            <button className={`icon-pill ${fast ? 'on' : ''}`} onClick={() => setFast((x) => !x)} aria-pressed={fast} aria-label={fast ? 'Wolniej' : 'Szybciej'}>
+              ⏩
             </button>
             <button
-              className="btn btn-ghost btn-small"
+              className="icon-pill text"
               onClick={() => {
                 setSpinning(false);
                 setGame(seasonSkip(gameRef.current));
@@ -283,36 +422,46 @@ export default function Season({ game, setGame }: StepProps) {
         )}
       </div>
 
-      <FormReel g={g} spinning={spinning} />
+      <div className="season-bar">
+        <FormReel g={g} spinning={spinning} />
+        <div className={`rec-pill ${lastRes === 'W' ? 'up' : lastRes === 'L' ? 'down' : ''}`} key={recKey}>
+          <small>Bilans</small>
+          <b>
+            {w}-{l}
+            {dr ? `-${dr}` : ''}
+          </b>
+          {lastRes === 'W' && <i>▲</i>}
+          {lastRes === 'L' && <i>▼</i>}
+        </div>
+      </div>
+
       {run.intro.length > 0 && (
-        <div className="intro-notes">
+        <details className="intro-notes">
+          <summary>{amateur ? 'Plan sezonu: turnieje' : 'Przed sezonem'}</summary>
           {run.intro.map((t, i) => (
             <p key={i}>{t}</p>
           ))}
-        </div>
+        </details>
       )}
 
       <div className="fight-list">
-        {run.fights.map((f, i) => (
-          <FightCard
-            key={i}
-            g={g}
-            f={f}
-            open={i === run.fights.length - 1 ? !openIdx.has(i) : openIdx.has(i)}
-            onToggle={() => toggle(i)}
-            setGame={setGame}
-          />
-        ))}
+        {run.fights.map((f, i) =>
+          i === run.fights.length - 1 ? (
+            <LiveCard key={f.idx} g={g} f={f} start={start} animate={anim} setGame={setGame} />
+          ) : (
+            <FightRow key={f.idx} f={f} open={openIdx.has(i)} onToggle={() => toggle(i)} />
+          ),
+        )}
         {upcoming.map((u, i) => (
           <div className="upcoming" key={`u${i}`}>
+            <span className="res-badge sm X">?</span>
             {u}
           </div>
         ))}
       </div>
 
-      <div ref={endRef} />
       {run.done && (
-        <div className="cta-bar">
+        <div className="cta-bar float" style={d(anim ? revealMs : 0)}>
           <button className="btn btn-primary btn-block" onClick={() => setGame(toSummary(g))}>
             Podsumowanie sezonu
           </button>

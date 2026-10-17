@@ -1,112 +1,135 @@
 import { toMarket } from '../../engine/game';
-import { money, signed } from '../../format';
+import { moneyShort, signed } from '../../format';
 import type { StepProps } from '../Game';
 import CareerChart from '../CareerChart';
 import { PeersTable } from '../Sheets';
+import { Belt, Confetti, CountUp, Fighter, Medal } from '../Art';
+import { clubCrest } from '../Emblem';
 
 export default function Summary({ game, setGame, onPeers }: StepProps & { onPeers: () => void }) {
   const g = game;
   const s = g.lastSummary!;
   const gradeTone =
     s.beltWon || s.grade === 'Sezon wybitny' ? 'gold' : s.grade === 'Udany sezon' ? 'good' : s.grade === 'Katastrofa' || s.grade === 'Sezon do zapomnienia' ? 'bad' : '';
-  const activePeers = g.peers.filter((p) => !p.retired).length;
+  const activePeers = g.peers.filter((p) => !p.retired);
   const amateur = s.tier === 0;
+  const medals = amateur ? (g.run?.tourneys ?? []).map((t) => t.medal).filter((m): m is 'gold' | 'silver' | 'bronze' => !!m) : [];
+  const party = s.beltWon || medals.includes('gold') || s.grade === 'Sezon wybitny';
 
   return (
-    <>
-      <section className="step">
-        <div className="kicker">
-          Sezon {s.season} · {s.year}
-        </div>
-        <div className={`grade ${gradeTone}`}>{s.beltWon ? (amateur ? 'Mistrz Polski amatorów!' : 'Sezon z pasem!') : s.grade}</div>
-        <p className="story">{s.story}</p>
-
-        <div className="stats-strip">
-          <div>
-            <small>Bilans</small>
-            <b>
-              {s.w}-{s.l}
-              {s.d ? `-${s.d}` : ''}
-            </b>
-          </div>
-          <div>
-            <small>{amateur ? 'Medale w sezonie' : 'Ranking'}</small>
-            <b>
-              {amateur
-                ? (g.run?.tourneys ?? []).map((t) => (t.medal === 'gold' ? '🥇' : t.medal === 'silver' ? '🥈' : t.medal === 'bronze' ? '🥉' : '')).join('') || '–'
-                : s.rank === 0
-                  ? 'Mistrz'
-                  : s.rank === null
-                    ? '–'
-                    : `#${s.rank}`}
-            </b>
-          </div>
-          <div>
-            <small>OVR</small>
-            <b>
-              {s.ovrFrom}→{s.ovrTo}
-            </b>
-          </div>
-          <div>
-            <small>Pieniądze</small>
-            <b className={s.moneyDelta >= 0 ? 'pos' : 'neg'}>{money(s.moneyDelta, true)}</b>
-          </div>
-        </div>
-
-        <div className="grade-bars">
-          {s.bars.map((b) => (
-            <div key={b.label} className="grade-bar">
-              <div className="grade-bar-top">
-                <span>{b.label}</span>
-                {b.note && <span className="faint">{b.note}</span>}
-              </div>
-              <div className="bar">
-                <i style={{ width: `${b.value}%` }} />
-              </div>
+    <section className="step summary-step">
+      <div className={`sum-hero ${gradeTone}`}>
+        {party && <Confetti />}
+        <div className="sum-art">
+          <Fighter seed={`${g.profile.firstName}${g.profile.lastName}`} corner="blue" shorts={clubCrest(g.club).bg} size={92} belt={s.champion && !amateur} hurt={gradeTone === 'bad'} />
+          {(s.beltWon || medals.length > 0) && (
+            <div className="sum-trophies">
+              {s.beltWon && !amateur ? <Belt size={96} /> : medals.map((m, i) => <Medal key={i} kind={m} size={34} />)}
             </div>
-          ))}
+          )}
         </div>
-
-        {g.seasons.length >= 2 && (
-          <div style={{ marginTop: 18 }}>
-            <div className="panel-title">Kariera w liczbach</div>
-            <CareerChart g={g} />
+        <div className="sum-head">
+          <div className="kicker">
+            Sezon {s.season} · {s.year}
           </div>
-        )}
+          <div className={`grade ${gradeTone}`}>{s.beltWon ? (amateur ? 'Mistrz Polski amatorów!' : 'Sezon z pasem!') : s.grade}</div>
+          <div className="sum-rec">
+            {s.w}-{s.l}
+            {s.d ? `-${s.d}` : ''}
+            <small>{amateur ? 'bilans amatorski' : s.rank === 0 ? 'mistrz' : s.rank === null ? 'poza rankingiem' : `ranking #${s.rank}`}</small>
+          </div>
+        </div>
+      </div>
 
-        <div className="ledger" style={{ marginTop: 16 }}>
-          <div className="ledger-row">
+      <div className="tiles">
+        <div className="tile">
+          <small>Wygrane</small>
+          <b>
+            <CountUp to={s.w} />
+          </b>
+        </div>
+        <div className="tile">
+          <small>OVR</small>
+          <b>
+            {s.ovrTo}
+            <i className={s.ovrTo > s.ovrFrom ? 'pos' : ''}>{signed(s.ovrTo - s.ovrFrom)}</i>
+          </b>
+        </div>
+        <div className="tile">
+          <small>Kasa</small>
+          <b className={s.moneyDelta >= 0 ? 'pos' : 'neg'}>
+            {(() => {
+              const [num, unit] = moneyShort(Math.abs(s.moneyDelta)).split(' ');
+              return (
+                <>
+                  {s.moneyDelta >= 0 ? '+' : '−'}
+                  {num}
+                  <i>{unit ?? 'zł'}</i>
+                </>
+              );
+            })()}
+          </b>
+        </div>
+        <div className="tile">
+          <small>Media</small>
+          <b>
+            <CountUp to={g.media} />
+          </b>
+        </div>
+      </div>
+
+      <p className="story">{s.story}</p>
+
+      <div className="grade-bars">
+        {s.bars.map((b, i) => (
+          <div key={b.label} className="grade-bar">
+            <div className="grade-bar-top">
+              <span>{b.label}</span>
+              {b.note && <span className="faint">{b.note}</span>}
+            </div>
+            <div className="bar">
+              <i style={{ width: `${b.value}%`, animationDelay: `${i * 0.12}s` }} />
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="acc-list">
+        <details className="acc">
+          <summary>
             <span>Rozwój</span>
-            <span>
+            <b className={s.ovrTo > s.ovrFrom ? 'pos' : ''}>
               OVR {s.ovrFrom} → {s.ovrTo} ({signed(s.ovrTo - s.ovrFrom)})
-            </span>
+            </b>
+          </summary>
+          <div className="acc-body">
+            <p className="muted small">
+              Media {g.media}/100 · reputacja {g.rep}/100 · forma w sezonie: {s.form.toLowerCase()}
+            </p>
+            {g.seasons.length >= 2 && <CareerChart g={g} />}
           </div>
-          <div className="ledger-row">
-            <span>Media i reputacja</span>
-            <span>
-              media {g.media}/100 · reputacja {g.rep}/100
-            </span>
+        </details>
+        <details className="acc">
+          <summary>
+            <span>Twój rocznik</span>
+            <b>
+              {activePeers.length} z {g.peers.length} walczy
+            </b>
+          </summary>
+          <div className="acc-body">
+            <PeersTable g={{ ...g, peers: activePeers.slice(0, 5) }} />
+            <button className="btn btn-ghost btn-small" style={{ marginTop: 8 }} onClick={onPeers}>
+              Cały rocznik
+            </button>
           </div>
-        </div>
-      </section>
+        </details>
+      </div>
 
-      <section className="step">
-        <div className="step-head">
-          <h3>Twój rocznik</h3>
-          <button className="btn btn-ghost btn-small" onClick={onPeers}>
-            Wszyscy
-          </button>
-        </div>
-        <p className="muted" style={{ marginBottom: 10 }}>
-          {activePeers} z {g.peers.length} wciąż walczy.
-        </p>
-        <PeersTable g={{ ...g, peers: g.peers.filter((p) => !p.retired).slice(0, 5) }} />
-        <div className="cta-bar">
-          <button className="btn btn-primary btn-block" onClick={() => setGame(toMarket(g))}>
-            Dalej: oferty na nowy sezon
-          </button>
-        </div>
-      </section>
-    </>
+      <div className="cta-bar float" style={{ ['--d' as string]: '500ms' }}>
+        <button className="btn btn-primary btn-block" onClick={() => setGame(toMarket(g))}>
+          Dalej: rynek
+        </button>
+      </div>
+    </section>
   );
 }

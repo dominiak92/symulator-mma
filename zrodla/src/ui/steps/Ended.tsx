@@ -10,6 +10,8 @@ import { lat, money } from '../../format';
 import { SHOP_URL } from '../Logo';
 import { GG } from '../brand';
 import { ACHIEVEMENTS } from '../../engine/achievements';
+import { Confetti, Fighter } from '../Art';
+import { clubCrest } from '../Emblem';
 
 export default function Ended({ game, onNewCareer, onMenu }: { game: GameState; onNewCareer: () => void; onMenu: () => void }) {
   const g = game;
@@ -70,9 +72,22 @@ export default function Ended({ game, onNewCareer, onMenu }: { game: GameState; 
 
   return (
     <>
-      <section className="step">
+      <section className="step summary-step">
+        <div className={`sum-hero ${g.belts.length ? 'gold' : ''}`}>
+          {g.belts.length > 0 && <Confetti />}
+          <div className="sum-art">
+            <Fighter seed={`${g.profile.firstName}${g.profile.lastName}`} corner="blue" shorts={clubCrest(g.club).bg} size={96} belt={g.belts.length > 0} />
+          </div>
+          <div className="sum-head">
+            <div className="kicker">Koniec kariery · {lat(g.age)}</div>
+            <h2 className="verdict-big">{e.verdict}</h2>
+            <div className="sum-rec">
+              {recStr(mainRecord(g))}
+              <small>{g.proDebut ? 'rekord zawodowy' : 'rekord amatorski'}</small>
+            </div>
+          </div>
+        </div>
         <p className="muted">{e.reason}</p>
-        <h2 className="verdict-big">{e.verdict}</h2>
         <p className="lead" style={{ marginTop: 6 }}>
           {e.verdictDesc}
         </p>

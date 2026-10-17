@@ -1,6 +1,6 @@
+import { useEffect } from 'react';
 import { choiceChance, chooseEvent, continueAfterEvent, effectChips, type Chip } from '../../engine/game';
 import { STAT_LABELS } from '../../engine/data';
-import { distFrom } from '../../engine/fight';
 import type { StepProps } from '../Game';
 import { GG } from '../brand';
 
@@ -49,6 +49,11 @@ export default function EventStep({ game, setGame }: StepProps) {
   const ev = g.event!;
   const picked = ev.picked;
 
+  useEffect(() => {
+    if (picked === undefined) return;
+    document.getElementById('event-result')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, [picked]);
+
   return (
     <section className="step">
       {ev.brand && GG[ev.brand as keyof typeof GG] && <img className="event-brand" src={GG[ev.brand as keyof typeof GG]} alt={ev.title} />}
@@ -67,20 +72,23 @@ export default function EventStep({ game, setGame }: StepProps) {
               <button key={i} className="choice" onClick={() => setGame(chooseEvent(g, i))}>
                 <span className="opt-top">
                   <span className="opt-label">{c.label}</span>
-                  {risky && <span className="chance-big">{ch}%</span>}
+                  {risky && <span className={`chance-big tone-${ch! >= 65 ? 'good' : ch! >= 40 ? 'mid' : 'bad'}`}>{ch}%</span>}
                 </span>
                 <span className="desc">{c.desc}</span>
                 {risky ? (
                   <>
-                    <span className="outcome-line">
-                      <span className="ok">Jeśli się uda:</span>
+                    <span className="opt-bar" aria-hidden="true">
+                      <i className={ch! >= 65 ? 'good' : ch! >= 40 ? 'mid' : 'bad'} style={{ width: `${ch}%` }} />
+                    </span>
+                    <span className="ev-out">
+                      <span className="ok">✓</span>
                       <Chips chips={effectChips(c.success)} />
                     </span>
-                    <span className="outcome-line">
-                      <span className="ko">Jeśli nie:</span>
+                    <span className="ev-out">
+                      <span className="ko">✗</span>
                       <Chips chips={effectChips(c.fail)} />
                     </span>
-                    <Dist dist={distFrom(ch!)} stat={c.test ? STAT_LABELS[c.test] : undefined} />
+                    {c.test && <span className="faint small">test: {STAT_LABELS[c.test].toLowerCase()}</span>}
                   </>
                 ) : (
                   <Chips chips={effectChips(c.effects)} />
@@ -91,7 +99,7 @@ export default function EventStep({ game, setGame }: StepProps) {
         </div>
       ) : (
         <>
-          <div className="event-result reveal">
+          <div className={`event-result reveal res-${ev.rolled ?? 'none'}`} id="event-result">
             <div className="event-result-head">
               <strong>{ev.choices[picked].label}</strong>
               {ev.rolled && (
@@ -103,7 +111,7 @@ export default function EventStep({ game, setGame }: StepProps) {
             <p>{ev.resultText ?? ev.choices[picked].desc}</p>
             <Chips chips={effectChips(ev.resultEffects)} />
           </div>
-          <div className="cta-bar">
+          <div className="cta-bar float" style={{ ['--d' as string]: '350ms' }}>
             <button className="btn btn-primary btn-block" onClick={() => setGame(continueAfterEvent(g))}>
               Dalej
             </button>

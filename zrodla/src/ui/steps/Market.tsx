@@ -40,8 +40,8 @@ export default function Market({ game, setGame }: StepProps) {
       <section className="step">
         <div className="kicker">Rynek · przed sezonem {g.season}</div>
         <h2>Gdzie walczysz w tym roku?</h2>
-        <p className="muted" style={{ marginTop: 6 }}>
-          Masz {lat(g.age)}. Wybierz, gdzie walczysz, a niżej klub, w którym trenujesz.
+        <p className="muted small" style={{ marginTop: 4 }}>
+          Masz {lat(g.age)}. Wybierz galę, niżej klub.
         </p>
 
         <div role="radiogroup" aria-label="Kontrakt" style={{ marginTop: 14 }}>
@@ -125,54 +125,63 @@ export default function Market({ game, setGame }: StepProps) {
 
       <section className="step">
         <h3 style={{ marginBottom: 10 }}>Klub</h3>
-        <div role="radiogroup" aria-label="Klub">
+        <div role="radiogroup" aria-label="Klub" className="club-pick">
           {m.clubs.map((c, idx) => {
             const av = clubAvailability(g, c);
+            if (!av.ok) return null;
             const current = c.id === g.club.id;
             return (
-              <button
-                key={c.id}
-                className="offer"
-                role="radio"
-                aria-checked={m.pickedClub === idx}
-                disabled={!av.ok}
-                onClick={() => setGame(pickClub(g, idx))}
-              >
+              <button key={c.id} className="offer club-offer" role="radio" aria-checked={m.pickedClub === idx} onClick={() => setGame(pickClub(g, idx))}>
                 <span className="offer-top">
                   <span className="fed-row">
                     <Emblem spec={clubCrest(c)} size={34} title={c.name} />
-                    <span className="fed">{c.name}</span>
-                  </span>
-                  <span className="tag">{current ? 'twój klub' : `poziom ${c.quality} z 5`}</span>
-                </span>
-                <span className="offer-note">{av.ok ? c.desc : av.reason}</span>
-                <span className="terms">
-                  <span>
-                    <small>Gdzie</small>
-                    <b>{c.city}</b>
-                  </span>
-                  <span>
-                    <small>Składki</small>
-                    <b>{c.cost ? `${money(c.cost)} rocznie` : 'za darmo'}</b>
-                  </span>
-                  <span>
-                    <small>Specjalność</small>
-                    <b>{STAT_LABELS[c.specialty].toLowerCase()}</b>
-                  </span>
-                  {current && (
-                    <span>
-                      <small>Trenujesz tu</small>
-                      <b>
-                        {g.clubSeasons} {plural(g.clubSeasons, 'sezon', 'sezony', 'sezonów')}
-                      </b>
+                    <span className="fed">
+                      {c.name}
+                      <small className="club-sub">
+                        {c.city} · {c.cost ? `${money(c.cost)}/rok` : 'za darmo'} · {STAT_LABELS[c.specialty].toLowerCase()}
+                      </small>
                     </span>
-                  )}
+                  </span>
+                  <span className="lvl" aria-label={`poziom ${c.quality} z 5`}>
+                    {Array.from({ length: 5 }, (_, i) => (
+                      <i key={i} className={i < c.quality ? 'on' : ''} />
+                    ))}
+                  </span>
                 </span>
-                {current && clubLimits(g) && <span className="tag bad">ten klub hamuje twój rozwój</span>}
+                <span className="offer-note">{c.desc}</span>
+                {current && (
+                  <span className="chips">
+                    <span className="tag blue">
+                      twój klub · {g.clubSeasons} {plural(g.clubSeasons, 'sezon', 'sezony', 'sezonów')}
+                    </span>
+                    {clubLimits(g) && <span className="tag bad">hamuje twój rozwój</span>}
+                  </span>
+                )}
               </button>
             );
           })}
         </div>
+        {m.clubs.some((c) => !clubAvailability(g, c).ok) && (
+          <details className="acc" style={{ marginTop: 8 }}>
+            <summary>
+              <span>Kluby poza zasięgiem</span>
+              <b>{m.clubs.filter((c) => !clubAvailability(g, c).ok).length}</b>
+            </summary>
+            <div className="acc-body locked-clubs">
+              {m.clubs
+                .filter((c) => !clubAvailability(g, c).ok)
+                .map((c) => (
+                  <div key={c.id} className="locked-club">
+                    <Emblem spec={clubCrest(c)} size={26} title={c.name} />
+                    <span>
+                      <b>{c.name}</b>
+                      <small>{clubAvailability(g, c).reason}</small>
+                    </span>
+                  </div>
+                ))}
+            </div>
+          </details>
+        )}
 
         {warnings.map((w, i) => (
           <div className="warn" key={i}>
