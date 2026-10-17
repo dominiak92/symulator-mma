@@ -74,6 +74,41 @@ export default function Game({
 
   const phaseIdx = PHASES.indexOf(g.phase);
   const hudRef = useRef<HTMLElement>(null);
+  // belka chowa się przy przewijaniu w dół, wraca przy ruchu w górę
+  const [hudHidden, setHudHidden] = useState(false);
+  useEffect(() => {
+    let last = window.scrollY;
+    let raf = 0;
+    // belka wraca tylko, gdy to gracz przewija w górę (nie przy automatycznym przewijaniu
+    // ani przy skróceniu strony po zwinięciu walki)
+    let userAt = 0;
+    const markUser = () => {
+      userAt = Date.now();
+    };
+    const onScroll = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
+        const y = window.scrollY;
+        const h = hudRef.current?.offsetHeight ?? 100;
+        const byUser = Date.now() - userAt < 900;
+        if (y < h) setHudHidden(false);
+        else if (y > last + 8) setHudHidden(true);
+        else if (y < last - 8 && byUser) setHudHidden(false);
+        if (Math.abs(y - last) > 8 || y < h) last = y;
+      });
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('touchmove', markUser, { passive: true });
+    window.addEventListener('wheel', markUser, { passive: true });
+    window.addEventListener('keydown', markUser);
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('touchmove', markUser);
+      window.removeEventListener('wheel', markUser);
+      window.removeEventListener('keydown', markUser);
+      cancelAnimationFrame(raf);
+    };
+  }, []);
   useLayoutEffect(() => {
     const el = hudRef.current;
     if (!el) return;
@@ -97,20 +132,22 @@ export default function Game({
 
   return (
     <>
-      <header className="hud" ref={hudRef}>
+      <header className={`hud ${hudHidden && !sheet ? 'hud-hidden' : ''}`} ref={hudRef}>
         <div className="hud-inner">
           <div className="hud-top">
-            <div className="ovr" title="Ogólna ocena zawodnika: średnia umiejętności, 0–99">
-              <span className="num">{ovr(g.stats)}</span>
-              <small>OVR</small>
-            </div>
-            <div className="hud-name">
-              <strong className="full">{displayName(g)}</strong>
-              <strong className="short">{shortName(g)}</strong>
-              <span>
-                Sezon {g.season} · {careerLine(g)}
+            <button className="hud-who" onClick={() => setSheet('skills')} aria-label="Zawodnik: umiejętności i klub">
+              <span className="ovr" title="Ogólna ocena zawodnika: średnia umiejętności, 0–99">
+                <span className="num">{ovr(g.stats)}</span>
+                <small>OVR</small>
               </span>
-            </div>
+              <span className="hud-name">
+                <strong className="full">{displayName(g)}</strong>
+                <strong className="short">{shortName(g)}</strong>
+                <span>
+                  Sezon {g.season} · {careerLine(g)}
+                </span>
+              </span>
+            </button>
             <img className="hud-logo" src={GG.icon} alt="Ground Game" />
             <button className="icon-btn" aria-label="Menu gry" onClick={() => setSheet('menu')}>
               <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
@@ -127,37 +164,37 @@ export default function Game({
                 <i>zł</i>
               </b>
             </div>
-            <div className="hs" title={amateur ? 'Rekord amatorski: wygrane-porażki-remisy' : 'Rekord zawodowy: wygrane-porażki-remisy'}>
+            <button className="hs" onClick={() => setSheet('history')} title={amateur ? 'Rekord amatorski: wygrane-porażki-remisy' : 'Rekord zawodowy: wygrane-porażki-remisy'}>
               <small>{amateur ? 'Rekord am.' : 'Rekord'}</small>
               <b>
                 <Icon name="glove" size={14} />
                 {recStr(rec)}
               </b>
-            </div>
+            </button>
             {g.tier === 0 && g.contract.kind !== 'freak' ? (
-              <div className="hs" title="Medale: złote · srebrne · brązowe">
+              <button className="hs" onClick={() => setSheet('ranking')} title="Medale: złote · srebrne · brązowe">
                 <small>Medale</small>
                 <b>
                   <Icon name="medal" size={14} />
                   {medals ? `${g.medals.gold}·${g.medals.silver}·${g.medals.bronze}` : '0'}
                 </b>
-              </div>
+              </button>
             ) : (
-              <div className="hs" title="Miejsce w rankingu federacji">
+              <button className="hs" onClick={() => setSheet('ranking')} title="Miejsce w rankingu federacji">
                 <small>Ranking</small>
                 <b>
                   <Icon name="trophy" size={14} />
                   {g.rank === 0 ? 'pas' : g.rank === null ? '–' : `#${g.rank}`}
                 </b>
-              </div>
+              </button>
             )}
-            <div className="hs" title="Wiek zawodnika">
+            <button className="hs" onClick={() => setSheet('peers')} title="Wiek zawodnika. Dotknij, żeby zobaczyć swój rocznik">
               <small>Wiek</small>
               <b>
                 <Icon name="hourglass" size={14} />
                 {g.age}
               </b>
-            </div>
+            </button>
           </div>
         </div>
         {g.phase !== 'ended' && (
@@ -167,26 +204,6 @@ export default function Game({
         )}
       </header>
 
-      {g.phase !== 'ended' && (
-        <nav className="dock" aria-label="Informacje o zawodniku">
-          <button onClick={() => setSheet('skills')}>
-            <Icon name="user" size={16} />
-            Zawodnik
-          </button>
-          <button onClick={() => setSheet('ranking')}>
-            <Icon name={g.tier === 0 ? 'medal' : 'trophy'} size={16} />
-            {g.tier === 0 ? 'Medale' : 'Ranking'}
-          </button>
-          <button onClick={() => setSheet('history')}>
-            <Icon name="list" size={16} />
-            Walki
-          </button>
-          <button onClick={() => setSheet('peers')}>
-            <Icon name="users" size={16} />
-            Rocznik
-          </button>
-        </nav>
-      )}
 
       <div className={`layout ${g.phase === 'ended' ? 'solo' : ''}`}>
         {g.phase !== 'ended' && (
@@ -228,6 +245,10 @@ export default function Game({
                   <button className="btn btn-ghost btn-block btn-ico" onClick={() => setSheet('skills')}>
                     <Icon name="user" />
                     Umiejętności i klub
+                  </button>
+                  <button className="btn btn-ghost btn-block btn-ico" onClick={() => setSheet('ranking')}>
+                    <Icon name={g.tier === 0 ? 'medal' : 'trophy'} />
+                    {g.tier === 0 ? 'Medale i warunki debiutu' : 'Ranking'}
                   </button>
                   <button className="btn btn-ghost btn-block btn-ico" onClick={() => setSheet('history')}>
                     <Icon name="list" />
