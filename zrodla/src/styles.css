@@ -48,12 +48,9 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
-html,
-body {
-  overflow-x: clip;
-}
 body {
   min-height: 100vh;
+  overflow-x: hidden;
 }
 
 button {
@@ -5271,17 +5268,8 @@ button.hs:active,
 .event-result.res-fail,
 .pitch-result.ko { animation: popIn 0.35s cubic-bezier(0.2, 1.4, 0.4, 1) both, shake 0.4s 0.35s; }
 
-/* desktop: pasek boczny przyklejony pod belką, powiadomienia w obrębie kolumny gry */
+/* desktop: powiadomienia w obrębie kolumny gry */
 @media (min-width: 900px) {
-  .sidebar {
-    position: sticky;
-    top: calc(var(--hud-h) + 12px);
-    max-height: calc(100vh - var(--hud-h) - 24px);
-    overflow-y: auto;
-    scrollbar-width: thin;
-    scrollbar-color: var(--line) transparent;
-    padding-bottom: 4px;
-  }
   .toasts {
     right: max(16px, calc((100vw - 1140px) / 2 + 16px));
     top: calc(var(--hud-h) + 10px);
@@ -5417,3 +5405,181 @@ button.hs:active,
   border-radius: 4px;
   background: rgba(255, 255, 255, 0.16);
 }
+
+/* oferta walki */
+.fight-intro.offer-modal { cursor: default; }
+.ofr-pay {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+  gap: 6px;
+  margin-top: 10px;
+}
+.ofr-pay > div {
+  background: var(--panel-2);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 6px 8px;
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+}
+.ofr-pay small {
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--faint);
+}
+.ofr-pay b { font-family: var(--display); font-size: 1.05rem; white-space: nowrap; }
+.ofr-pay b.neg { color: var(--bad); }
+.ofr-note {
+  margin: 8px 0 0;
+  font-size: 0.8rem;
+  line-height: 1.35;
+  color: var(--muted);
+}
+.ofr-note.strong { color: var(--gold); font-weight: 600; }
+.ofr-actions { display: grid; gap: 8px; margin-top: 12px; }
+.ofr-row { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.ofr-row .btn { justify-content: center; min-width: 0; white-space: normal; line-height: 1.2; }
+.ofr-help { margin: 0; text-align: center; font-size: 0.72rem; }
+.season-note { font-size: 0.8rem; line-height: 1.35; }
+
+/* menedżerowie */
+.mgr-list { display: grid; gap: 6px; }
+.offer.mgr-opt { display: grid; gap: 4px; text-align: left; }
+.mgr-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.mgr-stats { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 0.74rem; color: var(--muted); }
+.mgr-stats span { display: inline-flex; align-items: center; gap: 3px; }
+
+/* liczba walk w sezonie */
+.fights-pick {
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: var(--panel);
+  display: grid;
+  gap: 8px;
+}
+.fights-pick .seg { display: flex; gap: 6px; }
+.fights-pick .seg button {
+  flex: 1;
+  appearance: none;
+  border: 1px solid var(--line);
+  background: var(--panel-2);
+  border-radius: 10px;
+  padding: 8px 0;
+  font-family: var(--display);
+  font-size: 1.15rem;
+  cursor: pointer;
+}
+.fights-pick .seg button.on { border-color: var(--cyan); background: var(--cyan-soft); color: var(--text); }
+.fights-pick small { font-size: 0.76rem; line-height: 1.35; }
+
+/* oferta walki: zwarta karta, przyciski zawsze widoczne */
+.offer-modal .fi-card { gap: 8px; padding: 14px; }
+.offer-modal .fi-num { font-size: 1.35rem; }
+.offer-modal .fi-card .fighter-art { width: 60px; height: 72px; }
+.offer-modal .fi-word { font-size: 1.7rem; padding-bottom: 24px; }
+.offer-modal .fi-vs { gap: 4px; }
+.offer-modal .ofr-pay { margin-top: 2px; }
+
+@media (max-height: 760px) {
+  .offer-modal .fi-scout { display: none; }
+}
+
+/* plakaty gal i turniejów */
+.poster {
+  width: min(440px, 100%);
+  max-height: 100%;
+  overflow: auto;
+  display: grid;
+  gap: 10px;
+  padding: 18px 16px 16px;
+  border-radius: 18px;
+  border: 1px solid var(--line);
+  background:
+    repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.025) 0 12px, transparent 12px 24px),
+    radial-gradient(110% 60% at 50% 0%, rgba(1, 174, 238, 0.28), transparent 65%),
+    radial-gradient(90% 50% at 50% 100%, rgba(225, 29, 72, 0.22), transparent 70%),
+    #0c0c10;
+  box-shadow: 0 30px 80px -20px rgba(0, 0, 0, 0.9);
+  animation: fiIn 0.5s cubic-bezier(0.2, 1.3, 0.4, 1) both;
+}
+.poster.title-bout {
+  border-color: var(--gold);
+  background:
+    repeating-linear-gradient(135deg, rgba(245, 183, 0, 0.04) 0 12px, transparent 12px 24px),
+    radial-gradient(110% 60% at 50% 0%, rgba(245, 183, 0, 0.3), transparent 65%),
+    radial-gradient(90% 50% at 50% 100%, rgba(225, 29, 72, 0.2), transparent 70%),
+    #0c0c10;
+}
+.poster.freak {
+  background:
+    repeating-linear-gradient(135deg, rgba(255, 0, 170, 0.05) 0 12px, transparent 12px 24px),
+    radial-gradient(110% 60% at 50% 0%, rgba(255, 0, 170, 0.3), transparent 65%),
+    #0c0c10;
+}
+.pst-head { display: grid; justify-items: center; text-align: center; gap: 2px; }
+.pst-head small {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--muted);
+}
+.pst-head h2 {
+  margin: 0;
+  font-family: var(--display);
+  font-size: clamp(2rem, 9vw, 2.8rem);
+  line-height: 0.95;
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
+  text-shadow: 0 4px 24px rgba(1, 174, 238, 0.45);
+}
+.poster.title-bout .pst-head h2 { color: var(--gold); text-shadow: 0 4px 24px rgba(245, 183, 0, 0.45); }
+.pst-place { display: inline-flex; align-items: center; gap: 4px; font-size: 0.8rem; color: var(--muted); }
+.pst-vs { display: grid; grid-template-columns: 1fr auto 1fr; align-items: end; gap: 4px; }
+.pst-vs .fighter-art { width: 58px; height: 70px; }
+.pst-mid { display: grid; justify-items: center; padding-bottom: 18px; }
+.pst-mid .fi-word { font-size: 1.7rem; padding: 0; }
+.pst-mid small { font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+.pst-card { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.pst-card li {
+  display: grid;
+  gap: 1px;
+  padding: 5px 10px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid transparent;
+}
+.pst-card li.me { background: var(--cyan-soft); border-color: var(--cyan); }
+.pst-tag { font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--faint); }
+.pst-card li.me .pst-tag { color: var(--cyan); }
+.pst-bout { display: flex; align-items: baseline; flex-wrap: wrap; gap: 0 5px; font-size: 0.86rem; }
+.pst-bout small { color: var(--faint); font-size: 0.7rem; }
+.pst-bout i { color: var(--gold); font-style: normal; font-family: var(--display); font-size: 0.8rem; margin: 0 2px; }
+.pst-foot { text-align: center; }
+.pst-bracket {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  font-size: 0.78rem;
+  color: var(--faint);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.pst-bracket span { display: inline-flex; align-items: center; gap: 4px; }
+.pst-bracket span.on { color: var(--text); font-weight: 700; }
+.pst-bracket i { font-style: normal; color: var(--faint); }
+.pst-text { margin: 0; text-align: center; font-size: 0.84rem; color: var(--muted); line-height: 1.4; }
+@media (max-height: 700px) {
+  .pst-card li:nth-child(n + 5):not(.me) { display: none; }
+  .pst-vs .fighter-art { width: 46px; height: 55px; }
+}
+
+/* nagłówek panelu federacji: nazwa nie ściska się obok znacznika rankingu */
+.panel-title { flex-wrap: wrap; gap: 6px; }
+.panel-title .fed-row { min-width: 0; flex: 1 1 160px; }
+.panel-title > .tag { flex-shrink: 0; white-space: nowrap; }
