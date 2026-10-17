@@ -18,7 +18,7 @@ import { START_PROFILES } from './engine/data';
 type Screen =
   | { name: 'menu' }
   | { name: 'slots' }
-  | { name: 'tutorial'; then: 'slots' | 'menu' }
+  | { name: 'tutorial'; then: 'slots' | 'menu' | 'daily' }
   | { name: 'create'; slot: number }
   | { name: 'game' }
   | { name: 'achievements' }
@@ -136,13 +136,13 @@ export default function App() {
           <Menu
             onPlay={() => setScreen(tutorialSeen() ? { name: 'slots' } : { name: 'tutorial', then: 'slots' })}
             onTutorial={() => setScreen({ name: 'tutorial', then: 'menu' })}
-            onDaily={startDaily}
+            onDaily={() => (tutorialSeen() ? startDaily() : setScreen({ name: 'tutorial', then: 'daily' }))}
             onAchievements={() => setScreen({ name: 'achievements' })}
             onMuseum={() => setScreen({ name: 'museum' })}
             onSettings={() => setScreen({ name: 'settings' })}
           />
         )}
-        {screen.name === 'tutorial' && <Tutorial onDone={() => setScreen(screen.then === 'slots' ? { name: 'slots' } : { name: 'menu' })} />}
+        {screen.name === 'tutorial' && <Tutorial onDone={() => (screen.then === 'daily' ? startDaily() : setScreen(screen.then === 'slots' ? { name: 'slots' } : { name: 'menu' }))} />}
         {screen.name === 'achievements' && <AchievementsScreen onBack={toMenu} />}
         {screen.name === 'museum' && <MuseumScreen onBack={toMenu} />}
         {screen.name === 'settings' && <SettingsScreen onBack={toMenu} />}

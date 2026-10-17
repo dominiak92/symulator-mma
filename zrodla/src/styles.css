@@ -5202,3 +5202,12 @@ button.hs:active,
   color: var(--bad);
   flex-shrink: 0;
 }
+.tile small {
+  font-size: 0.6rem;
+  letter-spacing: 0.03em;
+  gap: 3px;
+}
+.tile small .ico {
+  width: 10px;
+  height: 10px;
+}
