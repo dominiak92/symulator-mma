@@ -29,7 +29,7 @@ const PHASE_LABEL: Record<Phase, string> = {
   event: 'Przed startem',
   season: 'Walki',
   summary: 'Podsumowanie',
-  market: 'Rynek',
+  market: 'Kontrakty',
   ended: 'Koniec kariery',
 };
 
@@ -527,8 +527,8 @@ export function CareerPanel({ g, onRanking }: { g: GameState; onRanking?: () => 
         <p className="muted small" style={{ marginTop: 10 }}>
           {d.ok
             ? g.phase === 'market'
-              ? 'Możesz przejść na zawodowstwo. Oferta jest na rynku.'
-              : 'Możesz już przejść na zawodowstwo. Oferta pojawi się na rynku na koniec roku.'
+              ? 'Możesz przejść na zawodowstwo. Oferta czeka w kontraktach.'
+              : 'Możesz już przejść na zawodowstwo. Oferta pojawi się w kontraktach na koniec roku.'
             : `Warunek debiutu zawodowego: ${d.reason}.`}
         </p>
       </section>
