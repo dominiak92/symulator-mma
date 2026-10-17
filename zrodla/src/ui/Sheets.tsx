@@ -134,15 +134,23 @@ export function peerStatus(p: Peer) {
 }
 
 export function PeersTable({ g }: { g: GameState }) {
-  const peers = [...g.peers].sort((a, b) => Number(a.retired) - Number(b.retired) || b.tier - a.tier || ovr(b.stats) - ovr(a.stats));
+  const peers = [...g.peers].sort(
+    (a, b) => Number(b.id === g.rivalId) - Number(a.id === g.rivalId) || Number(a.retired) - Number(b.retired) || b.tier - a.tier || ovr(b.stats) - ovr(a.stats),
+  );
   return (
     <div className="peer-list">
       {peers.map((p) => (
-        <div key={p.id} className={`peer-row ${p.retired ? 'retired' : ''}`}>
+        <div key={p.id} className={`peer-row ${p.retired ? 'retired' : ''} ${p.id === g.rivalId ? 'rival' : ''}`}>
           <div>
             <b>
               {p.firstName} {p.lastName}
             </b>
+            {p.id === g.rivalId && (
+              <span className="tag red rival-tag">
+                <Icon name="flame" size={11} />
+                rywal
+              </span>
+            )}
             {p.belts > 0 && (
               <span title="pasy" className="belt-mark">
                 <Icon name="trophy" size={13} />

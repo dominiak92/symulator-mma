@@ -203,7 +203,9 @@ export default function Game({
               </b>
             </div>
             <button className="hs" onClick={() => setSheet('history')} title={amateur ? 'Rekord amatorski: wygrane-porażki-remisy' : 'Rekord zawodowy: wygrane-porażki-remisy'}>
-              <small>{amateur ? 'Rekord am.' : 'Rekord'}</small>
+              <small>
+                Rekord{amateur && <span className="am-suffix"> am.</span>}
+              </small>
               <b>
                 <Icon name="glove" size={14} />
                 {recStr(rec)}
