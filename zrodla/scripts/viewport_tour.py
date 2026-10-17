@@ -21,7 +21,7 @@ CHECK = r"""
     if (r.right > innerWidth + 1 || r.left < -1) out.push('poza ekranem: ' + (el.className||el.tagName) + ' „' + el.textContent.trim().slice(0,40) + '”');
   }
   // 2) elementy przyklejone/fixed: co jest pod nimi z klikalnych rzeczy?
-  const floats = [...document.querySelectorAll('.hud, .season-bar, .cta-bar, .toasts > *')].filter(vis).filter(e => ['sticky','fixed'].includes(getComputedStyle(e).position) || e.closest('.toasts'));
+  const floats = [...document.querySelectorAll('.hud, .play-ctrl, .cta-bar, .toasts > *')].filter(vis).filter(e => ['sticky','fixed'].includes(getComputedStyle(e).position) || e.closest('.toasts'));
   const clickables = [...document.querySelectorAll('button, a, input, .choice, .offer')].filter(vis);
   for (const f of floats) {
     const fr = f.getBoundingClientRect();
@@ -114,8 +114,9 @@ with sync_playwright() as p:
         pg.wait_for_timeout(120)
     # arkusze
     if pg.get_by_role("button", name="Menu gry").count():
-        for nm in ["Zawodnik", "Walki", "Rocznik"]:
-            btn = pg.locator(".dock button", has_text=nm)
+        for nm, sel in [("zawodnik", ".hud-who"), ("walki", "button.hs >> nth=0"), ("ranking", "button.hs >> nth=1"), ("rocznik", "button.hs >> nth=2")]:
+            btn = pg.locator(sel)
+            pg.evaluate("window.scrollTo(0,0)"); pg.wait_for_timeout(200)
             if btn.count():
                 btn.first.click(); pg.wait_for_timeout(200)
                 snap(pg, f"x-arkusz-{nm.lower()}", problems)

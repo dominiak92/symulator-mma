@@ -41,9 +41,10 @@ with sync_playwright() as p:
         page.add_style_tag(content='.toasts{display:none!important}')
         page.screenshot(path=f"{OUT}/{tag}-rynek.png")
         if tag == "m":
-            for name in ["Zawodnik", "Medale", "Ranking", "Walki", "Rocznik"]:
-                btn = page.locator(".dock button", has_text=name)
+            for name, sel in [("Zawodnik", ".hud-who"), ("Ranking", "button.hs >> nth=1"), ("Walki", "button.hs >> nth=0"), ("Rocznik", "button.hs >> nth=2")]:
+                btn = page.locator(sel)
                 if btn.count():
+                    page.evaluate("window.scrollTo(0,0)"); page.wait_for_timeout(100)
                     btn.first.click(); page.wait_for_timeout(150)
                     page.screenshot(path=f"{OUT}/{tag}-arkusz-{name}.png")
                     page.keyboard.press("Escape"); page.wait_for_timeout(100)
