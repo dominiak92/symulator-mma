@@ -368,7 +368,7 @@ function LiveCard({ g, f, start, animate, setGame }: { g: GameState; f: FightRep
   );
 }
 
-const INTRO_MS = 2800;
+const INTRO_MS = 3600;
 const NEXT_MS = 4000;
 
 const SCOUT: Record<string, string> = {
@@ -381,7 +381,7 @@ const SCOUT: Record<string, string> = {
 };
 
 /** Zapowiedź walki: krótki „plakat” przed każdą walką. */
-function FightIntro({ g, f, n, total, onGo }: { g: GameState; f: FightReport; n: number; total: number | null; onGo: () => void }) {
+function FightIntro({ g, f, n, total, onGo, paused }: { g: GameState; f: FightReport; n: number; total: number | null; onGo: () => void; paused: boolean }) {
   const o = f.opp;
   const head = f.amateur ? (f.stage ? STAGE_LABELS[f.stage] : 'Walka') : total ? `Walka ${n} z ${total}` : `Walka ${n}`;
   return (
@@ -433,7 +433,7 @@ function FightIntro({ g, f, n, total, onGo }: { g: GameState; f: FightReport; n:
         <button className="btn btn-primary btn-block btn-ico fi-go" onClick={onGo}>
           <Icon name="glove" />
           Do walki!
-          <i className="fi-timer" style={{ animationDuration: `${INTRO_MS}ms` }} />
+          {!paused && <i className="fi-timer" style={{ animationDuration: `${INTRO_MS}ms` }} />}
         </button>
       </div>
     </div>
@@ -455,6 +455,27 @@ export default function Season({ game, setGame }: StepProps) {
   const waiting = !!last?.sim.pending;
   const anim = animate && !fast;
 
+  // gdy gracz sam przewija albo czyta, gra nie przechodzi dalej sama
+  // (na starcie pierwszego sezonu czeka, aż gracz przeczyta podpowiedź trenera)
+  const [paused, setPaused] = useState(() => {
+    const st = loadSettings();
+    return run.fights.length === 0 && st.tips && !st.tipsSeen.includes('season');
+  });
+  useEffect(() => {
+    const stop = () => setPaused(true);
+    const onKey = (e: KeyboardEvent) => {
+      if (['ArrowDown', 'ArrowUp', 'PageDown', 'PageUp', 'Home', 'End', ' '].includes(e.key)) stop();
+    };
+    window.addEventListener('touchmove', stop, { passive: true });
+    window.addEventListener('wheel', stop, { passive: true });
+    window.addEventListener('keydown', onKey);
+    return () => {
+      window.removeEventListener('touchmove', stop);
+      window.removeEventListener('wheel', stop);
+      window.removeEventListener('keydown', onKey);
+    };
+  }, []);
+
   // zapowiedź nowej walki (przed pokazaniem karty)
   const seenIntro = useRef(-1);
   const [introIdx, setIntroIdx] = useState<number | null>(null);
@@ -468,10 +489,10 @@ export default function Season({ game, setGame }: StepProps) {
   const introOpen = !!last && ((introIdx !== null && introIdx === last.idx) || needIntro);
 
   useEffect(() => {
-    if (introIdx === null) return;
+    if (introIdx === null || paused) return;
     const t = setTimeout(() => setIntroIdx(null), INTRO_MS);
     return () => clearTimeout(t);
-  }, [introIdx]);
+  }, [introIdx, paused]);
 
   // od której rundy animować bieżącą walkę (po decyzji: od miejsca przerwania)
   const prev = useRef<{ idx: number; round: number; fin: boolean } | null>(null);
@@ -493,17 +514,21 @@ export default function Season({ game, setGame }: StepProps) {
     return () => clearTimeout(t);
   }, [spinning]);
 
-  const advance = () => setGame(seasonNext(gameRef.current));
+  const advance = () => {
+    setPaused(false);
+    setGame(seasonNext(gameRef.current));
+  };
 
   // pierwsza walka i kolejne: po wyniku chwila przerwy (albo przycisk „Następna walka”)
   useEffect(() => {
     if (spinning || run.done || waiting || introOpen) return;
     if (last && !last.sim.finished) return;
+    if (paused && anim) return;
     const delay = !animate ? 0 : fast ? 260 : !last ? 400 : revealMs + NEXT_MS;
     const t = setTimeout(advance, delay);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [spinning, run.done, waiting, introOpen, last?.idx, finishedNow, fast, animate]);
+  }, [spinning, run.done, waiting, introOpen, last?.idx, finishedNow, fast, animate, paused]);
 
   // przewijanie do karty walki (cała karta na ekranie), na koniec do przycisku
   useEffect(() => {
@@ -513,7 +538,7 @@ export default function Season({ game, setGame }: StepProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [last?.idx, introOpen]);
   useEffect(() => {
-    if (!run.done) return;
+    if (!run.done || paused) return;
     const t = setTimeout(() => window.scrollTo({ top: document.body.scrollHeight, behavior: animate ? 'smooth' : 'auto' }), anim ? revealMs : 0);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -624,11 +649,17 @@ export default function Season({ game, setGame }: StepProps) {
 
       {!run.done && !waiting && !introOpen && (
         <div className="play-ctrl" role="group" aria-label="Tempo sezonu">
+          {!last && paused && anim && !spinning && (
+            <button className="icon-pill next" onClick={advance}>
+              Pierwsza walka
+              <Icon name="play" size={12} />
+            </button>
+          )}
           {nextReady && anim && (
             <button className="icon-pill next" onClick={advance} style={d(revealMs)}>
               Następna walka
               <Icon name="play" size={12} />
-              <i className="next-timer" style={{ animationDelay: `${revealMs}ms`, animationDuration: `${NEXT_MS}ms` }} />
+              {!paused && <i className="next-timer" style={{ animationDelay: `${revealMs}ms`, animationDuration: `${NEXT_MS}ms` }} />}
             </button>
           )}
           <button className={`icon-pill ${fast ? 'on' : ''}`} onClick={() => setFast((x) => !x)} aria-pressed={fast} aria-label={fast ? 'Wolniej' : 'Szybciej'}>
@@ -659,7 +690,7 @@ export default function Season({ game, setGame }: StepProps) {
       )}
 
       {introOpen && last && (
-        <FightIntro g={g} f={last} n={run.fights.length} total={amateur ? null : run.planned} onGo={() => setIntroIdx(null)} />
+        <FightIntro g={g} f={last} n={run.fights.length} total={amateur ? null : run.planned} paused={paused} onGo={() => setIntroIdx(null)} />
       )}
     </section>
   );
