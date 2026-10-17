@@ -1,8 +1,9 @@
 /** Ilustracje SVG rysowane w kodzie: zawodnik, pas, medal, konfetti. */
-import { useEffect, useState, type CSSProperties } from 'react';
+import { useEffect, useId, useState, type CSSProperties } from 'react';
 
-const SKINS = ['#f1c7a5', '#e5b18c', '#d39a72', '#b97c55', '#8d5a3b', '#f6d3b8'];
-const HAIRS = ['#1d1612', '#3b2a1e', '#6b4a2b', '#a9783f', '#d9b36a', '#2a2a2a'];
+const SKINS = ['#f6d3b8', '#f1c7a5', '#e8b48f', '#d9a07a', '#c68a62', '#a86d48', '#8a5537', '#6b3f28'];
+const HAIRS = ['#1a1310', '#2e2119', '#4a3324', '#6b4a2b', '#9a6a3a', '#c9a15e', '#e6d3a3', '#7a2e1a', '#2b2b2f'];
+const INKS = ['#1e2a44', '#24303f', '#2b2340'];
 
 function hash(s: string) {
   let h = 2166136261;
@@ -10,27 +11,76 @@ function hash(s: string) {
   return h >>> 0;
 }
 
-export interface FighterLook {
-  skin: string;
-  hair: string;
-  style: 'buzz' | 'bald' | 'mohawk' | 'top' | 'long';
-  beard: boolean;
-}
-
-export function lookFor(seed: string): FighterLook {
-  const h = hash(seed);
-  const styles: FighterLook['style'][] = ['buzz', 'bald', 'mohawk', 'top', 'buzz', 'long', 'top'];
-  return {
-    skin: SKINS[h % SKINS.length],
-    hair: HAIRS[(h >>> 3) % HAIRS.length],
-    style: styles[(h >>> 6) % styles.length],
-    beard: ((h >>> 9) & 3) === 0,
+/** Prosty generator liczb z ziarna (żeby każdy wygląd był stały dla danego nazwiska). */
+function seeded(seed: string) {
+  let x = hash(seed) || 1;
+  return () => {
+    x ^= x << 13;
+    x ^= x >>> 17;
+    x ^= x << 5;
+    return ((x >>> 0) % 10000) / 10000;
   };
 }
 
+type HairStyle = 'buzz' | 'bald' | 'mohawk' | 'top' | 'long' | 'bun' | 'cornrows' | 'slick' | 'curly' | 'fade';
+type BeardStyle = 'none' | 'stubble' | 'full' | 'goatee' | 'stache' | 'chin';
+type Tattoo = 'chestEagle' | 'chestScript' | 'sleeveL' | 'sleeveR' | 'tribalShoulder' | 'neck' | 'ribs' | 'forearmBands' | 'star' | 'cross';
+
+export interface FighterLook {
+  skin: string;
+  hair: string;
+  style: HairStyle;
+  beard: BeardStyle;
+  build: number; // 0 smukły .. 2 ciężki
+  tattoos: Tattoo[];
+  ink: string;
+  ear: boolean; // kalafiorowe ucho
+  scar: boolean;
+  nose: boolean; // krzywy nos
+  chestHair: boolean;
+  shortsStyle: 'solid' | 'stripe' | 'panel' | 'split';
+  brow: number; // nachylenie brwi
+}
+
+export function lookFor(seed: string): FighterLook {
+  const r = seeded(seed);
+  const pick = <T,>(a: T[]) => a[Math.floor(r() * a.length)];
+  const styles: HairStyle[] = ['buzz', 'bald', 'mohawk', 'top', 'long', 'bun', 'cornrows', 'slick', 'curly', 'fade', 'buzz', 'fade'];
+  const beards: BeardStyle[] = ['none', 'none', 'stubble', 'stubble', 'full', 'goatee', 'stache', 'chin'];
+  const allTats: Tattoo[] = ['chestEagle', 'chestScript', 'sleeveL', 'sleeveR', 'tribalShoulder', 'neck', 'ribs', 'forearmBands', 'star', 'cross'];
+  const tatCount = r() < 0.3 ? 0 : r() < 0.55 ? 1 : r() < 0.8 ? 2 : 3 + Math.floor(r() * 2);
+  const tattoos: Tattoo[] = [];
+  for (let i = 0; i < tatCount; i++) {
+    const t = pick(allTats);
+    if (!tattoos.includes(t) && !(t.startsWith('chest') && tattoos.some((x) => x.startsWith('chest')))) tattoos.push(t);
+  }
+  return {
+    skin: pick(SKINS),
+    hair: pick(HAIRS),
+    style: pick(styles),
+    beard: pick(beards),
+    build: Math.floor(r() * 3),
+    tattoos,
+    ink: pick(INKS),
+    ear: r() < 0.3,
+    scar: r() < 0.25,
+    nose: r() < 0.3,
+    chestHair: r() < 0.18,
+    shortsStyle: pick(['solid', 'stripe', 'panel', 'split'] as const),
+    brow: Math.floor(r() * 3),
+  };
+}
+
+function darken(hex: string, k: number) {
+  const n = parseInt(hex.slice(1), 16);
+  const c = (v: number) => Math.max(0, Math.min(255, Math.round(v * k)));
+  return `rgb(${c(n >> 16)},${c((n >> 8) & 255)},${c(n & 255)})`;
+}
+
 /**
- * Zawodnik w gardzie (popiersie z rękawicami).
+ * Zawodnik w gardzie (popiersie w rękawicach MMA).
  * corner: 'blue' = ty, 'red' = rywal. shorts: kolor spodenek (np. kolor klubu).
+ * Wygląd (fryzura, broda, budowa, tatuaże, blizny) wynika z ziarna, więc jest stały dla danej osoby.
  */
 export function Fighter({
   seed,
@@ -53,28 +103,66 @@ export function Fighter({
   className?: string;
   style?: CSSProperties;
 }) {
+  const uid = useId().replace(/[^a-zA-Z0-9]/g, '');
   const l = lookFor(seed);
   const glove = corner === 'blue' ? '#01aeee' : '#e11d48';
-  const gloveDark = corner === 'blue' ? '#0086b8' : '#a3123a';
+  const gloveDark = corner === 'blue' ? '#0079a8' : '#9b0f33';
   const sh = shorts ?? (corner === 'blue' ? '#1f00fe' : '#3a0d18');
-  const shade = 'rgba(0,0,0,.18)';
+  const skinD = darken(l.skin, 0.82);
+  const skinDD = darken(l.skin, 0.68);
+  const hairD = darken(l.hair, 0.75);
+  const line = 'rgba(40,20,10,.28)';
+  const ink = l.ink;
+  const w = [0, 3, 6][l.build]; // poszerzenie barków
+  const has = (t: Tattoo) => l.tattoos.includes(t);
+  const armL = `M${27 - w} 68 Q${15 - w} 82 26 90 Q32 92 36 64`;
+  const armR = `M${73 + w} 68 Q${85 + w} 82 74 90 Q68 92 64 64`;
+  const ink2 = { stroke: ink, strokeOpacity: 0.8, fill: 'none', strokeLinecap: 'round' as const };
   return (
-    <svg
-      className={`fighter-art ${className ?? ''}`}
-      style={style}
-      width={size}
-      height={size * 1.2}
-      viewBox="0 0 100 120"
-      aria-hidden="true"
-    >
+    <svg className={`fighter-art ${className ?? ''}`} style={style} width={size} height={size * 1.2} viewBox="0 0 100 120" aria-hidden="true">
+      <defs>
+        <linearGradient id={`sk${uid}`} x1="0" x2="1" y1="0" y2="0">
+          <stop offset="0" stopColor={skinD} />
+          <stop offset=".45" stopColor={l.skin} />
+          <stop offset="1" stopColor={skinD} />
+        </linearGradient>
+        <linearGradient id={`gl${uid}`} x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0" stopColor={glove} />
+          <stop offset="1" stopColor={gloveDark} />
+        </linearGradient>
+      </defs>
       <g transform={mirror ? 'translate(100 0) scale(-1 1)' : undefined}>
         {/* tułów */}
-        <path d="M24 66 Q50 58 76 66 L70 106 Q50 110 30 106 Z" fill={l.skin} />
-        <path d="M50 70 L50 100 M40 84 Q50 87 60 84 M41 94 Q50 97 59 94" stroke={shade} strokeWidth="1.6" fill="none" strokeLinecap="round" />
-        <path d="M33 72 Q41 77 49 72 M51 72 Q59 77 67 72" stroke={shade} strokeWidth="1.6" fill="none" strokeLinecap="round" />
+        <path d={`M${24 - w} 66 Q50 ${58 - w / 2} ${76 + w} 66 L${71 + w / 2} 106 Q50 110 ${29 - w / 2} 106 Z`} fill={`url(#sk${uid})`} stroke={skinDD} strokeOpacity=".5" strokeWidth=".8" />
+        {/* klatka i brzuch */}
+        <path d={`M${33 - w / 2} 72 Q41 78 49 72 M51 72 Q59 78 ${67 + w / 2} 72`} stroke={line} strokeWidth="1.7" fill="none" strokeLinecap="round" />
+        <path d="M50 74 L50 101" stroke={line} strokeWidth="1.3" fill="none" />
+        {l.build < 2 ? (
+          <path d="M42 84 Q50 86.5 58 84 M42.5 92 Q50 94.5 57.5 92 M43.5 99 Q50 101 56.5 99" stroke={line} strokeWidth="1.3" fill="none" strokeLinecap="round" />
+        ) : (
+          <path d="M40 90 Q50 95 60 90" stroke={line} strokeWidth="1.4" fill="none" strokeLinecap="round" />
+        )}
+        {l.chestHair && <path d="M46 75 l1 3 m2 -3 l0 3.5 m2 -3.5 l-1 3 M48 84 l1 2 m2 -2 l-1 2 M49 92 l1 2" stroke={hairD} strokeWidth=".9" strokeLinecap="round" opacity=".7" />}
+        {/* tatuaże na korpusie */}
+        {has('chestEagle') && (
+          <g {...ink2} strokeWidth="1.2">
+            <path d="M50 74 Q43 68 33 70 Q39 73 42 74 Q37 76 34 80 Q42 79 47 77 M50 74 Q57 68 67 70 Q61 73 58 74 Q63 76 66 80 Q58 79 53 77" strokeWidth="1.5" />
+            <path d="M47.5 75 L50 83 L52.5 75 Q50 73 47.5 75 Z" fill={ink} fillOpacity=".7" />
+            <circle cx="50" cy="73.2" r="1.6" fill={ink} fillOpacity=".8" />
+          </g>
+        )}
+        {has('chestScript') && <path d="M37 79 q2 -2 4 0 t4 0 t4 0 M52 79 q2 -2 4 0 t4 0 t4 0" {...ink2} strokeWidth="1" />}
+        {has('ribs') && <path d="M61 86 l6 -2 M61 89 l6 -1.6 M61.5 92 l5 -1.2" {...ink2} strokeWidth="1" />}
+        {has('star') && <path d="M38 87 l1.6 3.4 3.6 .4 -2.7 2.4 .8 3.6 -3.3 -1.9 -3.3 1.9 .8 -3.6 -2.7 -2.4 3.6 -.4 z" fill={ink} fillOpacity=".75" />}
+        {has('cross') && <path d="M62 75 v7 M59.5 77.5 h5" {...ink2} strokeWidth="1.4" />}
+        {has('tribalShoulder') && <path d={`M${27 - w} 67 q5 -4 9 -2 q-3 2 -2 5 q2 -3 6 -3`} {...ink2} strokeWidth="1.6" strokeOpacity=".6" />}
         {/* spodenki */}
         <path d="M29 104 Q50 108 71 104 L73 120 L27 120 Z" fill={sh} />
-        <path d="M29 104 Q50 108 71 104" stroke="#fff" strokeOpacity=".75" strokeWidth="2.4" fill="none" />
+        {l.shortsStyle === 'stripe' && <path d="M31 107 L30 120 M69 107 L70 120" stroke="#fff" strokeOpacity=".6" strokeWidth="2.2" />}
+        {l.shortsStyle === 'panel' && <path d="M27 112 L40 108 L38 120 L27 120 Z" fill="#fff" fillOpacity=".18" />}
+        {l.shortsStyle === 'split' && <path d="M50 107 L50 120" stroke={darken(sh.length === 7 ? sh : '#333333', 0.6)} strokeWidth="2" />}
+        <path d="M29 104 Q50 108 71 104" stroke="#111" strokeOpacity=".55" strokeWidth="2.8" fill="none" />
+        <path d="M29 104 Q50 108 71 104" stroke="#fff" strokeOpacity=".7" strokeWidth="1.1" fill="none" />
         {belt && (
           <g>
             <path d="M27 100 Q50 105 73 100 L74 110 Q50 115 26 110 Z" fill="#f5b700" stroke="#a87b00" strokeWidth="1" />
@@ -82,48 +170,99 @@ export function Fighter({
             <circle cx="50" cy="107" r="2.6" fill="#e11d48" />
           </g>
         )}
-        {/* szyja */}
-        <rect x="43" y="46" width="14" height="16" rx="4" fill={l.skin} />
-        <rect x="43" y="54" width="14" height="5" fill={shade} />
-        {/* głowa */}
+        {/* szyja (u ciężkich grubsza) */}
+        <path d={`M${43 - l.build} 46 L${57 + l.build} 46 L${58 + l.build} 62 L${42 - l.build} 62 Z`} fill={l.skin} />
+        <path d={`M${43 - l.build} 54 L${57 + l.build} 54 L${58 + l.build} 59 L${42 - l.build} 59 Z`} fill={skinD} opacity=".7" />
+        {has('neck') && <path d="M53 50 q2 1 1.5 3.5 q-1.5 -1 -3 0 q.5 -2 1.5 -3.5 z M47 56 l3 0" {...ink2} strokeWidth="1" />}
+        {/* uszy */}
         <ellipse cx="34.5" cy="36" rx="3" ry="4.5" fill={l.skin} />
         <ellipse cx="65.5" cy="36" rx="3" ry="4.5" fill={l.skin} />
-        <ellipse cx="50" cy="34" rx="15" ry="17" fill={l.skin} />
-        {l.beard && <path d="M36 36 Q37 52 50 53 Q63 52 64 36 Q60 44 50 45 Q40 44 36 36 Z" fill={l.hair} opacity=".9" />}
-        {l.style === 'buzz' && <path d="M35.5 30 Q37 16 50 16 Q63 16 64.5 30 Q58 23 50 23 Q42 23 35.5 30 Z" fill={l.hair} opacity=".85" />}
+        {l.ear && <path d="M33 33 q-1.5 1.5 0 3 q-1.5 1.5 0 3.2" stroke={skinDD} strokeWidth="1.3" fill="none" strokeLinecap="round" />}
+        {/* włosy z tyłu (długie, kok) */}
+        {l.style === 'long' && <path d="M35 30 Q33 50 38 56 L42 50 Q38 40 40 28 Z M65 30 Q67 50 62 56 L58 50 Q62 40 60 28 Z" fill={l.hair} />}
+        {l.style === 'bun' && <circle cx="50" cy="13" r="5.5" fill={l.hair} />}
+        {/* głowa */}
+        <ellipse cx="50" cy="34" rx={15 + l.build * 0.6} ry="17" fill={l.skin} />
+        <ellipse cx="45" cy="27" rx="7" ry="5" fill="#fff" opacity=".08" />
+        {/* zarost */}
+        {l.beard === 'stubble' && <path d="M36 37 Q37 52 50 53 Q63 52 64 37 Q60 45 50 46 Q40 45 36 37 Z" fill={l.hair} opacity=".28" />}
+        {l.beard === 'full' && <path d="M35.5 35 Q36 54 50 55 Q64 54 64.5 35 Q61 45 50 46 Q39 45 35.5 35 Z" fill={l.hair} opacity=".92" />}
+        {l.beard === 'goatee' && <path d="M45 46 Q50 44.5 55 46 L54 52 Q50 54 46 52 Z" fill={l.hair} opacity=".9" />}
+        {l.beard === 'chin' && <path d="M44 49 Q50 55 56 49 Q50 52 44 49 Z" fill={l.hair} opacity=".9" />}
+        {(l.beard === 'stache' || l.beard === 'goatee' || l.beard === 'full') && <path d="M43.5 44.5 Q50 41.5 56.5 44.5 Q50 43.5 43.5 44.5 Z" stroke={l.hair} strokeWidth="1.8" fill={l.hair} strokeLinejoin="round" />}
+        {/* fryzury */}
+        {l.style === 'buzz' && <path d="M35.5 30 Q37 16 50 16 Q63 16 64.5 30 Q58 23 50 23 Q42 23 35.5 30 Z" fill={l.hair} opacity=".8" />}
+        {l.style === 'fade' && (
+          <>
+            <path d="M35.5 31 Q37 16 50 16 Q63 16 64.5 31 Q58 24 50 24 Q42 24 35.5 31 Z" fill={l.hair} opacity=".35" />
+            <path d="M38 24 Q40 13 50 13 Q60 13 62 24 Q56 19 50 19 Q44 19 38 24 Z" fill={l.hair} />
+          </>
+        )}
         {l.style === 'top' && <path d="M35 31 Q34 13 50 13 Q67 13 65 31 Q62 21 55 22 Q50 18 44 22 Q38 21 35 31 Z" fill={l.hair} />}
-        {l.style === 'mohawk' && <path d="M45 24 Q46 11 50 9 Q54 11 55 24 Q50 22 45 24 Z" fill={l.hair} />}
-        {l.style === 'long' && <path d="M34 38 Q31 13 50 13 Q69 13 66 38 L63 30 Q60 20 50 20 Q40 20 37 30 Z" fill={l.hair} />}
-        {/* twarz */}
-        <path d="M41 32 L46 33.5 M54 33.5 L59 32" stroke="#2a1d16" strokeWidth="1.8" strokeLinecap="round" />
+        {l.style === 'slick' && <path d="M35 30 Q34 14 51 14 Q66 15 65 29 Q60 19 48 20 Q41 21 35 30 Z" fill={l.hair} />}
+        {l.style === 'curly' && (
+          <g fill={l.hair}>
+            <circle cx="39" cy="22" r="5" />
+            <circle cx="46" cy="17" r="5.5" />
+            <circle cx="54" cy="17" r="5.5" />
+            <circle cx="61" cy="22" r="5" />
+            <circle cx="50" cy="20" r="5" />
+          </g>
+        )}
+        {l.style === 'mohawk' && (
+          <>
+            <path d="M35.5 30 Q37 18 50 18 Q63 18 64.5 30 Q58 24 50 24 Q42 24 35.5 30 Z" fill={l.hair} opacity=".25" />
+            <path d="M45 24 Q46 9 50 7 Q54 9 55 24 Q50 22 45 24 Z" fill={l.hair} />
+          </>
+        )}
+        {l.style === 'cornrows' && (
+          <>
+            <path d="M35.5 30 Q37 16 50 16 Q63 16 64.5 30 Q58 23 50 23 Q42 23 35.5 30 Z" fill={l.hair} />
+            <path d="M42 17.5 Q41 22 40 27 M47 16.3 L46.5 24 M53 16.3 L53.5 24 M58 17.5 Q59 22 60 27" stroke={l.skin} strokeOpacity=".5" strokeWidth=".8" />
+          </>
+        )}
+        {(l.style === 'long' || l.style === 'bun') && <path d="M35 31 Q34 15 50 15 Q66 15 65 31 Q60 21 50 21 Q40 21 35 31 Z" fill={l.hair} />}
+        {/* brwi i oczy */}
+        <path d={`M40.5 ${31 + (l.brow === 2 ? 1 : 0)} L46.5 ${33.5 - (l.brow === 1 ? 1 : 0)} M53.5 ${33.5 - (l.brow === 1 ? 1 : 0)} L59.5 ${31 + (l.brow === 2 ? 1 : 0)}`} stroke={darken(l.hair, 0.6)} strokeWidth="2" strokeLinecap="round" />
+        {l.scar && <path d="M57.5 29.5 L56 35" stroke="#fff" strokeOpacity=".55" strokeWidth=".9" strokeLinecap="round" />}
         {hurt ? (
           <>
             <path d="M42 36 l3 3 m0 -3 l-3 3 M55 36 l3 3 m0 -3 l-3 3" stroke="#2a1d16" strokeWidth="1.5" strokeLinecap="round" />
-            <path d="M45 46 Q50 43 55 46" stroke="#2a1d16" strokeWidth="1.6" fill="none" strokeLinecap="round" />
+            <ellipse cx="57" cy="38.5" rx="3.6" ry="2.6" fill="#7c3a6b" opacity=".35" />
+            <path d="M45 47 Q50 44 55 47" stroke="#2a1d16" strokeWidth="1.6" fill="none" strokeLinecap="round" />
           </>
         ) : (
           <>
-            <circle cx="44" cy="37.5" r="1.7" fill="#2a1d16" />
-            <circle cx="56" cy="37.5" r="1.7" fill="#2a1d16" />
-            <path d="M46 46 L54 46" stroke="#2a1d16" strokeWidth="1.6" strokeLinecap="round" />
+            <path d="M42 37.5 Q44 36.2 46 37.5" stroke="#2a1d16" strokeWidth="1.6" fill="none" strokeLinecap="round" />
+            <path d="M54 37.5 Q56 36.2 58 37.5" stroke="#2a1d16" strokeWidth="1.6" fill="none" strokeLinecap="round" />
+            <circle cx="44" cy="38.2" r="1.3" fill="#2a1d16" />
+            <circle cx="56" cy="38.2" r="1.3" fill="#2a1d16" />
+            <path d="M46 47 L54 47" stroke="#2a1d16" strokeWidth="1.6" strokeLinecap="round" />
           </>
         )}
-        {/* ochraniacz zębów */}
-        {!l.beard && <path d="M47 45.5 L53 45.5" stroke={glove} strokeWidth="1" strokeOpacity=".7" />}
+        {/* nos */}
+        <path d={l.nose ? 'M50 37 Q48.5 40 50.5 42 Q49 43.5 47.5 43' : 'M50 37 Q49 40.5 50 42.5 Q48.8 43.4 47.6 43'} stroke={skinDD} strokeWidth="1.3" fill="none" strokeLinecap="round" />
+        {/* ochraniacz na zęby */}
+        {l.beard !== 'full' && <path d="M47 46.6 L53 46.6" stroke={glove} strokeWidth="1" strokeOpacity=".75" />}
         {/* ręce */}
-        <path d="M27 68 Q16 82 26 90 Q32 92 37 60" stroke={l.skin} strokeWidth="11" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-        <path d="M73 68 Q84 82 74 90 Q68 92 63 60" stroke={l.skin} strokeWidth="11" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-        {/* rękawice */}
-        <g>
-          <rect x="29" y="44" width="17" height="19" rx="7" fill={glove} />
-          <rect x="29" y="58" width="17" height="6" rx="2" fill="#f4f4f5" />
-          <path d="M33 48 Q37 46 42 48" stroke={gloveDark} strokeWidth="1.6" fill="none" strokeLinecap="round" />
-        </g>
-        <g>
-          <rect x="54" y="42" width="17" height="19" rx="7" fill={glove} />
-          <rect x="54" y="56" width="17" height="6" rx="2" fill="#f4f4f5" />
-          <path d="M58 46 Q62 44 67 46" stroke={gloveDark} strokeWidth="1.6" fill="none" strokeLinecap="round" />
-        </g>
+        <path d={armL} stroke={`url(#sk${uid})`} strokeWidth={11 + l.build} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+        <path d={armR} stroke={`url(#sk${uid})`} strokeWidth={11 + l.build} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+        {has('sleeveL') && <path d={armL} stroke={ink} strokeOpacity=".62" strokeWidth={8 + l.build} strokeDasharray="2.5 1.6 5 2" fill="none" strokeLinecap="butt" />}
+        {has('sleeveR') && <path d={armR} stroke={ink} strokeOpacity=".62" strokeWidth={8 + l.build} strokeDasharray="4 2 1.5 2" fill="none" strokeLinecap="butt" />}
+        {has('forearmBands') && <path d="M30 86 l7 -1 M30.5 83.5 l6.5 -1" stroke={ink} strokeOpacity=".6" strokeWidth="1.4" strokeLinecap="round" />}
+        {/* rękawice MMA: wyściółka, otwarte palce, rzep */}
+        {[
+          { x: 27.5, y: 48 },
+          { x: 55.5, y: 46.5 },
+        ].map((gp, i) => (
+          <g key={i}>
+            <rect x={gp.x} y={gp.y} width="17" height="15" rx="6" fill={`url(#gl${uid})`} />
+            <path d={`M${gp.x + 2.5} ${gp.y + 3.5} h12 M${gp.x + 2.5} ${gp.y + 6.5} h12`} stroke={gloveDark} strokeOpacity=".7" strokeWidth="1" />
+            <path d={`M${gp.x + 3} ${gp.y + 1.2} q2 -1.6 4 0 q2 -1.6 4 0 q2 -1.6 4 0`} stroke={l.skin} strokeWidth="1.6" fill="none" strokeLinecap="round" />
+            <rect x={gp.x - 0.5} y={gp.y + 13} width="18" height="6" rx="2" fill="#18181b" />
+            <rect x={gp.x + 1} y={gp.y + 14.6} width="15" height="2.6" rx="1" fill="#fff" opacity=".85" />
+          </g>
+        ))}
       </g>
     </svg>
   );
@@ -240,4 +379,19 @@ export function CountUp({ to, ms = 700, format = (n: number) => String(n) }: { t
 
 function reducedMotion() {
   return typeof window !== 'undefined' && !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+}
+
+/** Podgląd wyglądów zawodników (adres #zawodnicy). */
+export function FighterGallery() {
+  const names = ['Kowalski', 'Nowak', 'Wiśniewski', 'Wójcik', 'Kamiński', 'Lewandowski', 'Zieliński', 'Szymański', 'Woźniak', 'Dąbrowski', 'Kozłowski', 'Jankowski', 'Mazur', 'Kwiatkowski', 'Krawczyk', 'Piotrowski', 'Grabowski', 'Nowakowski', 'Pawłowski', 'Michalski', 'Silva', "O'Brien", 'Petrov', 'Magomedov'];
+  return (
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, padding: 16, background: '#111' }}>
+      {names.map((n, i) => (
+        <div key={n} style={{ textAlign: 'center', color: '#aaa', fontSize: 11 }}>
+          <Fighter seed={`Jan${n}`} corner={i % 2 ? 'red' : 'blue'} size={110} mirror={i % 2 === 1} belt={i === 4} hurt={i === 7} />
+          <div>{n}</div>
+        </div>
+      ))}
+    </div>
+  );
 }
