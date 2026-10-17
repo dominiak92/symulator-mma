@@ -2,6 +2,8 @@ import TextSize from './TextSize';
 import { shownRecord, useHudHold } from './hudHold';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { GameState, Phase } from '../engine/types';
+import { predictability } from '../engine/fight';
+import { todaysGoals, weekEndsIn } from '../engine/goals';
 import { STAT_KEYS, STAT_LABELS, STAT_DESC, START_PROFILES, STYLE_LABELS, TIER_NAMES, DIFFICULTY, WEIGHTS, amateurDivision } from '../engine/data';
 import { debutCheck, displayName, rankStr, rankingTable, recStr, tourneyResultText } from '../engine/game';
 import { ovr } from '../engine/fighter';
@@ -19,7 +21,7 @@ import { Icon, STAT_ICON } from './Icon';
 import { Medal } from './Art';
 import { Tutorial } from './Tutorial';
 import { sfxClick, unlockAudio } from './sound';
-import { loadSettings, saveSettings } from '../storage';
+import { loadGoals, loadSettings, saveSettings } from '../storage';
 import { Emblem, SponsorLogo, clubCrest, crestFor } from './Emblem';
 
 const PHASES: Phase[] = ['training', 'budget', 'event', 'season', 'summary', 'market'];
@@ -38,7 +40,7 @@ export interface StepProps {
   setGame: (s: GameState) => void;
 }
 
-type SheetName = 'menu' | 'history' | 'peers' | 'ranking' | 'skills';
+type SheetName = 'menu' | 'history' | 'peers' | 'ranking' | 'skills' | 'goals';
 
 export function shortName(g: GameState) {
   const p = g.profile;
@@ -312,6 +314,10 @@ export default function Game({
                     <Icon name="users" />
                     Twój rocznik
                   </button>
+                  <button className="btn btn-ghost btn-block btn-ico" onClick={() => setSheet('goals')}>
+                    <Icon name="target" />
+                    Cele dnia i wyzwanie tygodnia
+                  </button>
                   <SoundToggle />
                   <TextSize />
                   <button
@@ -341,6 +347,7 @@ export default function Game({
             )}
             {sheet === 'history' && <HistorySheet g={g} onClose={() => setSheet(null)} />}
             {sheet === 'peers' && <PeersSheet g={g} onClose={() => setSheet(null)} />}
+            {sheet === 'goals' && <GoalsSheet g={g} onClose={() => setSheet(null)} />}
             {sheet === 'ranking' && <RankingSheet g={g} onClose={() => setSheet(null)} />}
           </div>
         </div>
@@ -414,6 +421,7 @@ function SkillsPanel({ g, plain }: { g: GameState; plain?: boolean }) {
         );
       })}
       {g.injury && <p className="tag bad" style={{ marginTop: 10 }}><Icon name="bandage" size={13} />Kontuzja: {g.injury.name}, testy −{g.injury.penalty} pkt</p>}
+      <PredictNote g={g} />
       <WearBar wear={g.wear} />
       <div className="kv-grid">
         <span>Waga</span>
@@ -627,5 +635,59 @@ function WearBar({ wear }: { wear: number }) {
       </div>
       <small>{note}</small>
     </div>
+  );
+}
+
+/** Ostrzeżenie: zawodnik jednowymiarowy jest przewidywalny dla rywali. */
+function PredictNote({ g }: { g: GameState }) {
+  const pr = predictability(g.stats);
+  if (pr.spike < 3) return null;
+  const what = { stand: 'stójkę', wrest: 'zapasy', bjj: 'parter' }[pr.stat];
+  return (
+    <p className={`predict-note ${pr.spike >= 10 ? 'hot' : ''}`}>
+      <Icon name="target" size={14} />
+      <span>
+        Jesteś przewidywalny: rywale szykują się na twoje {what} i bronią się przed nimi lepiej. Podciągnij inne umiejętności, a twoja główna broń znowu zacznie zaskakiwać.
+      </span>
+    </p>
+  );
+}
+
+/** Cele dnia i wyzwanie tygodnia w trakcie kariery: co już masz w tej karierze. */
+function GoalsSheet({ g, onClose }: { g: GameState; onClose: () => void }) {
+  const t = todaysGoals();
+  const gs = loadGoals(t.day, t.week);
+  const left = weekEndsIn();
+  const row = (id: string, title: string, desc: string, check: (s: GameState) => boolean, doneEarlier: boolean, weekly = false) => {
+    let now = false;
+    try {
+      now = check(g);
+    } catch {
+      now = false;
+    }
+    return (
+      <li key={id} className={`${doneEarlier ? 'done' : now ? 'now' : ''} ${weekly ? 'weekly' : ''}`}>
+        <span className="goal-check" aria-hidden="true">
+          {doneEarlier || now ? <Icon name="check" size={14} /> : weekly ? <Icon name="star" size={13} /> : ''}
+        </span>
+        <div>
+          <strong>{title}</strong>
+          <span>{desc}</span>
+        </div>
+        <small>{doneEarlier ? 'zaliczone dziś' : now ? 'masz to w tej karierze, zaliczy się na koniec' : weekly ? `wyzwanie tygodnia · ${left.days} d ${left.hours} h` : 'jeszcze nie'}</small>
+      </li>
+    );
+  };
+  return (
+    <>
+      <SheetHead title="Cele" onClose={onClose} />
+      <p className="muted" style={{ margin: '0 0 12px' }}>
+        Zaliczają się, gdy skończysz karierę. Seria dni: {gs.streak}.
+      </p>
+      <ul className="goal-list">
+        {t.daily.map((x) => row(x.id, x.title, x.desc, x.check, gs.dailyDone.includes(x.id)))}
+        {row(t.weekly.id, t.weekly.title, t.weekly.desc, t.weekly.check, gs.weeklyDone, true)}
+      </ul>
+    </>
   );
 }
