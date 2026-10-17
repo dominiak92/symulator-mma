@@ -236,11 +236,19 @@ const STAKE: Record<string, { icon: string; text: string }> = {
   safe: { icon: 'heart', text: 'łapiesz oddech, mniej obrywasz' },
 };
 
+// zwykłe opcje różnią się tym, co dają, a nie tylko szansą
+const NORMAL_STAKE: Partial<Record<string, { icon: string; text: string }>> = {
+  stand: { icon: 'glove', text: 'obijasz go, łatwiej potem skończyć' },
+  wrest: { icon: 'trophy', text: 'pewne punkty, rywal się męczy' },
+  cardio: { icon: 'heart', text: 'zajeżdżasz go tempem' },
+  iq: { icon: 'trophy', text: 'pewne punkty, mało ryzyka' },
+};
+
 function OptionButton({ o, onPick }: { o: DecisionOption; onPick: () => void }) {
   const tone = o.chance >= 56 ? 'good' : o.chance >= 42 ? 'mid' : 'bad';
   const dots = o.chance >= 72 ? 5 : o.chance >= 56 ? 4 : o.chance >= 42 ? 3 : o.chance >= 28 ? 2 : 1;
   const kind = o.kind ?? 'normal';
-  const st = STAKE[kind];
+  const st = kind === 'normal' ? NORMAL_STAKE[o.stat] ?? STAKE.normal : STAKE[kind];
   return (
     <button className={`choice opt opt-${kind}`} onClick={onPick} title={`Szansa: ${o.chance}%`}>
       <span className="opt-top">
