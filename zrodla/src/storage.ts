@@ -69,10 +69,12 @@ export interface Settings {
   tips: boolean;
   tipsSeen: string[];
   tutorialSeen: boolean;
+  /** delikatne dźwięki w ważnych momentach */
+  sound: boolean;
 }
 export function loadSettings(): Settings {
   const raw = safeGet(SETTINGS);
-  const def: Settings = { animations: true, cardTheme: 'gg', tips: true, tipsSeen: [], tutorialSeen: false };
+  const def: Settings = { animations: true, cardTheme: 'gg', tips: true, tipsSeen: [], tutorialSeen: false, sound: true };
   if (!raw) return def;
   try {
     return { ...def, ...JSON.parse(raw) };
