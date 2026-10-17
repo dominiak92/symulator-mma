@@ -543,6 +543,36 @@ export function takeLoan(s0: GameState): GameState {
   return s;
 }
 
+/** Tańszy klub na ratunek budżetu: najlepszy, na który cię stać (w ostateczności klub z remizy). */
+export function cheaperClub(s: GameState): { idx: number; name: string; cost: number; quality: number } | null {
+  if (s.club.cost <= 0) return null;
+  const room = s.club.cost + s.money + budgetBalance(s) + OVERDRAFT;
+  const cands = CLUB_TEMPLATES.map((t, idx) => ({ t, idx }))
+    .filter(({ t }) => t.cost < s.club.cost && t.minTier <= s.tier && t.cost <= Math.max(0, room))
+    .sort((a, b) => b.t.quality - a.t.quality || a.t.cost - b.t.cost);
+  const pick = cands[0] ?? { t: CLUB_TEMPLATES[0], idx: 0 };
+  return { idx: pick.idx, name: pick.t.name, cost: pick.t.cost, quality: pick.t.quality };
+}
+
+export function downgradeClub(s0: GameState): GameState {
+  const c = cheaperClub(s0);
+  if (!c) return s0;
+  const s = clone(s0);
+  withRng(s, (rng) => {
+    const prev = s.club.name;
+    s.club = makeClub(rng, c.idx, s.profile.hometown);
+    s.clubSeasons = 0;
+    log(s, `Na składki w ${prev} nie starcza. Przenosisz się do ${s.club.name}.`);
+  });
+  return s;
+}
+
+/** Ile zostanie po sezonie z danym klubem (do ostrzeżenia na rynku). */
+export function projectedAfter(s: GameState, clubCost: number): number {
+  const base = s.money + budgetBalance(s) + s.club.cost - clubCost;
+  return base + Math.round(expectedPurses(s) * 0.8);
+}
+
 /** Czy można wejść w sezon z tym budżetem. */
 export function canStartSeason(s: GameState) {
   return s.money + budgetBalance(s) >= -OVERDRAFT;
@@ -2340,6 +2370,14 @@ export function marketWarnings(s: GameState): string[] {
     if (p.untilSeason < s.season - 1) continue;
     if (p.kind === 'noPromotion' && c?.kind === 'promotion') out.push(`Łamiesz słowo. ${p.text}`);
     if (p.kind === 'stayClub' && club && club.id !== s.club.id) out.push(`Łamiesz słowo. ${p.text}`);
+  }
+  if (club && club.id !== s.club.id && club.cost > 0) {
+    // szacunek: kasa teraz + gaże i sponsorzy − składki i życie w nowym sezonie
+    const living = livingCost(s.age + 1);
+    const purses = c ? (c.purse + c.winBonus * 0.5) * c.fights * (1 - (currentManager(s)?.cut ?? 0)) : 0;
+    const left = s.money + s.sponsors.reduce((a, b) => a + b.perSeason, 0) + purses - club.cost - living - (c?.entryCost ?? 0) - s.loans.reduce((a, l) => a + l.installment, 0);
+    if (left < 0)
+      out.push(`Uwaga na budżet: ze składkami ${club.cost.toLocaleString('pl-PL')} zł i kosztami życia po sezonie zabraknie ci ok. ${Math.round(-left / 1000).toLocaleString('pl-PL')} tys. zł. Grozi kredyt albo rok przerwy.`);
   }
   if (c?.kind === 'freak')
     out.push(

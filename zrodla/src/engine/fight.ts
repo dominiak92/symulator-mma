@@ -75,7 +75,8 @@ interface Eff {
 
 function eff(base: Stats, dmg: number, stam: number): Eff {
   const dmgF = 1 - dmg / 260;
-  const stamF = stam < 35 ? 0.88 + stam / 300 : 1;
+  // zmęczenie działa stopniowo: poniżej 60% sił wszystko idzie gorzej
+  const stamF = stam < 60 ? 0.74 + stam / 230 : 1;
   const f = dmgF * stamF;
   return {
     stand: base.stand * f,
@@ -245,7 +246,8 @@ function simulateRound(rng: Rng, ctx: FightCtx, sim: FightSim, rep: FightReport)
         p = chanceFrom((A.wrest + A.cardio) / 2, defStat, mod);
     }
     const out = rollExchange(rng, p);
-    aSide.stam -= action === 'strike' ? 3 : 5;
+    // słaba kondycja: każda akcja kosztuje więcej sił
+    aSide.stam -= (action === 'strike' ? 3 : 5) * (1.45 - A.cardio / 110);
     const add = (n: number) => {
       if (who === 'me') pts.me += n;
       else pts.opp += n;
@@ -279,12 +281,13 @@ function simulateRound(rng: Rng, ctx: FightCtx, sim: FightSim, rep: FightReport)
 
     const big = out === 'super';
     if (action === 'strike') {
-      dSide.dmg += big ? rng.int(14, 22) : rng.int(6, 11);
+      // twarda szczęka mniej przyjmuje z każdego ciosu
+      dSide.dmg += Math.round((big ? rng.int(14, 22) : rng.int(6, 11)) * (1.3 - D.chin / 160));
       add(big ? 4 : 2);
       if (big || (dSide.dmg >= 55 && rng.chance(0.45))) {
         // nokdaun - test na skończenie
         const chin = who === 'me' ? D.chin : D.chin; // D to broniący
-        const pf = Math.round(clamp(14 + (A.stand - chin) * 0.7 + dSide.dmg * 0.55, 5, 85));
+        const pf = Math.round(clamp(14 + (A.stand - chin * 1.15 + 7) * 0.8 + dSide.dmg * 0.5, 5, 85));
         const fin = rng.chance(pf / 100);
         const d = rng.pick(WIN_DETAILS.KO);
         const detail = d.nom;
@@ -433,7 +436,7 @@ function simulateRound(rng: Rng, ctx: FightCtx, sim: FightSim, rep: FightReport)
   }
 
   // zmęczenie rundy
-  const drain = (c: number) => 20 - c / 7;
+  const drain = (c: number) => Math.max(6, 27 - c / 3.6);
   sim.me.stam = clamp(sim.me.stam - drain(ctx.me.cardio), 0, 100);
   sim.opp.stam = clamp(sim.opp.stam - drain(opp.stats.cardio), 0, 100);
   sim.momentum = Math.round(sim.momentum * 0.4);
