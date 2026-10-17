@@ -8,6 +8,7 @@ import { sfxCash, sfxClick, sfxCrowd, sfxGong, sfxLoss, sfxThud } from '../sound
 import { OUTCOME_LABEL } from '../../engine/fight';
 import { money } from '../../format';
 import { loadSettings } from '../../storage';
+import { ChanceTag } from '../Chance';
 import type { StepProps } from '../Game';
 import { GG } from '../brand';
 import { Belt, Confetti, Fighter, Medal } from '../Art';
@@ -787,26 +788,40 @@ function PressCard({ g, o, setGame }: { g: GameState; o: FightOffer; setGame: (s
           <span className="fi-ctx">{o.gala} · face to face</span>
         </div>
         <VsHero g={g} opp={o.opp} label="przed galą" size={64} />
-        <blockquote className="press-quote">
-          <Icon name="megaphone" size={14} />
-          <span>
-            „{o.pressQuote}”<small> {o.opp.lastName}</small>
-          </span>
-        </blockquote>
+        {o.pressCtx && o.pressCtx.id !== 'default' ? (
+          <blockquote className="press-quote">
+            <Icon name="megaphone" size={14} />
+            <span>{o.pressCtx.question}</span>
+          </blockquote>
+        ) : (
+          <blockquote className="press-quote">
+            <Icon name="megaphone" size={14} />
+            <span>
+              „{o.pressQuote}”<small> {o.opp.lastName}</small>
+            </span>
+          </blockquote>
+        )}
         <div className="choice-list press-opts">
-          {PRESS_OPTIONS.map((p) => (
-            <button
-              key={p.key}
-              className={`choice press-opt press-${p.key}`}
-              onClick={() => {
-                sfxClick();
-                setGame(pressAnswer(g, p.key));
-              }}
-            >
-              <span className="title">{p.label}</span>
-              <span className="desc">{p.desc}</span>
-            </button>
-          ))}
+          {PRESS_OPTIONS.map((p) => {
+            const lab = o.pressCtx?.labels[p.key];
+            const odds = p.key === 'provoke' ? o.pressCtx?.provoke : p.key === 'insult' ? o.pressCtx?.insult : null;
+            return (
+              <button
+                key={p.key}
+                className={`choice press-opt press-${p.key}`}
+                onClick={() => {
+                  sfxClick();
+                  setGame(pressAnswer(g, p.key));
+                }}
+              >
+                <span className="opt-top">
+                  <span className="title">{lab ? lab[0] : p.label}</span>
+                  {odds != null && <ChanceTag p={Math.round(odds * 100)} />}
+                </span>
+                <span className="desc">{lab ? lab[1] : p.desc}</span>
+              </button>
+            );
+          })}
         </div>
       </div>
     </div>

@@ -1,5 +1,5 @@
 import { STAT_LABELS } from '../../engine/data';
-import { acceptShadyDeal, refuseShadyDeal, BACKROOM, backroomCost, backroomOpen, hasLabs, setBackroom, cheaperClub, downgradeClub, fightRange, plannedFights, setWantFights, ACADEMY_LEVELS, academyName, academyNext, investAcademy, OVERDRAFT, PITCH_SLOTS, pitchBlocked, pitchChance, pitchPay, pitchSponsor, breakPreview, budgetBalance, budgetLines, canStartSeason, expectedPurses, loanOffer, loanRefusal, startSeason, takeBreakYear, takeLoan } from '../../engine/game';
+import { acceptShadyDeal, refuseShadyDeal, BACKROOM, backroomAvailable, backroomCost, backroomOpen, hasLabs, setBackroom, cheaperClub, downgradeClub, fightRange, plannedFights, setWantFights, ACADEMY_LEVELS, academyName, academyNext, investAcademy, OVERDRAFT, PITCH_SLOTS, pitchBlocked, pitchChance, pitchPay, pitchSponsor, breakPreview, budgetBalance, budgetLines, canStartSeason, expectedPurses, loanOffer, loanRefusal, startSeason, takeBreakYear, takeLoan } from '../../engine/game';
 import { useState, type CSSProperties } from 'react';
 import type { StatKey } from '../../engine/types';
 import { money, plural } from '../../format';
@@ -147,7 +147,7 @@ export default function Budget({ game, setGame }: StepProps) {
             <span className="faint small">opcjonalnie, płatne co roku</span>
           </div>
           <div className="br-list">
-            {BACKROOM.map((b) => {
+            {BACKROOM.filter((b) => backroomAvailable(g, b.id)).map((b) => {
               const on = !!g.backroom?.[b.id];
               const cost = backroomCost(g, b.id);
               const free = b.id === 'supps' && hasLabs(g);

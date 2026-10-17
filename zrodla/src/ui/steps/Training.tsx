@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { predictability } from '../../engine/fight';
 import type { StatKey } from '../../engine/types';
 import { STAT_KEYS, STAT_LABELS, STAT_TRAINING_DESC } from '../../engine/data';
 import { CAMPS, campBlocked, campCost, campGain, clubLimits, doTraining, EXPEDITIONS, expeditionBlocked, expeditionCost, goExpedition, introText, rehabCost, rehabYear, trainingForecast, type Expedition } from '../../engine/game';
@@ -74,7 +75,7 @@ export default function Training({ game, setGame }: StepProps) {
       ) : (
         last && (
           <p className="muted small">
-            Poprzedni rok: {last.grade.toLowerCase()}, bilans {last.w}-{last.l}
+            Poprzedni rok: {last.grade.toLowerCase().replace(/^sezon/, 'rok')}, bilans {last.w}-{last.l}
             {last.d ? `-${last.d}` : ''}. Masz {lat(g.age)}.
           </p>
         )
@@ -102,7 +103,7 @@ export default function Training({ game, setGame }: StepProps) {
       </div>
       <h2>Co trenujesz na obozie?</h2>
       <p className="muted small" style={{ marginTop: 4 }}>
-        Wybrana umiejętność urośnie najbardziej.{g.age >= 31 ? ' Po trzydziestce organizm bierze już mniej.' : ''}
+        Wybrana umiejętność urośnie najbardziej. Jedna broń bez reszty robi z ciebie przewidywalnego zawodnika.{g.age >= 31 ? ' Po trzydziestce organizm bierze już mniej.' : ''}
       </p>
       <CoachTip id="training">
         Wybierz umiejętność na obóz. Zielona liczba to wynik po nim. Na belce u góry masz <b>OVR</b> (ogólną siłę), budżet, rekord i wiek. Dotknij ich, żeby zobaczyć szczegóły.
@@ -128,6 +129,15 @@ export default function Training({ game, setGame }: StepProps) {
                       klub
                     </span>
                   )}
+                  {(() => {
+                    const pr = predictability({ ...g.stats, [k]: to });
+                    return pr.stat === k && pr.spike >= 3 ? (
+                      <span className="tag bad" title="Główna broń za bardzo odstaje od reszty. Rywale się na nią szykują.">
+                        <Icon name="target" size={12} />
+                        przewidywalny
+                      </span>
+                    ) : null;
+                  })()}
                 </span>
                 <span className="train-nums">
                   <span className="cur">{now}</span>
