@@ -4,6 +4,7 @@ import { METHOD_SHORT, rankingTable, recStr } from '../engine/game';
 import { ovr } from '../engine/fighter';
 import { lat, money, plural } from '../format';
 import { CareerPanel, SheetHead } from './Game';
+import { Icon } from './Icon';
 
 export function methodParts(h: { method: string; round: number; time?: string; detail: string }): [string, string] {
   const m = METHOD_SHORT[h.method] ?? h.method;
@@ -142,7 +143,12 @@ export function PeersTable({ g }: { g: GameState }) {
             <b>
               {p.firstName} {p.lastName}
             </b>
-            {p.belts > 0 && <span title="pasy"> 🏆{p.belts > 1 ? `×${p.belts}` : ''}</span>}
+            {p.belts > 0 && (
+              <span title="pasy" className="belt-mark">
+                <Icon name="trophy" size={13} />
+                {p.belts > 1 ? `×${p.belts}` : ''}
+              </span>
+            )}
             <small>
               {peerStatus(p)} · {recStr(p.record)}
             </small>

@@ -12,9 +12,9 @@ const P: Record<string, ReactNode> = {
   ),
   glove: (
     <>
-      <path d="M8 21h8v-3.5c2.2-1.2 3.5-3.4 3.5-6.5V8a4 4 0 0 0-4-4h-5a4 4 0 0 0-4 4v4c0 1.3.5 2.4 1.5 3.2z" />
-      <path d="M6.5 11.5h3a2 2 0 0 1 0 4H8" />
-      <path d="M8 18h8" />
+      <path d="M8.5 21h8v-3.6c2-1 3.5-3.2 3.5-6V9.5A5.5 5.5 0 0 0 14.5 4h-1A5.5 5.5 0 0 0 8 9.5V12" />
+      <path d="M8 12h-.5A2.5 2.5 0 0 0 5 14.5v0A2.5 2.5 0 0 0 7.5 17h3.5a2 2 0 0 0 0-4H9" />
+      <path d="M8.5 17.4h8" />
     </>
   ),
   trophy: (
@@ -58,15 +58,17 @@ const P: Record<string, ReactNode> = {
   ),
   takedown: (
     <>
-      <path d="M12 3v13" />
-      <path d="M6.5 10.5L12 16l5.5-5.5" />
-      <path d="M4 21h16" />
+      <circle cx="7" cy="4.5" r="2" />
+      <circle cx="17" cy="4.5" r="2" />
+      <path d="M7.5 8c-1.6 2.2-2.2 4.6-1.6 7.2L4.5 21M16.5 8c1.6 2.2 2.2 4.6 1.6 7.2L19.5 21" />
+      <path d="M8 10.5l8 3.5M16 10.5l-8 3.5" />
     </>
   ),
   knot: (
     <>
-      <circle cx="9" cy="12" r="5" />
-      <circle cx="15" cy="12" r="5" />
+      <path d="M1.5 9.5h6M16.5 9.5h6" strokeWidth="4" strokeLinecap="butt" />
+      <rect x="8" y="5.8" width="8" height="7.4" rx="1.6" />
+      <path d="M10 13.4l-4.6 5.8M14 13.4l4.6 5.8" strokeWidth="3.2" />
     </>
   ),
   heart: (
@@ -233,6 +235,7 @@ const P: Record<string, ReactNode> = {
 };
 
 export type IconName = keyof typeof P;
+export const ICON_NAMES = Object.keys(P);
 
 export function Icon({ name, size = 18, className, style, title }: { name: IconName | string; size?: number; className?: string; style?: CSSProperties; title?: string }) {
   const body = P[name];
@@ -267,3 +270,21 @@ export const STAT_ICON: Record<StatKey, IconName> = {
   chin: 'shield',
   iq: 'target',
 } as Record<StatKey, IconName>;
+
+/** Podgląd wszystkich ikon (adres z #ikony) — do sprawdzania wyglądu. */
+export function IconGallery() {
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))', gap: 8, padding: 12 }}>
+      {ICON_NAMES.map((n) => (
+        <div key={n} style={{ display: 'grid', justifyItems: 'center', gap: 6, padding: 10, border: '1px solid #333', borderRadius: 8 }}>
+          <div style={{ display: 'flex', gap: 10, alignItems: 'center', color: '#01aeee' }}>
+            <Icon name={n} size={48} />
+            <Icon name={n} size={18} />
+            <Icon name={n} size={13} />
+          </div>
+          <span style={{ color: '#ddd', fontSize: 12 }}>{n}</span>
+        </div>
+      ))}
+    </div>
+  );
+}

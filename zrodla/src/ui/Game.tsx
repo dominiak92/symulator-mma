@@ -14,6 +14,8 @@ import Ended from './steps/Ended';
 import { HistorySheet, PeersSheet, RankingSheet } from './Sheets';
 import { GG } from './brand';
 import { Icon, STAT_ICON } from './Icon';
+import { Medal } from './Art';
+import { Tutorial } from './Tutorial';
 import { Emblem, SponsorLogo, clubCrest, crestFor } from './Emblem';
 
 const PHASES: Phase[] = ['training', 'budget', 'event', 'season', 'summary', 'market'];
@@ -56,6 +58,7 @@ export default function Game({
   onNewCareer: () => void;
 }) {
   const [sheet, setSheet] = useState<null | SheetName>(null);
+  const [tut, setTut] = useState(false);
   const g = game;
 
   useEffect(() => {
@@ -94,10 +97,10 @@ export default function Game({
 
   return (
     <>
-      <header className={`hud ${g.phase !== 'ended' ? 'has-progress' : ''}`} ref={hudRef}>
+      <header className="hud" ref={hudRef}>
         <div className="hud-inner">
           <div className="hud-top">
-            <div className="ovr" title="Ogólna ocena zawodnika (średnia umiejętności)">
+            <div className="ovr" title="Ogólna ocena zawodnika: średnia umiejętności, 0–99">
               <span className="num">{ovr(g.stats)}</span>
               <small>OVR</small>
             </div>
@@ -115,56 +118,51 @@ export default function Game({
               </svg>
             </button>
           </div>
-          <div className="hud-chips">
-            <div className="hud-chip">
-              <small>
-                <Icon name="coins" size={12} />
-                Budżet
-              </small>
+          <div className="hud-stats">
+            <div className="hs" title="Pieniądze na koncie">
+              <small>Budżet</small>
               <b key={moneyFlash?.n ?? 0} className={`${g.money < 0 ? 'neg' : ''} ${moneyFlash ? `flash-${moneyFlash.dir}` : ''}`}>
-                {moneyShort(g.money)} zł
+                <Icon name="coins" size={14} />
+                {moneyShort(g.money)}
+                <i>zł</i>
               </b>
             </div>
-            <div className="hud-chip">
-              <small>
-                <Icon name="glove" size={12} />
-                {amateur ? 'Rekord am.' : 'Rekord'}
-              </small>
-              <b>{recStr(rec)}</b>
+            <div className="hs" title={amateur ? 'Rekord amatorski: wygrane-porażki-remisy' : 'Rekord zawodowy: wygrane-porażki-remisy'}>
+              <small>{amateur ? 'Rekord am.' : 'Rekord'}</small>
+              <b>
+                <Icon name="glove" size={14} />
+                {recStr(rec)}
+              </b>
             </div>
-            <div className="hud-chip">
-              {g.tier === 0 && g.contract.kind !== 'freak' ? (
-                <>
-                  <small>
-                    <Icon name="medal" size={12} />
-                    Medale
-                  </small>
-                  <b>{medals ? `${g.medals.gold}·${g.medals.silver}·${g.medals.bronze}` : '–'}</b>
-                </>
-              ) : (
-                <>
-                  <small>
-                    <Icon name="trophy" size={12} />
-                    Ranking
-                  </small>
-                  <b>{g.rank === 0 ? 'Mistrz' : g.rank === null ? '–' : `#${g.rank}`}</b>
-                </>
-              )}
-            </div>
-            <div className="hud-chip">
-              <small>
-                <Icon name="hourglass" size={12} />
-                Wiek
-              </small>
-              <b>{g.age}</b>
+            {g.tier === 0 && g.contract.kind !== 'freak' ? (
+              <div className="hs" title="Medale: złote · srebrne · brązowe">
+                <small>Medale</small>
+                <b>
+                  <Icon name="medal" size={14} />
+                  {medals ? `${g.medals.gold}·${g.medals.silver}·${g.medals.bronze}` : '0'}
+                </b>
+              </div>
+            ) : (
+              <div className="hs" title="Miejsce w rankingu federacji">
+                <small>Ranking</small>
+                <b>
+                  <Icon name="trophy" size={14} />
+                  {g.rank === 0 ? 'pas' : g.rank === null ? '–' : `#${g.rank}`}
+                </b>
+              </div>
+            )}
+            <div className="hs" title="Wiek zawodnika">
+              <small>Wiek</small>
+              <b>
+                <Icon name="hourglass" size={14} />
+                {g.age}
+              </b>
             </div>
           </div>
         </div>
         {g.phase !== 'ended' && (
-          <div className="hud-progress" aria-label={`Sezon ${g.season}, etap: ${PHASE_LABEL[g.phase]}`}>
-            {PHASES.map((p, i) => (
-              <span key={p} className={i < phaseIdx ? 'on' : i === phaseIdx ? 'now' : ''} />
-            ))}
+          <div className="hud-progress" role="progressbar" aria-valuemin={1} aria-valuemax={PHASES.length} aria-valuenow={phaseIdx + 1} aria-label={`Etap sezonu: ${PHASE_LABEL[g.phase]}`}>
+            <i style={{ width: `${((phaseIdx + 1) / PHASES.length) * 100}%` }} />
           </div>
         )}
       </header>
@@ -219,6 +217,7 @@ export default function Game({
         </div>
       </div>
 
+      {tut && <Tutorial onDone={() => setTut(false)} />}
       {sheet && (
         <div className="sheet-backdrop" onClick={() => setSheet(null)}>
           <div className="sheet" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
@@ -237,6 +236,16 @@ export default function Game({
                   <button className="btn btn-ghost btn-block btn-ico" onClick={() => setSheet('peers')}>
                     <Icon name="users" />
                     Twój rocznik
+                  </button>
+                  <button
+                    className="btn btn-ghost btn-block btn-ico"
+                    onClick={() => {
+                      setSheet(null);
+                      setTut(true);
+                    }}
+                  >
+                    <Icon name="help" />
+                    Jak grać
                   </button>
                   <button className="btn btn-ghost btn-block btn-ico" onClick={onMenu}>
                     <Icon name="door" />
@@ -401,7 +410,11 @@ export function CareerPanel({ g, onRanking }: { g: GameState; onRanking?: () => 
           <b>{recStr(g.amRecord)}</b>
           <span>Medale</span>
           <b>
-            🥇 {g.medals.gold} · 🥈 {g.medals.silver} · 🥉 {g.medals.bronze}
+            <span className="medal-row">
+              <Medal kind="gold" size={13} /> {g.medals.gold}
+              <Medal kind="silver" size={13} /> {g.medals.silver}
+              <Medal kind="bronze" size={13} /> {g.medals.bronze}
+            </span>
           </b>
         </div>
         {ts && (
@@ -467,7 +480,8 @@ export function CareerPanel({ g, onRanking }: { g: GameState; onRanking?: () => 
         <div className="chips">
           {g.belts.map((b, i) => (
             <span key={i} className="tag gold">
-              🏆 {b.name.split(' (')[0]}
+              <Icon name="trophy" size={12} />
+              {b.name.split(' (')[0]}
             </span>
           ))}
         </div>

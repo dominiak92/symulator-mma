@@ -15,12 +15,14 @@ export default function Menu({
   onAchievements,
   onMuseum,
   onSettings,
+  onTutorial,
 }: {
   onPlay: () => void;
   onDaily: () => void;
   onAchievements: () => void;
   onMuseum: () => void;
   onSettings: () => void;
+  onTutorial: () => void;
 }) {
   const { label } = dailySeed();
   const ach = Object.keys(loadAchievements()).length;
@@ -73,6 +75,54 @@ export default function Menu({
           </span>
         </button>
       </div>
+
+      <section className="how">
+        <div className="how-head">
+          <h2>Jak grać</h2>
+          <button className="btn btn-ghost btn-small btn-ico" onClick={onTutorial}>
+            <Icon name="help" size={15} />
+            Samouczek
+          </button>
+        </div>
+        <ol className="how-steps">
+          <li>
+            <span className="how-ico">
+              <Icon name="dumbbell" size={20} />
+            </span>
+            <div>
+              <strong>Trenuj</strong>
+              <span>Przed sezonem wybierasz, co poprawić: stójkę, zapasy, parter, kondycję, szczękę albo taktykę.</span>
+            </div>
+          </li>
+          <li>
+            <span className="how-ico">
+              <Icon name="coins" size={20} />
+            </span>
+            <div>
+              <strong>Pilnuj kasy</strong>
+              <span>Klub, starty i życie kosztują. Losowe wydarzenia mogą pomóc albo zaszkodzić.</span>
+            </div>
+          </li>
+          <li>
+            <span className="how-ico">
+              <Icon name="glove" size={20} />
+            </span>
+            <div>
+              <strong>Walcz</strong>
+              <span>Walki toczą się na żywo. W ważnych momentach wybierasz plan, a procent pokazuje twoją szansę.</span>
+            </div>
+          </li>
+          <li>
+            <span className="how-ico">
+              <Icon name="trophy" size={20} />
+            </span>
+            <div>
+              <strong>Idź w górę</strong>
+              <span>Po sezonie wybierasz galę i klub. Medale, debiut, awanse, pas. Na koniec karta kariery z punktami LEGACY.</span>
+            </div>
+          </li>
+        </ol>
+      </section>
 
       <section className="goals">
         <div className="goals-head">
@@ -152,19 +202,6 @@ export default function Menu({
         </button>
       </div>
 
-      <details className="acc how-acc" style={{ maxWidth: 760 }}>
-        <summary>
-          <span>
-            <Icon name="help" size={15} />
-            Jak to działa
-          </span>
-        </summary>
-        <p className="muted acc-body">
-          Każdy rok to jeden sezon. Wybierasz, co trenujesz, sprawdzasz budżet i decydujesz, co zrobić z tym, co przynosi życie. Potem
-          oglądasz swoje walki, a w ważnych momentach sam wybierasz plan i widzisz, jaką masz szansę. Po sezonie wybierasz, gdzie walczysz i w
-          jakim klubie trenujesz. Na koniec dostajesz kartę kariery, którą możesz wysłać znajomym.
-        </p>
-      </details>
 
       <a className="shop-link" style={{ maxWidth: 760 }} href={`${SHOP_URL}menu`} target="_blank" rel="noopener">
         <img className="shop-logo" src={GG.stacked} alt="" aria-hidden="true" />

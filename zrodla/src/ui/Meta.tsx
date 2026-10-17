@@ -124,6 +124,11 @@ export function SettingsScreen({ onBack }: { onBack: () => void }) {
     setSt(n);
     saveSettings(n);
   };
+  const toggleTips = () => {
+    const n = { ...st, tips: !st.tips, tipsSeen: st.tips ? st.tipsSeen : [] };
+    setSt(n);
+    saveSettings(n);
+  };
   return (
     <Shell title="Ustawienia" onBack={onBack}>
       <button className="choice" role="switch" aria-checked={st.animations} onClick={toggle}>
@@ -132,6 +137,13 @@ export function SettingsScreen({ onBack }: { onBack: () => void }) {
           <span className={`tag ${st.animations ? 'good' : ''}`}>{st.animations ? 'włączone' : 'wyłączone'}</span>
         </span>
         <span className="desc">Ruletka formy i walki pojawiające się po kolei. Po wyłączeniu sezon rozgrywa się od razu.</span>
+      </button>
+      <button className="choice" role="switch" aria-checked={st.tips} onClick={toggleTips} style={{ marginTop: 8 }}>
+        <span className="title">
+          Podpowiedzi trenera
+          <span className={`tag ${st.tips ? 'good' : ''}`}>{st.tips ? 'włączone' : 'wyłączone'}</span>
+        </span>
+        <span className="desc">Krótkie wskazówki przy każdym etapie sezonu. Po włączeniu pokażą się od nowa.</span>
       </button>
       <p className="muted" style={{ marginTop: 16 }}>
         Gra zapisuje się automatycznie w tej przeglądarce. Wyczyszczenie danych strony usunie kariery, osiągnięcia i muzeum.
