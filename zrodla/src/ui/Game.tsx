@@ -65,6 +65,38 @@ export default function Game({
     window.scrollTo({ top: 0, behavior: 'auto' });
   }, [g.phase, g.season]);
 
+  // blokada podwójnego stuknięcia: zaraz po zmianie ekranu przycisk w tym samym miejscu
+  // (np. „Trenuję” → „Zaczynam sezon”) nie może przyjąć drugiego kliknięcia
+  const clickLock = useRef(0);
+  useEffect(() => {
+    clickLock.current = Date.now() + 450;
+  }, [g.phase, g.season, g.event?.id, g.event?.picked]);
+  useEffect(() => {
+    const block = (e: Event) => {
+      if (Date.now() > clickLock.current) return;
+      const t = e.target as HTMLElement | null;
+      if (t?.closest('.cta-bar button, .main .choice:not(.train-opt), .main .offer, .icon-pill')) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    };
+    document.addEventListener('click', block, true);
+    return () => document.removeEventListener('click', block, true);
+  }, []);
+
+  // przycisk „wstecz” w telefonie: zamyka okienko albo otwiera menu gry, zamiast wyrzucać z gry
+  const sheetRef = useRef(sheet);
+  sheetRef.current = sheet;
+  useEffect(() => {
+    history.pushState({ spzGame: 1 }, '');
+    const onPop = () => {
+      setSheet(sheetRef.current ? null : 'menu');
+      history.pushState({ spzGame: 1 }, '');
+    };
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
+
   useEffect(() => {
     if (!sheet) return;
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setSheet(null);

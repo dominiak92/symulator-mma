@@ -133,10 +133,10 @@ export function SettingsScreen({ onBack }: { onBack: () => void }) {
     <Shell title="Ustawienia" onBack={onBack}>
       <button className="choice" role="switch" aria-checked={st.animations} onClick={toggle}>
         <span className="title">
-          Animacje raportu sezonu
+          Animacje walk
           <span className={`tag ${st.animations ? 'good' : ''}`}>{st.animations ? 'włączone' : 'wyłączone'}</span>
         </span>
-        <span className="desc">Ruletka formy i walki pojawiające się po kolei. Po wyłączeniu sezon rozgrywa się od razu.</span>
+        <span className="desc">Zapowiedzi walk, rundy na żywo i efekty po wygranej. Po wyłączeniu sezon rozgrywa się od razu.</span>
       </button>
       <button className="choice" role="switch" aria-checked={st.tips} onClick={toggleTips} style={{ marginTop: 8 }}>
         <span className="title">
