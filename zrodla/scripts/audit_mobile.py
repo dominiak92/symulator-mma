@@ -143,7 +143,7 @@ with sync_playwright() as p:
             season += 1
             if season >= SEASONS:
                 break
-        elif page.get_by_role("button", name="Brakuje pieniędzy na sezon").count():
+        elif page.get_by_role("button", name="Brakuje pieniędzy na ten rok").count():
             snap(page, f"s{season}-brak-kasy")
             if not handle_money(page): break
         elif page.locator(".cta-bar .btn").count():

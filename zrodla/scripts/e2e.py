@@ -65,7 +65,7 @@ with sync_playwright() as p:
     page.get_by_label("Nazwisko").fill("Testowy")
     page.get_by_label("Ksywa").fill("Bober")
     shot(page, "03-create")
-    click_text(page, "Pierwszy trening")
+    click_text(page, "Zaczynam karierę")
     page.wait_for_timeout(300)
 
     season = 0
@@ -118,12 +118,12 @@ with sync_playwright() as p:
                 shot(page, "04-training")
             page.locator(".train-opt").nth((season * 2) % 6).click()
             page.locator(".cta-bar .btn").first.click()
-        elif page.get_by_role("button", name="Brakuje pieniędzy na sezon").count():
+        elif page.get_by_role("button", name="Brakuje pieniędzy na ten rok").count():
             if not handle_money(page): break
-        elif page.get_by_role("button", name="Zaczynam sezon", exact=True).count():
+        elif page.get_by_role("button", name="Zaczynam rok", exact=True).count():
             if season == 0:
                 shot(page, "05-budget")
-            page.get_by_role("button", name="Zaczynam sezon", exact=True).click()
+            page.get_by_role("button", name="Zaczynam rok", exact=True).click()
         elif page.locator(".event-result").count():
             if first_time(f"evres{season}"):
                 shot(page, f"07-event-result-s{season+1}")
@@ -148,9 +148,9 @@ with sync_playwright() as p:
             if first_time(f"dec{season}"):
                 shot(page, f"08-decision-s{season+1}")
             page.locator(".decision .choice").first.click()
-        elif page.get_by_role("button", name="Podsumowanie sezonu").count():
+        elif page.get_by_role("button", name="Podsumowanie roku").count():
             shot(page, f"09-season-s{season+1}")
-            page.get_by_role("button", name="Podsumowanie sezonu").click()
+            page.get_by_role("button", name="Podsumowanie roku").click()
         elif page.get_by_role("button", name="Dalej: rynek").count():
             shot(page, f"10-summary-s{season+1}")
             page.get_by_role("button", name="Dalej: rynek").click()

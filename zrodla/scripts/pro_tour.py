@@ -42,13 +42,13 @@ with sync_playwright() as p:
             pg.locator('.cta-bar button').click(); pg.wait_for_timeout(500); continue
         if pg.get_by_role('button', name='Zaczynam rehabilitację').count():
             shot(pg, 'rehab'); pg.get_by_role('button', name='Zaczynam rehabilitację').click(); pg.wait_for_timeout(400); continue
-        if pg.locator('.fights-pick').count() or pg.get_by_role('button', name='Zaczynam sezon').count():
+        if pg.locator('.fights-pick').count() or pg.get_by_role('button', name='Zaczynam rok').count():
             shot(pg, 'budzet')
             if pg.locator('.fights-pick').count():
                 pg.locator('.fights-pick').scroll_into_view_if_needed(); shot(pg, 'budzet-walki')
                 pg.locator('.fights-pick .seg button').last.click(); pg.wait_for_timeout(200)
             if pg.get_by_role('button', name='Biorę kredyt').count(): pg.get_by_role('button', name='Biorę kredyt').click()
-            btn = pg.get_by_role('button', name='Zaczynam sezon')
+            btn = pg.get_by_role('button', name='Zaczynam rok')
             if btn.count() and btn.is_enabled(): btn.click()
             else:
                 pg.get_by_role('button', name='Rok przerwy').click(); pg.get_by_role('button', name='Tak, idę do pracy').click()
@@ -57,8 +57,8 @@ with sync_playwright() as p:
             shot(pg, 'wydarzenie-wynik'); pg.get_by_role('button', name='Dalej', exact=True).click(); pg.wait_for_timeout(400); continue
         if pg.locator('.step .choice').count() and 'Rynek' not in main and not pg.locator('.offer').count():
             shot(pg, 'wydarzenie'); pg.locator('.step .choice').first.click(); pg.wait_for_timeout(500); continue
-        if pg.get_by_role('button', name='Podsumowanie sezonu').count():
-            pg.wait_for_timeout(1500); shot(pg, 'sezon-koniec'); pg.get_by_role('button', name='Podsumowanie sezonu').click(); pg.wait_for_timeout(600); continue
+        if pg.get_by_role('button', name='Podsumowanie roku').count():
+            pg.wait_for_timeout(1500); shot(pg, 'sezon-koniec'); pg.get_by_role('button', name='Podsumowanie roku').click(); pg.wait_for_timeout(600); continue
         if pg.get_by_role('button', name='Dalej: rynek').count():
             shot(pg, 'podsumowanie'); pg.get_by_role('button', name='Dalej: rynek').click(); pg.wait_for_timeout(600); continue
         if pg.locator('.mgr-section').count() or pg.get_by_role('button', name='Podpisuję').count():

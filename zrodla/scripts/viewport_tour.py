@@ -99,11 +99,11 @@ with sync_playwright() as p:
             pg.locator(".train-opt").nth(season % 6).click(); pg.wait_for_timeout(150)
             if once(f"tp{season}") and season == 0: snap(pg, f"s{season}-1b-trening-wybor", problems)
             pg.locator(".cta-bar .btn").first.click()
-        elif pg.get_by_role("button", name="Brakuje pieniędzy na sezon").count():
+        elif pg.get_by_role("button", name="Brakuje pieniędzy na ten rok").count():
             if not handle_money(pg): break
-        elif pg.get_by_role("button", name="Zaczynam sezon").count():
+        elif pg.get_by_role("button", name="Zaczynam rok").count():
             if once(f"b{season}"): snap(pg, f"s{season}-2-budzet", problems)
-            pg.get_by_role("button", name="Zaczynam sezon").click()
+            pg.get_by_role("button", name="Zaczynam rok").click()
         elif pg.locator(".event-result").count():
             if once(f"er{season}"): snap(pg, f"s{season}-4-wydarzenie-wynik", problems)
             pg.get_by_role("button", name="Dalej", exact=True).click()
@@ -122,9 +122,9 @@ with sync_playwright() as p:
         elif pg.locator(".step .choice").count() and not pg.locator(".offer").count():
             if once(f"e{season}"): snap(pg, f"s{season}-3-wydarzenie", problems)
             pg.locator(".step .choice").first.click()
-        elif pg.get_by_role("button", name="Podsumowanie sezonu").count():
+        elif pg.get_by_role("button", name="Podsumowanie roku").count():
             if once(f"r{season}"): snap(pg, f"s{season}-6-raport", problems)
-            pg.get_by_role("button", name="Podsumowanie sezonu").click()
+            pg.get_by_role("button", name="Podsumowanie roku").click()
         elif pg.get_by_role("button", name="Dalej: rynek").count():
             if once(f"p{season}"): snap(pg, f"s{season}-7-podsumowanie", problems)
             pg.get_by_role("button", name="Dalej: rynek").click()
