@@ -125,9 +125,9 @@ with sync_playwright() as p:
         elif pg.get_by_role("button", name="Podsumowanie roku").count():
             if once(f"r{season}"): snap(pg, f"s{season}-6-raport", problems)
             pg.get_by_role("button", name="Podsumowanie roku").click()
-        elif pg.get_by_role("button", name="Dalej: rynek").count():
+        elif pg.get_by_role("button", name="Dalej: kontrakty").count():
             if once(f"p{season}"): snap(pg, f"s{season}-7-podsumowanie", problems)
-            pg.get_by_role("button", name="Dalej: rynek").click()
+            pg.get_by_role("button", name="Dalej: kontrakty").click()
         elif pg.locator(".offer").count() and pg.get_by_role("button", name="Podpisuję").count():
             if once(f"m{season}"): snap(pg, f"s{season}-8-rynek", problems)
             pg.get_by_role("button", name="Podpisuję").click(); season += 1

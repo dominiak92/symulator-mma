@@ -149,7 +149,7 @@ with sync_playwright() as p:
         elif page.locator(".cta-bar .btn").count():
             btn = page.locator(".cta-bar .btn").first
             label = btn.inner_text().lower()
-            key = f"s{season}-" + ("budzet" if "zaczynam" in label else "raport" if "podsumowanie" in label else "podsumowanie" if "rynek" in label else "inne")
+            key = f"s{season}-" + ("budzet" if "zaczynam" in label else "raport" if "podsumowanie" in label else "podsumowanie" if "kontrakty" in label else "inne")
             if key not in seen:
                 seen.add(key); snap(page, key)
             btn.click()

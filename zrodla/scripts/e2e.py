@@ -151,9 +151,9 @@ with sync_playwright() as p:
         elif page.get_by_role("button", name="Podsumowanie roku").count():
             shot(page, f"09-season-s{season+1}")
             page.get_by_role("button", name="Podsumowanie roku").click()
-        elif page.get_by_role("button", name="Dalej: rynek").count():
+        elif page.get_by_role("button", name="Dalej: kontrakty").count():
             shot(page, f"10-summary-s{season+1}")
-            page.get_by_role("button", name="Dalej: rynek").click()
+            page.get_by_role("button", name="Dalej: kontrakty").click()
         elif page.locator(".offer").count() and page.get_by_role("button", name="Podpisuję").count():
             shot(page, f"11-market-s{season+1}")
             page.get_by_role("button", name="Podpisuję").click()

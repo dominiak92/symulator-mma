@@ -55,12 +55,12 @@ with sync_playwright() as p:
             pg.wait_for_timeout(500); continue
         if pg.locator('.event-result').count():
             shot(pg, 'wydarzenie-wynik'); pg.get_by_role('button', name='Dalej', exact=True).click(); pg.wait_for_timeout(400); continue
-        if pg.locator('.step .choice').count() and 'Rynek' not in main and not pg.locator('.offer').count():
+        if pg.locator('.step .choice').count() and 'Kontrakty ·' not in main and not pg.locator('.offer').count():
             shot(pg, 'wydarzenie'); pg.locator('.step .choice').first.click(); pg.wait_for_timeout(500); continue
         if pg.get_by_role('button', name='Podsumowanie roku').count():
             pg.wait_for_timeout(1500); shot(pg, 'sezon-koniec'); pg.get_by_role('button', name='Podsumowanie roku').click(); pg.wait_for_timeout(600); continue
-        if pg.get_by_role('button', name='Dalej: rynek').count():
-            shot(pg, 'podsumowanie'); pg.get_by_role('button', name='Dalej: rynek').click(); pg.wait_for_timeout(600); continue
+        if pg.get_by_role('button', name='Dalej: kontrakty').count():
+            shot(pg, 'podsumowanie'); pg.get_by_role('button', name='Dalej: kontrakty').click(); pg.wait_for_timeout(600); continue
         if pg.locator('.mgr-section').count() or pg.get_by_role('button', name='Podpisuję').count():
             shot(pg, 'rynek')
             if pg.locator('.mgr-section').count():
