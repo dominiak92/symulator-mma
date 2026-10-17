@@ -70,3 +70,22 @@ Porównanie strategii bota (100–120 karier na strategię):
 Zmiany w walce: szanse rosną coraz wolniej przy dużej przewadze (tanh), lepszy zapaśnik obala pod ciosem, z góry można kończyć (ground and pound, duszenie), poddania zdarzają się częściej, bicie z pleców jest trudniejsze.
 
 `scripts/fuzz.ts` przechodzi setki karier z losowymi decyzjami i szuka „undefined”, NaN, nierozwiniętych szablonów, statystyk poza zakresem i wyjątków.
+
+## Runda 4: wydatki, kontuzje, decyzje w walce
+
+- **Obozy zagraniczne** (od ligi krajowej): Tajlandia, Dagestan, Floryda. Koszt rośnie ze szczeblem, premia do dwóch umiejętności (do granicy talentu).
+- **„2-3 years Dagestan and forget”**: raz na karierę, zawodowiec do 30 lat. Trzy sezony bez walk, duży skok zapasów i kondycji, utrata rankingu i rozpoznawalności.
+- **Własna akademia**: 4 poziomy (150 tys. → 3 mln zł), przychód co sezon zależny od mediów i 60–550 pkt legacy po karierze.
+- **Kontuzje**: lekkie (kara do szans), poważne (koniec sezonu) i urazy na cały rok (ekran rehabilitacji, NFZ, gdy brak pieniędzy). Średnio na karierę: 2,6 lekkie, 1,3 poważne, 0,5 roku rehabilitacji.
+- **Decyzje w walce**: szansa słowami i kropkami zamiast procentu, wyraźna stawka (kończenie / runda / odpoczynek) i stan walki (karty, siły, obrażenia). Bot „zawsze największa szansa” nie jest już najlepszy: najlepiej wypada gra pod sytuację, „zawsze ryzyko” najgorzej.
+- Automat sezonu staje przy każdym dotknięciu ekranu (z widocznym „czeka”).
+
+## Runda 5: oferty walk, menedżerowie, rywal, plakaty
+
+- **Oferty walk** (zawodowcy): przed każdą walką karta z rywalem, gażą i premią. Możesz przyjąć, negocjować (szansa zależy od menedżera, mediów i pozycji) albo odrzucić. Po odmowie przychodzi inna oferta albo w sezonie jest jedna walka mniej, a grymaszenie obniża reputację. O pas się nie odmawia.
+- **Liczba walk w sezonie**: wybór na ekranie budżetu (standard kontraktu ±1). Czwarta i piąta walka męczą (forma, zużycie, kontuzje), mniej walk daje świeżość, ale wolniejszy ranking i mniej pieniędzy.
+- **Menedżerowie**: Wujek Zdzisiek, Facet w okularach, Agencja Spinacz, Paradygmat Sports, Dominacja Management. Prowizja 5–18%, wyższe gaże, mocniejsi rywale, łatwiejsze negocjacje i awanse, sponsorzy. Duże stajnie czasem cały sezon zajmują się innymi.
+- **Odwieczny rywal**: zawodnik z rocznika, z którym przegrasz albo spotkasz się drugi raz. Wraca częściej, ma swoje zdarzenia (internet, nagrania, face to face), wyższą gażę i liczy się do legacy.
+- **Plakaty**: plakat każdej gali zawodowej (miasto, hala, cała karta walk) i każdego turnieju amatorskiego (miasto, kategoria, drabinka).
+
+Balans (120 karier na strategię): przyjmowanie ofert, negocjowanie i wybredność dają podobne wyniki. Najlepszy menedżer daje dużo więcej pieniędzy, ale trudniejszych rywali (mniej pasów). Maksymalna liczba walk to więcej pieniędzy przy podobnym legacy, minimalna jest słabsza. Pełny gracz (menedżer, negocjacje, obozy, akademia, walka pod sytuację) wypada najlepiej. Słabe strony do dalszej pracy: trenowanie wyłącznie kondycji albo szczęki nie opłaca się, a najtańszy klub i kredyty ponad stan prowadzą do spirali długów.
