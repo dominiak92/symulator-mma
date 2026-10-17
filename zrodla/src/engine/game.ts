@@ -412,10 +412,27 @@ export function expectedPurses(s: GameState) {
   return (s.contract.purse + s.contract.winBonus * 0.5) * s.contract.fights;
 }
 
+/** Ile maksymalnie da bank na danym szczeblu kariery. */
+const LOAN_CAP = [20000, 40000, 120000, 300000, 800000];
+/** Do ilu złotych na minusie można jeszcze wejść w sezon (debet). */
+export const OVERDRAFT = 5000;
+
+/** Czemu bank nie da kredytu (null = da). */
+export function loanRefusal(s: GameState): string | null {
+  const active = s.loans.filter((l) => l.left > 0);
+  if (active.length) {
+    const left = active.reduce((a, l) => a + l.left, 0);
+    return `Bank odmawia: najpierw spłać obecny kredyt (zostało ${left} ${pl(left, 'rata', 'raty', 'rat')}).`;
+  }
+  if (s.money < -30000) return 'Bank odmawia: masz za duże długi.';
+  return null;
+}
+
 export function loanOffer(s: GameState) {
   const short = -(s.money + budgetBalance(s));
   if (short <= 0) return null;
-  const amount = Math.ceil((short + 2000) / 1000) * 1000;
+  if (loanRefusal(s)) return null;
+  const amount = Math.min(LOAN_CAP[s.tier], Math.ceil((short + 2000) / 1000) * 1000);
   const count = 3;
   const installment = Math.ceil((amount * 1.18) / count / 1000) * 1000;
   return { amount, installment, count };
@@ -428,6 +445,98 @@ export function takeLoan(s0: GameState): GameState {
   s.money += o.amount;
   s.loans.push({ installment: o.installment, left: o.count });
   log(s, `Kredyt na ${o.amount.toLocaleString('pl-PL')} zł.`);
+  return s;
+}
+
+/** Czy można wejść w sezon z tym budżetem. */
+export function canStartSeason(s: GameState) {
+  return s.money + budgetBalance(s) >= -OVERDRAFT;
+}
+
+/** Pensja za rok pracy zamiast walk. */
+export function jobSalary(age: number) {
+  if (age < 19) return 9000;
+  if (age < 22) return 42000;
+  if (age < 26) return 54000;
+  return 60000;
+}
+
+/** Co da rok przerwy (podgląd do budżetu). */
+export function breakPreview(s: GameState) {
+  const installments = s.loans.filter((l) => l.left > 0).reduce((a, l) => a + l.installment, 0);
+  const living = livingCost(s.age) + (s.flags.kid ? 10000 : 0);
+  const salary = jobSalary(s.age);
+  return { salary, living, installments, net: salary - living - installments, after: s.money + salary - living - installments };
+}
+
+/**
+ * Rok przerwy: zamiast sezonu idziesz do pracy. Zarabiasz, spłacasz raty,
+ * ale efekty obozu przepadają, a umiejętności spadają. Wypadasz z rankingu.
+ */
+export function takeBreakYear(s0: GameState): GameState {
+  const s = clone(s0);
+  withRng(s, (rng) => {
+    const pv = breakPreview(s);
+    const ovrFrom = s.flags.ovrStart ?? ovr(s.stats);
+    const moneyFrom = s.money;
+    s.money = pv.after;
+    for (const l of s.loans) l.left -= 1;
+    s.loans = s.loans.filter((l) => l.left > 0);
+    // obóz przepada, a forma leci w dół
+    for (const k of Object.keys(s.stats) as StatKey[]) {
+      const gain = s.lastGains[k] ?? 0;
+      const drop = k === 'cardio' ? rng.int(3, 5) : k === 'iq' ? rng.int(0, 1) : rng.int(1, 3);
+      s.stats[k] = clamp(s.stats[k] - gain - drop, 1, 99);
+    }
+    s.lastGains = {};
+    s.media = clamp(s.media - 6, 0, 100);
+    s.rep = clamp(s.rep - 3, 0, 100);
+    s.relations += 1;
+    const wasRanked = s.tier > 0 && s.rank !== null && s.contract.kind !== 'freak';
+    if (s.tier > 0) s.rank = null;
+    const job =
+      s.age < 19
+        ? 'Rok przerwy od turniejów. Weekendy na zmywaku i przy rozładunku, w tygodniu szkoła.'
+        : rng.pick([
+            'Rok na budowie. Rano szalunki, wieczorem nie masz siły nawet na rozciąganie.',
+            'Rok w magazynie na trzy zmiany. Kasa się zgadza, kondycja już nie.',
+            'Rok jako ochroniarz w galerii. Stoisz osiem godzin dziennie i tyjesz.',
+            'Rok na kurierce. Trzysta paczek dziennie, na salę wpadasz raz w tygodniu.',
+          ]);
+    const summary: SeasonSummary = {
+      season: s.season,
+      year: s.year,
+      age: s.age,
+      tier: s.tier,
+      fed: s.fed,
+      club: s.club.name,
+      w: 0,
+      l: 0,
+      d: 0,
+      rank: s.rank,
+      champion: false,
+      beltWon: false,
+      moneyDelta: s.money - moneyFrom,
+      ovrFrom,
+      ovrTo: ovr(s.stats),
+      form: 'Rok przerwy',
+      grade: 'Rok przerwy',
+      bars: [
+        { label: 'Pieniądze', value: Math.round(clamp(50 + (pv.net / 30000) * 40, 5, 100)), note: fmtK(s.money - moneyFrom) },
+        { label: 'Forma fizyczna', value: 15, note: 'umiejętności spadły' },
+      ],
+      story: `${job} Długi są mniejsze, ale treningi przepadły.${wasRanked ? ' Wypadasz z rankingu.' : ''}`,
+    };
+    s.seasons.push(summary);
+    s.lastSummary = summary;
+    s.run = null;
+    s.event = null;
+    s.eventQueue = [];
+    s.flags.breakYears = (s.flags.breakYears ?? 0) + 1;
+    log(s, 'Rok przerwy: praca zamiast walk.');
+    for (const p of s.peers) progressPeer(rng, p);
+  });
+  s.phase = 'summary';
   return s;
 }
 
@@ -475,6 +584,7 @@ function maybeAutoSponsor(rng: Rng, s: GameState): string | null {
 // ---------------------------------------------------------------------------
 
 export function startSeason(s0: GameState): GameState {
+  if (!canStartSeason(s0)) return s0;
   const s = clone(s0);
   withRng(s, (rng) => {
     s.money += budgetBalance(s);
