@@ -767,7 +767,7 @@ const POOL = {
     'Plan działa. Ta runda jest twoja.',
     'Robisz swoje, a {n} nie ma na to odpowiedzi.',
     'Spokojnie i konsekwentnie. Sędziowie zapisują rundę dla ciebie.',
-    'Trener w przerwie tylko kiwa głową. Tak ma być.',
+    'Trener w narożniku tylko kiwa głową. Tak ma być.',
     '{n} zaczyna się frustrować i szukać pomysłu, którego nie ma.',
   ],
   normalSuper: [
@@ -778,7 +778,7 @@ const POOL = {
   normalFail: [
     '{n} czyta to bez problemu. Trzeba szukać czegoś innego.',
     'Nie klei się. {n} był na to przygotowany.',
-    'Trener w przerwie łapie się za głowę. Plan nie działa.',
+    'Trener w narożniku łapie się za głowę. Plan nie działa.',
     '{n} odpowiada na każdą twoją akcję. Ta runda dla niego.',
   ],
   safeOk: [

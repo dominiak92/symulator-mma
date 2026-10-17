@@ -271,7 +271,7 @@ export const EVENTS: EventDef[] = [
         label: 'Podpisujesz',
         desc: 'Może faktycznie zna.',
         chance: 55,
-        success: { media: 5, flag: 'manager', note: 'lepsze oferty na rynku' },
+        success: { media: 5, flag: 'manager', note: 'lepsze oferty kontraktów' },
         fail: { money: -4000, rep: -2, note: 'zniknął z zaliczką' },
         successText: 'Faktycznie zna. Telefon dzwoni częściej, a gaże rosną.',
         failText: 'Po tygodniu zablokował twój numer. Zaliczka 4 tys. zł przepadła.',

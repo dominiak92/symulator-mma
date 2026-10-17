@@ -2416,8 +2416,8 @@ function finalizeFight(rng: Rng, s: GameState, rep: FightReport) {
       'L:Decyzja większościowa': ['Remis u jednego sędziego, porażka u dwóch. Boli.'],
       'D:Remis': ['Remis. Nikt nie jest zadowolony, wszyscy chcą rewanżu.', 'Remis. Organizator już zaciera ręce na rewanż.'],
     };
-    const pool = lines[`${res}:${rep.method}`];
-    if (pool && !rep.moments.some((m) => m.title === 'Dogrywka'))
+    const pool = (lines[`${res}:${rep.method}`] ?? []).filter((t) => rep.sim.maxRounds === 3 || !/Trzy rundy|Każda runda/.test(t));
+    if (pool.length && !rep.moments.some((m) => m.title === 'Dogrywka'))
       rep.moments.push({ round: rep.round, title: 'Werdykt', text: rng.pick(pool), tone: res === 'W' ? 'good' : res === 'L' ? 'bad' : 'neutral' });
   }
 
