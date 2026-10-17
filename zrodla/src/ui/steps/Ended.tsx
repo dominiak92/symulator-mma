@@ -89,6 +89,20 @@ export default function Ended({ game, onNewCareer, onMenu }: { game: GameState; 
           </div>
         </div>
         <p className="muted">{e.reason}</p>
+        {e.top && !unranked && (
+          <div className="top-exit">
+            <div className="top-exit-head">
+              <Icon name="trophy" size={16} />
+              <b>{e.top.title}</b>
+              <span>+{e.top.pts} LEGACY</span>
+            </div>
+            <ul>
+              {e.top.lines.map((l) => (
+                <li key={l}>{l}</li>
+              ))}
+            </ul>
+          </div>
+        )}
         <p className="lead" style={{ marginTop: 6 }}>
           {e.verdictDesc}
         </p>
@@ -115,6 +129,15 @@ export default function Ended({ game, onNewCareer, onMenu }: { game: GameState; 
           </div>
         </div>
       </section>
+
+      {g.seasons.length >= 2 && (
+        <section className="step">
+          <h3>Wykres kariery</h3>
+          <div style={{ marginTop: 10 }}>
+            <CareerChart g={g} full />
+          </div>
+        </section>
+      )}
 
       <section className="step">
         <div className="end-grid">
@@ -212,12 +235,6 @@ export default function Ended({ game, onNewCareer, onMenu }: { game: GameState; 
         <span className="btn btn-primary btn-small">groundgame.com</span>
       </a>
 
-      <section className="step" style={{ marginTop: 12 }}>
-        <h3>Wykres kariery</h3>
-        <div style={{ marginTop: 10 }}>
-          <CareerChart g={g} />
-        </div>
-      </section>
 
       <section className="step">
         <h3>Najważniejsze chwile</h3>

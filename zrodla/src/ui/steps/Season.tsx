@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from
 import { createPortal } from 'react-dom';
 import type { CardSpot, DecisionOption, DecisionPoint, FightOffer, FightReport, GameState, Moment } from '../../engine/types';
 import { galaPrefix, SEASON_FORMS, STAGE_LABELS, STAT_LABELS, STYLE_LABELS } from '../../engine/data';
-import { divisionKey, PRESS_OPTIONS, pressAnswer, prepCost, acceptAllOffers, acceptOffer, declineBlocked, declineOffer, decide, negotiateChance, negotiateOffer, recStr, seasonNext, seasonSkip, toSummary } from '../../engine/game';
+import { divisionKey, weightMissChance, PRESS_OPTIONS, pressAnswer, prepCost, acceptAllOffers, acceptOffer, declineBlocked, declineOffer, decide, negotiateChance, negotiateOffer, recStr, seasonNext, seasonSkip, toSummary } from '../../engine/game';
 import { activeManager, currentManager } from '../../engine/managers';
 import { sfxCash, sfxClick, sfxCrowd, sfxGong, sfxLoss, sfxThud } from '../sound';
 import { OUTCOME_LABEL } from '../../engine/fight';
@@ -359,11 +359,13 @@ function LiveCard({ g, f, start, animate, setGame }: { g: GameState; f: FightRep
   const decision = pending ? (
     <div className="decision" id="decision">
       <div className="decision-head">
-        <span className="tag gold">
+        <span className={`tag ${pending.corner ? 'blue' : 'gold'}`}>
           <Icon name="target" size={13} />
-          Twoja decyzja
+          {pending.corner ? 'Narożnik' : 'Twoja decyzja'}
         </span>
-        <span className="faint">przed rundą {pending.round}</span>
+        <span className="faint">
+          {f.sim.big ? `runda ${pending.round} z ${f.sim.maxRounds}` : `przed rundą ${pending.round}`}
+        </span>
       </div>
       <h3>{pending.title}</h3>
       <p className="decision-text">{pending.text}</p>
@@ -398,7 +400,13 @@ function LiveCard({ g, f, start, animate, setGame }: { g: GameState; f: FightRep
               {f.defense ? 'obrona pasa' : 'o pas'}
             </span>
           )}
-          {f.peer && (
+          {f.sim.big && !f.title && (
+            <span className="tag bad">
+              <Icon name="bolt" size={12} />
+              walka z rywalem
+            </span>
+          )}
+          {f.peer && !f.sim.big && (
             <span className="tag blue">
               <Icon name="users" size={12} />
               rocznik
@@ -952,6 +960,12 @@ function OfferCard({ g, o, n, total, setGame }: { g: GameState; o: FightOffer; n
             </span>
           </div>
         )}
+        {o.hook && (
+          <p className="ofr-hook">
+            <Icon name="bolt" size={14} />
+            <span>{o.hook}</span>
+          </p>
+        )}
         <div className="ofr-pay">
           <div className={fx?.kind === 'up' ? 'pay-up' : ''}>
             <small>Gaża</small>
@@ -978,6 +992,14 @@ function OfferCard({ g, o, n, total, setGame }: { g: GameState; o: FightOffer; n
           <p key={o.note} className={`ofr-note strong ofr-banner ${fx?.kind === 'up' ? 'up' : fx?.kind === 'flat' ? 'flat' : ''}`}>
             <Icon name={fx?.kind === 'up' ? 'trend' : fx?.kind === 'flat' ? 'x' : 'coins'} size={14} />
             <span className="ofr-banner-txt">{o.note}</span>
+          </p>
+        )}
+        {weightMissChance(g) > 0 && !o.opp.freak && (
+          <p className={`ofr-note weight-warn ${weightMissChance(g) >= 15 ? 'hot' : ''}`}>
+            <Icon name="scale" size={14} />
+            <span>
+              Waga na granicy: {weightMissChance(g)}% szansy, że nie zrobisz limitu. Wtedy oddajesz 25% gaży i wchodzisz do klatki wysuszony.
+            </span>
           </p>
         )}
         <div className="prep">

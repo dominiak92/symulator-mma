@@ -1,6 +1,6 @@
 import { STAT_LABELS, TIER_LEVEL } from '../../engine/data';
 import { ovr } from '../../engine/fighter';
-import { changeDivision, clubAvailability, clubLimits, confirmMarket, divisionKey, divisionOptions, marketWarnings, pickClub, pickContract, retire, setManager, weightMissChance } from '../../engine/game';
+import { changeDivision, clubAvailability, clubLimits, confirmMarket, divisionKey, divisionOptions, marketWarnings, pickClub, pickContract, retire, retireBonus, setManager, weightMissChance } from '../../engine/game';
 import { WEIGHTS } from '../../engine/data';
 import { MANAGERS, currentManager, managerBlocked } from '../../engine/managers';
 import type { Contract } from '../../engine/types';
@@ -33,6 +33,7 @@ export default function Market({ game, setGame }: StepProps) {
   const g = game;
   const m = g.market!;
   const [confirmRetire, setConfirmRetire] = useState(false);
+  const topExit = retireBonus(g);
   const [clubsOpen, setClubsOpen] = useState(false);
   const warnings = marketWarnings(g);
   const available = m.contracts.filter((c) => c.available);
@@ -296,6 +297,20 @@ export default function Market({ game, setGame }: StepProps) {
         <div style={{ marginTop: 18, textAlign: 'center' }}>
           {confirmRetire ? (
             <div className="row wrap" style={{ justifyContent: 'center' }}>
+              {topExit && (
+                <div className="top-exit" style={{ width: '100%', textAlign: 'left' }}>
+                  <div className="top-exit-head">
+                    <Icon name="trophy" size={16} />
+                    <b>{topExit.title}</b>
+                    <span>+{topExit.pts} LEGACY</span>
+                  </div>
+                  <ul>
+                    {topExit.lines.map((l) => (
+                      <li key={l}>{l}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
               <span className="muted">Na pewno kończysz karierę?</span>
               <button className="btn btn-ghost btn-small" onClick={() => setConfirmRetire(false)}>
                 Jeszcze nie
@@ -305,9 +320,9 @@ export default function Market({ game, setGame }: StepProps) {
               </button>
             </div>
           ) : (
-            <button className="btn btn-ghost btn-small btn-ico" onClick={() => setConfirmRetire(true)}>
-              <Icon name="door" size={15} />
-              Zakończ karierę
+            <button className={`btn btn-small btn-ico ${topExit ? 'btn-gold' : 'btn-ghost'}`} onClick={() => setConfirmRetire(true)}>
+              <Icon name={topExit ? 'trophy' : 'door'} size={15} />
+              {topExit ? `Odejdź na szczycie · +${topExit.pts} LEGACY` : 'Zakończ karierę'}
             </button>
           )}
         </div>

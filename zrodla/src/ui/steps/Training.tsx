@@ -278,7 +278,7 @@ function ExpeditionTab({ g, exps, setGame }: { g: GameState; exps: Expedition[];
       </div>
       <h2>Wyjazd na lata</h2>
       <p className="muted small" style={{ marginTop: 4 }}>
-        Kilka lat samego treningu za granicą. Wracasz dużo mocniejszy, ale starszy, bez rankingu i kontraktu. Każdy wyjazd raz na karierę.
+        Kilka lat samego treningu za granicą. Wracasz dużo mocniejszy i w życiowej formie na pierwszy rok, ale starszy, niżej w rankingu i bez kontraktu. Każdy wyjazd raz na karierę.
       </p>
       <div className="exp-list">
         {exps.map((e) => (
