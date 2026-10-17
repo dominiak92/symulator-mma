@@ -5879,3 +5879,58 @@ button.hs:active,
 }
 .more-btn:hover { border-color: var(--cyan); }
 .club-pick > .offer { animation: alertIn 0.25s ease-out both; }
+
+/* kategoria wagowa i obóz przed walką */
+.seg.div-seg,
+.seg.prep-seg { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.div-seg button,
+.prep-seg button {
+  appearance: none;
+  display: grid;
+  gap: 1px;
+  justify-items: center;
+  padding: 8px 4px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--panel-2);
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+  min-width: 0;
+}
+.div-seg button.on,
+.prep-seg button.on { border-color: var(--cyan); background: var(--cyan-soft); }
+.div-seg button:disabled,
+.prep-seg button:disabled { opacity: 0.45; cursor: not-allowed; }
+.div-seg b,
+.prep-seg b { font-size: 0.86rem; text-transform: capitalize; }
+.div-seg small,
+.prep-seg small { font-size: 0.66rem; color: var(--muted); }
+.div-note { margin: 8px 0 0; line-height: 1.4; }
+.prep { display: grid; gap: 6px; margin-top: 4px; }
+.prep-title { font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--faint); }
+.prep-desc { font-size: 0.74rem; color: var(--muted); line-height: 1.35; }
+.prep-seg b { text-transform: none; }
+
+/* konferencja */
+.press-quote {
+  margin: 4px 0 0;
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(225, 29, 72, 0.12);
+  border: 1px solid rgba(225, 29, 72, 0.35);
+  font-size: 0.9rem;
+  line-height: 1.4;
+  animation: alertIn 0.4s 0.5s ease-out both;
+}
+.press-quote .ico { color: var(--bad); flex: none; margin-top: 3px; }
+.press-quote small { display: block; margin-top: 4px; color: var(--muted); font-size: 0.72rem; }
+.press-quote small::before { content: '— '; }
+.press-opts { gap: 6px; }
+.press-opt { padding: 10px 12px; }
+.press-opt .title { font-weight: 700; }
+.press-opt .desc { font-size: 0.78rem; }
+.press-insult { border-color: rgba(225, 29, 72, 0.4); }
