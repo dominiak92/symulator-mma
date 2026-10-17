@@ -180,3 +180,12 @@ describe('obozy i akademia', () => {
     expect(budgetBalance(a)).toBeGreaterThan(before);
   });
 });
+
+describe('zdarzenia', () => {
+  it('mają unikalne identyfikatory', async () => {
+    const { EVENTS } = await import('../src/engine/events');
+    const ids = EVENTS.map((e) => e.id);
+    const dup = ids.filter((id, i) => ids.indexOf(id) !== i);
+    expect(dup).toEqual([]);
+  });
+});
