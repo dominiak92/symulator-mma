@@ -225,15 +225,46 @@ export const EVENTS: EventDef[] = [
     ],
   },
 
+  // ---------- Start kariery: sparing kontrolny u trenera (kolejkowany przy pierwszym sezonie) ----------
+  {
+    id: 'sparing_kontrolny',
+    title: 'Sparing kontrolny',
+    once: true,
+    weight: 0,
+    cond: () => false,
+    text: (s) => {
+      const partners = [
+        'Marka z sekcji BJJ, brązowy pas, który na macie spędził więcej czasu niż ty na świecie',
+        'Darka, byłego boksera z ligi okręgowej, z nosem złamanym trzy razy',
+        'Kubę, zapaśnika z AZS, który podobno nosi worki z piaskiem na rozgrzewkę',
+        'Pawła, kickboksera z amatorskim pasem K-1, szybszego niż wygląda',
+      ];
+      const who = partners[(s.profile.lastName.length + s.profile.firstName.length) % partners.length];
+      return `Pierwszy tydzień w klubie. Trener stawia cię naprzeciw ${who}. „Trzy rundy, zasady MMA. Nie musisz wygrać, chcę zobaczyć, co w tobie siedzi. Od tego zależy, gdzie cię wyślę na pierwsze amatorskie zawody.”`;
+    },
+    choices: (s) => {
+      const ch = (v: number) => Math.max(25, Math.min(80, Math.round(30 + (v - 20) * 3.5)));
+      const ok = { flag: 'amTalent', form: 1, rep: 1, note: 'od razu zawody ogólnopolskie' };
+      const slow = { flag: 'amLocal', note: 'najpierw zawody wojewódzkie' };
+      const okText = 'Trener długo nic nie mówi, potem kiwa głową: „Masz to coś. Jedziesz od razu na Amatorski Puchar Polski.”';
+      const slowText = 'Trener klepie cię w ramię: „Dobra, wyrobisz się. Na początek wyślemy cię na zawody wojewódzkie, tam się otrzaskasz. Za rok pogadamy.”';
+      return [
+        { label: 'Wymieniasz w stójce', desc: 'Ręce wysoko, kombinacje, praca na nogach.', chance: ch(s.stats.stand), success: ok, fail: slow, successText: okText, failText: slowText },
+        { label: 'Idziesz w zapasy', desc: 'Wejście w nogi i kontrola przy siatce.', chance: ch(s.stats.wrest), success: ok, fail: slow, successText: okText, failText: slowText },
+        { label: 'Walczysz głową', desc: 'Spokojnie, czytasz go i kontrujesz.', chance: ch(s.stats.iq), success: ok, fail: slow, successText: okText, failText: slowText },
+      ];
+    },
+  },
+
   // ---------- Kariera ----------
   {
     id: 'menedzer',
-    title: 'Menedżer w okularach',
+    title: 'Menedżer po gali',
     once: true,
     weight: 6,
     cond: (s) => s.tier >= 1 && s.tier <= 2 && s.record.w >= 3 && !s.manager && !s.flags.manager,
     text: () =>
-      'Po gali podchodzi facet w okularach przeciwsłonecznych, choć jest 23:00. Mówi, że „zna wszystkich w federacji” i chce 20% od każdej gaży.',
+      'Po gali podchodzi Kamil Wroński z KW Fight: okulary przeciwsłoneczne, choć jest 23:00, i dwa telefony w ręku. Mówi, że „zna wszystkich w federacji” i chce 15% od każdej gaży.',
     choices: () => [
       {
         label: 'Podpisujesz',
@@ -801,7 +832,7 @@ export const EVENTS: EventDef[] = [
   },
 
   {
-    id: 'gg_labs',
+    id: 'gg_labs_supps',
     title: 'Ground Game Labs',
     brand: 'labs',
     once: true,

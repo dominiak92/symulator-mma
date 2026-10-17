@@ -23,6 +23,8 @@ import type {
 } from './types';
 import {
   AMATEUR_TOURNEYS,
+  AMATEUR_TOURNEYS_LOCAL,
+  REGION_CITY,
   BAD_FORMS,
   GOOD_FORMS,
   STAGE_LABELS,
@@ -317,7 +319,8 @@ export function newGame(opts: NewGameOpts): GameState {
     run: null,
     lastSummary: null,
     market: null,
-    flags: {},
+    // nowa kariera zaczyna się od sparingu kontrolnego u trenera
+    flags: { amLevel: 0, tryoutPending: 1 },
     seenEvents: [],
     ending: null,
   };
@@ -455,6 +458,7 @@ function offerShadyDeal(rng: Rng, s: GameState) {
   s.shadyDeal = null;
   if (s.tier < 1 || s.contract.kind === 'freak') return;
   if (s.sponsors.some((x) => SHADY_SPONSORS.some((d) => d.name === x.name))) return;
+  if (s.sponsors.length >= sponsorCap(s)) return;
   const tight = budgetBalance(s) + s.money < 15000 + s.tier * 10000;
   const mgr = currentManager(s);
   if (!rng.chance(tight ? 0.6 : mgr ? 0.14 : 0.06)) return;
@@ -477,7 +481,7 @@ function offerShadyDeal(rng: Rng, s: GameState) {
 
 export function acceptShadyDeal(s0: GameState): GameState {
   const d = s0.shadyDeal;
-  if (!d || d.status !== 'open' || d.season !== s0.season) return s0;
+  if (!d || d.status !== 'open' || d.season !== s0.season || s0.sponsors.length >= sponsorCap(s0)) return s0;
   const s = clone(s0);
   const x = s.shadyDeal!;
   x.status = 'taken';
@@ -514,7 +518,7 @@ export function budgetLines(s: GameState): BudgetLine[] {
   if (s.contract.entryCost > 0)
     lines.push(
       s.tier === 0
-        ? { label: 'Opłaty startowe i dojazdy', sub: 'Puchar i Mistrzostwa Polski', amount: -s.contract.entryCost, icon: 'receipt' }
+        ? { label: 'Opłaty startowe i dojazdy', sub: amLevel(s) === 0 ? 'zawody wojewódzkie' : 'Amatorski Puchar i Mistrzostwa Polski', amount: -s.contract.entryCost, icon: 'receipt' }
         : { label: 'Badania, licencja, dojazdy', sub: s.contract.fed, amount: -s.contract.entryCost, icon: 'receipt' },
     );
   // zawodowcy na wyższych szczeblach płacą sztab: trenera przygotowania i dietetyka
@@ -874,7 +878,7 @@ export const EXPEDITIONS: Expedition[] = [
     place: 'Dagestan · sala w górach',
     years: 2,
     maxAge: 30,
-    cost: [0, 40000, 90000, 200000, 450000],
+    cost: [0, 30000, 70000, 160000, 360000],
     gains: { wrest: [8, 12], cardio: [6, 9], chin: [3, 5], bjj: [3, 6], iq: [2, 4], stand: [0, 2] },
     ceiling: { wrest: 10, cardio: 8, chin: 5, bjj: 4 },
     media: -12,
@@ -895,7 +899,7 @@ export const EXPEDITIONS: Expedition[] = [
     place: 'USA · stajnia mistrzów',
     years: 2,
     maxAge: 33,
-    cost: [0, 70000, 150000, 320000, 650000],
+    cost: [0, 45000, 100000, 220000, 460000],
     gains: { stand: [4, 7], wrest: [4, 7], bjj: [4, 7], cardio: [3, 5], iq: [3, 5], chin: [1, 3] },
     ceiling: { stand: 4, wrest: 4, bjj: 4, iq: 2 },
     media: -4,
@@ -968,7 +972,12 @@ export function goExpedition(s0: GameState, id: Expedition['id']): GameState {
     }
     s.lastGains = mapStats((k) => s.stats[k] - before[k]);
     // wszystkie lata poza ostatnim mijają tutaj, ostatni przy przejściu na rynek
-    for (let i = 0; i < e.years - 1; i++) ageOneYear(rng, s);
+    // życie za granicą też kosztuje: za każdy rok poza ostatnim (ten liczy się przy rynku)
+    const livingAbroad = Math.round(livingCost(s.age) / 500) * 500;
+    for (let i = 0; i < e.years - 1; i++) {
+      ageOneYear(rng, s);
+      s.money -= livingAbroad;
+    }
     for (let i = 0; i < e.years; i++) for (const p of s.peers) progressPeer(rng, p);
     s.media = clamp(s.media + e.media, 0, 100);
     s.rep = clamp(s.rep + e.rep, 0, 100);
@@ -1178,6 +1187,7 @@ export function startSeason(s0: GameState): GameState {
       if (!pool.length) break;
       s.eventQueue.push(rng.weighted(pool));
     }
+    if ((s.flags.tryoutPending ?? 0) > 0 && s.tier === 0) s.eventQueue.unshift('sparing_kontrolny');
   });
   return nextEventOrSeason(s);
 }
@@ -1251,10 +1261,18 @@ export function applyEffects(s: GameState, e: Effects, rng: Rng) {
   if (e.sponsor) {
     s.sponsors.push({ ...e.sponsor, id: uid(rng, 's') });
     s.flags[`sponsor:${e.sponsor.name}`] = 1;
-    if (e.sponsor.name === LABS_SPONSOR) s.backroom = { ...(s.backroom ?? {}), supps: true };
+    if (e.sponsor.name === LABS_SPONSOR && !s.backroom?.supps) {
+      s.backroom = { ...(s.backroom ?? {}), supps: true };
+      s.flags.labsAutoSupps = 1;
+    }
   }
   if (e.flag) s.flags[e.flag] = (s.flags[e.flag] ?? 0) + 1;
   if (e.flag === 'manager') s.manager = 'okulary';
+  if (e.flag === 'amTalent' || e.flag === 'amLocal') {
+    s.flags.amLevel = e.flag === 'amTalent' ? 1 : 0;
+    s.flags.tryoutPending = 0;
+    s.flags.tryout = e.flag === 'amTalent' ? 2 : 1;
+  }
   if (e.form) s.flags.formBonus = (s.flags.formBonus ?? 0) + e.form;
   if (e.loan) {
     s.money += e.loan.amount;
@@ -1317,15 +1335,22 @@ export function isAmateurRun(s: GameState) {
 function makeTourneys(rng: Rng, s: GameState): Tourney[] {
   const div = amateurDivision(s.age, s.amRecord.w + s.amRecord.l + s.amRecord.d);
   const cities = rng.shuffle([...TOURNEY_CITIES]);
-  return AMATEUR_TOURNEYS.map((name, i) => ({
+  const local = amLevel(s) === 0;
+  const home = REGION_CITY[s.profile.region] ?? cities[0];
+  return (local ? AMATEUR_TOURNEYS_LOCAL : AMATEUR_TOURNEYS).map((name, i) => ({
     name,
-    city: cities[i],
+    city: local ? (i === 0 ? home : s.profile.hometown || home) : cities[i],
     division: div,
     stage: 'qf' as TourneyStage,
     medal: null,
     place: null,
-    championship: i === 1,
+    championship: !local && i === 1,
   }));
+}
+
+/** Poziom zawodów amatorskich: 0 wojewódzkie, 1 ogólnopolskie (stare zapisy: ogólnopolskie). */
+export function amLevel(s: GameState) {
+  return s.flags.amLevel ?? 1;
 }
 
 function plannedAmateur(run: NonNullable<GameState['run']>) {
@@ -1344,9 +1369,16 @@ function beginRun(s: GameState) {
     const intro: string[] = [];
     let tourneys: Tourney[] | undefined;
     if (isAmateurRun(s)) {
+      // awans z zawodów wojewódzkich: po medalu albo po dwóch sezonach (jedna walka nie przekreśla kariery)
+      if (amLevel(s) === 0 && ((s.flags.amPromote ?? 0) > 0 || (s.flags.amLocalSeasons ?? 0) >= 2)) {
+        s.flags.amLevel = 1;
+        s.flags.amPromote = 0;
+        intro.push('Trener: „Dość zawodów wojewódzkich. W tym roku jedziesz na Amatorski Puchar i Mistrzostwa Polski.”');
+      }
+      if (amLevel(s) === 0) s.flags.amLocalSeasons = (s.flags.amLocalSeasons ?? 0) + 1;
       tourneys = makeTourneys(rng, s);
       intro.push(
-        `W tym roku dwa turnieje: ${tourneys[0].name} (${tourneys[0].city}) i ${tourneys[1].name} (${tourneys[1].city}). Startujesz ${tourneys[0].division === 'pierwszy krok' ? 'wśród debiutantów' : `jako ${divisionPerson(tourneys[0].division)}`}, w drabince jest ośmiu zawodników.`,
+        `${amLevel(s) === 0 ? 'Na początek zawody niższej rangi. ' : ''}W tym roku dwa turnieje amatorskie: ${tourneys[0].name} (${tourneys[0].city}) i ${tourneys[1].name} (${tourneys[1].city}). Startujesz ${tourneys[0].division === 'pierwszy krok' ? 'wśród debiutantów' : `jako ${divisionPerson(tourneys[0].division)}`}, w drabince jest ośmiu zawodników.`,
       );
     }
     const sp = maybeAutoSponsor(rng, s);
@@ -1393,7 +1425,7 @@ function amateurOpponent(rng: Rng, s: GameState, t: Tourney, stage: TourneyStage
   opp.country = 'Polska';
   opp.flag = '🇵🇱';
   opp.age = clamp(s.age + rng.int(-1, 2), 16, 34);
-  const shift = t.division === 'pierwszy krok' ? -4 : t.division === 'kadeci' ? -2 : t.division === 'seniorzy' ? 2 : 0;
+  const shift = (t.division === 'pierwszy krok' ? -4 : t.division === 'kadeci' ? -2 : t.division === 'seniorzy' ? 2 : 0) + (amLevel(s) === 0 ? -3 : 0);
   if (shift) opp.stats = mapStats((k) => clamp(opp.stats[k] + shift, 6, 99));
   if (t.division === 'pierwszy krok') opp.record = { w: rng.int(0, 1), l: rng.int(0, 1), d: 0 };
   return opp;
@@ -1578,7 +1610,7 @@ export function buildTuneup(rng: Rng, s: GameState): FightOffer {
   const w = rng.int(5, 12);
   opp.record = { w, l: w + rng.int(8, 16), d: 0 };
   opp.rank = null;
-  const purse = Math.round((s.contract.purse * (0.6 + rng.next() * 0.15)) / 100) * 100;
+  const purse = Math.round(Math.min(s.contract.purse * (0.6 + rng.next() * 0.15), [0, 0, 25000, 45000, 70000][s.tier] ?? 25000) / 100) * 100;
   const mgr = currentManager(s);
   const who = mgr ? mgr.name : 'Znajomy promotor';
   const skad = pool.country === 'Słowacja' ? 'ze Słowacji' : 'z Czech';
@@ -2056,14 +2088,15 @@ function advanceTourney(s: GameState, rep: FightReport, res: 'W' | 'L' | 'D') {
   }
   if (t.stage === null) {
     if (t.medal) s.medals[t.medal]++;
+    if (!t.championship && amLevel(s) === 0 && (t.medal === 'gold' || t.medal === 'silver')) s.flags.amPromote = 1;
     if (t.medal === 'gold' && t.championship) {
       s.belts.push({ name: BELT_NAMES[0], season: s.season, age: s.age });
       log(s, `🥇 Mistrz Polski amatorów (${t.city}).`);
-      rep.moments.push({ round: rep.round, title: 'Mistrz Polski!', text: `Złoty medal Mistrzostw Polski. Wieszają ci go na szyi, a trener udaje, że coś wpadło mu do oka.`, tone: 'purple' });
+      rep.moments.push({ round: rep.round, title: 'Mistrz Polski amatorów!', text: `Złoty medal Amatorskich Mistrzostw Polski. Wieszają ci go na szyi, a trener udaje, że coś wpadło mu do oka.`, tone: 'purple' });
     } else if (t.medal) {
       const m = t.medal === 'gold' ? 'Złoto' : t.medal === 'silver' ? 'Srebro' : 'Brąz';
       log(s, `${t.medal === 'gold' ? '🥇' : t.medal === 'silver' ? '🥈' : '🥉'} ${m}: ${t.name} (${t.city}).`);
-      rep.moments.push({ round: rep.round, title: `${m} ${t.name.startsWith('Puchar') ? 'Pucharu Polski' : 'Mistrzostw Polski'}`, text: t.medal === 'gold' ? 'Cztery godziny czekania na hali i trzy walki. Medal jest twój.' : t.medal === 'silver' ? 'Finał przegrany, ale srebro to srebro. Za rok wracasz po więcej.' : 'Brąz wywalczony w walce o trzecie miejsce. Na podium stoisz z uśmiechem.', tone: 'good' });
+      rep.moments.push({ round: rep.round, title: `${m}: ${t.name}`, text: t.medal === 'gold' ? 'Cztery godziny czekania na hali i trzy walki. Medal jest twój.' : t.medal === 'silver' ? 'Finał przegrany, ale srebro to srebro. Za rok wracasz po więcej.' : 'Brąz wywalczony w walce o trzecie miejsce. Na podium stoisz z uśmiechem.', tone: 'good' });
     }
     run.tIdx = (run.tIdx ?? 0) + 1;
   }
@@ -2165,7 +2198,7 @@ function finalizeFight(rng: Rng, s: GameState, rep: FightReport) {
   // pieniądze i bonusy
   let earned = rep.amateur ? 0 : rep.purse + (res === 'W' ? rep.winBonus ?? Math.round(s.contract.winBonus * (rep.title ? 1.8 : 1)) : 0);
   if (!rep.amateur && s.tier >= 1) {
-    const amount = [0, 1500, 10000, 30000, 200000][s.tier];
+    const amount = rep.tuneup ? 1500 : [0, 1500, 10000, 30000, 200000][s.tier];
     let bonus: string | null = null;
     if (res === 'W' && rep.method === 'KO/TKO' && rng.chance(0.3)) bonus = 'Nokaut wieczoru';
     else if (res === 'W' && rep.method === 'Poddanie' && rng.chance(0.35)) bonus = 'Poddanie wieczoru';
@@ -2524,7 +2557,13 @@ function ageOneYear(rng: Rng, s: GameState) {
   }
   // sponsorzy
   for (const sp of s.sponsors) sp.seasonsLeft -= 1;
+  const hadLabs = hasLabs(s);
   s.sponsors = s.sponsors.filter((x) => x.seasonsLeft > 0);
+  // koniec umowy z Labs: suplementy włączone przez sponsora wyłączają się same
+  if (hadLabs && !hasLabs(s) && s.flags.labsAutoSupps) {
+    s.backroom = { ...(s.backroom ?? {}), supps: false };
+    s.flags.labsAutoSupps = 0;
+  }
   // media wygasają powoli
   s.media = clamp(s.media - (s.media > 40 ? 3 : 1), 0, 100);
   s.contractSeasonsLeft -= 1;
@@ -2591,7 +2630,7 @@ export function buildMarket(rng: Rng, s: GameState) {
 
   // zostajesz
   const stay = contractFor(rng, s, s.tier, 'stay', s.rank);
-  stay.note = s.tier === 0 ? 'Jeszcze rok turniejów amatorskich: Puchar i Mistrzostwa Polski.' : s.rank === 0 ? 'Bronisz pasa. Mistrza się nie wypuszcza.' : 'Kolejny sezon w tej samej federacji.';
+  stay.note = s.tier === 0 ? (amLevel(s) === 0 ? 'Jeszcze rok turniejów amatorskich, najpierw zawody wojewódzkie.' : 'Jeszcze rok turniejów amatorskich: Amatorski Puchar i Mistrzostwa Polski.') : s.rank === 0 ? 'Bronisz pasa. Mistrza się nie wypuszcza.' : 'Kolejny sezon w tej samej federacji.';
   if (cut) {
     stay.available = false;
     stay.reason = 'federacja nie przedłuża z tobą kontraktu';
@@ -2617,6 +2656,15 @@ export function buildMarket(rng: Rng, s: GameState) {
     const c = contractFor(rng, s, 1, 'promotion', null);
     if (d.ok) {
       c.note = 'Debiut zawodowy na gali regionalnej. Pierwsze pieniądze za walkę, rundy po pięć minut, bez kasku.';
+      // dobra amatorka procentuje: mistrz Polski amatorów albo medalista dostaje lepsze warunki
+      const amChamp = s.belts.some((b) => b.name === BELT_NAMES[0]);
+      const medals = medalCount(s);
+      const boost = amChamp ? 1.35 : medals >= 3 ? 1.2 : 1;
+      if (boost > 1) {
+        c.purse = Math.round((c.purse * boost) / 100) * 100;
+        c.winBonus = Math.round(c.purse * 0.7);
+        c.note += amChamp ? ' Mistrz Polski amatorów: organizator płaci więcej i od razu stawia cię wyżej w karcie.' : ` ${medals} medali w amatorce robi wrażenie: organizator dokłada do gaży.`;
+      }
     } else {
       c.available = false;
       c.reason = d.reason;

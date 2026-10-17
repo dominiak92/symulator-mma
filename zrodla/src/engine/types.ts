@@ -287,6 +287,8 @@ export interface SeasonRun {
   mgrFocus?: boolean;
   /** krótkie notki z sezonu (odrzucone oferty itp.) */
   notes?: string[];
+  /** gracz zobaczył już losowanie formy (po przeładowaniu nie powtarzamy) */
+  formSeen?: boolean;
   /** czy w tym sezonie była już propozycja walki na odbudowę */
   tuneupOffered?: boolean;
 }
