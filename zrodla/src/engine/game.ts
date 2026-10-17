@@ -46,6 +46,12 @@ import {
   STYLE_PROFILE,
   TIER_ENTRY,
   TIER_FEDS,
+  FED_NOTES,
+  FED_VENUES,
+  TUNEUP_GALAS,
+  NAMES_TUNEUP,
+  TUNEUP_NICKS,
+  SHADY_SPONSORS,
   TIER_FIGHTS,
   TIER_LEVEL,
   TIER_NAMES,
@@ -438,8 +444,55 @@ export function doTraining(s0: GameState, k: StatKey, campId?: string | null): G
     s.lastGains = mapStats((key) => s.stats[key] - before[key]);
     s.trainingPick = k;
     s.peakOvr = Math.max(s.peakOvr, ovr(s.stats));
+    offerShadyDeal(rng, s);
   });
   s.phase = 'budget';
+  return s;
+}
+
+/** Menedżer (albo kolega) podsuwa dziwnego sponsora: kasa jest, gorzej z wizerunkiem. */
+function offerShadyDeal(rng: Rng, s: GameState) {
+  s.shadyDeal = null;
+  if (s.tier < 1 || s.contract.kind === 'freak') return;
+  if (s.sponsors.some((x) => SHADY_SPONSORS.some((d) => d.name === x.name))) return;
+  const tight = budgetBalance(s) + s.money < 15000 + s.tier * 10000;
+  const mgr = currentManager(s);
+  if (!rng.chance(tight ? 0.6 : mgr ? 0.14 : 0.06)) return;
+  const d = rng.pick(SHADY_SPONSORS);
+  const base = [0, 7000, 22000, 50000, 110000][s.tier];
+  const perSeason = Math.round((base * (1 + s.media / 90) * (0.85 + rng.next() * 0.3)) / 500) * 500;
+  s.shadyDeal = {
+    season: s.season,
+    name: d.name,
+    product: d.product,
+    pitch: d.pitch,
+    perSeason,
+    seasons: 2,
+    rep: -rng.int(4, 7),
+    media: 2,
+    from: mgr ? mgr.name : 'Kolega z siłowni',
+    status: 'open',
+  };
+}
+
+export function acceptShadyDeal(s0: GameState): GameState {
+  const d = s0.shadyDeal;
+  if (!d || d.status !== 'open' || d.season !== s0.season) return s0;
+  const s = clone(s0);
+  const x = s.shadyDeal!;
+  x.status = 'taken';
+  s.sponsors.push({ id: `shady-${s.season}`, name: x.name, perSeason: x.perSeason, seasonsLeft: x.seasons, clause: `reklamujesz: ${x.product}` });
+  s.rep = clamp(s.rep + x.rep, 0, 100);
+  s.media = clamp(s.media + x.media, 0, 100);
+  s.flags.shadyDeals = (s.flags.shadyDeals ?? 0) + 1;
+  log(s, `Sponsor: ${x.name} (${x.product}). Kasa jest, środowisko się śmieje.`);
+  return s;
+}
+
+export function refuseShadyDeal(s0: GameState): GameState {
+  if (!s0.shadyDeal || s0.shadyDeal.status !== 'open') return s0;
+  const s = clone(s0);
+  s.shadyDeal!.status = 'refused';
   return s;
 }
 
@@ -758,9 +811,9 @@ export function rehabYear(s0: GameState): GameState {
   return s;
 }
 
-// Wyjazdy na lata: sezony treningu zamiast walk (Dagestan, Floryda, Montreal)
+// Wyjazdy na lata: sezony treningu zamiast walk (Dagestan, Floryda, Trondheim)
 export interface Expedition {
-  id: 'dagestan' | 'floryda' | 'montreal';
+  id: 'dagestan' | 'floryda' | 'trondheim';
   name: string;
   place: string;
   years: number;
@@ -819,23 +872,23 @@ export const EXPEDITIONS: Expedition[] = [
     ],
   },
   {
-    id: 'montreal',
-    name: 'Montreal: Trzy Gwiazdy',
-    place: 'Kanada · szkoła techniki',
+    id: 'trondheim',
+    name: 'Trondheim',
+    place: 'Norwegia · sala nad fiordem',
     years: 1,
     maxAge: 36,
     cost: [0, 25000, 55000, 120000, 250000],
-    gains: { iq: [5, 8], stand: [3, 5], wrest: [2, 4], bjj: [1, 3], cardio: [1, 2], chin: [0, 1] },
-    ceiling: { iq: 5, stand: 2 },
+    gains: { cardio: [5, 8], stand: [3, 5], chin: [2, 4], iq: [2, 4], wrest: [1, 3], bjj: [1, 2] },
+    ceiling: { cardio: 5, chin: 3, stand: 2 },
     media: -2,
     rep: 2,
-    wear: -5,
-    desc: 'Jeden sezon u trenera, który rozpisuje walki jak partię szachów. Dobre także dla weteranów.',
+    wear: -10,
+    desc: 'Jeden sezon na północy: biegi po śniegu, sauna, przerębel i sparingi z Norwegami, którzy nigdy się nie męczą.',
     minus: 'Rok bez walk i bez gaż. Ranking przepada.',
-    log: 'Sezon w Montrealu. Taktyka, technika i zeszyt pełen notatek.',
+    log: 'Sezon w Trondheim. Śnieg, sauna i kondycja nie z tej ziemi.',
     stories: [
-      'Rok w Montrealu. Trener zatrzymuje sparing co minutę i pyta „dlaczego?”. Wracasz z zeszytem pełnym notatek i spokojem w głowie.',
-      'Mróz za oknem, a na sali tylko technika i plan. Po sezonie widzisz walkę dwa ruchy do przodu.',
+      'Rok w Trondheim. Słońce widziałeś może dwa razy, za to biegałeś po śniegu codziennie. Wracasz z płucami, które nie znają zmęczenia.',
+      'Sauna, przerębel, sparing i znowu sauna. Norwegowie mówią mało, ale biją równo przez pięć rund. Teraz ty też tak umiesz.',
     ],
   },
 ];
@@ -1459,6 +1512,40 @@ function buildOffer(rng: Rng, s: GameState, idx: number): FightOffer {
   };
 }
 
+/** Czy menedżer (albo znajomy promotor) podsunie walkę na odbudowę rekordu. */
+function tuneupWanted(rng: Rng, s: GameState, idx: number): boolean {
+  const run = s.run!;
+  if (s.tier < 2 || s.contract.kind === 'freak' || run.tuneupOffered || run.autoAccept) return false;
+  if (s.rank === 0) return false;
+  const bad = s.streak <= -1 || (s.rank === null && idx > 0) || (s.rank !== null && s.rank >= RANK_SIZE[s.tier] - 3);
+  if (!bad) return false;
+  return rng.chance(currentManager(s) ? 0.55 : 0.3);
+}
+
+export function buildTuneup(rng: Rng, s: GameState): FightOffer {
+  const g = rng.pick(TUNEUP_GALAS);
+  const pool = rng.chance(0.75) ? NAMES_TUNEUP[0] : NAMES_TUNEUP[1];
+  const opp = generateOpponent(rng, 1, null, false);
+  opp.firstName = rng.pick(pool.first);
+  opp.lastName = rng.pick(pool.last);
+  opp.country = pool.country;
+  opp.flag = pool.flag;
+  opp.nickname = rng.chance(0.7) ? rng.pick(TUNEUP_NICKS) : '';
+  opp.age = rng.int(34, 42);
+  const lvl = ovr(s.stats) - 8;
+  const prof = STYLE_PROFILE[opp.style];
+  opp.stats = mapStats((k) => clamp(Math.round(lvl + prof[k] * 0.6 + rng.int(-3, 3)), 8, 99));
+  const w = rng.int(5, 12);
+  opp.record = { w, l: w + rng.int(8, 16), d: rng.int(0, 2) };
+  opp.rank = null;
+  const purse = Math.round((s.contract.purse * (0.45 + rng.next() * 0.15)) / 100) * 100;
+  const mgr = currentManager(s);
+  const who = mgr ? mgr.name : 'Znajomy promotor';
+  const skad = pool.country === 'Słowacja' ? 'ze Słowacji' : 'z Czech';
+  const tip = `${who}: „Mam dla ciebie gościa ${skad}, ${opp.firstName} ${opp.lastName}, bilans ${recStr(opp.record)}. Wygrasz, odbudujesz rekord, trochę grosza wpadnie. Ludzie pogadają, ale kto by się przejmował.”`;
+  return { opp, title: false, defense: false, spot: 'wieczoru', gala: `${g.gala} · ${g.city}`, purse, winBonus: Math.round(purse * 0.3), negotiated: true, tuneup: true, tip };
+}
+
 export function seasonNext(s0: GameState): GameState {
   const s = clone(s0);
   const run = s.run;
@@ -1469,6 +1556,11 @@ export function seasonNext(s0: GameState): GameState {
   withRng(s, (rng) => {
     const idx = run.fights.length;
     if (!isAmateurRun(s)) {
+      if (tuneupWanted(rng, s, idx)) {
+        run.tuneupOffered = true;
+        run.offer = buildTuneup(rng, s);
+        return;
+      }
       const o = buildOffer(rng, s, idx);
       if (run.autoAccept) {
         const p = run.autoPrep ?? 'std';
@@ -1523,7 +1615,12 @@ const VENUES: { city: string; venue: string }[][] = [
 
 function makePoster(rng: Rng, s: GameState, rep: FightReport): FightReport['poster'] {
   const tier = Math.max(1, s.tier);
-  const v = rep.freak ? { city: rng.pick(['Warszawa', 'Łódź', 'Gliwice']), venue: 'Hala Expo' } : rng.pick(VENUES[tier]);
+  const tg = rep.tuneup ? TUNEUP_GALAS.find((x) => rep.gala?.startsWith(x.gala)) : undefined;
+  const v = rep.freak
+    ? { city: rng.pick(['Warszawa', 'Łódź', 'Gliwice']), venue: 'Hala Expo' }
+    : tg
+      ? { city: tg.city, venue: tg.venue }
+      : rng.pick(FED_VENUES[s.fed] ?? VENUES[tier]);
   const tags = ['Walka wieczoru', 'Co-main event', 'Karta główna', 'Karta główna', 'Karta wstępna', 'Karta wstępna'];
   const mine = rep.spot === 'wieczoru' ? 0 : rep.spot === 'główna' ? rng.int(1, 3) : rng.int(4, 5);
   const bouts: NonNullable<FightReport['poster']>['bouts'] = [];
@@ -1533,8 +1630,9 @@ function makePoster(rng: Rng, s: GameState, rep: FightReport): FightReport['post
       continue;
     }
     const rk = i <= 1 ? rng.int(1, 5) : i <= 3 ? rng.int(4, 12) : null;
-    const x = rep.freak ? generateFreak(rng) : generateOpponent(rng, tier, rk, false);
-    const y = rep.freak ? generateFreak(rng) : generateOpponent(rng, tier, rk === null ? null : rk + rng.int(1, 3), false);
+    const pt = rep.tuneup ? 1 : tier;
+    const x = rep.freak ? generateFreak(rng) : generateOpponent(rng, pt, rk, false);
+    const y = rep.freak ? generateFreak(rng) : generateOpponent(rng, pt, rk === null ? null : rk + rng.int(1, 3), false);
     bouts.push({ a: x.lastName, ar: x.freak ? 'freak' : recStr(x.record), b: y.lastName, br: y.freak ? 'freak' : recStr(y.record), tag: tags[i] });
   }
   bouts[mine].tag = tags[mine];
@@ -1578,8 +1676,10 @@ function startFight(rng: Rng, s: GameState, o: FightOffer) {
       purse: amateur ? 0 : o.purse,
       winBonus: amateur ? 0 : o.winBonus,
       rival: o.rival,
+      tuneup: o.tuneup,
       earned: 0,
     };
+    if (o.tuneup) rep.fed = o.gala;
     if (!amateur) rep.poster = makePoster(rng, s, rep);
     if (!amateur) {
       rep.prep = o.prep ?? 'std';
@@ -1715,7 +1815,7 @@ export function acceptAllOffers(s0: GameState, prep: 'std' | 'rival' | 'hard' = 
 
 // Konferencja przed galą: tylko przy dużych walkach (karta główna, rywal, pas)
 export function pressEligible(o: FightOffer) {
-  return !!(o.title || o.rival || o.spot === 'główna' || o.spot === 'wieczoru' || o.opp.freak);
+  return !o.tuneup && !!(o.title || o.rival || o.spot === 'główna' || o.spot === 'wieczoru' || o.opp.freak);
 }
 const PRESS_QUOTES = [
   'Ten {n} to zawodnik z przypadku. W klatce zobaczy, jak wygląda prawdziwe MMA.',
@@ -1830,6 +1930,15 @@ export function negotiateOffer(s0: GameState): GameState {
 
 export function declineOffer(s0: GameState): GameState {
   if (declineBlocked(s0) || !s0.run?.offer) return s0;
+  if (s0.run.offer.tuneup) {
+    const s = clone(s0);
+    withRng(s, (rng) => {
+      s.run!.notes = s.run!.notes ?? [];
+      s.run!.notes.push(`Odmawiasz walki na ${s0.run!.offer!.gala.split(' · ')[0]}. Federacja ma dla ciebie normalnego rywala.`);
+      s.run!.offer = buildOffer(rng, s, s.run!.fights.length);
+    });
+    return s;
+  }
   const s = clone(s0);
   const run = s.run!;
   const o = run.offer!;
@@ -1950,6 +2059,13 @@ function updateRank(s: GameState, rep: FightReport) {
     return;
   }
   const finish = rep.method === 'KO/TKO' || rep.method === 'Poddanie';
+  if (rep.tuneup) {
+    // walka poza federacją: lekki ruch w rankingu, za porażkę bolesny
+    if (res === 'W') s.rank = mine === null ? size : Math.max(1, mine - 1);
+    else if (res === 'L') s.rank = (mine ?? size) + 4;
+    if (s.rank !== null && s.rank > size) s.rank = null;
+    return;
+  }
   const cur = mine ?? size + 2;
   if (res === 'W') {
     let next: number;
@@ -2054,6 +2170,12 @@ function finalizeFight(rng: Rng, s: GameState, rep: FightReport) {
   if (rep.freak) {
     s.media = clamp(s.media + 5, 0, 100);
     s.rep = clamp(s.rep - 3, 0, 100);
+  }
+  if (rep.tuneup) {
+    // obijanie słabeuszy: środowisko widzi, co robisz
+    s.rep = clamp(s.rep - (res === 'W' ? 4 : 8), 0, 100);
+    if (res !== 'W') s.media = clamp(s.media - 4, 0, 100);
+    s.flags.tuneups = (s.flags.tuneups ?? 0) + 1;
   }
 
   // zużycie i kontuzje
@@ -2475,14 +2597,14 @@ export function buildMarket(rng: Rng, s: GameState) {
       (ovr(s.stats) >= TIER_LEVEL[s.tier + 1] + 4 && seasonW >= 2));
   if (eligible) {
     const nt = s.tier + 1;
-    const n = nt >= 3 ? 1 : 2;
+    const n = 2;
     const used = new Set<string>();
     for (let i = 0; i < n; i++) {
       const sr = rng.chance(0.3) && s.rank === 0 ? rng.int(6, RANK_SIZE[nt]) : null;
       const c = contractFor(rng, s, nt, 'promotion', sr);
       if (used.has(c.fed)) continue;
       used.add(c.fed);
-      c.note = s.rank === 0 ? 'Chcą sprawdzić, ile jest wart mistrz z niższej półki.' : 'Krok wyżej: mocniejsi rywale i lepsze pieniądze.';
+      c.note = (s.rank === 0 ? 'Chcą sprawdzić, ile jest wart mistrz z niższej półki.' : 'Krok wyżej: mocniejsi rywale i lepsze pieniądze.') + (FED_NOTES[c.fed] ? ` ${FED_NOTES[c.fed]}` : '');
       if (nt >= 3 && s.rep < 18) {
         c.available = false;
         c.reason = 'lepsza reputacja w środowisku';
@@ -2496,6 +2618,20 @@ export function buildMarket(rng: Rng, s: GameState) {
     c.reason = s.rank === null ? 'miejsce w rankingu' : `top ${s.tier >= 2 ? 2 : 3} rankingu (teraz jesteś #${s.rank})`;
     c.note = 'Wyższa federacja cię obserwuje.';
     contracts.push(c);
+  }
+
+  // transfer do innej federacji na tym samym poziomie (zagranica)
+  if (s.tier >= 3 && !cut && rng.chance(s.rank !== null && s.rank <= 8 ? 0.6 : 0.35)) {
+    const others = TIER_FEDS[s.tier].filter((f) => f !== s.fed && !contracts.some((c) => c.fed === f));
+    if (others.length) {
+      const sr = s.rank === null ? null : clamp(s.rank + rng.int(-2, 3), 1, RANK_SIZE[s.tier]);
+      const c = contractFor(rng, s, s.tier, 'side', sr === 0 ? 1 : sr);
+      c.fed = rng.pick(others);
+      c.purse = Math.round((c.purse * (1 + rng.next() * 0.25)) / 500) * 500;
+      c.winBonus = Math.round(c.purse * 0.7);
+      c.note = `Transfer: ${sr === null ? 'zaczynasz bez rankingu' : `startujesz z miejsca #${sr}`}. ${FED_NOTES[c.fed] ?? 'Nowa federacja, nowi rywale.'}`;
+      contracts.push(c);
+    }
   }
 
   // spadek
@@ -2661,6 +2797,10 @@ export function confirmMarket(s0: GameState): GameState {
       if (prevTier === 0) log(s, `Przechodzisz na zawodowstwo: ${c.fed}.`);
       else if (c.tier > prevTier) log(s, `Awans: ${c.fed}.`);
       else log(s, `Krok w tył: ${c.fed}.`);
+    } else if (c.fed !== s.fed && c.kind === 'side') {
+      s.rank = c.startRank;
+      s.titleDefenses = 0;
+      log(s, `Transfer: ${c.fed}.`);
     }
     s.fed = c.fed;
   }

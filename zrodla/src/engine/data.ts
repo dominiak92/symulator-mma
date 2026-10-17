@@ -205,9 +205,74 @@ export const TIER_FEDS: string[][] = [
   // parodie jak auta w GTA: brzmią znajomo, ale to nie te gale
   ['Babel MMA', 'Armada Fight Night', 'Thunderbolt Fight League'],
   ['XSW – Ekstremalne Starcia Wojowników', 'FAN – Fight Absolute Night'],
-  ['Cage Worriers', 'Hexagon MMA', 'Brava CF'],
-  ['UFL – Ultimate Fighting League'],
+  ['Cage Worriers', 'Hexagon MMA', 'Brava CF', 'Oktagram MMA'],
+  ['UFL – Ultimate Fighting League', 'Balettor MMA', 'TWO FC – Two Fighting Championship', 'PLF – Professional League of Fighters'],
 ];
+
+/** Krótki opis federacji przy ofercie kontraktu (parodie). */
+export const FED_NOTES: Record<string, string> = {
+  'Oktagram MMA': 'Czesko-słowacka federacja: hale pełne, piwo tanie, a kibice śpiewają przez całą walkę.',
+  'Brava CF': 'Gale od Bahrajnu po Brazylię. Dużo latania, dobre hotele.',
+  'Cage Worriers': 'Kuźnia talentów z Wysp. Stąd najczęściej idzie się do UFL.',
+  'Hexagon MMA': 'Francusko-belgijska gala w sześciokątnej klatce. Sędziowie lubią parter.',
+  'UFL – Ultimate Fighting League': 'Najbardziej znana liga na świecie. Pieniądze i sława, ale rywale z samego topu.',
+  'Balettor MMA': 'Amerykańska liga, co druga gala w kasynie. Płacą dobrze, a turnieje Grand Prix to szansa na szybki pas.',
+  'TWO FC – Two Fighting Championship': 'Azja: Singapur, Bangkok, Manila. Hale na 20 tysięcy i ważenie z badaniem nawodnienia.',
+  'PLF – Professional League of Fighters': 'Liga sezonowa z play-offami. Wygrywasz turniej, dostajesz czek na milion.',
+};
+
+/** Hale dla federacji z innych kontynentów (reszta bierze listę ze szczebla). */
+export const FED_VENUES: Record<string, { city: string; venue: string }[]> = {
+  'Oktagram MMA': [
+    { city: 'Praga', venue: 'Hala na Libni' },
+    { city: 'Bratysława', venue: 'Zimný štadión' },
+    { city: 'Ostrawa', venue: 'Hala w Witkowicach' },
+  ],
+  'Balettor MMA': [
+    { city: 'Uncasville', venue: 'Arena w kasynie' },
+    { city: 'Los Angeles', venue: 'Forum' },
+    { city: 'Dublin', venue: 'Arena Liffey' },
+  ],
+  'TWO FC – Two Fighting Championship': [
+    { city: 'Singapur', venue: 'Indoor Stadium' },
+    { city: 'Bangkok', venue: 'Lumpinee Arena' },
+    { city: 'Manila', venue: 'Mall of Asia Arena' },
+    { city: 'Dżakarta', venue: 'Istora Senayan' },
+  ],
+  'PLF – Professional League of Fighters': [
+    { city: 'Nowy Jork', venue: 'Hulu Theater' },
+    { city: 'Rijad', venue: 'Kingdom Arena' },
+    { city: 'Atlanta', venue: 'Overtime Elite Arena' },
+  ],
+};
+
+/** Dziwne gale na walki „na odbudowę” (Słowacja, Czechy, przygraniczne hale). */
+export const TUNEUP_GALAS: { gala: string; city: string; venue: string }[] = [
+  { gala: 'Tatra Fight Night 4', city: 'Poprad', venue: 'Hala zimowego stadionu' },
+  { gala: 'Bitka pod Hradem 9', city: 'Trenczyn', venue: 'Hala sportowa przy zamku' },
+  { gala: 'Kemping Fight Show', city: 'Liptowski Mikułasz', venue: 'Namiot przy aquaparku' },
+  { gala: 'Noc Wojowników 2', city: 'Dolny Kubin', venue: 'Sala gimnastyczna gimnazjum' },
+  { gala: 'Halušky Fight Club 11', city: 'Żylina', venue: 'Hala targowa' },
+  { gala: 'Granica Cup', city: 'Czadca', venue: 'Dyskoteka Galaxy' },
+];
+
+/** Dziwni sponsorzy, których podsuwa menedżer: kasa jest, gorzej z wizerunkiem. */
+export const SHADY_SPONSORS: { name: string; product: string; pitch: string }[] = [
+  { name: 'Suple-Max Turbo', product: 'suplement na porost włosów i bicepsa jednocześnie', pitch: 'Raz w tygodniu filmik, jak pijesz to coś zielonego i mówisz „czuję moc”.' },
+  { name: 'Kebab u Mirka', product: 'kebab w cieście z podwójnym sosem czosnkowym', pitch: 'Logo na spodenkach i zdjęcie z kebabem po każdej walce. Także po ważeniu.' },
+  { name: 'Biuro Matrymonialne Serduszko', product: 'randki dla samotnych rolników', pitch: 'Wchodzisz do klatki przy piosence z ich reklamy. Mirek z marketingu już ją nagrał.' },
+  { name: 'Lotto-Typer Pewniak', product: 'aplikacja z typami bukmacherskimi', pitch: 'Wrzucasz ich kod rabatowy na każdą relację. Federacja może krzywo patrzeć.' },
+  { name: 'Kryptowaluta MMAcoin', product: 'kryptowaluta, której nikt nie rozumie', pitch: 'Płacą z góry, w złotówkach. Na razie.' },
+  { name: 'Ocet Jabłkowy Babuni', product: 'ocet jabłkowy na wszystko', pitch: 'Mówisz w wywiadach, że ocet to twój sekret kondycji. Trener płacze.' },
+  { name: 'Pompy Ciepła Grzejpol', product: 'pompy ciepła z montażem gratis', pitch: 'Reklama w lokalnej telewizji: stoisz w kąpielówkach przy pompie i mówisz „ciepło jak po trzeciej rundzie”.' },
+  { name: 'Energetyk Wściekły Byk', product: 'napój energetyczny o smaku gumy balonowej', pitch: 'Wypijasz puszkę na konferencji, przed kamerą, na raz.' },
+];
+
+export const NAMES_TUNEUP: NamePool[] = [
+  { country: 'Słowacja', flag: '🇸🇰', first: ['Marek', 'Jozef', 'Peter', 'Ľuboš', 'Miroslav', 'Dušan', 'Igor'], last: ['Horváth', 'Kováč', 'Baláž', 'Varga', 'Tóth', 'Šimko', 'Hudák'] },
+  { country: 'Czechy', flag: '🇨🇿', first: ['Pavel', 'Radek', 'Zdeněk', 'Jiří', 'Libor'], last: ['Dvořák', 'Procházka', 'Kratochvíl', 'Veselý', 'Pokorný'] },
+];
+export const TUNEUP_NICKS = ['Dziadek', 'Weteran', 'Tatranský Medveď', 'Kotlina', 'Ostatni Mohikanin', 'Bulwa', 'Taxi', 'Pan Kanapka'];
 
 export const FREAK_FEDS = ['Flame MMA', 'Primo MMA', 'Hype League', 'Klout MMA'];
 

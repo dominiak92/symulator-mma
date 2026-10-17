@@ -239,6 +239,8 @@ export interface FightReport {
   poster?: { city: string; venue: string; bouts: { a: string; ar: string; b: string; br: string; tag: string }[] };
   winBonus?: number;
   rival?: boolean;
+  /** walka na odbudowę rekordu (słaby rywal na dziwnej gali) */
+  tuneup?: boolean;
   cards?: [number, number][];
   headline?: string;
 }
@@ -285,6 +287,8 @@ export interface SeasonRun {
   mgrFocus?: boolean;
   /** krótkie notki z sezonu (odrzucone oferty itp.) */
   notes?: string[];
+  /** czy w tym sezonie była już propozycja walki na odbudowę */
+  tuneupOffered?: boolean;
 }
 
 export interface FightOffer {
@@ -306,6 +310,10 @@ export interface FightOffer {
   pressQuote?: string;
   /** komunikat po negocjacjach */
   note?: string;
+  /** walka na odbudowę rekordu: słaby rywal z ujemnym bilansem na dziwnej gali */
+  tuneup?: boolean;
+  /** podpowiedź menedżera przy ofercie */
+  tip?: string;
 }
 
 export interface SeasonSummary {
@@ -401,6 +409,8 @@ export interface GameState {
   sponsors: Sponsor[];
   /** wynik ostatniego szukania sponsora na własną rękę */
   pitch?: { season: number; ok: boolean; text: string; name?: string; slot: string } | null;
+  /** dziwny sponsor podsunięty przez menedżera (oferta na ten sezon) */
+  shadyDeal?: { season: number; name: string; product: string; perSeason: number; seasons: number; rep: number; media: number; pitch: string; from: string; status: 'open' | 'taken' | 'refused' } | null;
   loans: Loan[];
   /** kategoria, w której walczysz (domyślnie naturalna z profilu) */
   division?: WeightKey;
