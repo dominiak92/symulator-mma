@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState, type CSSProperties } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
+import { createPortal } from 'react-dom';
 import type { CardSpot, DecisionOption, FightReport, GameState, Moment } from '../../engine/types';
 import { SEASON_FORMS, STAGE_LABELS, STAT_LABELS, STYLE_LABELS } from '../../engine/data';
 import { decide, mainRecord, recStr, seasonNext, seasonSkip, toSummary } from '../../engine/game';
@@ -226,6 +227,27 @@ function LiveCard({ g, f, start, animate, setGame }: { g: GameState; f: FightRep
             : `ranking #${f.rankBefore} → #${f.rankAfter}`
       : null;
 
+  const sheetMode = typeof window !== 'undefined' && window.innerWidth < 900;
+  const decision = pending ? (
+    <div className="decision" id="decision">
+      <div className="decision-head">
+        <span className="tag gold">
+          <Icon name="target" size={13} />
+          Twoja decyzja
+        </span>
+        <span className="faint">przed rundą {pending.round}</span>
+      </div>
+      <h3>{pending.title}</h3>
+      <p className="decision-text">{pending.text}</p>
+      <CoachTip id="decision">Procent to szansa, że plan wejdzie. Bezpieczny wybór wchodzi częściej, ryzyko może skończyć walkę.</CoachTip>
+      <div className="choice-list">
+        {pending.options.map((o) => (
+          <OptionButton key={o.key} o={o} onPick={() => setGame(decide(g, o.key))} />
+        ))}
+      </div>
+    </div>
+  ) : null;
+
   return (
     <article className={`live ${f.title ? 'title-bout' : ''} ${done ? `done res-${f.result ?? 'X'}` : ''} ${animate ? 'anim' : ''}`} id="live-fight">
       <div className="live-ctx">
@@ -329,28 +351,92 @@ function LiveCard({ g, f, start, animate, setGame }: { g: GameState; f: FightRep
         </div>
       )}
 
-      {pending && (
-        <div className="decision m-anim" style={d(decisionAt)} id="decision">
-          <div className="decision-head">
-            <span className="tag gold">
-              <Icon name="target" size={13} />
-              Twoja decyzja
-            </span>
-            <span className="faint">przed rundą {pending.round}</span>
+      {pending &&
+        (sheetMode ? (
+          createPortal(
+            <div className="decision-sheet" style={d(decisionAt)}>
+              {decision}
+            </div>,
+            document.body,
+          )
+        ) : (
+          <div className="m-anim" style={d(decisionAt)}>
+            {decision}
           </div>
-          <h3>{pending.title}</h3>
-          <p className="decision-text">{pending.text}</p>
-          <CoachTip id="decision">
-        Procent to szansa, że plan wejdzie. Bezpieczny wybór wchodzi częściej, ryzyko może skończyć walkę.
-      </CoachTip>
-          <div className="choice-list">
-            {pending.options.map((o) => (
-              <OptionButton key={o.key} o={o} onPick={() => setGame(decide(g, o.key))} />
-            ))}
+        ))}
+    </article>
+  );
+}
+
+const INTRO_MS = 2800;
+const NEXT_MS = 4000;
+
+const SCOUT: Record<string, string> = {
+  boxer: 'Groźny w stójce. Spróbuj sprowadzić go do parteru.',
+  kickboxer: 'Kopie z dystansu. Skracaj dystans i wiąż go w klinczu.',
+  wrestler: 'Będzie obalał. Pilnuj nóg i wstawaj spod siatki.',
+  grappler: 'Szuka poddań. Nie dawaj mu pleców, trzymaj go w stójce.',
+  brawler: 'Twarda głowa i ciężka ręka. Nie wdawaj się w otwarte wymiany.',
+  allround: 'Bez wyraźnych słabości. Zdecyduje forma dnia.',
+};
+
+/** Zapowiedź walki: krótki „plakat” przed każdą walką. */
+function FightIntro({ g, f, n, total, onGo }: { g: GameState; f: FightReport; n: number; total: number | null; onGo: () => void }) {
+  const o = f.opp;
+  const head = f.amateur ? (f.stage ? STAGE_LABELS[f.stage] : 'Walka') : total ? `Walka ${n} z ${total}` : `Walka ${n}`;
+  return (
+    <div className="fight-intro" role="dialog" aria-modal="true" aria-label={`Zapowiedź: ${head}`} onClick={onGo}>
+      <div className={`fi-card ${f.title ? 'title-bout' : ''}`} onClick={(e) => e.stopPropagation()}>
+        <div className="fi-top">
+          <span className="fi-num">{head}</span>
+          <span className="fi-ctx">{contextLine(f).split(' · ').slice(f.amateur ? 1 : 0).join(' · ')}</span>
+        </div>
+        {f.title && (
+          <div className="fi-belt">
+            <Icon name="trophy" size={16} />
+            {f.defense ? 'Obrona pasa' : 'Walka o pas'}
+          </div>
+        )}
+        <div className="fi-vs">
+          <div className="fi-side me">
+            <Fighter seed={`${g.profile.firstName}${g.profile.lastName}`} corner="blue" shorts={clubCrest(g.club).bg} size={96} belt={g.rank === 0 && !f.amateur} />
+            <b>{g.profile.lastName}</b>
+            <small>{recStr(mainRecord(g))}</small>
+          </div>
+          <span className="fi-word">VS</span>
+          <div className="fi-side opp">
+            <Fighter seed={`${o.firstName}${o.lastName}`} corner="red" size={96} mirror />
+            <b>{o.lastName}</b>
+            <small>
+              {o.flag} {o.freak ? o.freak : `${recStr(o.record)} · ${STYLE_LABELS[o.style].toLowerCase()}`}
+            </small>
           </div>
         </div>
-      )}
-    </article>
+        <div className="fi-tags">
+          {f.peer && (
+            <span className="tag blue">
+              <Icon name="users" size={12} />z twojego rocznika
+            </span>
+          )}
+          {!f.amateur && !o.freak && o.rank !== null && (
+            <span className="tag">
+              <Icon name="trophy" size={12} />
+              {o.rank === 0 ? 'mistrz' : `#${o.rank} w rankingu`}
+            </span>
+          )}
+          {f.spot === 'wieczoru' && <span className="tag gold">main event</span>}
+        </div>
+        <p className="fi-scout">
+          <Icon name="target" size={14} />
+          {o.freak ? 'Freak fight. Kamery, hałas i cyrk. Nie daj się wyprowadzić z równowagi.' : SCOUT[o.style]}
+        </p>
+        <button className="btn btn-primary btn-block btn-ico fi-go" onClick={onGo}>
+          <Icon name="glove" />
+          Do walki!
+          <i className="fi-timer" style={{ animationDuration: `${INTRO_MS}ms` }} />
+        </button>
+      </div>
+    </div>
   );
 }
 
@@ -367,19 +453,39 @@ export default function Season({ game, setGame }: StepProps) {
 
   const last = run.fights[run.fights.length - 1];
   const waiting = !!last?.sim.pending;
+  const anim = animate && !fast;
+
+  // zapowiedź nowej walki (przed pokazaniem karty)
+  const seenIntro = useRef(-1);
+  const [introIdx, setIntroIdx] = useState<number | null>(null);
+  const needIntro = !!last && anim && last.idx > seenIntro.current;
+  useLayoutEffect(() => {
+    if (!last || last.idx <= seenIntro.current) return;
+    seenIntro.current = last.idx;
+    if (anim) setIntroIdx(last.idx);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [last?.idx]);
+  const introOpen = !!last && ((introIdx !== null && introIdx === last.idx) || needIntro);
+
+  useEffect(() => {
+    if (introIdx === null) return;
+    const t = setTimeout(() => setIntroIdx(null), INTRO_MS);
+    return () => clearTimeout(t);
+  }, [introIdx]);
 
   // od której rundy animować bieżącą walkę (po decyzji: od miejsca przerwania)
   const prev = useRef<{ idx: number; round: number; fin: boolean } | null>(null);
   const startRef = useRef(0);
-  if (last) {
+  if (last && !introOpen) {
     const p = prev.current;
     if (!p || p.idx !== last.idx) startRef.current = 0;
     else if (p.round !== last.sim.round || p.fin !== last.sim.finished) startRef.current = p.round;
     prev.current = { idx: last.idx, round: last.sim.round, fin: last.sim.finished };
   }
   const start = startRef.current;
-  const anim = animate && !fast;
   const revealMs = !last ? 0 : last.sim.finished ? (Math.max(last.round, start) - start) * ROUND_MS + 700 : (last.sim.round - start) * ROUND_MS + 300;
+  const finishedNow = !!last?.sim.finished;
+  const nextReady = finishedNow && !run.done && !introOpen;
 
   useEffect(() => {
     if (!spinning) return;
@@ -387,31 +493,25 @@ export default function Season({ game, setGame }: StepProps) {
     return () => clearTimeout(t);
   }, [spinning]);
 
-  useEffect(() => {
-    if (spinning || run.done || waiting) return;
-    const delay = !animate ? 0 : fast ? 260 : run.fights.length === 0 ? 400 : revealMs + 1500;
-    const t = setTimeout(() => setGame(seasonNext(gameRef.current)), delay);
-    return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [spinning, run.done, waiting, run.fights.length, fast, animate, setGame]);
+  const advance = () => setGame(seasonNext(gameRef.current));
 
-  // przewijanie: bieżąca walka → decyzja → koniec sezonu
+  // pierwsza walka i kolejne: po wyniku chwila przerwy (albo przycisk „Następna walka”)
   useEffect(() => {
-    if (!last) return;
-    const behavior: ScrollBehavior = animate ? 'smooth' : 'auto';
-    const el = document.getElementById('live-fight');
-    el?.scrollIntoView({ behavior, block: 'start' });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [last?.idx]);
-  useEffect(() => {
-    if (!waiting) return;
-    const t = setTimeout(
-      () => document.getElementById('decision')?.scrollIntoView({ behavior: animate ? 'smooth' : 'auto', block: 'start' }),
-      anim ? revealMs : 0,
-    );
+    if (spinning || run.done || waiting || introOpen) return;
+    if (last && !last.sim.finished) return;
+    const delay = !animate ? 0 : fast ? 260 : !last ? 400 : revealMs + NEXT_MS;
+    const t = setTimeout(advance, delay);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [waiting]);
+  }, [spinning, run.done, waiting, introOpen, last?.idx, finishedNow, fast, animate]);
+
+  // przewijanie do karty walki (cała karta na ekranie), na koniec do przycisku
+  useEffect(() => {
+    if (!last || introOpen) return;
+    const t = setTimeout(() => document.getElementById('live-fight')?.scrollIntoView({ behavior: animate ? 'smooth' : 'auto', block: 'start' }), 30);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [last?.idx, introOpen]);
   useEffect(() => {
     if (!run.done) return;
     const t = setTimeout(() => window.scrollTo({ top: document.body.scrollHeight, behavior: animate ? 'smooth' : 'auto' }), anim ? revealMs : 0);
@@ -428,24 +528,25 @@ export default function Season({ game, setGame }: StepProps) {
     });
 
   // bilans aktualizuje się dopiero po „odsłonięciu” wyniku walki
-  const lastKey = last ? `${last.idx}-${last.sim.finished}` : '';
+  const lastKey = last ? `${last.idx}-${last.sim.finished}-${introOpen ? 'i' : ''}` : '';
   const [revealedKey, setRevealedKey] = useState(lastKey);
   useEffect(() => {
     if (!anim) {
       setRevealedKey(lastKey);
       return;
     }
+    if (introOpen) return;
     const t = setTimeout(() => setRevealedKey(lastKey), revealMs - 300);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lastKey, anim]);
-  const counted = revealedKey === lastKey ? run.fights : run.fights.slice(0, -1);
+  const counted = revealedKey === lastKey && !introOpen ? run.fights : run.fights.slice(0, -1);
   const w = counted.filter((f) => f.result === 'W').length;
   const l = counted.filter((f) => f.result === 'L').length;
   const dr = counted.filter((f) => f.result === 'D').length;
   const amateur = !!run.tourneys;
   const recKey = `${w}-${l}-${dr}`;
-  const lastRes = last?.sim.finished && revealedKey === lastKey ? last.result : null;
+  const lastRes = last?.sim.finished && revealedKey === lastKey && !introOpen ? last.result : null;
 
   // co jeszcze przed nami
   const upcoming: string[] = [];
@@ -464,8 +565,10 @@ export default function Season({ game, setGame }: StepProps) {
     }
   }
 
+  const fightsShown = introOpen ? run.fights.slice(0, -1) : run.fights;
+
   return (
-    <section className="step season-step">
+    <section className={`step season-step ${waiting ? 'has-decision' : ''}`}>
       <div className="kicker season-kicker">{amateur ? 'Turnieje amatorskie' : g.contract.kind === 'freak' ? g.contract.fed : g.fed}</div>
       <div className="season-head">
         <h2>Sezon {g.season}</h2>
@@ -482,7 +585,7 @@ export default function Season({ game, setGame }: StepProps) {
       <FormReel g={g} spinning={spinning} />
 
       <CoachTip id="season">
-        Walki lecą same, a ekran sam przewija się do bieżącej. Przyciski na dole przyspieszają sezon albo od razu pokazują wyniki.
+        Przed każdą walką zobaczysz zapowiedź rywala. Walka toczy się sama, a w ważnym momencie trener zapyta cię o plan. Po walce przejdziesz dalej przyciskiem na dole.
       </CoachTip>
       {run.intro.length > 0 && (
         <details className="intro-notes">
@@ -494,12 +597,20 @@ export default function Season({ game, setGame }: StepProps) {
       )}
 
       <div className="fight-list">
-        {run.fights.map((f, i) =>
+        {fightsShown.map((f, i) =>
           i === run.fights.length - 1 ? (
             <LiveCard key={f.idx} g={g} f={f} start={start} animate={anim} setGame={setGame} />
           ) : (
             <FightRow key={f.idx} f={f} open={openIdx.has(i)} onToggle={() => toggle(i)} />
           ),
+        )}
+        {introOpen && last && (
+          <div className="upcoming next-up">
+            <span className="res-badge sm X">
+              <Icon name="glove" size={14} />
+            </span>
+            {last.amateur && last.stage ? STAGE_LABELS[last.stage] : `Walka ${run.fights.length}`} · {last.opp.firstName} {last.opp.lastName}
+          </div>
         )}
         {upcoming.map((u, i) => (
           <div className="upcoming" key={`u${i}`}>
@@ -511,16 +622,24 @@ export default function Season({ game, setGame }: StepProps) {
         ))}
       </div>
 
-      {!run.done && !waiting && (
+      {!run.done && !waiting && !introOpen && (
         <div className="play-ctrl" role="group" aria-label="Tempo sezonu">
-          <button className={`icon-pill ${fast ? 'on' : ''}`} onClick={() => setFast((x) => !x)} aria-pressed={fast}>
+          {nextReady && anim && (
+            <button className="icon-pill next" onClick={advance} style={d(revealMs)}>
+              Następna walka
+              <Icon name="play" size={12} />
+              <i className="next-timer" style={{ animationDelay: `${revealMs}ms`, animationDuration: `${NEXT_MS}ms` }} />
+            </button>
+          )}
+          <button className={`icon-pill ${fast ? 'on' : ''}`} onClick={() => setFast((x) => !x)} aria-pressed={fast} aria-label={fast ? 'Wolniej' : 'Szybciej'}>
             <Icon name="ff" size={16} />
-            {fast ? 'Szybko' : 'Szybciej'}
+            {nextReady && anim ? '' : fast ? 'Szybko' : 'Szybciej'}
           </button>
           <button
             className="icon-pill"
             onClick={() => {
               setSpinning(false);
+              setIntroIdx(null);
               setGame(seasonSkip(gameRef.current));
             }}
           >
@@ -537,6 +656,10 @@ export default function Season({ game, setGame }: StepProps) {
             Podsumowanie sezonu
           </button>
         </div>
+      )}
+
+      {introOpen && last && (
+        <FightIntro g={g} f={last} n={run.fights.length} total={amateur ? null : run.planned} onGo={() => setIntroIdx(null)} />
       )}
     </section>
   );

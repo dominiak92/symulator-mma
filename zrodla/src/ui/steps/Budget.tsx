@@ -1,5 +1,6 @@
 import { STAT_LABELS } from '../../engine/data';
-import { budgetBalance, budgetLines, expectedPurses, loanOffer, startSeason, takeLoan } from '../../engine/game';
+import { OVERDRAFT, breakPreview, budgetBalance, budgetLines, canStartSeason, expectedPurses, loanOffer, loanRefusal, startSeason, takeBreakYear, takeLoan } from '../../engine/game';
+import { useState } from 'react';
 import type { StatKey } from '../../engine/types';
 import { money, plural } from '../../format';
 import type { StepProps } from '../Game';
@@ -13,6 +14,10 @@ export default function Budget({ game, setGame }: StepProps) {
   const bal = budgetBalance(g);
   const after = g.money + bal;
   const loan = loanOffer(g);
+  const refusal = loanRefusal(g);
+  const brk = breakPreview(g);
+  const canStart = canStartSeason(g);
+  const [confirmBreak, setConfirmBreak] = useState(false);
   const purses = expectedPurses(g);
   const gains = Object.entries(g.lastGains).filter(([, v]) => (v ?? 0) > 0) as [StatKey, number][];
 
@@ -101,23 +106,66 @@ export default function Budget({ game, setGame }: StepProps) {
         </p>
       )}
 
-      {loan && (
-        <div className="warn">
-          Brakuje ci pieniędzy. Bank daje {money(loan.amount)} kredytu, spłata w {loan.count} ratach po {money(loan.installment)}, pierwsza za rok.
-          <div className="row wrap" style={{ marginTop: 10 }}>
-            <button className="btn btn-small btn-gold btn-ico" onClick={() => setGame(takeLoan(g))}>
-              <Icon name="card" size={15} />
-              Biorę kredyt
-            </button>
-            <span className="small">Bez kredytu wchodzisz w sezon na minusie, a duże długi zabierają czas na trening.</span>
+      {after < 0 && (
+        <div className="money-trouble">
+          <div className="mt-head">
+            <Icon name="card" size={18} />
+            <b>Brakuje ci {money(-after)}</b>
           </div>
+          {loan ? (
+            <div className="mt-opt">
+              <div>
+                <strong>Kredyt w banku</strong>
+                <span>
+                  {money(loan.amount)} teraz, potem {loan.count} raty po {money(loan.installment)}. Kolejny dostaniesz dopiero po spłacie.
+                </span>
+              </div>
+              <button className="btn btn-small btn-gold btn-ico" onClick={() => setGame(takeLoan(g))}>
+                <Icon name="card" size={15} />
+                Biorę kredyt
+              </button>
+            </div>
+          ) : (
+            <p className="mt-refusal">{refusal ?? 'Bank nie da ci więcej.'}</p>
+          )}
+          <div className="mt-opt">
+            <div>
+              <strong>Rok przerwy: idziesz do pracy</strong>
+              <span>
+                Zarobisz {money(brk.salary)}
+                {brk.installments ? `, spłacisz raty (${money(brk.installments)})` : ''} i zostanie ci {money(brk.after)}. Ale obóz przepada, umiejętności spadną
+                (kondycja najbardziej){g.tier > 0 ? ', a z rankingu wypadniesz' : ''}.
+              </span>
+            </div>
+            {confirmBreak ? (
+              <div className="row" style={{ gap: 6 }}>
+                <button className="btn btn-small btn-ghost" onClick={() => setConfirmBreak(false)}>
+                  Nie
+                </button>
+                <button className="btn btn-small btn-primary btn-ico" onClick={() => setGame(takeBreakYear(g))}>
+                  <Icon name="briefcase" size={15} />
+                  Tak, idę do pracy
+                </button>
+              </div>
+            ) : (
+              <button className="btn btn-small btn-ghost btn-ico" onClick={() => setConfirmBreak(true)}>
+                <Icon name="briefcase" size={15} />
+                Rok przerwy
+              </button>
+            )}
+          </div>
+          {canStart ? (
+            <p className="mt-note">Możesz też wejść w sezon na lekkim minusie (do {money(OVERDRAFT)}), ale długi zabierają czas na trening.</p>
+          ) : (
+            <p className="mt-note bad">Z takim minusem nie wystartujesz. Weź kredyt albo zrób rok przerwy.</p>
+          )}
         </div>
       )}
 
       <div className="cta-bar">
-        <button className="btn btn-primary btn-block btn-ico" onClick={() => setGame(startSeason(g))}>
+        <button className="btn btn-primary btn-block btn-ico" disabled={!canStart} onClick={() => setGame(startSeason(g))}>
           <Icon name="glove" />
-          Zaczynam sezon
+          {canStart ? 'Zaczynam sezon' : 'Brakuje pieniędzy na sezon'}
         </button>
       </div>
     </section>
