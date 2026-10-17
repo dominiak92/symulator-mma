@@ -491,7 +491,7 @@ export function takeBreakYear(s0: GameState): GameState {
     // obóz przepada, a forma leci w dół
     for (const k of Object.keys(s.stats) as StatKey[]) {
       const gain = s.lastGains[k] ?? 0;
-      const drop = k === 'cardio' ? rng.int(3, 5) : k === 'iq' ? rng.int(0, 1) : rng.int(1, 3);
+      const drop = k === 'cardio' ? rng.int(4, 6) : k === 'iq' ? rng.int(0, 1) : k === 'chin' ? rng.int(0, 2) : rng.int(2, 4);
       s.stats[k] = clamp(s.stats[k] - gain - drop, 1, 99);
     }
     s.lastGains = {};
