@@ -63,6 +63,12 @@ export default function Game({
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'auto' });
+    // fokus na nagłówek nowego ekranu (klawiatura i czytniki ekranu nie zostają „w powietrzu”)
+    const h = document.querySelector<HTMLElement>('.main h2');
+    if (h && (document.activeElement === document.body || !document.activeElement?.isConnected)) {
+      h.tabIndex = -1;
+      h.focus({ preventScroll: true });
+    }
   }, [g.phase, g.season]);
 
   // blokada podwójnego stuknięcia: zaraz po zmianie ekranu przycisk w tym samym miejscu

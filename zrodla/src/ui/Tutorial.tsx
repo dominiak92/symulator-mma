@@ -39,17 +39,17 @@ const SLIDES: Slide[] = [
   },
   {
     title: 'Walczysz i decydujesz',
-    text: 'Walki toczą się same, a ty oglądasz je na żywo. W ważnym momencie trener pyta o plan. Procent przy wyborze to szansa, że się uda.',
+    text: 'Walki toczą się same, a ty oglądasz je na żywo. W ważnym momencie trener pyta o plan. Pewny wybór daje mało, ryzyko może skończyć walkę albo ciebie. Patrz na karty i siły.',
     art: (
       <div className="tut-choice">
         <div className="tut-opt">
           <b>Obalamy i dociskamy</b>
-          <span className="tone-good">72%</span>
+          <span className="tone-good">raczej wyjdzie</span>
           <i style={{ width: '72%' }} className="good" />
         </div>
         <div className="tut-opt">
           <b>Szukamy nokautu</b>
-          <span className="tone-bad">31%</span>
+          <span className="tone-bad">ryzykowne</span>
           <i style={{ width: '31%' }} className="bad" />
         </div>
       </div>

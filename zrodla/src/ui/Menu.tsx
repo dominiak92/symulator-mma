@@ -109,7 +109,7 @@ export default function Menu({
             </span>
             <div>
               <strong>Walcz</strong>
-              <span>Walki toczą się na żywo. W ważnych momentach wybierasz plan, a procent pokazuje twoją szansę.</span>
+              <span>Walki toczą się na żywo. W ważnych momentach wybierasz plan: bezpiecznie, na punkty albo po kończenie.</span>
             </div>
           </li>
           <li>
