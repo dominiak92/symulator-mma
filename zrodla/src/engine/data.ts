@@ -260,14 +260,16 @@ export const TUNEUP_GALAS: { gala: string; city: string; venue: string }[] = [
 
 /** Dziwni sponsorzy, których podsuwa menedżer: kasa jest, gorzej z wizerunkiem. */
 export const SHADY_SPONSORS: { name: string; product: string; pitch: string }[] = [
-  { name: 'Suple-Max Turbo', product: 'suplement na porost włosów i bicepsa jednocześnie', pitch: 'Raz w tygodniu filmik, jak pijesz to coś zielonego i mówisz „czuję moc”.' },
-  { name: 'Kebab u Mirka', product: 'kebab w cieście z podwójnym sosem czosnkowym', pitch: 'Logo na spodenkach i zdjęcie z kebabem po każdej walce. Także po ważeniu.' },
-  { name: 'Biuro Matrymonialne Serduszko', product: 'randki dla samotnych rolników', pitch: 'Wchodzisz do klatki przy piosence z ich reklamy. Mirek z marketingu już ją nagrał.' },
-  { name: 'Lotto-Typer Pewniak', product: 'aplikacja z typami bukmacherskimi', pitch: 'Wrzucasz ich kod rabatowy na każdą relację. Federacja może krzywo patrzeć.' },
-  { name: 'Kryptowaluta MMAcoin', product: 'kryptowaluta, której nikt nie rozumie', pitch: 'Płacą z góry, w złotówkach. Na razie.' },
-  { name: 'Ocet Jabłkowy Babuni', product: 'ocet jabłkowy na wszystko', pitch: 'Mówisz w wywiadach, że ocet to twój sekret kondycji. Trener płacze.' },
-  { name: 'Pompy Ciepła Grzejpol', product: 'pompy ciepła z montażem gratis', pitch: 'Reklama w lokalnej telewizji: stoisz w kąpielówkach przy pompie i mówisz „ciepło jak po trzeciej rundzie”.' },
-  { name: 'Energetyk Wściekły Byk', product: 'napój energetyczny o smaku gumy balonowej', pitch: 'Wypijasz puszkę na konferencji, przed kamerą, na raz.' },
+  { name: 'Ulga dla Siedzących', product: 'maść na hemoroidy', pitch: 'W wywiadzie po każdej walce mówisz do kamery: „Po walce siadam bez bólu. Dzięki, Ulga dla Siedzących”.' },
+  { name: 'Senior Komfort', product: 'pieluchomajtki dla dorosłych', pitch: 'Wchodzisz do klatki w koszulce z hasłem „Komfort na każdą rundę”. Na ważeniu też.' },
+  { name: 'Stopa Wojownika', product: 'spray na grzybicę stóp', pitch: 'Co tydzień filmik: zbliżenie na twoją bosą stopę i psik. Na koniec mówisz „Swędzi? Już nie”.' },
+  { name: 'Bąbel-Stop', product: 'syrop na wzdęcia', pitch: 'Na konferencji przed walką wypijasz łyżkę syropu i mówisz: „Jestem lekki jak nigdy”. Rywal będzie miał używanie.' },
+  { name: 'Pan Fryzura', product: 'tupeciki i doczepiane grzywki', pitch: 'Na face to face poprawiasz grzywkę z ich kolekcji. Grzywka jest różowa.' },
+  { name: 'Babcine Ciepło', product: 'kalesony z wełny owczej', pitch: 'Pozujesz w kalesonach do plakatu gali. Plakat zawiśnie w każdym kiosku w województwie.' },
+  { name: 'Talia Osy', product: 'gorset wyszczuplający dla panów', pitch: 'Ważysz się w gorsecie i mówisz do kamery, że to „sekret zbijania wagi”. Komentatorzy płaczą ze śmiechu.' },
+  { name: 'Cud-Pięta', product: 'krem na odciski i zrogowacenia', pitch: 'Reklama w telewizji śniadaniowej: smarujesz piętę prowadzącej. Na żywo.' },
+  { name: 'Świeży Oddech Mamuta', product: 'pastylki na nieświeży oddech', pitch: 'Przed każdą walką chuchasz do kamery i mówisz „Mamut poleca”. Twój trener nie chce na to patrzeć.' },
+  { name: 'Burek & Ty', product: 'szampon 2w1 dla psa i właściciela', pitch: 'Filmik z kąpieli: ty i pies, ta sama butelka. Pies wygląda na bardziej zadowolonego.' },
 ];
 
 export const NAMES_TUNEUP: NamePool[] = [
