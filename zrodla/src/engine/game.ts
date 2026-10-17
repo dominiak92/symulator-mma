@@ -376,6 +376,7 @@ export interface BudgetLine {
   sub?: string;
   amount: number;
   logo?: { kind: 'club' | 'sponsor'; name: string };
+  icon?: string;
 }
 
 export function budgetLines(s: GameState): BudgetLine[] {
@@ -384,8 +385,8 @@ export function budgetLines(s: GameState): BudgetLine[] {
   if (s.contract.entryCost > 0)
     lines.push(
       s.tier === 0
-        ? { label: 'Opłaty startowe i dojazdy', sub: 'Puchar i Mistrzostwa Polski', amount: -s.contract.entryCost }
-        : { label: 'Badania, licencja, dojazdy', sub: s.contract.fed, amount: -s.contract.entryCost },
+        ? { label: 'Opłaty startowe i dojazdy', sub: 'Puchar i Mistrzostwa Polski', amount: -s.contract.entryCost, icon: 'receipt' }
+        : { label: 'Badania, licencja, dojazdy', sub: s.contract.fed, amount: -s.contract.entryCost, icon: 'receipt' },
     );
   const job = s.tier <= 1 && s.age >= 19;
   const living = Math.round((livingCost(s.age) * (job ? 0.15 : 1)) / 500) * 500 + (s.flags.kid ? 10000 : 0);
@@ -394,11 +395,12 @@ export function budgetLines(s: GameState): BudgetLine[] {
       label: 'Życie',
       sub: job ? 'etat pokrywa większość, trenujesz po pracy' : s.flags.kid ? 'mieszkanie, jedzenie, dziecko' : 'mieszkanie i jedzenie',
       amount: -living,
+      icon: 'home',
     });
-  for (const l of s.loans) lines.push({ label: 'Rata kredytu', sub: `${l.left === 1 ? 'ostatnia rata' : `zostało ${l.left} ${pl(l.left, 'rata', 'raty', 'rat')}`}`, amount: -l.installment });
+  for (const l of s.loans) lines.push({ label: 'Rata kredytu', sub: `${l.left === 1 ? 'ostatnia rata' : `zostało ${l.left} ${pl(l.left, 'rata', 'raty', 'rat')}`}`, amount: -l.installment, icon: 'card' });
   for (const sp of s.sponsors)
     lines.push({ label: sp.name, sub: `${sp.clause} · ${sp.seasonsLeft === 1 ? 'ostatni sezon' : `jeszcze ${sp.seasonsLeft} ${pl(sp.seasonsLeft, 'sezon', 'sezony', 'sezonów')}`}`, amount: sp.perSeason, logo: { kind: 'sponsor', name: sp.name } });
-  if (s.age < 19 && s.relations >= 3) lines.push({ label: 'Rodzice dokładają', sub: 'z trzynastki', amount: 2000 + s.relations * 300 });
+  if (s.age < 19 && s.relations >= 3) lines.push({ label: 'Rodzice dokładają', sub: 'z trzynastki', amount: 2000 + s.relations * 300, icon: 'heart' });
   return lines;
 }
 
@@ -579,6 +581,7 @@ export function applyEffects(s: GameState, e: Effects, rng: Rng) {
 export interface Chip {
   text: string;
   tone: 'good' | 'bad' | 'neutral' | 'purple';
+  icon?: string;
 }
 
 const fmtMoney = (n: number) => {
@@ -591,20 +594,20 @@ export function effectChips(e: Effects | undefined, s?: GameState): Chip[] {
   if (!e) return [];
   const out: Chip[] = [];
   const sg = (n: number) => (n > 0 ? `+${n}` : `−${Math.abs(n)}`);
-  if (e.money) out.push({ text: fmtMoney(e.money), tone: e.money > 0 ? 'good' : 'bad' });
+  if (e.money) out.push({ text: fmtMoney(e.money), tone: e.money > 0 ? 'good' : 'bad', icon: 'coins' });
   if (e.stats)
     for (const [k, v] of Object.entries(e.stats) as [StatKey, number][])
-      out.push({ text: `${STAT_LABELS[k].toLowerCase()} ${sg(v)}`, tone: v > 0 ? 'good' : 'bad' });
-  if (e.media) out.push({ text: `media ${sg(e.media)}`, tone: e.media > 0 ? 'good' : 'bad' });
-  if (e.rep) out.push({ text: `reputacja ${sg(e.rep)}`, tone: e.rep > 0 ? 'good' : 'bad' });
-  if (e.relations) out.push({ text: `rodzina ${sg(e.relations)}`, tone: e.relations > 0 ? 'good' : 'bad' });
-  if (e.form) out.push({ text: `forma ${sg(e.form)}`, tone: e.form > 0 ? 'good' : 'bad' });
-  if (e.wear) out.push({ text: `zużycie ${sg(e.wear)}`, tone: e.wear > 0 ? 'bad' : 'good' });
-  if (e.injury) out.push({ text: `kontuzja: ${e.injury.name}`, tone: 'bad' });
-  if (e.healInjury) out.push({ text: 'kontuzja wyleczona', tone: 'good' });
-  if (e.sponsor) out.push({ text: `sponsor ${fmtMoney(e.sponsor.perSeason).slice(1)} na sezon`, tone: 'good' });
-  if (e.promise) out.push({ text: `obietnica do sezonu ${e.promise.untilSeason}`, tone: 'neutral' });
-  if (e.loan && e.loan.installment) out.push({ text: `raty ${e.loan.count} × ${fmtMoney(e.loan.installment).slice(1)}`, tone: 'bad' });
+      out.push({ text: `${STAT_LABELS[k].toLowerCase()} ${sg(v)}`, tone: v > 0 ? 'good' : 'bad', icon: `stat:${k}` });
+  if (e.media) out.push({ text: `media ${sg(e.media)}`, tone: e.media > 0 ? 'good' : 'bad', icon: 'megaphone' });
+  if (e.rep) out.push({ text: `reputacja ${sg(e.rep)}`, tone: e.rep > 0 ? 'good' : 'bad', icon: 'star' });
+  if (e.relations) out.push({ text: `rodzina ${sg(e.relations)}`, tone: e.relations > 0 ? 'good' : 'bad', icon: 'home' });
+  if (e.form) out.push({ text: `forma ${sg(e.form)}`, tone: e.form > 0 ? 'good' : 'bad', icon: 'flame' });
+  if (e.wear) out.push({ text: `zużycie ${sg(e.wear)}`, tone: e.wear > 0 ? 'bad' : 'good', icon: 'bandage' });
+  if (e.injury) out.push({ text: `kontuzja: ${e.injury.name}`, tone: 'bad', icon: 'bandage' });
+  if (e.healInjury) out.push({ text: 'kontuzja wyleczona', tone: 'good', icon: 'heart' });
+  if (e.sponsor) out.push({ text: `sponsor ${fmtMoney(e.sponsor.perSeason).slice(1)} na sezon`, tone: 'good', icon: 'briefcase' });
+  if (e.promise) out.push({ text: `obietnica do sezonu ${e.promise.untilSeason}`, tone: 'neutral', icon: 'pen' });
+  if (e.loan && e.loan.installment) out.push({ text: `raty ${e.loan.count} × ${fmtMoney(e.loan.installment).slice(1)}`, tone: 'bad', icon: 'card' });
   if (e.note) out.push({ text: e.note, tone: 'neutral' });
   void s;
   return out;
