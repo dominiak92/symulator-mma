@@ -381,7 +381,7 @@ export interface Camp {
 export const CAMPS: Camp[] = [
   { id: 'tajlandia', name: 'Tajlandia', place: 'obóz muay thai pod Phuketem', desc: 'Dwa treningi dziennie, 35 stopni i łokcie od rana.', main: 'stand', second: 'cardio' },
   { id: 'dagestan', name: 'Dagestan', place: 'sala zapaśnicza w górach', desc: 'Nikt nie mówi po polsku, za to każdy obala.', main: 'wrest', second: 'chin' },
-  { id: 'usa', name: 'Floryda', place: 'Amerykański Top Gym', desc: 'Sparingi z gwiazdami, analiza nagrań i najlepsza dieta.', main: 'bjj', second: 'iq' },
+  { id: 'usa', name: 'Floryda', place: 'Top Squad na Florydzie', desc: 'Sparingi z gwiazdami, analiza nagrań i najlepsza dieta.', main: 'bjj', second: 'iq' },
 ];
 const CAMP_COST = [0, 0, 15000, 50000, 120000];
 export function campCost(s: GameState) {
@@ -758,80 +758,168 @@ export function rehabYear(s0: GameState): GameState {
   return s;
 }
 
-// „2-3 years Dagestan and forget”: trzy sezony w górach zamiast walk
-const DAGESTAN_COST = [0, 40000, 90000, 200000, 450000];
-export function dagestanCost(s: GameState) {
-  return DAGESTAN_COST[s.tier] ?? 0;
+// Wyjazdy na lata: sezony treningu zamiast walk (Dagestan, Floryda, Montreal)
+export interface Expedition {
+  id: 'dagestan' | 'floryda' | 'montreal';
+  name: string;
+  place: string;
+  years: number;
+  maxAge: number;
+  cost: number[]; // wg szczebla
+  gains: Record<StatKey, [number, number]>;
+  ceiling: Partial<Record<StatKey, number>>; // o ile rośnie limit talentu
+  media: number; // zmiana rozpoznawalności
+  rep: number;
+  wear: number; // regeneracja organizmu
+  desc: string;
+  minus: string;
+  log: string;
+  stories: string[];
 }
-export function dagestanBlocked(s: GameState): string | null {
-  if (s.flags.dagestan) return 'Już tam byłeś. Drugi raz cię nie wpuszczą.';
+export const EXPEDITIONS: Expedition[] = [
+  {
+    id: 'dagestan',
+    name: '2-3 years Dagestan and forget',
+    place: 'Dagestan · sala w górach',
+    years: 2,
+    maxAge: 30,
+    cost: [0, 40000, 90000, 200000, 450000],
+    gains: { wrest: [8, 12], cardio: [6, 9], chin: [3, 5], bjj: [3, 6], iq: [2, 4], stand: [0, 2] },
+    ceiling: { wrest: 10, cardio: 8, chin: 5, bjj: 4 },
+    media: -12,
+    rep: 4,
+    wear: -10,
+    desc: 'Dwa sezony w górach (trzeci rok to powrót do formy). Zapasy pięć razy dziennie, bez internetu i bez cukru.',
+    minus: 'Kibice o tobie zapominają, wracasz bez rankingu.',
+    log: 'Dwa lata w Dagestanie. Zapasy, góry i cisza.',
+    stories: [
+      'Wyjeżdżasz w wieku {from} lat, wracasz po dwóch. Bez internetu, bez cukru, z zapasami pięć razy dziennie. W hali nikt nie pamięta twojego nazwiska, za to ty pamiętasz każde obalenie.',
+      'Dwie zimy w górach. Stary trener mówił do ciebie tylko „jeszcze raz”. Wracasz twardszy, cichszy i nikt w Polsce nie wie, czego się spodziewać.',
+      'Dwa lata, jedna sala i baran na każde święto. Media pytają, czy w ogóle jeszcze walczysz. Zaraz się przekonają.',
+    ],
+  },
+  {
+    id: 'floryda',
+    name: 'Floryda: Top Squad',
+    place: 'USA · stajnia mistrzów',
+    years: 2,
+    maxAge: 33,
+    cost: [0, 70000, 150000, 320000, 650000],
+    gains: { stand: [4, 7], wrest: [4, 7], bjj: [4, 7], cardio: [3, 5], iq: [3, 5], chin: [1, 3] },
+    ceiling: { stand: 4, wrest: 4, bjj: 4, iq: 2 },
+    media: -4,
+    rep: 3,
+    wear: -6,
+    desc: 'Dwa sezony w największej amerykańskiej stajni. Sparingi z mistrzami i trenerzy od wszystkiego.',
+    minus: 'Najdroższy wyjazd. Wracasz bez rankingu, ale z filmikami z sali.',
+    log: 'Dwa lata na Florydzie. Upał, sparingi i trenerzy od wszystkiego.',
+    stories: [
+      'Dwa lata w Top Squad. Codziennie ktoś z pasem leje cię na sparingu, a ty coraz częściej oddajesz. Wracasz jako zawodnik kompletny.',
+      'Upał, aligatory przy parkingu i sparingi z mistrzami. Po dwóch latach trener mówi, że możesz walczyć z każdym. Kibice widzieli tylko twoje filmiki z sali.',
+    ],
+  },
+  {
+    id: 'montreal',
+    name: 'Montreal: Trzy Gwiazdy',
+    place: 'Kanada · szkoła techniki',
+    years: 1,
+    maxAge: 36,
+    cost: [0, 25000, 55000, 120000, 250000],
+    gains: { iq: [5, 8], stand: [3, 5], wrest: [2, 4], bjj: [1, 3], cardio: [1, 2], chin: [0, 1] },
+    ceiling: { iq: 5, stand: 2 },
+    media: -2,
+    rep: 2,
+    wear: -5,
+    desc: 'Jeden sezon u trenera, który rozpisuje walki jak partię szachów. Dobre także dla weteranów.',
+    minus: 'Rok bez walk i bez gaż. Ranking przepada.',
+    log: 'Sezon w Montrealu. Taktyka, technika i zeszyt pełen notatek.',
+    stories: [
+      'Rok w Montrealu. Trener zatrzymuje sparing co minutę i pyta „dlaczego?”. Wracasz z zeszytem pełnym notatek i spokojem w głowie.',
+      'Mróz za oknem, a na sali tylko technika i plan. Po sezonie widzisz walkę dwa ruchy do przodu.',
+    ],
+  },
+];
+export function expeditionById(id: string) {
+  return EXPEDITIONS.find((e) => e.id === id) ?? null;
+}
+export function expeditionCost(s: GameState, e: Expedition) {
+  return e.cost[s.tier] ?? 0;
+}
+function expeditionDone(s: GameState, e: Expedition) {
+  return e.id === 'dagestan' ? !!s.flags.dagestan : !!s.flags[`exp_${e.id}`];
+}
+export function expeditionBlocked(s: GameState, e: Expedition): string | null {
+  if (expeditionDone(s, e)) return 'Już tam byłeś.';
   if (s.tier < 1) return 'Najpierw przejdź na zawodowstwo.';
-  if (s.age > 30) return 'Po trzydziestce trzy lata w górach to już za dużo.';
-  if (s.injury) return 'Z kontuzją nie przetrwasz tamtejszych treningów.';
-  if (s.loans.length) return 'Najpierw spłać kredyt, rat z gór nie zapłacisz.';
-  if (s.money < dagestanCost(s)) return `Potrzebujesz ${dagestanCost(s).toLocaleString('pl-PL')} zł na trzy lata.`;
+  if (s.age > e.maxAge) return `Do ${e.maxAge} lat. Potem to już za dużo dla organizmu.`;
+  if (s.injury) return 'Najpierw wylecz kontuzję.';
+  if (s.loans.length) return 'Najpierw spłać kredyt, rat z wyjazdu nie zapłacisz.';
+  const c = expeditionCost(s, e);
+  if (s.money < c) return `Potrzebujesz ${c.toLocaleString('pl-PL')} zł.`;
   return null;
 }
-/** Przybliżone przyrosty (do podglądu): środek przedziału, do granicy talentu. */
-export const DAGESTAN_GAINS: Record<StatKey, [number, number]> = {
-  wrest: [8, 12],
-  cardio: [6, 9],
-  chin: [3, 5],
-  bjj: [3, 6],
-  iq: [2, 4],
-  stand: [0, 2],
-};
-export function goDagestan(s0: GameState): GameState {
-  if (dagestanBlocked(s0)) return s0;
+export function goExpedition(s0: GameState, id: Expedition['id']): GameState {
+  const e = expeditionById(id);
+  if (!e || expeditionBlocked(s0, e)) return s0;
   const s = clone(s0);
   withRng(s, (rng) => {
     const ovrFrom = ovr(s.stats);
     const moneyFrom = s.money;
     const ageFrom = s.age;
-    s.money -= dagestanCost(s);
+    s.money -= expeditionCost(s, e);
     const m = s.age >= 28 ? 0.7 : 1;
     const before = { ...s.stats };
+    for (const k of STAT_KEYS) s.potential[k] = clamp(s.potential[k] + (e.ceiling[k] ?? 0), 1, 99);
     for (const k of STAT_KEYS) {
-      const [a, b] = DAGESTAN_GAINS[k];
+      const [a, b] = e.gains[k];
       const g = Math.round(rng.int(a, b) * m);
       s.stats[k] = clamp(Math.min(s.stats[k] + g, Math.max(s.stats[k], s.potential[k])), 1, 99);
     }
     s.lastGains = mapStats((k) => s.stats[k] - before[k]);
-    // dwa z trzech lat mijają tutaj, trzeci przy przejściu na rynek
-    ageOneYear(rng, s);
-    ageOneYear(rng, s);
-    for (let i = 0; i < 3; i++) for (const p of s.peers) progressPeer(rng, p);
-    s.media = clamp(s.media - 15, 0, 100);
-    s.rep = clamp(s.rep + 4, 0, 100);
-    s.wear = clamp(s.wear - 10, 0, 100);
+    // wszystkie lata poza ostatnim mijają tutaj, ostatni przy przejściu na rynek
+    for (let i = 0; i < e.years - 1; i++) ageOneYear(rng, s);
+    for (let i = 0; i < e.years; i++) for (const p of s.peers) progressPeer(rng, p);
+    s.media = clamp(s.media + e.media, 0, 100);
+    s.rep = clamp(s.rep + e.rep, 0, 100);
+    s.wear = clamp(s.wear + e.wear, 0, 100);
     if (s.tier > 0) s.rank = null;
     s.contractSeasonsLeft = 0;
-    s.flags.dagestan = 1;
+    if (e.id === 'dagestan') s.flags.dagestan = 1;
+    else s.flags[`exp_${e.id}`] = 1;
     s.peakOvr = Math.max(s.peakOvr, ovr(s.stats));
+    const lata = e.years === 1 ? 'rok' : `${e.years} lata`;
     const summary: SeasonSummary = {
       season: s.season, year: s.year, age: s.age, tier: s.tier, fed: s.fed, club: s.club.name,
       w: 0, l: 0, d: 0, rank: s.rank, champion: false, beltWon: false,
       moneyDelta: s.money - moneyFrom, ovrFrom, ovrTo: ovr(s.stats),
-      form: 'Dagestan', grade: '2-3 years Dagestan and forget',
+      form: e.id === 'dagestan' ? 'Dagestan' : e.name, grade: e.name,
       bars: [
         { label: 'Forma fizyczna', value: 95, note: `OVR ${ovrFrom} → ${ovr(s.stats)}` },
-        { label: 'Rozpoznawalność', value: 15, note: 'kibice o tobie zapomnieli' },
+        { label: 'Rozpoznawalność', value: Math.max(10, 60 + e.media * 3), note: e.media <= -10 ? 'kibice o tobie zapomnieli' : `${lata} poza klatką` },
       ],
-      story: rng.pick([
-        `Wyjeżdżasz w wieku ${ageFrom} lat, wracasz po trzech. Bez internetu, bez cukru, z zapasami pięć razy dziennie. W hali nikt nie pamięta twojego nazwiska, za to ty pamiętasz każde obalenie.`,
-        `Trzy zimy w górach. Stary trener mówił do ciebie tylko „jeszcze raz”. Wracasz twardszy, cichszy i nikt w Polsce nie wie, czego się spodziewać.`,
-        `Trzy lata, jedna sala i baran na każde święto. Media pytają, czy w ogóle jeszcze walczysz. Zaraz się przekonają.`,
-      ]),
+      story: rng.pick(e.stories).replace('{from}', String(ageFrom)),
     };
     s.seasons.push(summary);
     s.lastSummary = summary;
     s.run = null;
     s.event = null;
     s.eventQueue = [];
-    log(s, 'Trzy lata w Dagestanie. Zapasy, góry i cisza.');
+    log(s, e.log);
   });
   s.phase = 'summary';
   return s;
+}
+
+// zgodność wstecz (testy, skrypty)
+export const DAGESTAN_GAINS = EXPEDITIONS[0].gains;
+export function dagestanCost(s: GameState) {
+  return expeditionCost(s, EXPEDITIONS[0]);
+}
+export function dagestanBlocked(s: GameState): string | null {
+  return expeditionBlocked(s, EXPEDITIONS[0]);
+}
+export function goDagestan(s0: GameState): GameState {
+  return goExpedition(s0, 'dagestan');
 }
 
 const SPONSOR_NAMES = [
