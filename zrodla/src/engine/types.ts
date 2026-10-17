@@ -209,6 +209,10 @@ export interface FightSim {
   seen?: string[];
   /** po której rundzie padło ostatnie pytanie narożnika (-1 = jeszcze nie) */
   asked?: number;
+  /** walka zawodowa: plan na walkę zawsze przed 1. rundą */
+  pro?: boolean;
+  /** wybrany plan: ustawia styl walki gracza na całą walkę */
+  plan?: 'stand' | 'wrest' | 'bjj';
 }
 
 export interface FightReport {
@@ -318,6 +322,8 @@ export interface FightOffer {
   pressNote?: string;
   /** cytat rywala na konferencji */
   pressQuote?: string;
+  /** kontekst konferencji: pytanie i dopasowane odpowiedzi */
+  pressCtx?: { id: string; question: string; labels: Record<'calm' | 'provoke' | 'insult', [string, string]>; provoke: number; insult: number };
   /** komunikat po negocjacjach */
   note?: string;
   /** walka na odbudowę rekordu: słaby rywal z ujemnym bilansem na dziwnej gali */
@@ -421,7 +427,7 @@ export interface GameState {
   injury: Injury | null;
   sponsors: Sponsor[];
   /** zaplecze opłacane co roku (od polskiej federacji): fizjo, lekarz, suplementy */
-  backroom?: { physio?: boolean; doctor?: boolean; supps?: boolean };
+  backroom?: { physio?: boolean; doctor?: boolean; supps?: boolean; sparring?: boolean };
   /** wynik ostatniego szukania sponsora na własną rękę */
   pitch?: { season: number; ok: boolean; text: string; name?: string; slot: string } | null;
   /** dziwny sponsor podsunięty przez menedżera (oferta na ten rok) */

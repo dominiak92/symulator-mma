@@ -132,6 +132,38 @@ function styleOfStats(s: Stats): string {
   return 'allround';
 }
 
+/** Przewidywalność: o ile główna broń odstaje od reszty umiejętności. Rywal i jego narożnik
+ * przygotowują się na nią, więc przy tej akcji broni się lepiej. Wszechstronny zawodnik ma 0. */
+export function predictability(st: Stats): { stat: 'stand' | 'wrest' | 'bjj'; spike: number } {
+  const off: ('stand' | 'wrest' | 'bjj')[] = ['stand', 'wrest', 'bjj'];
+  const top = off.reduce((a, b) => (st[b] > st[a] ? b : a), 'stand');
+  const rest = (st.stand + st.wrest + st.bjj + st.cardio + st.chin + st.iq - st[top]) / 5;
+  return { stat: top, spike: Math.max(0, st[top] - rest - 10) };
+}
+
+/** Jak mocno rywal czyta przewidywalnego zawodnika (pkt obrony za każdy punkt odstawania głównej broni). */
+const READ_K = 1.3;
+
+const PLAN_STYLE: Record<'stand' | 'wrest' | 'bjj', string> = { stand: 'boxer', wrest: 'wrestler', bjj: 'grappler' };
+
+function planText(opp: Fighter): string {
+  const scout = opp.freak ? '' : scoutNote(opp);
+  const hasGap = scout.startsWith('Z nagrań');
+  // „wszechstronny, bez dziur” kłóci się z wyraźną dziurą z nagrań
+  const style = opp.style === 'allround' && hasGap ? 'Rywal gra wszystkiego po trochu.' : styleNote(opp);
+  return `Dziesięć minut do wyjścia. Trener siada obok i pyta o plan. ${style} ${scout} Plan ustawia, jak walczysz przez całą walkę.`.replace(/\s+/g, ' ').trim();
+}
+
+/** Scouting: gdzie rywal jest najsłabszy, a gdzie najgroźniejszy. */
+export function scoutNote(opp: Fighter): string {
+  const names = { stand: 'stójce', wrest: 'zapasach', bjj: 'parterze' } as const;
+  const keys = ['stand', 'wrest', 'bjj'] as const;
+  const weak = keys.reduce((a, b) => (opp.stats[b] < opp.stats[a] ? b : a), 'stand' as (typeof keys)[number]);
+  const strong = keys.reduce((a, b) => (opp.stats[b] > opp.stats[a] ? b : a), 'stand' as (typeof keys)[number]);
+  if (opp.stats[strong] - opp.stats[weak] < 5) return 'Nagrania nie pokazują wyraźnej dziury. Zdecyduje twoja przewaga.';
+  return `Z nagrań: najgroźniejszy w ${names[strong]}, najsłabszy w ${names[weak]}.`;
+}
+
 // ---------- Stan walki ----------
 
 export function newSim(maxRounds: number): FightSim {
@@ -213,12 +245,18 @@ function simulateRound(rng: Rng, ctx: FightCtx, sim: FightSim, rep: FightReport)
   const r = sim.round;
   const opp = ctx.opp;
   const oppStyle = opp.style;
-  const meStyle = styleOfStats(ctx.me);
+  const meStyle = sim.plan ? PLAN_STYLE[sim.plan] : styleOfStats(ctx.me);
   let pts = { me: 0, opp: 0 };
   const exchanges = 3;
   let groundMe = 0;
   let groundOpp = 0;
   const myMod = ctx.form - ctx.penalty + sim.momentum;
+  const predMe = predictability(ctx.me);
+  const predOpp = predictability(opp.stats);
+  const readBonus = (atkWho: Who, stat: 'stand' | 'wrest' | 'bjj') => {
+    const pr = atkWho === 'me' ? predMe : predOpp;
+    return pr.stat === stat ? pr.spike * READ_K : 0;
+  };
 
   for (let x = 0; x < exchanges && !sim.finished; x++) {
     const meE = eff(ctx.me, sim.me.dmg, sim.me.stam);
@@ -235,18 +273,18 @@ function simulateRound(rng: Rng, ctx: FightCtx, sim: FightSim, rep: FightReport)
     let defStat: number;
     switch (action) {
       case 'strike': {
-        defStat = D.stand * 0.55 + D.iq * 0.45;
+        defStat = D.stand * 0.55 + D.iq * 0.45 + readBonus(who, 'stand');
         // leżąc pod rywalem trudno bić: kara za uderzanie z dołu
         const underneath = who === 'me' ? groundOpp > 0 : groundMe > 0;
         p = chanceFrom(A.stand, defStat, mod - (underneath ? 14 : 0));
         break;
       }
       case 'takedown':
-        defStat = D.wrest * 0.85 + D.cardio * 0.15;
+        defStat = D.wrest * 0.85 + D.cardio * 0.15 + readBonus(who, 'wrest');
         p = chanceFrom(A.wrest, defStat, mod);
         break;
       case 'sub':
-        defStat = D.bjj * 0.8 + D.wrest * 0.2;
+        defStat = D.bjj * 0.8 + D.wrest * 0.2 + readBonus(who, 'bjj');
         p = chanceFrom(A.bjj, defStat, mod - 6 + (who === 'me' ? groundMe : groundOpp) * 8);
         break;
       default:
@@ -564,6 +602,8 @@ function buildDecisionRaw(rng: Rng, ctx: FightCtx, sim: FightSim): DecisionPoint
   const n = shortName(ctx.opp);
   const next = sim.round + 1;
   const base = ctx.form - ctx.penalty;
+  const pm = predictability(ctx.me);
+  const rd = (k: 'stand' | 'wrest' | 'bjj') => (pm.stat === k ? pm.spike * READ_K : 0);
   const safe = (key: string, label: string, desc: string, win: string, lose: string, stat: StatKey = 'iq') =>
     option(key, 'safe', label, desc, stat, me[stat], op[stat], base, win, lose);
 
@@ -572,11 +612,11 @@ function buildDecisionRaw(rng: Rng, ctx: FightCtx, sim: FightSim): DecisionPoint
       id: 'plan',
       round: 1,
       title: 'Plan na walkę',
-      text: `Dziesięć minut do wyjścia. Trener siada obok i pyta o plan. ${styleNote(ctx.opp)}`,
+      text: planText(ctx.opp),
       options: [
-        option('plan_stand', 'normal', 'Bijemy się w stójce', 'Na nogach, szukamy czystych trafień.', 'stand', me.stand, op.stand * 0.6 + op.iq * 0.4, base, 'obijasz go od pierwszej rundy', 'łatwiej nadziać się na kontrę'),
-        option('plan_wrest', 'normal', 'Obalamy i dociskamy', 'Zapasy, kontrola z góry, rundy na punkty.', 'wrest', me.wrest, op.wrest, base, 'kontrolujesz rundy z góry', 'tracisz siły na nieudanych wejściach'),
-        option('plan_bjj', 'risk', 'Szukamy poddania', 'Sprowadzamy do parteru i polujemy na szyję.', 'bjj', me.bjj, op.bjj * 0.8 + op.wrest * 0.2, base - 4, 'szansa na szybkie poddanie', 'lądujesz pod nim'),
+        option('plan_stand', 'normal', 'Bijemy się w stójce', 'Na nogach, szukamy czystych trafień.', 'stand', me.stand, op.stand * 0.6 + op.iq * 0.4 + rd('stand'), base, 'obijasz go od pierwszej rundy', 'łatwiej nadziać się na kontrę'),
+        option('plan_wrest', 'normal', 'Obalamy i dociskamy', 'Zapasy, kontrola z góry, rundy na punkty.', 'wrest', me.wrest, op.wrest + rd('wrest'), base, 'kontrolujesz rundy z góry', 'tracisz siły na nieudanych wejściach'),
+        option('plan_bjj', 'risk', 'Szukamy poddania', 'Sprowadzamy do parteru i polujemy na szyję.', 'bjj', me.bjj, op.bjj * 0.8 + op.wrest * 0.2 + rd('bjj'), base - 4, 'szansa na szybkie poddanie', 'lądujesz pod nim'),
       ],
     };
   }
@@ -657,8 +697,8 @@ function buildDecisionRaw(rng: Rng, ctx: FightCtx, sim: FightSim): DecisionPoint
       title: 'Narożnik pyta',
       text: `Przerwa przed ${next}. rundą. Wyrównana walka. Trener pyta, gdzie czujesz przewagę.`,
       options: [
-        option('mid_stand', 'normal', 'Podkręcasz tempo w stójce', 'Więcej kombinacji, więcej ryzyka.', 'stand', me.stand, op.stand * 0.6 + op.iq * 0.4, base, 'obijasz go i zabierasz mu rundę', 'łapiesz kontrę'),
-        option('mid_wrest', 'normal', 'Schodzisz do nóg i obalasz', 'Zapasy i kontrola przy siatce.', 'wrest', me.wrest, op.wrest, base, 'rundy z góry', 'tracisz siły'),
+        option('mid_stand', 'normal', 'Podkręcasz tempo w stójce', 'Więcej kombinacji, więcej ryzyka.', 'stand', me.stand, op.stand * 0.6 + op.iq * 0.4 + rd('stand'), base, 'obijasz go i zabierasz mu rundę', 'łapiesz kontrę'),
+        option('mid_wrest', 'normal', 'Schodzisz do nóg i obalasz', 'Zapasy i kontrola przy siatce.', 'wrest', me.wrest, op.wrest + rd('wrest'), base, 'rundy z góry', 'tracisz siły'),
         safe('mid_safe', 'Trzymasz plan', 'Robisz swoje, bez kombinowania.', 'mała przewaga', 'nic się nie zmienia'),
       ],
     };
@@ -799,7 +839,9 @@ export function applyDecision(rng: Rng, ctx: FightCtx, sim: FightSim, rep: Fight
   if (!dp) return;
   const opt = dp.options.find((o) => o.key === key) ?? dp.options[0];
   sim.pending = null;
-  sim.decisionUsed = true;
+  if (dp.id === 'plan' && (opt.stat === 'stand' || opt.stat === 'wrest' || opt.stat === 'bjj')) sim.plan = opt.stat;
+  // w walce zawodowej plan nie zabiera szansy na decyzję w trakcie walki
+  if (!(dp.id === 'plan' && sim.pro)) sim.decisionUsed = true;
   const out = rollOutcome(rng, opt.chance);
   const n = shortName(ctx.opp);
   const kind: OptKind = opt.kind ?? KIND_OF[opt.key] ?? 'normal';
@@ -932,7 +974,8 @@ export function applyDecision(rng: Rng, ctx: FightCtx, sim: FightSim, rep: Fight
 export function advanceFight(rng: Rng, ctx: FightCtx, sim: FightSim, rep: FightReport) {
   while (!sim.finished && !sim.pending) {
     const bigTurn = !!sim.big && ctx.allowDecision && (sim.asked ?? -1) !== sim.round;
-    if (bigTurn || (ctx.allowDecision && !sim.decisionUsed && rng.chance(sim.round === 0 ? ctx.decisionChance * 0.45 : ctx.decisionChance * 0.4))) {
+    const planTurn = !!sim.pro && ctx.allowDecision && sim.round === 0 && !sim.plan && (sim.asked ?? -1) !== 0;
+    if (bigTurn || planTurn || (ctx.allowDecision && !sim.decisionUsed && rng.chance(sim.round === 0 ? ctx.decisionChance * 0.45 : ctx.decisionChance * 0.4))) {
       if (sim.round < sim.maxRounds) {
         const dp = buildDecision(rng, ctx, sim);
         if (dp) {

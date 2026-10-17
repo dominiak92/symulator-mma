@@ -635,8 +635,8 @@ export const EVENTS: EventDef[] = [
     cond: (s) => s.media >= 15,
     text: () => 'Fundacja dla chorych dzieci prosi o twoje rękawice z ostatniej walki na licytację.',
     choices: () => [
-      { label: 'Oddajesz rękawice', desc: 'I dorzucasz trening z najwyższą ofertą.', effects: { rep: 3, media: 2 } },
-      { label: 'Masz do nich sentyment', desc: 'Wiszą nad łóżkiem.', effects: {} },
+      { label: 'Oddajesz rękawice', desc: 'I dorzucasz trening z najwyższą ofertą. To cała sobota.', effects: { rep: 3, media: 2, form: -1 } },
+      { label: 'Masz do nich sentyment', desc: 'Wiszą nad łóżkiem i dają ci kopa przed każdym obozem.', effects: { form: 1 } },
     ],
   },
   {
@@ -670,8 +670,8 @@ export const EVENTS: EventDef[] = [
     cond: (s) => s.tier >= 1 && s.tier <= 2,
     text: (s) => `Organizator robi galę w hali OSiR u ciebie w domu: ${s.profile.hometown}. Chce cię na plakacie i w walce wieczoru.`,
     choices: () => [
-      { label: 'Zgadzasz się', desc: 'Pełna hala, cała rodzina w pierwszym rzędzie.', effects: { media: 5, money: 5000, form: 2 } },
-      { label: 'Wolisz spokój', desc: 'Presja przed swoimi to za dużo.', effects: {} },
+      { label: 'Zgadzasz się', desc: 'Pełna hala, cała rodzina w pierwszym rzędzie. Presja jak nigdy.', test: 'iq', success: { media: 5, money: 5000, form: 2 }, fail: { media: 3, money: 5000, form: -3, note: 'presja przed swoimi zjadła cię na obozie' }, successText: 'Bilety schodzą w dwa dni. Cały obóz czujesz wsparcie miasta.', failText: 'Bilety schodzą w dwa dni, ale ty nie śpisz po nocach. Wszyscy pytają tylko o tę walkę.' },
+      { label: 'Wolisz spokój', desc: 'Presja przed swoimi to za dużo. Skupiasz się na treningu.', effects: { form: 1 } },
     ],
   },
   {
@@ -984,7 +984,7 @@ export const EVENTS: EventDef[] = [
     cond: (s) => s.age >= 29,
     text: () => 'W klubie pojawia się 18-latek, który na sparingach robi ci problemy. Trener pyta, czy weźmiesz go pod skrzydła.',
     choices: () => [
-      { label: 'Zostajesz mentorem', desc: 'Uczysz go wszystkiego, co wiesz.', effects: { rep: 4, stats: { iq: 2 }, relations: 1 } },
+      { label: 'Zostajesz mentorem', desc: 'Uczysz go wszystkiego, co wiesz. Twoje treningi schodzą na drugi plan.', effects: { rep: 3, stats: { iq: 1 }, relations: 1, form: -2 } },
       { label: 'Pokazujesz mu, gdzie jego miejsce', desc: 'Na sparingu bez litości.', effects: { stats: { stand: 1 }, rep: -1, form: 1 } },
     ],
   },

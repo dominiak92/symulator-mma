@@ -472,7 +472,7 @@ function offerShadyDeal(rng: Rng, s: GameState) {
   const mgr = currentManager(s);
   if (!rng.chance(tight ? 0.6 : mgr ? 0.14 : 0.06)) return;
   const d = rng.pick(SHADY_SPONSORS);
-  const base = [0, 3500, 11000, 26000, 60000][s.tier];
+  const base = [0, 2800, 9000, 21000, 48000][s.tier];
   const perSeason = Math.round((base * (1 + s.media / 150) * (0.85 + rng.next() * 0.3)) / 500) * 500;
   s.shadyDeal = {
     season: s.season,
@@ -537,7 +537,7 @@ export function budgetLines(s: GameState): BudgetLine[] {
   // zaplecze do wyboru
   if (backroomOpen(s)) {
     for (const b of BACKROOM) {
-      if (!s.backroom?.[b.id]) continue;
+      if (!s.backroom?.[b.id] || !backroomAvailable(s, b.id)) continue;
       const c = backroomCost(s, b.id);
       lines.push({ label: b.name, sub: c === 0 ? 'pokrywa Ground Game Labs' : b.short, amount: -c, icon: b.icon });
     }
@@ -605,12 +605,16 @@ export function investAcademy(s0: GameState): GameState {
 // ---------------------------------------------------------------------------
 // Zaplecze: fizjoterapeuta, lekarz, suplementy (opcjonalne, od polskiej federacji)
 // ---------------------------------------------------------------------------
-export type BackroomId = 'physio' | 'doctor' | 'supps';
-export const BACKROOM: { id: BackroomId; name: string; short: string; effect: string; icon: string; cost: number[] }[] = [
+export type BackroomId = 'physio' | 'doctor' | 'supps' | 'sparring';
+export const BACKROOM: { id: BackroomId; name: string; short: string; effect: string; icon: string; cost: number[]; minTier?: number }[] = [
   { id: 'physio', name: 'Fizjoterapeuta', short: 'masaże, rozluźnianie, taping', effect: 'Organizm wolniej się zużywa, kariera trwa dłużej.', icon: 'heart', cost: [0, 0, 3000, 7000, 20000] },
   { id: 'doctor', name: 'Lekarz sportowy', short: 'badania i opieka przed walką', effect: 'Rzadsze kontuzje, a jeśli już, to lżejsze.', icon: 'bandage', cost: [0, 0, 5000, 12000, 30000] },
   { id: 'supps', name: 'Suplementacja', short: 'odżywki, witaminy, elektrolity', effect: 'Lekko lepsza forma w każdej walce.', icon: 'flame', cost: [0, 0, 1500, 4000, 9000] },
+  { id: 'sparring', name: 'Elitarni sparingpartnerzy', short: 'sparingpartnerzy z czołówki, ściągani na obóz', effect: 'Wyraźnie lepsza forma w każdej walce. Drogo, ale na tym poziomie liczy się każdy procent.', icon: 'glove', cost: [0, 0, 0, 70000, 180000], minTier: 3 },
 ];
+export function backroomAvailable(s: GameState, id: BackroomId) {
+  return s.tier >= (BACKROOM.find((b) => b.id === id)!.minTier ?? 2);
+}
 export const LABS_SPONSOR = 'Ground Game Labs';
 export function hasLabs(s: GameState) {
   return s.sponsors.some((x) => x.name === LABS_SPONSOR);
@@ -624,7 +628,7 @@ export function backroomCost(s: GameState, id: BackroomId): number {
 }
 /** Aktywne zaplecze (tylko gdy w ogóle dostępne). */
 function hasBackroom(s: GameState, id: BackroomId) {
-  return backroomOpen(s) && !!s.backroom?.[id];
+  return backroomOpen(s) && backroomAvailable(s, id) && !!s.backroom?.[id];
 }
 export function setBackroom(s0: GameState, id: BackroomId, on: boolean): GameState {
   const s = clone(s0);
@@ -1094,7 +1098,7 @@ const SPONSOR_CLAUSES = [
 function maybeAutoSponsor(rng: Rng, s: GameState): string | null {
   const cap = 1 + s.tier;
   if (s.sponsors.length >= cap) return null;
-  const p = clamp((s.media + s.rep * 0.3) / 120 + (currentManager(s)?.sponsor ?? 0) / 100, 0.08, 0.75) * (s.profile.difficulty === 'hard' ? 0.6 : 1);
+  const p = clamp((s.media * 0.8 + s.rep * 0.6) / 120 + (currentManager(s)?.sponsor ?? 0) / 100, 0.08, 0.75) * (s.profile.difficulty === 'hard' ? 0.6 : 1);
   if (!rng.chance(p)) return null;
   const name = rng.pick(SPONSOR_NAMES.filter((n) => !s.sponsors.some((x) => x.name === n)));
   const base = [1500, 4000, 12000, 30000, 80000][s.tier];
@@ -1144,7 +1148,7 @@ export function pitchBlocked(s: GameState): string | null {
 export function pitchChance(s: GameState, slot: PitchSlot): number {
   const sl = PITCH_SLOTS.find((x) => x.id === slot)!;
   const mediaW = slot === 'social' ? 1 / 70 : 1 / 160;
-  let c = sl.base + s.media * mediaW + s.rep / 350 + s.tier * 0.05 - s.sponsors.length * 0.1 + (currentManager(s)?.sponsor ?? 0) / 200;
+  let c = sl.base + s.media * mediaW + (s.rep - 30) / 220 + s.tier * 0.05 - s.sponsors.length * 0.1 + (currentManager(s)?.sponsor ?? 0) / 200;
   if ((s.flags.freakStigma ?? 0) > 0 && slot !== 'social') c -= 0.05;
   if (s.profile.difficulty === 'hard') c *= 0.8;
   return Math.round(clamp(c, 0.05, 0.85) * 100);
@@ -1203,12 +1207,25 @@ export function startSeason(s0: GameState): GameState {
   return nextEventOrSeason(s);
 }
 
+/** Odpowiedzi w zdarzeniach w zmiennej kolejności, żeby nie klikało się zawsze pierwszej. */
+function shuffleChoices<T>(arr: T[], key: string): T[] {
+  let h = 2166136261;
+  for (let i = 0; i < key.length; i++) h = Math.imul(h ^ key.charCodeAt(i), 16777619);
+  const out = [...arr];
+  for (let i = out.length - 1; i > 0; i--) {
+    h = Math.imul(h ^ (h >>> 13), 2246822507) >>> 0;
+    const j = h % (i + 1);
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+}
+
 function nextEventOrSeason(s: GameState): GameState {
   const id = s.eventQueue.shift();
   if (id) {
     const def = findEvent(id)!;
     s.seenEvents.push(id);
-    s.event = { id, brand: def.brand, title: def.title ?? 'Wydarzenie', text: def.text(s), choices: def.choices(s) };
+    s.event = { id, brand: def.brand, title: def.title ?? 'Wydarzenie', text: def.text(s), choices: shuffleChoices(def.choices(s), `${id}:${s.season}:${s.age}:${s.history.length}`) };
     s.phase = 'event';
     return s;
   }
@@ -1534,6 +1551,7 @@ function fightMods(s: GameState): number {
   if (cur.prep === 'hard') m += 3;
   m += cur.pressMod ?? 0;
   if (hasBackroom(s, 'supps')) m += 2;
+  if (hasBackroom(s, 'sparring')) m += 4;
   return m;
 }
 
@@ -1822,6 +1840,7 @@ function startFight(rng: Rng, s: GameState, o: FightOffer) {
         rep.moments.push({ round: 0, title: 'Nie zrobiłeś wagi', text: `Waga pokazuje o 1,2 kg za dużo. ${fine.toLocaleString('pl-PL')} zł z gaży idzie do rywala, a ty wchodzisz do klatki wysuszony.`, tone: 'bad' });
       }
     }
+    if (!amateur && !freak) rep.sim.pro = true;
     if (!amateur && !freak && (title || o.rival)) {
       rep.sim.big = true;
       rep.moments.push({
@@ -1890,7 +1909,7 @@ export function decide(s0: GameState, key: string): GameState {
   withRng(s, (rng) => {
     const ctx = fightCtx(s, rep.opp);
     applyDecision(rng, ctx, rep.sim, rep, key);
-    if (!rep.sim.finished) advanceFight(rng, { ...ctx, allowDecision: !!rep.sim.big }, rep.sim, rep);
+    if (!rep.sim.finished) advanceFight(rng, ctx, rep.sim, rep);
     if (rep.sim.finished) finalizeFight(rng, s, rep);
   });
   return s;
@@ -1962,19 +1981,104 @@ export const PRESS_OPTIONS: { key: PressAnswer; label: string; desc: string }[] 
   { key: 'insult', label: 'Jedziesz po bandzie', desc: 'Zasięgi gwarantowane. Federacja może ukarać, a nerwy mogą puścić.' },
 ];
 
+/** Ile rozgłosu daje wybryk: im bardziej jesteś znany, tym mniej robi wrażenie kolejny. */
+function mediaGain(s: GameState, base: number): number {
+  return Math.max(1, Math.round(base * clamp(1.25 - s.media / 90, 0.3, 1.25)));
+}
+
+type PressCtx = NonNullable<FightOffer['pressCtx']>;
+
+/** Konferencja zależna od sytuacji: inne pytanie, inne odpowiedzi i inne ryzyko. */
+export function pressContext(s: GameState, o: FightOffer): PressCtx {
+  const n = o.opp.lastName;
+  const peer = o.opp.peer ? s.peers.find((p) => p.id === o.opp.id) : undefined;
+  if (o.opp.freak)
+    return {
+      id: 'freak',
+      question: `Dziennikarz: „Sportowiec kontra ${o.opp.freak}. Nie wstyd ci?”`,
+      labels: {
+        calm: ['„To też praca”', 'Spokojnie, bez wchodzenia w cyrk. Kibice MMA to docenią.'],
+        provoke: ['Grasz w ich grę', 'Riposta pod klipy. Zasięgi pewne, nerwy też.'],
+        insult: ['Robisz show', 'Przewracasz stół i rzucasz butelką. Dokładnie tego chcą organizatorzy.'],
+      },
+      provoke: 0.7,
+      insult: 0.65,
+    };
+  if (peer && peer.metCount > 0)
+    return {
+      id: 'rematch',
+      question: `Dziennikarz: „Wasz bilans to ${peer.h2h.w}-${peer.h2h.l}. ${n} mówi, że tym razem nie będzie przypadku. Co ty na to?”`,
+      labels: {
+        calm: ['„Znamy się na pamięć”', 'Szacunek dla historii. Kibice cenią klasę.'],
+        provoke: ['Przypominasz wynik', `Wyciągasz mu wasze poprzednie starcie. Trafi albo go nakręci.`],
+        insult: ['Robisz z tego wojnę', 'Osobiste wycieczki. Hala będzie pełna, a ochrona w gotowości.'],
+      },
+      provoke: peer.h2h.w > peer.h2h.l ? 0.7 : 0.45,
+      insult: 0.4,
+    };
+  if (s.streak <= -2)
+    return {
+      id: 'losing',
+      question: `Dziennikarz: „${Math.abs(s.streak)} porażki z rzędu. Ludzie mówią, że to już koniec. Po co jeszcze walczysz?”`,
+      labels: {
+        calm: ['Bierzesz to na siebie', '„Zawaliłem, wracam silniejszy.” Kibice lubią szczerość.'],
+        provoke: ['Odgryzasz się', 'Ostro do dziennikarza. Po serii porażek łatwo wyjść na sfrustrowanego.'],
+        insult: ['Atakujesz rywala', 'Głośno i agresywnie. Jak przegrasz, internet cię zje.'],
+      },
+      provoke: 0.4,
+      insult: 0.25,
+    };
+  if (s.streak >= 3)
+    return {
+      id: 'streak',
+      question: `Dziennikarz: „Seria ${s.streak} wygranych. ${n} twierdzi, że biłeś się z nikim. Czujesz się faworytem?”`,
+      labels: {
+        calm: ['„Każda walka jest inna”', 'Pokora faworyta. Bez fajerwerków.'],
+        provoke: ['„Zapytaj moich ostatnich rywali”', 'Pewność siebie na fali. Zwykle działa.'],
+        insult: ['Wyśmiewasz go', 'Arogancja zwycięzcy. Jak się potkniesz, wróci do ciebie.'],
+      },
+      provoke: 0.72,
+      insult: 0.5,
+    };
+  if (o.title)
+    return {
+      id: 'title',
+      question: `Dziennikarz: „${o.defense ? 'Pierwsza obrona? Druga? Ile jeszcze utrzymasz ten pas?' : 'Walka o pas. Co to dla ciebie znaczy?'}”`,
+      labels: {
+        calm: ['Mówisz o drodze', '„Od remizy do tego miejsca.” Kibice to kupują.'],
+        provoke: ['„Pas już jest mój”', 'Pewność siebie przed największą walką.'],
+        insult: ['Jedziesz po rywalu', 'Wszystko albo nic. Federacja patrzy, kibice też.'],
+      },
+      provoke: 0.55,
+      insult: 0.35,
+    };
+  return {
+    id: 'default',
+    question: `${n} na face to face: „${o.pressQuote ?? ''}”`,
+    labels: {
+      calm: ['Spokojnie i z klasą', 'Szacunek, zero emocji. Kibice cenią.'],
+      provoke: ['Odbijasz piłeczkę', 'Ostra riposta. Może wyprowadzić go z równowagi albo ciebie.'],
+      insult: ['Jedziesz po bandzie', 'Zasięgi gwarantowane. Federacja może ukarać, a nerwy mogą puścić.'],
+    },
+    provoke: 0.6,
+    insult: 0.4,
+  };
+}
+
 export function pressAnswer(s0: GameState, key: PressAnswer): GameState {
   const s = clone(s0);
   const o = s.run?.press;
   if (!o) return s0;
   s.run!.press = null;
+  const ctx = o.pressCtx ?? pressContext(s, o);
   withRng(s, (rng) => {
     if (key === 'calm') {
-      s.rep = clamp(s.rep + 2, 0, 100);
+      s.rep = clamp(s.rep + (ctx.id === 'losing' || ctx.id === 'title' ? 3 : 2), 0, 100);
       o.pressMod = 1;
       o.pressNote = rng.pick(['Spokojnie odpowiadasz, że w sobotę wszystko się wyjaśni. Dziennikarze kiwają głowami.', 'Mówisz o szacunku i ciężkiej pracy. Nudne, ale profesjonalne.']);
     } else if (key === 'provoke') {
-      s.media = clamp(s.media + 2, 0, 100);
-      if (rng.chance(0.6)) {
+      s.media = clamp(s.media + mediaGain(s, 2), 0, 100);
+      if (rng.chance(ctx.provoke)) {
         o.pressMod = 3;
         o.pressNote = rng.pick(['Twoja riposta trafia. Rywal czerwienieje i nie wie, co odpowiedzieć. Sala się śmieje.', 'Odbijasz piłeczkę tak, że rywal schodzi ze sceny wściekły. To ty kontrolujesz emocje.']);
       } else {
@@ -1982,9 +2086,9 @@ export function pressAnswer(s0: GameState, key: PressAnswer): GameState {
         o.pressNote = rng.pick(['Rywal ma odpowiedź na wszystko. To ciebie wyprowadził z równowagi.', 'Wdajesz się w przepychankę słowną i przegrywasz ją. Wracasz do hotelu zły.']);
       }
     } else {
-      s.media = clamp(s.media + 3, 0, 100);
-      s.rep = clamp(s.rep - 3, 0, 100);
-      if (rng.chance(0.4)) {
+      s.media = clamp(s.media + mediaGain(s, ctx.id === 'freak' ? 5 : 3), 0, 100);
+      s.rep = clamp(s.rep - (ctx.id === 'freak' ? 1 : ctx.id === 'losing' ? 6 : 4), 0, 100);
+      if (rng.chance(ctx.insult)) {
         o.pressMod = 4;
         o.pressNote = 'Klip z konferencji ma milion wyświetleń. Rywal przez cały tydzień myśli tylko o tobie, a nie o planie na walkę.';
       } else {
@@ -2000,7 +2104,7 @@ export function pressAnswer(s0: GameState, key: PressAnswer): GameState {
 }
 
 export function prepCost(_s: GameState, o: FightOffer): number {
-  return Math.max(500, Math.round((o.purse * 0.2) / 100) * 100);
+  return Math.max(1000, Math.round((o.purse * 0.35) / 100) * 100);
 }
 
 export function acceptOffer(s0: GameState, prep: 'std' | 'rival' | 'hard' = 'std'): GameState {
@@ -2012,6 +2116,7 @@ export function acceptOffer(s0: GameState, prep: 'std' | 'rival' | 'hard' = 'std
   if (pressEligible(o) && !s.run!.autoAccept) {
     withRng(s, (rng) => {
       o.pressQuote = rng.pick(PRESS_QUOTES).replace('{n}', s.profile.lastName);
+      o.pressCtx = pressContext(s, o);
     });
     s.run!.press = o;
     return s;
@@ -3088,13 +3193,15 @@ export function legacyScore(s: GameState): number {
     const t = Math.max(0, BELT_NAMES.findIndex((n) => b.name.startsWith(n)));
     const k = beltCount[t] ?? 0;
     beltCount[t] = k + 1;
-    pts += BELT_PTS[t] * (k === 0 ? 1 : t === 0 ? 0.2 : t <= 2 ? 0.35 : 0.6);
+    pts += BELT_PTS[t] * (k === 0 ? 1 : t === 0 ? 0.2 : t <= 2 ? 0.25 : 0.6);
   }
   pts += s.medals.gold * 12 + s.medals.silver * 6 + s.medals.bronze * 4;
   // wyjście poza Polskę jest warte więcej niż kolejne pasy w kraju
-  pts += [0, 40, 120, 300, 550][s.peakTier] ?? 0;
+  pts += [0, 40, 120, 400, 850][s.peakTier] ?? 0;
   pts += Math.min(400, s.totalEarned / 25000);
   pts += s.media * 2;
+  // reputacja: jak cię zapamiętają poza zasięgami
+  pts += (s.rep - 30) * 2;
   pts -= s.brokenPromises * 20;
   // akademia zostaje po karierze: wychowankowie, nazwisko na drzwiach
   pts += [0, 60, 160, 320, 550][s.academy ?? 0];

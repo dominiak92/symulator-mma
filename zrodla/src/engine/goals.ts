@@ -11,6 +11,8 @@ export interface Goal {
 }
 
 const belt = (s: GameState, t: number) => s.belts.some((b) => b.name.startsWith(BELT_NAMES[t]));
+const beltBefore = (s: GameState, t: number, age: number) => s.belts.some((b) => b.name.startsWith(BELT_NAMES[t]) && b.age < age);
+const rival = (s: GameState) => s.peers.find((p) => p.id === s.rivalId);
 const bestSeason = (s: GameState, fn: (x: GameState['seasons'][0]) => number) => Math.max(0, ...s.seasons.map(fn));
 
 export const DAILY_GOALS: Goal[] = [
@@ -29,6 +31,12 @@ export const DAILY_GOALS: Goal[] = [
   { id: 'd_season4', title: 'Rok życia', desc: 'Wygraj 3 walki w jednym roku zawodowym.', check: (s) => bestSeason(s, (x) => (x.tier >= 1 ? x.w : 0)) >= 3 },
   { id: 'd_gold', title: 'Złota jesień', desc: 'Zdobądź złoty medal w turnieju amatorskim.', check: (s) => s.medals.gold >= 1 },
   { id: 'd_debut20', title: 'Szybki start', desc: 'Zadebiutuj zawodowo przed 20. urodzinami.', check: (s) => s.proDebut !== null && s.proDebut.age < 20 },
+  { id: 'd_rival2', title: 'Rachunki wyrównane', desc: 'Pokonaj odwiecznego rywala dwa razy.', check: (s) => (rival(s)?.h2h.w ?? 0) >= 2 },
+  { id: 'd_young_pl', title: 'Młody mistrz', desc: 'Zdobądź pas polskiej federacji przed 26. urodzinami.', check: (s) => beltBefore(s, 2, 26) },
+  { id: 'd_healthy', title: 'Głowa na karku', desc: 'Zakończ karierę ze zużyciem organizmu poniżej 50.', check: (s) => s.phase === 'ended' && s.wear < 50 && s.record.w >= 10 },
+  { id: 'd_rep', title: 'Wzór do naśladowania', desc: 'Skończ karierę z reputacją co najmniej 70.', check: (s) => s.rep >= 70 },
+  { id: 'd_media', title: 'Twarz z billboardu', desc: 'Dobij do 60 punktów rozgłosu.', check: (s) => s.media >= 60 },
+  { id: 'd_academy', title: 'Własna sala', desc: 'Otwórz własną akademię.', check: (s) => (s.academy ?? 0) >= 1 },
 ];
 
 export const WEEKLY_GOALS: Goal[] = [
@@ -37,6 +45,12 @@ export const WEEKLY_GOALS: Goal[] = [
   { id: 'w_three', title: 'Kolekcjoner', desc: 'Zdobądź pasy na trzech różnych szczeblach.', check: (s) => [0, 1, 2, 3, 4].filter((t) => belt(s, t)).length >= 3 },
   { id: 'w_40', title: 'Emerytura z gablotą', desc: 'Walcz do czterdziestki i zdobądź co najmniej 3 pasy.', check: (s) => s.age >= 40 && s.belts.length >= 3 },
   { id: 'w_hard', title: 'Pod wiatr', desc: 'Na poziomie trudnym zdobądź pas polskiej federacji.', check: (s) => s.profile.difficulty === 'hard' && belt(s, 2) },
+  { id: 'w_top', title: 'Na własnych warunkach', desc: 'Zakończ karierę jako mistrz albo na serii zwycięstw.', check: (s) => !!s.ending?.top },
+  { id: 'w_rival', title: 'Kto tu rządzi', desc: 'Skończ karierę z bilansem co najmniej 3-0 przeciw odwiecznemu rywalowi.', check: (s) => (rival(s)?.h2h.w ?? 0) >= 3 && (rival(s)?.h2h.l ?? 1) === 0 },
+  { id: 'w_young_eu', title: 'Europejski talent', desc: 'Zdobądź pas mistrza Europy przed 30. urodzinami.', check: (s) => beltBefore(s, 3, 30) },
+  { id: 'w_finisher', title: 'Nie dla sędziów', desc: 'Wygraj co najmniej 15 walk zawodowych, w tym 70% przed czasem.', check: (s) => s.record.w >= 15 && s.finishes.ko + s.finishes.sub >= s.record.w * 0.7 },
+  { id: 'w_world_belt', title: 'Na szczycie świata', desc: 'Zdobądź pas światowej federacji.', check: (s) => belt(s, 4) },
+  { id: 'w_local', title: 'Od zera', desc: 'Zacznij od zawodów wojewódzkich i zdobądź pas polskiej federacji.', check: (s) => (s.flags.tryout ?? 0) === 1 && belt(s, 2) },
 ];
 
 function dayKey(d = new Date()) {
