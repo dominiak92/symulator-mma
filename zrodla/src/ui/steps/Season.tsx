@@ -4,6 +4,7 @@ import type { CardSpot, DecisionOption, DecisionPoint, FightOffer, FightReport, 
 import { galaPrefix, SEASON_FORMS, STAGE_LABELS, STAT_LABELS, STYLE_LABELS } from '../../engine/data';
 import { acceptAllOffers, acceptOffer, declineBlocked, declineOffer, decide, mainRecord, negotiateChance, negotiateOffer, recStr, seasonNext, seasonSkip, toSummary } from '../../engine/game';
 import { activeManager, currentManager } from '../../engine/managers';
+import { sfxClick, sfxCrowd, sfxGong, sfxLoss, sfxThud } from '../sound';
 import { OUTCOME_LABEL } from '../../engine/fight';
 import { money } from '../../format';
 import { loadSettings } from '../../storage';
@@ -284,7 +285,14 @@ function LiveCard({ g, f, start, animate, setGame }: { g: GameState; f: FightRep
       <CoachTip id="decision">Prowadzisz? Graj spokojnie. Przegrywasz albo rywal słabnie? Zaryzykuj. Obity? Odpocznij.</CoachTip>
       <div className="choice-list">
         {pending.options.map((o) => (
-          <OptionButton key={o.key} o={o} onPick={() => setGame(decide(g, o.key))} />
+          <OptionButton
+            key={o.key}
+            o={o}
+            onPick={() => {
+              sfxClick();
+              setGame(decide(g, o.key));
+            }}
+          />
         ))}
       </div>
     </div>
@@ -895,6 +903,28 @@ export default function Season({ game, setGame }: StepProps) {
   const amateur = !!run.tourneys;
   const recKey = `${w}-${l}-${dr}`;
   const lastRes = last?.sim.finished && revealedKey === lastKey && !introOpen ? last.result : null;
+
+  // dźwięki: gong na start walki, potem wynik (nokaut, doping, porażka)
+  const gonged = useRef(run.fights.length ? run.fights[run.fights.length - 1].idx : -1);
+  useEffect(() => {
+    if (!last || introOpen || last.idx <= gonged.current || last.method === 'Walkower') return;
+    gonged.current = last.idx;
+    sfxGong();
+  }, [last?.idx, introOpen]);
+  const scored = useRef(run.fights.length && run.fights[run.fights.length - 1].sim.finished ? run.fights[run.fights.length - 1].idx : -1);
+  useEffect(() => {
+    if (!last || !lastRes || last.idx <= scored.current) return;
+    scored.current = last.idx;
+    const ko = last.method === 'KO/TKO' || last.method === 'Lekarz';
+    const big = (last.title && lastRes === 'W') || (last.amateur && (last.stage === 'f' || last.stage === 'b') && lastRes === 'W');
+    if (lastRes === 'W') {
+      if (ko) sfxThud(true);
+      setTimeout(() => sfxCrowd(big), ko ? 180 : 0);
+    } else if (lastRes === 'L') {
+      if (ko) sfxThud(true);
+      setTimeout(sfxLoss, ko ? 250 : 0);
+    }
+  }, [lastRes, last?.idx]);
 
   // co jeszcze przed nami
   const upcoming: string[] = [];

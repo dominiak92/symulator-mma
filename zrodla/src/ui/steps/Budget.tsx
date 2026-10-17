@@ -7,6 +7,7 @@ import type { StepProps } from '../Game';
 import { Emblem, SponsorLogo, clubCrest } from '../Emblem';
 import { Icon, STAT_ICON } from '../Icon';
 import { CoachTip } from '../Tutorial';
+import { sfxCash } from '../sound';
 
 export default function Budget({ game, setGame }: StepProps) {
   const g = game;
@@ -122,7 +123,11 @@ export default function Budget({ game, setGame }: StepProps) {
             {PITCH_SLOTS.map((sl) => {
               const ch = pitchChance(g, sl.id);
               return (
-                <button key={sl.id} className="choice pitch-opt" onClick={() => setGame(pitchSponsor(g, sl.id))}>
+                <button key={sl.id} className="choice pitch-opt" onClick={() => {
+                    const n = pitchSponsor(g, sl.id);
+                    if (n.pitch?.ok) sfxCash();
+                    setGame(n);
+                  }}>
                   <span className="opt-top">
                     <span className="opt-label">{sl.label}</span>
                     <span className={`chance-big tone-${ch >= 50 ? 'good' : ch >= 30 ? 'mid' : 'bad'}`}>{ch}%</span>
@@ -182,6 +187,7 @@ export default function Budget({ game, setGame }: StepProps) {
                       className="btn btn-small btn-gold btn-ico"
                       onClick={() => {
                         setConfirmAcad(false);
+                        sfxCash();
                         setGame(investAcademy(g));
                       }}
                     >
