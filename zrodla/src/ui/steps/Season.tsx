@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from
 import { createPortal } from 'react-dom';
 import type { CardSpot, DecisionOption, DecisionPoint, FightOffer, FightReport, GameState, Moment } from '../../engine/types';
 import { galaPrefix, SEASON_FORMS, STAGE_LABELS, STAT_LABELS, STYLE_LABELS } from '../../engine/data';
-import { acceptAllOffers, acceptOffer, declineBlocked, declineOffer, decide, mainRecord, negotiateChance, negotiateOffer, recStr, seasonNext, seasonSkip, toSummary } from '../../engine/game';
+import { PRESS_OPTIONS, pressAnswer, prepCost, acceptAllOffers, acceptOffer, declineBlocked, declineOffer, decide, mainRecord, negotiateChance, negotiateOffer, recStr, seasonNext, seasonSkip, toSummary } from '../../engine/game';
 import { activeManager, currentManager } from '../../engine/managers';
 import { sfxClick, sfxCrowd, sfxGong, sfxLoss, sfxThud } from '../sound';
 import { OUTCOME_LABEL } from '../../engine/fight';
@@ -673,6 +673,42 @@ function TourneyPoster({ g, f, onGo, paused }: { g: GameState; f: FightReport; o
   );
 }
 
+/** Konferencja przed dużą galą: rywal rzuca tekst, ty wybierasz odpowiedź. */
+function PressCard({ g, o, setGame }: { g: GameState; o: FightOffer; setGame: (s: GameState) => void }) {
+  return (
+    <div className="fight-intro offer-modal press-modal" role="dialog" aria-modal="true" aria-label="Konferencja przed galą">
+      <div className="fi-card">
+        <div className="fi-top">
+          <span className="fi-num">Konferencja</span>
+          <span className="fi-ctx">{o.gala} · face to face</span>
+        </div>
+        <VsHero g={g} opp={o.opp} label="przed galą" size={64} />
+        <blockquote className="press-quote">
+          <Icon name="megaphone" size={14} />
+          <span>
+            „{o.pressQuote}”<small> {o.opp.lastName}</small>
+          </span>
+        </blockquote>
+        <div className="choice-list press-opts">
+          {PRESS_OPTIONS.map((p) => (
+            <button
+              key={p.key}
+              className={`choice press-opt press-${p.key}`}
+              onClick={() => {
+                sfxClick();
+                setGame(pressAnswer(g, p.key));
+              }}
+            >
+              <span className="title">{p.label}</span>
+              <span className="desc">{p.desc}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /** Oferta walki (zawodowcy): rywal, gaża i decyzja gracza. */
 function OfferCard({ g, o, n, total, setGame }: { g: GameState; o: FightOffer; n: number; total: number; setGame: (s: GameState) => void }) {
   const opp = o.opp;
@@ -680,6 +716,9 @@ function OfferCard({ g, o, n, total, setGame }: { g: GameState; o: FightOffer; n
   useEffect(() => {
     goRef.current?.focus({ preventScroll: true });
   }, [o.opp.id, o.purse]);
+  const [prep, setPrep] = useState<'std' | 'rival' | 'hard'>('std');
+  const pc = prepCost(g, o);
+  const canRival = g.money >= pc;
   const mgr = currentManager(g);
   const busy = mgr && !activeManager(g);
   const blocked = declineBlocked(g);
@@ -738,13 +777,33 @@ function OfferCard({ g, o, n, total, setGame }: { g: GameState; o: FightOffer; n
         </div>
         {busy && <p className="ofr-note">{mgr!.name} w tym sezonie zajmuje się innymi. Ofertę przyniósł organizator.</p>}
         {o.note && <p className="ofr-note strong">{o.note}</p>}
-        <p className="fi-scout">
-          <Icon name="target" size={14} />
-          {opp.freak ? 'Freak fight. Kamery, hałas i cyrk.' : SCOUT[opp.style]}
-        </p>
+        <div className="prep">
+          <small className="prep-title">Obóz przed walką</small>
+          <div className="seg prep-seg" role="radiogroup" aria-label="Obóz przed walką">
+            <button role="radio" aria-checked={prep === 'std'} className={prep === 'std' ? 'on' : ''} onClick={() => setPrep('std')}>
+              <b>Zwykły</b>
+              <small>bez kosztów</small>
+            </button>
+            <button role="radio" aria-checked={prep === 'rival'} className={prep === 'rival' ? 'on' : ''} disabled={!canRival} onClick={() => setPrep('rival')}>
+              <b>Pod rywala</b>
+              <small>−{money(pc)}</small>
+            </button>
+            <button role="radio" aria-checked={prep === 'hard'} className={prep === 'hard' ? 'on' : ''} onClick={() => setPrep('hard')}>
+              <b>Ciężki</b>
+              <small>ryzyko urazu</small>
+            </button>
+          </div>
+          <small className="prep-desc">
+            {prep === 'rival'
+              ? `Sparingi z kimś w stylu rywala (${STYLE_LABELS[opp.style].toLowerCase()}). Wyraźnie lepsza forma w tej walce.`
+              : prep === 'hard'
+                ? 'Dwa treningi dziennie. Lepsza forma za darmo, ale większe zużycie i ryzyko kontuzji.'
+                : 'Normalne przygotowania, bez premii i bez ryzyka.'}
+          </small>
+        </div>
         <CoachTip id="offer">Na zawodowstwie każda walka to oferta. Przyjmij ją, spróbuj wynegocjować więcej albo odrzuć i poczekaj na lepszą.</CoachTip>
         <div className="ofr-actions">
-          <button ref={goRef} className="btn btn-primary btn-block btn-ico" onClick={() => setGame(acceptOffer(g))}>
+          <button ref={goRef} className="btn btn-primary btn-block btn-ico" onClick={() => setGame(acceptOffer(g, prep))}>
             <Icon name="glove" />
             Przyjmuję walkę
           </button>
@@ -759,7 +818,7 @@ function OfferCard({ g, o, n, total, setGame }: { g: GameState; o: FightOffer; n
             </button>
           </div>
           {total - n > 0 && (
-            <button className="link-btn ofr-auto" onClick={() => setGame(acceptAllOffers(g))}>
+            <button className="link-btn ofr-auto" onClick={() => setGame(acceptAllOffers(g, prep))}>
               Przyjmuj też kolejne oferty w tym sezonie
             </button>
           )}
@@ -870,14 +929,14 @@ export default function Season({ game, setGame }: StepProps) {
 
   // pierwsza walka i kolejne: po wyniku chwila przerwy (albo przycisk „Następna walka”)
   useEffect(() => {
-    if (spinning || run.done || waiting || introOpen || run.offer) return;
+    if (spinning || run.done || waiting || introOpen || run.offer || run.press) return;
     if (last && !last.sim.finished) return;
     if (paused && anim) return;
     const delay = !animate ? 0 : fast ? 260 : !last ? 400 : revealMs + NEXT_MS;
     const t = setTimeout(advance, delay);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [spinning, run.done, waiting, introOpen, last?.idx, finishedNow, fast, animate, paused, !!run.offer]);
+  }, [spinning, run.done, waiting, introOpen, last?.idx, finishedNow, fast, animate, paused, !!run.offer, !!run.press]);
 
   // przewijanie do karty walki (cała karta na ekranie), na koniec do przycisku
   useEffect(() => {
@@ -1026,7 +1085,7 @@ export default function Season({ game, setGame }: StepProps) {
         ))}
       </div>
 
-      {!run.done && !waiting && !introOpen && !run.offer && (
+      {!run.done && !waiting && !introOpen && !run.offer && !run.press && (
         <div className="play-ctrl" role="group" aria-label="Tempo sezonu">
           {!last && paused && anim && !spinning && (
             <button className="icon-pill next" onClick={advance}>
@@ -1069,6 +1128,7 @@ export default function Season({ game, setGame }: StepProps) {
         </div>
       )}
 
+      {run.press && !run.done && createPortal(<PressCard g={g} o={run.press} setGame={setGame} />, document.body)}
       {run.offer && !run.done && createPortal(<OfferCard g={g} o={run.offer} n={run.fights.length + 1} total={run.planned} setGame={setGame} />, document.body)}
       {introOpen &&
         last &&

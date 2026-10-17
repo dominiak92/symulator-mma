@@ -1,6 +1,7 @@
 import { STAT_LABELS, TIER_LEVEL } from '../../engine/data';
 import { ovr } from '../../engine/fighter';
-import { clubAvailability, clubLimits, confirmMarket, marketWarnings, pickClub, pickContract, retire, setManager } from '../../engine/game';
+import { changeDivision, clubAvailability, clubLimits, confirmMarket, divisionKey, divisionOptions, marketWarnings, pickClub, pickContract, retire, setManager, weightMissChance } from '../../engine/game';
+import { WEIGHTS } from '../../engine/data';
 import { MANAGERS, currentManager, managerBlocked } from '../../engine/managers';
 import type { Contract } from '../../engine/types';
 import { lat, money, plural } from '../../format';
@@ -183,6 +184,7 @@ export default function Market({ game, setGame }: StepProps) {
         )}
       </section>
 
+      {g.tier >= 1 && <DivisionPick game={g} setGame={setGame} />}
       {g.tier >= 1 && <ManagerPick game={g} setGame={setGame} />}
 
       <section className="step">
@@ -448,6 +450,39 @@ function ManagerPick({ game: g, setGame }: StepProps) {
           </div>
         </details>
       )}
+    </section>
+  );
+}
+
+function DivisionPick({ game: g, setGame }: StepProps) {
+  const opts = divisionOptions(g);
+  const cur = divisionKey(g);
+  const natural = g.profile.weight ?? 'polsrednia';
+  const idx = (k: string) => opts.indexOf(k as never);
+  const shift = opts.indexOf(cur) - opts.indexOf(natural);
+  const miss = weightMissChance(g);
+  return (
+    <section className="step div-section">
+      <h3 className="pt-ico" style={{ marginBottom: 8 }}>
+        <Icon name="scale" size={18} />
+        Kategoria wagowa
+      </h3>
+      <div className="seg div-seg" role="radiogroup" aria-label="Kategoria wagowa">
+        {opts.map((k) => (
+          <button key={k} role="radio" aria-checked={k === cur} className={k === cur ? 'on' : ''} onClick={() => setGame(changeDivision(g, k))}>
+            <b>{WEIGHTS[k].short}</b>
+            <small>{k === natural ? 'naturalna' : idx(k) < idx(natural) ? 'zbijasz wagę' : 'kategoria wyżej'}</small>
+          </button>
+        ))}
+      </div>
+      <p className="muted small div-note">
+        {shift < 0
+          ? `Przewaga warunków fizycznych w klatce, ale przed każdą walką ryzyko, że nie zrobisz wagi (ok. ${miss}%: kara z gaży i słabsza forma). Zbijanie męczy organizm.`
+          : shift > 0
+            ? 'Bez zbijania wagi i bez ryzyka na ważeniu, ale rywale są więksi i silniejsi.'
+            : 'Twoja naturalna waga. Bez premii i bez ryzyka.'}{' '}
+        Zmiana kategorii zeruje ranking.
+      </p>
     </section>
   );
 }
