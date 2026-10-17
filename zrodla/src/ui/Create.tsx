@@ -4,6 +4,7 @@ import type { GameState, Profile, StartProfile, Style } from '../engine/types';
 import { DIFFICULTY, HOMETOWNS, NICKNAMES, START_PROFILES, STYLE_DESC, STYLE_LABELS, VOIVODESHIPS, WEIGHTS, WEIGHT_KEYS } from '../engine/data';
 import { newGame, randomProfile } from '../engine/game';
 import { createRng } from '../engine/rng';
+import { Icon } from './Icon';
 
 const STYLES: Style[] = ['boxer', 'kickboxer', 'wrestler', 'grappler', 'brawler', 'allround'];
 const STARTS: StartProfile[] = ['osiedle', 'biznes', 'junior', 'wybraniec'];
@@ -44,7 +45,10 @@ export default function Create({ slot, onBack, onStart }: { slot: number; onBack
       </div>
 
       <section className="form-section">
-        <div className="label">Imię i nazwisko</div>
+        <div className="label pt-ico">
+          <Icon name="user" size={16} />
+          Imię i nazwisko
+        </div>
         <div className="field-grid">
           <input
             className="input"
@@ -61,13 +65,17 @@ export default function Create({ slot, onBack, onStart }: { slot: number; onBack
             onChange={(e) => set({ lastName: e.target.value })}
           />
         </div>
-        <button className="btn btn-ghost btn-small" style={{ marginTop: 8 }} onClick={reroll}>
+        <button className="btn btn-ghost btn-small btn-ico" style={{ marginTop: 8 }} onClick={reroll}>
+          <Icon name="dice" size={15} />
           Losuj imię i nazwisko
         </button>
       </section>
 
       <section className="form-section">
-        <div className="label">Ksywka (możesz zostawić pustą)</div>
+        <div className="label pt-ico">
+          <Icon name="pen" size={16} />
+          Ksywka (możesz zostawić pustą)
+        </div>
         <div className="field-inline">
           <input
             className="input"
@@ -77,14 +85,18 @@ export default function Create({ slot, onBack, onStart }: { slot: number; onBack
             aria-label="Ksywa"
             onChange={(e) => set({ nickname: e.target.value })}
           />
-          <button className="btn btn-ghost" onClick={() => set({ nickname: rng.pick(NICKNAMES) })}>
+          <button className="btn btn-ghost btn-ico" onClick={() => set({ nickname: rng.pick(NICKNAMES) })}>
+            <Icon name="dice" size={15} />
             Losuj
           </button>
         </div>
       </section>
 
       <section className="form-section">
-        <div className="label">Skąd jesteś</div>
+        <div className="label pt-ico">
+          <Icon name="pin" size={16} />
+          Skąd jesteś
+        </div>
         <div className="row wrap">
           <select
             className="input"
@@ -112,7 +124,10 @@ export default function Create({ slot, onBack, onStart }: { slot: number; onBack
       </section>
 
       <section className="form-section">
-        <div className="label">Styl walki</div>
+        <div className="label pt-ico">
+          <Icon name="glove" size={16} />
+          Styl walki
+        </div>
         <div className="choice-grid" role="radiogroup" aria-label="Styl walki">
           {STYLES.map((st) => (
             <button key={st} className="choice" role="radio" aria-checked={p.style === st} onClick={() => set({ style: st })}>
@@ -124,7 +139,10 @@ export default function Create({ slot, onBack, onStart }: { slot: number; onBack
       </section>
 
       <section className="form-section">
-        <div className="label">Kategoria wagowa</div>
+        <div className="label pt-ico">
+          <Icon name="scale" size={16} />
+          Kategoria wagowa
+        </div>
         <div className="weight-grid" role="radiogroup" aria-label="Kategoria wagowa">
           {WEIGHT_KEYS.map((w) => (
             <button key={w} className="choice weight" role="radio" aria-checked={p.weight === w} onClick={() => set({ weight: w })}>
@@ -143,7 +161,10 @@ export default function Create({ slot, onBack, onStart }: { slot: number; onBack
       </section>
 
       <section className="form-section">
-        <div className="label">Punkt startowy</div>
+        <div className="label pt-ico">
+          <Icon name="sparkle" size={16} />
+          Punkt startowy
+        </div>
         <div className="choice-list" role="radiogroup" aria-label="Punkt startowy">
           {STARTS.map((k) => {
             const sp = START_PROFILES[k];
@@ -165,7 +186,10 @@ export default function Create({ slot, onBack, onStart }: { slot: number; onBack
       </section>
 
       <section className="form-section">
-        <div className="label">Poziom trudności</div>
+        <div className="label pt-ico">
+          <Icon name="target" size={16} />
+          Poziom trudności
+        </div>
         <div className="choice-grid" role="radiogroup" aria-label="Poziom trudności">
           {(['normal', 'hard'] as const).map((d) => (
             <button key={d} className="choice" role="radio" aria-checked={p.difficulty === d} onClick={() => set({ difficulty: d })}>
@@ -190,7 +214,8 @@ export default function Create({ slot, onBack, onStart }: { slot: number; onBack
         <button className="btn btn-ghost" onClick={onBack}>
           Wróć
         </button>
-        <button className="btn btn-primary" disabled={!valid} onClick={start}>
+        <button className="btn btn-primary btn-ico" disabled={!valid} onClick={start}>
+          <Icon name="dumbbell" />
           Pierwszy trening
         </button>
       </div>

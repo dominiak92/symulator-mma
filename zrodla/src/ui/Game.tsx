@@ -13,6 +13,7 @@ import Market from './steps/Market';
 import Ended from './steps/Ended';
 import { HistorySheet, PeersSheet, RankingSheet } from './Sheets';
 import { GG } from './brand';
+import { Icon, STAT_ICON } from './Icon';
 import { Emblem, SponsorLogo, clubCrest, crestFor } from './Emblem';
 
 const PHASES: Phase[] = ['training', 'budget', 'event', 'season', 'summary', 'market'];
@@ -116,30 +117,45 @@ export default function Game({
           </div>
           <div className="hud-chips">
             <div className="hud-chip">
-              <small>Budżet</small>
+              <small>
+                <Icon name="coins" size={12} />
+                Budżet
+              </small>
               <b key={moneyFlash?.n ?? 0} className={`${g.money < 0 ? 'neg' : ''} ${moneyFlash ? `flash-${moneyFlash.dir}` : ''}`}>
                 {moneyShort(g.money)} zł
               </b>
             </div>
             <div className="hud-chip">
-              <small>{amateur ? 'Rekord am.' : 'Rekord'}</small>
+              <small>
+                <Icon name="glove" size={12} />
+                {amateur ? 'Rekord am.' : 'Rekord'}
+              </small>
               <b>{recStr(rec)}</b>
             </div>
             <div className="hud-chip">
               {g.tier === 0 && g.contract.kind !== 'freak' ? (
                 <>
-                  <small>Medale</small>
+                  <small>
+                    <Icon name="medal" size={12} />
+                    Medale
+                  </small>
                   <b>{medals ? `${g.medals.gold}·${g.medals.silver}·${g.medals.bronze}` : '–'}</b>
                 </>
               ) : (
                 <>
-                  <small>Ranking</small>
+                  <small>
+                    <Icon name="trophy" size={12} />
+                    Ranking
+                  </small>
                   <b>{g.rank === 0 ? 'Mistrz' : g.rank === null ? '–' : `#${g.rank}`}</b>
                 </>
               )}
             </div>
             <div className="hud-chip">
-              <small>Wiek</small>
+              <small>
+                <Icon name="hourglass" size={12} />
+                Wiek
+              </small>
               <b>{g.age}</b>
             </div>
           </div>
@@ -155,10 +171,22 @@ export default function Game({
 
       {g.phase !== 'ended' && (
         <nav className="dock" aria-label="Informacje o zawodniku">
-          <button onClick={() => setSheet('skills')}>Zawodnik</button>
-          <button onClick={() => setSheet('ranking')}>{g.tier === 0 ? 'Medale' : 'Ranking'}</button>
-          <button onClick={() => setSheet('history')}>Walki</button>
-          <button onClick={() => setSheet('peers')}>Rocznik</button>
+          <button onClick={() => setSheet('skills')}>
+            <Icon name="user" size={16} />
+            Zawodnik
+          </button>
+          <button onClick={() => setSheet('ranking')}>
+            <Icon name={g.tier === 0 ? 'medal' : 'trophy'} size={16} />
+            {g.tier === 0 ? 'Medale' : 'Ranking'}
+          </button>
+          <button onClick={() => setSheet('history')}>
+            <Icon name="list" size={16} />
+            Walki
+          </button>
+          <button onClick={() => setSheet('peers')}>
+            <Icon name="users" size={16} />
+            Rocznik
+          </button>
         </nav>
       )}
 
@@ -169,10 +197,12 @@ export default function Game({
             <CareerPanel g={g} onRanking={() => setSheet('ranking')} />
             <ClubPanel g={g} />
             <div className="row wrap" style={{ gap: 6 }}>
-              <button className="btn btn-ghost btn-small" onClick={() => setSheet('history')}>
+              <button className="btn btn-ghost btn-small btn-ico" onClick={() => setSheet('history')}>
+                <Icon name="list" size={15} />
                 Historia walk
               </button>
-              <button className="btn btn-ghost btn-small" onClick={() => setSheet('peers')}>
+              <button className="btn btn-ghost btn-small btn-ico" onClick={() => setSheet('peers')}>
+                <Icon name="users" size={15} />
                 Rocznik
               </button>
             </div>
@@ -196,16 +226,20 @@ export default function Game({
               <>
                 <SheetHead title="Menu" onClose={() => setSheet(null)} />
                 <div className="menu-list">
-                  <button className="btn btn-ghost btn-block" onClick={() => setSheet('skills')}>
+                  <button className="btn btn-ghost btn-block btn-ico" onClick={() => setSheet('skills')}>
+                    <Icon name="user" />
                     Umiejętności i klub
                   </button>
-                  <button className="btn btn-ghost btn-block" onClick={() => setSheet('history')}>
+                  <button className="btn btn-ghost btn-block btn-ico" onClick={() => setSheet('history')}>
+                    <Icon name="list" />
                     Historia walk
                   </button>
-                  <button className="btn btn-ghost btn-block" onClick={() => setSheet('peers')}>
+                  <button className="btn btn-ghost btn-block btn-ico" onClick={() => setSheet('peers')}>
+                    <Icon name="users" />
                     Twój rocznik
                   </button>
-                  <button className="btn btn-ghost btn-block" onClick={onMenu}>
+                  <button className="btn btn-ghost btn-block btn-ico" onClick={onMenu}>
+                    <Icon name="door" />
                     Wyjdź do menu głównego
                   </button>
                   <p className="muted small">Gra zapisuje się sama po każdym kroku.</p>
@@ -246,14 +280,20 @@ function SkillsPanel({ g, plain }: { g: GameState; plain?: boolean }) {
   return (
     <section className={plain ? 'plain-block' : 'panel'}>
       <div className="panel-title">
-        <span>Umiejętności</span>
+        <span className="pt-ico">
+          <Icon name="dumbbell" size={15} />
+          Umiejętności
+        </span>
         <span className="faint">0–99</span>
       </div>
       {STAT_KEYS.map((k) => {
         const gain = g.lastGains[k] ?? 0;
         return (
           <div className="stat-row" key={k} title={STAT_DESC[k]}>
-            <span>{STAT_LABELS[k]}</span>
+            <span className="stat-name">
+              <Icon name={STAT_ICON[k]} size={14} />
+              {STAT_LABELS[k]}
+            </span>
             <div className="bar">
               <i style={{ width: `${g.stats[k]}%` }} />
             </div>
@@ -264,7 +304,7 @@ function SkillsPanel({ g, plain }: { g: GameState; plain?: boolean }) {
           </div>
         );
       })}
-      {g.injury && <p className="tag bad" style={{ marginTop: 10 }}>Kontuzja: {g.injury.name}, testy −{g.injury.penalty} pkt</p>}
+      {g.injury && <p className="tag bad" style={{ marginTop: 10 }}><Icon name="bandage" size={13} />Kontuzja: {g.injury.name}, testy −{g.injury.penalty} pkt</p>}
       {g.wear >= 40 && (
         <p className="muted small" style={{ marginTop: 8 }}>
           Zużycie organizmu {Math.round(g.wear)}/100. {g.wear >= 75 ? 'Lekarze patrzą na ciebie coraz krzywiej.' : 'Szczęka już nie ta co kiedyś.'}
@@ -306,7 +346,10 @@ function ClubPanel({ g, plain }: { g: GameState; plain?: boolean }) {
   return (
     <section className={plain ? 'plain-block' : 'panel'}>
       <div className="panel-title">
-        <span>Klub</span>
+        <span className="pt-ico">
+          <Icon name="home" size={15} />
+          Klub
+        </span>
         <span className="tag">poziom {g.club.quality} z 5</span>
       </div>
       <div className="club-row">
@@ -320,7 +363,10 @@ function ClubPanel({ g, plain }: { g: GameState; plain?: boolean }) {
       </div>
       {g.sponsors.length > 0 && (
         <div className="sponsor-list">
-          <small className="faint">Sponsorzy</small>
+          <small className="faint pt-ico">
+            <Icon name="briefcase" size={13} />
+            Sponsorzy
+          </small>
           {g.sponsors.map((sp) => (
             <div key={sp.id} className="sponsor-item">
               <SponsorLogo name={sp.name} size={30} />
@@ -344,7 +390,10 @@ export function CareerPanel({ g, onRanking }: { g: GameState; onRanking?: () => 
     return (
       <section className="panel">
         <div className="panel-title">
-          <span>Amatorka</span>
+          <span className="pt-ico">
+            <Icon name="medal" size={15} />
+            Amatorka
+          </span>
           <span className="tag">{div}</span>
         </div>
         <div className="kv-grid">
@@ -424,7 +473,8 @@ export function CareerPanel({ g, onRanking }: { g: GameState; onRanking?: () => 
         </div>
       )}
       {onRanking && g.contract.kind !== 'freak' && (
-        <button className="btn btn-ghost btn-small" style={{ marginTop: 10 }} onClick={onRanking}>
+        <button className="btn btn-ghost btn-small btn-ico" style={{ marginTop: 10 }} onClick={onRanking}>
+          <Icon name="trophy" size={15} />
           Cały ranking
         </button>
       )}

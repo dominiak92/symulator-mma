@@ -7,6 +7,7 @@ import { todaysGoals, weekEndsIn } from '../engine/goals';
 import { plural } from '../format';
 import { ACHIEVEMENTS } from '../engine/achievements';
 import { Fighter } from './Art';
+import { Icon } from './Icon';
 
 export default function Menu({
   onPlay,
@@ -54,10 +55,16 @@ export default function Menu({
 
       <div className="menu-grid">
         <button className="menu-tile primary" onClick={onPlay}>
+          <span className="tile-ico">
+            <Icon name="play" size={22} />
+          </span>
           <strong>Graj</strong>
           <span>Nowa kariera albo dalej tam, gdzie skończyłeś</span>
         </button>
         <button className="menu-tile" onClick={onDaily}>
+          <span className="tile-ico">
+            <Icon name="calendar" size={20} />
+          </span>
           <strong>Kariera dnia</strong>
           <span>
             {doneToday
@@ -70,13 +77,19 @@ export default function Menu({
       <section className="goals">
         <div className="goals-head">
           <div>
-            <small>Seria</small>
+            <small>
+              <Icon name="flame" size={12} />
+              Seria
+            </small>
             <b>
               {gs.streak} {gs.streak === 1 ? 'dzień' : 'dni'}
             </b>
           </div>
           <div>
-            <small>Cele dnia</small>
+            <small>
+              <Icon name="target" size={12} />
+              Cele dnia
+            </small>
             <b>
               {gs.dailyDone.length}/{goals.daily.length}
             </b>
@@ -89,7 +102,7 @@ export default function Menu({
             return (
               <li key={g.id} className={done ? 'done' : ''}>
                 <span className="goal-check" aria-hidden="true">
-                  {done ? '✓' : ''}
+                  {done ? <Icon name="check" size={14} /> : ''}
                 </span>
                 <div>
                   <strong>{g.title}</strong>
@@ -100,7 +113,7 @@ export default function Menu({
           })}
           <li className={`weekly ${gs.weeklyDone ? 'done' : ''}`}>
             <span className="goal-check" aria-hidden="true">
-              {gs.weeklyDone ? '✓' : ''}
+              {gs.weeklyDone ? <Icon name="check" size={14} /> : <Icon name="star" size={13} />}
             </span>
             <div>
               <strong>{goals.weekly.title}</strong>
@@ -115,16 +128,25 @@ export default function Menu({
 
       <div className="menu-grid small">
         <button className="menu-tile" onClick={onAchievements}>
+          <span className="tile-ico">
+            <Icon name="trophy" size={20} />
+          </span>
           <strong>Osiągnięcia</strong>
           <span>
             {ach}/{ACHIEVEMENTS.length} zdobytych, kolekcja między karierami
           </span>
         </button>
         <button className="menu-tile" onClick={onMuseum}>
+          <span className="tile-ico">
+            <Icon name="museum" size={20} />
+          </span>
           <strong>Muzeum kariery</strong>
           <span>{museum.length ? `${museum.length} ${plural(museum.length, 'kariera', 'kariery', 'karier')}, rekord ${museum.find((m) => m.ranked)?.legacy ?? 0} pkt` : 'Rekordy i werdykty twoich karier'}</span>
         </button>
         <button className="menu-tile" onClick={onSettings}>
+          <span className="tile-ico">
+            <Icon name="sliders" size={20} />
+          </span>
           <strong>Ustawienia</strong>
           <span>Animacje i zapis gry</span>
         </button>
@@ -132,7 +154,10 @@ export default function Menu({
 
       <details className="acc how-acc" style={{ maxWidth: 760 }}>
         <summary>
-          <span>Jak to działa</span>
+          <span>
+            <Icon name="help" size={15} />
+            Jak to działa
+          </span>
         </summary>
         <p className="muted acc-body">
           Każdy rok to jeden sezon. Wybierasz, co trenujesz, sprawdzasz budżet i decydujesz, co zrobić z tym, co przynosi życie. Potem
@@ -147,7 +172,10 @@ export default function Menu({
           <strong>A ty trenujesz?</strong>
           <small>Rashguardy, spodenki i rękawice do sportów walki w sklepie Ground Game.</small>
         </div>
-        <span className="btn btn-primary btn-small">Sklep</span>
+        <span className="btn btn-primary btn-small btn-ico">
+          <Icon name="shirt" size={15} />
+          Sklep
+        </span>
       </a>
 
       <p className="footer">

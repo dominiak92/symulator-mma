@@ -4,6 +4,7 @@ import { TIER_NAMES } from '../engine/data';
 import { recStr } from '../engine/game';
 import { ovr } from '../engine/fighter';
 import { lat } from '../format';
+import { Icon } from './Icon';
 
 export default function Slots({
   onOpen,
@@ -20,7 +21,8 @@ export default function Slots({
     <main style={{ maxWidth: 680, margin: '0 auto', padding: '48px 0' }}>
       <div className="row" style={{ justifyContent: 'space-between' }}>
         <h2>Zapisy</h2>
-        <button className="btn btn-ghost btn-small" onClick={onBack}>
+        <button className="btn btn-ghost btn-small btn-ico" onClick={onBack}>
+          <Icon name="home" size={14} />
           Wróć do menu
         </button>
       </div>
@@ -60,10 +62,12 @@ export default function Slots({
                   </>
                 ) : (
                   <>
-                    <button className="btn btn-ghost btn-small" onClick={() => setConfirm(n)}>
+                    <button className="btn btn-ghost btn-small btn-ico" onClick={() => setConfirm(n)}>
+                      <Icon name="x" size={14} />
                       Usuń
                     </button>
-                    <button className="btn btn-primary btn-small" onClick={() => onOpen(n)}>
+                    <button className="btn btn-primary btn-small btn-ico" onClick={() => onOpen(n)}>
+                      <Icon name={s.phase === 'ended' ? 'card' : 'play'} size={14} />
                       {s.phase === 'ended' ? 'Zobacz kartę' : 'Kontynuuj'}
                     </button>
                   </>
@@ -75,7 +79,8 @@ export default function Slots({
                   <h3>Nowa kariera</h3>
                   <p className="muted">Pusty slot. Zacznij od pierwszego treningu.</p>
                 </div>
-                <button className="btn btn-primary btn-small" onClick={() => onOpen(n)}>
+                <button className="btn btn-primary btn-small btn-ico" onClick={() => onOpen(n)}>
+                  <Icon name="plus" size={14} />
                   Zacznij
                 </button>
               </div>

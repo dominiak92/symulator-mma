@@ -4,6 +4,7 @@ import { TIER_NAMES } from '../engine/data';
 import { loadAchievements, loadMuseum, loadSettings, saveSettings } from '../storage';
 import { money, plural } from '../format';
 import { GG } from './brand';
+import { Icon } from './Icon';
 
 function Shell({ title, sub, onBack, children }: { title: string; sub?: string; onBack: () => void; children: React.ReactNode }) {
   return (
@@ -17,7 +18,8 @@ function Shell({ title, sub, onBack, children }: { title: string; sub?: string; 
             </p>
           )}
         </div>
-        <button className="btn btn-ghost btn-small" onClick={onBack}>
+        <button className="btn btn-ghost btn-small btn-ico" onClick={onBack}>
+          <Icon name="home" size={14} />
           Wróć do menu
         </button>
       </div>
