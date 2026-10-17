@@ -116,7 +116,7 @@ export const START_PROFILES: Record<StartProfile, StartProfileDef> = {
   biznes: {
     label: 'Syn biznesmena',
     desc: 'Kasa i znajomości są, talent jak wypadnie.',
-    mult: 1,
+    mult: 0.9,
     money: 45000,
     talent: [0.1, 0.75],
     intro:
@@ -144,7 +144,7 @@ export const START_PROFILES: Record<StartProfile, StartProfileDef> = {
 
 export const DIFFICULTY = {
   normal: { label: 'Normalny', desc: 'Tak, jak to sobie wymyśliliśmy.', mult: 1 },
-  hard: { label: 'Trudny', desc: 'Sponsorzy skąpią, rywale są twardsi.', mult: 1.1 },
+  hard: { label: 'Trudny', desc: 'Sponsorzy skąpią, rywale są twardsi.', mult: 1.3 },
 };
 
 export const SEASON_FORMS: { label: string; mod: number; w: number; tone: 'good' | 'bad' | 'neutral' | 'purple' }[] = [

@@ -1339,7 +1339,9 @@ export function seasonNext(s0: GameState): GameState {
   withRng(s, (rng) => {
     const idx = run.fights.length;
     if (!isAmateurRun(s)) {
-      run.offer = buildOffer(rng, s, idx);
+      const o = buildOffer(rng, s, idx);
+      if (run.autoAccept) startFight(rng, s, o);
+      else run.offer = o;
       return;
     }
     const { opp, title, defense, grudge } = pickOpponent(rng, s, idx);
@@ -1544,6 +1546,13 @@ export function declineBlocked(s: GameState): string | null {
   if (!o) return null;
   if (o.title) return o.defense ? 'Mistrz nie odmawia obrony pasa.' : 'O pas się nie odmawia.';
   return null;
+}
+
+/** Przyjmuje tę ofertę i wszystkie kolejne w tym sezonie. */
+export function acceptAllOffers(s0: GameState): GameState {
+  const s = acceptOffer(s0);
+  if (s.run) s.run.autoAccept = true;
+  return s;
 }
 
 export function acceptOffer(s0: GameState): GameState {

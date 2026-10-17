@@ -268,6 +268,8 @@ export interface SeasonRun {
   intro: string[];
   /** oferta kolejnej walki czekająca na decyzję gracza (zawodowcy) */
   offer?: FightOffer | null;
+  /** gracz przyjmuje resztę ofert w sezonie bez pytania */
+  autoAccept?: boolean;
   /** odrzucone oferty w tym sezonie */
   declines?: number;
   /** czy menedżer zajmuje się tobą w tym sezonie */
