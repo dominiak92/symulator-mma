@@ -1,5 +1,5 @@
 import { STAT_LABELS } from '../../engine/data';
-import { fightRange, plannedFights, setWantFights, ACADEMY_LEVELS, academyName, academyNext, investAcademy, OVERDRAFT, PITCH_SLOTS, pitchBlocked, pitchChance, pitchPay, pitchSponsor, breakPreview, budgetBalance, budgetLines, canStartSeason, expectedPurses, loanOffer, loanRefusal, startSeason, takeBreakYear, takeLoan } from '../../engine/game';
+import { cheaperClub, downgradeClub, fightRange, plannedFights, setWantFights, ACADEMY_LEVELS, academyName, academyNext, investAcademy, OVERDRAFT, PITCH_SLOTS, pitchBlocked, pitchChance, pitchPay, pitchSponsor, breakPreview, budgetBalance, budgetLines, canStartSeason, expectedPurses, loanOffer, loanRefusal, startSeason, takeBreakYear, takeLoan } from '../../engine/game';
 import { useState } from 'react';
 import type { StatKey } from '../../engine/types';
 import { money, plural } from '../../format';
@@ -17,6 +17,7 @@ export default function Budget({ game, setGame }: StepProps) {
   const refusal = loanRefusal(g);
   const brk = breakPreview(g);
   const canStart = canStartSeason(g);
+  const cheap = after < 0 ? cheaperClub(g) : null;
   const [confirmBreak, setConfirmBreak] = useState(false);
   const [pitchOpen, setPitchOpen] = useState(false);
   const [confirmAcad, setConfirmAcad] = useState(false);
@@ -244,6 +245,20 @@ export default function Budget({ game, setGame }: StepProps) {
             <Icon name="card" size={18} />
             <b>Brakuje ci {money(-after)}</b>
           </div>
+          {cheap && (
+            <div className="mt-opt">
+              <div>
+                <strong>Tańszy klub: {cheap.name}</strong>
+                <span>
+                  Składki {cheap.cost ? `${money(cheap.cost)} zamiast ${money(g.club.cost)}` : `za darmo zamiast ${money(g.club.cost)}`}. Trenujesz słabiej, ale bez długów.
+                </span>
+              </div>
+              <button className="btn btn-small btn-ghost btn-ico" onClick={() => setGame(downgradeClub(g))}>
+                <Icon name="home" size={15} />
+                Przenoszę się
+              </button>
+            </div>
+          )}
           {loan ? (
             <div className="mt-opt">
               <div>

@@ -984,7 +984,6 @@ export default function Season({ game, setGame }: StepProps) {
               Następna walka
               <Icon name="play" size={12} />
               {!paused && <i className="next-timer" style={{ animationDelay: `${revealMs}ms`, animationDuration: `${NEXT_MS}ms` }} />}
-              {paused && <small className="paused-note">czeka</small>}
             </button>
           )}
           <button className={`icon-pill ${fast ? 'on' : ''}`} onClick={() => setFast((x) => !x)} aria-pressed={fast} aria-label={fast ? 'Wolniej' : 'Szybciej'}>
@@ -993,6 +992,7 @@ export default function Season({ game, setGame }: StepProps) {
           </button>
           <button
             className="icon-pill"
+            aria-label="Pomiń do końca sezonu albo do decyzji"
             onClick={() => {
               setSpinning(false);
               setIntroIdx(null);
@@ -1000,7 +1000,7 @@ export default function Season({ game, setGame }: StepProps) {
             }}
           >
             <Icon name="skip" size={14} />
-            Pomiń
+            {nextReady && anim ? '' : 'Pomiń'}
           </button>
         </div>
       )}
