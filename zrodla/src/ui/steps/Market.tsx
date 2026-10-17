@@ -71,6 +71,24 @@ export default function Market({ game, setGame }: StepProps) {
                   </span>
                 </span>
                 {c.note && <span className="offer-note">{c.note}</span>}
+                {c.kind === 'freak' && (
+                  <span className="freak-cost">
+                    {g.tier > 0 && g.rank !== null && (
+                      <span>
+                        <Icon name="trophy" size={12} />
+                        wypadasz z rankingu
+                      </span>
+                    )}
+                    <span>
+                      <Icon name="trend" size={12} style={{ transform: 'scaleY(-1)' }} />
+                      forma sportowa w dół
+                    </span>
+                    <span>
+                      <Icon name="coins" size={12} />
+                      federacje płacą mniej przez 2 lata
+                    </span>
+                  </span>
+                )}
                 <span className="terms">
                   <span>
                     <small>

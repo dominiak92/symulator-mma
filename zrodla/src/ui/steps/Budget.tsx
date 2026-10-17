@@ -1,5 +1,5 @@
 import { STAT_LABELS } from '../../engine/data';
-import { OVERDRAFT, breakPreview, budgetBalance, budgetLines, canStartSeason, expectedPurses, loanOffer, loanRefusal, startSeason, takeBreakYear, takeLoan } from '../../engine/game';
+import { OVERDRAFT, PITCH_SLOTS, pitchBlocked, pitchChance, pitchPay, pitchSponsor, breakPreview, budgetBalance, budgetLines, canStartSeason, expectedPurses, loanOffer, loanRefusal, startSeason, takeBreakYear, takeLoan } from '../../engine/game';
 import { useState } from 'react';
 import type { StatKey } from '../../engine/types';
 import { money, plural } from '../../format';
@@ -18,6 +18,9 @@ export default function Budget({ game, setGame }: StepProps) {
   const brk = breakPreview(g);
   const canStart = canStartSeason(g);
   const [confirmBreak, setConfirmBreak] = useState(false);
+  const [pitchOpen, setPitchOpen] = useState(false);
+  const pitchDone = !!g.pitch && g.pitch.season === g.season;
+  const blocked = pitchBlocked(g);
   const purses = expectedPurses(g);
   const gains = Object.entries(g.lastGains).filter(([, v]) => (v ?? 0) > 0) as [StatKey, number][];
 
@@ -87,6 +90,52 @@ export default function Budget({ game, setGame }: StepProps) {
           <span className={`amt ${after >= 0 ? 'plus' : 'minus'}`}>{money(after)}</span>
         </div>
       </div>
+
+      <section className="pitch">
+        <div className="pitch-head">
+          <span className="ledger-ico plus">
+            <Icon name="briefcase" size={16} />
+          </span>
+          <div>
+            <b>Poszukaj sponsora</b>
+            <small>Raz na sezon możesz sam napisać do firm z okolicy.</small>
+          </div>
+        </div>
+        {pitchDone ? (
+          <div className={`pitch-result ${g.pitch!.ok ? 'ok' : 'ko'}`}>
+            {g.pitch!.ok && g.pitch!.name ? <SponsorLogo name={g.pitch!.name} size={34} /> : <Icon name="x" size={18} />}
+            <span>{g.pitch!.text}</span>
+          </div>
+        ) : blocked ? (
+          <p className="muted small" style={{ margin: 0 }}>
+            {blocked}
+          </p>
+        ) : pitchOpen ? (
+          <div className="pitch-opts">
+            {PITCH_SLOTS.map((sl) => {
+              const ch = pitchChance(g, sl.id);
+              return (
+                <button key={sl.id} className="choice pitch-opt" onClick={() => setGame(pitchSponsor(g, sl.id))}>
+                  <span className="opt-top">
+                    <span className="opt-label">{sl.label}</span>
+                    <span className={`chance-big tone-${ch >= 50 ? 'good' : ch >= 30 ? 'mid' : 'bad'}`}>{ch}%</span>
+                  </span>
+                  <span className="desc">{sl.desc}</span>
+                  <span className="pitch-pay">
+                    <Icon name="coins" size={12} />
+                    ok. {money(pitchPay(g, sl.id))} na sezon
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        ) : (
+          <button className="btn btn-ghost btn-small btn-ico" onClick={() => setPitchOpen(true)}>
+            <Icon name="pen" size={15} />
+            Napisz do firm
+          </button>
+        )}
+      </section>
 
       {purses > 0 && g.contract.kind !== 'freak' && (
         <p className="muted" style={{ marginTop: 12 }}>
