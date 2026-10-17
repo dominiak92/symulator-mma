@@ -1,3 +1,4 @@
+import TextSize from './TextSize';
 import { sfxClick, unlockAudio } from './sound';
 import { useState } from 'react';
 import { ACHIEVEMENTS } from '../engine/achievements';
@@ -141,7 +142,11 @@ export function SettingsScreen({ onBack }: { onBack: () => void }) {
   };
   return (
     <Shell title="Ustawienia" onBack={onBack}>
-      <button className="choice" role="switch" aria-checked={st.animations} onClick={toggle}>
+      <div className="choice" style={{ cursor: 'default' }}>
+        <TextSize />
+        <span className="desc">Powiększa wszystkie napisy w grze. Przydaje się na małym telefonie.</span>
+      </div>
+      <button className="choice" role="switch" aria-checked={st.animations} onClick={toggle} style={{ marginTop: 8 }}>
         <span className="title">
           Animacje walk
           <span className={`tag ${st.animations ? 'good' : ''}`}>{st.animations ? 'włączone' : 'wyłączone'}</span>

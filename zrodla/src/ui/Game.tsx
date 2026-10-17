@@ -1,3 +1,4 @@
+import TextSize from './TextSize';
 import { shownRecord, useHudHold } from './hudHold';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { GameState, Phase } from '../engine/types';
@@ -312,6 +313,7 @@ export default function Game({
                     Twój rocznik
                   </button>
                   <SoundToggle />
+                  <TextSize />
                   <button
                     className="btn btn-ghost btn-block btn-ico"
                     onClick={() => {
