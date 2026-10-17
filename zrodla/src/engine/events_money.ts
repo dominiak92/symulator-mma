@@ -22,6 +22,9 @@ export function cash(s: GameState, frac: number, min = 100, max = Infinity): num
   return Math.round(raw / step) * step;
 }
 
+/** Zawodnik z ekipy Ground Game: sprzęt pokrywa sponsor. */
+export const inBanda = (s: GameState) => s.sponsors.some((x) => x.name === 'Ground Game');
+
 const zl = (n: number) => `${n.toLocaleString('pl-PL')} zł`;
 
 export const MONEY_EVENTS: EventDef[] = [
@@ -148,12 +151,64 @@ export const MONEY_EVENTS: EventDef[] = [
     id: 'kradziez_torby',
     title: 'Skradziona torba',
     weight: 2,
-    cond: () => true,
+    cond: (s) => !inBanda(s),
     text: () => 'Ktoś wyniósł z szatni twoją torbę. Rękawice, ochraniacze, rashguard i słuchawki. Kamera na korytarzu „akurat nie działała”.',
     choices: (s) => [
       { label: 'Kupujesz wszystko nowe', desc: 'Przynajmniej pachnie nowością.', effects: { money: -cash(s, 0.03, 250, 4000), form: 1 } },
       { label: 'Pożyczasz od klubowiczów', desc: 'Za duże rękawice, za ciasny rashguard.', effects: { money: -cash(s, 0.008, 50, 500), form: -1, relations: 1 } },
     ],
+  },
+  // ---------- Sprzęt: bez sponsora płacisz, w Ground Game Bandzie sponsor pokrywa ----------
+  {
+    id: 'pies_rekawice',
+    title: 'Pies i rękawice',
+    weight: 2,
+    cond: (s) => s.age >= 19 && !inBanda(s),
+    text: () => 'Zostawiłeś torbę w przedpokoju. Pies uznał, że rękawice sparingowe pachną najlepiej w całym mieszkaniu. Zostały z nich strzępy i zadowolony pies.',
+    choices: (s) => [
+      { label: 'Kupujesz nowe', desc: 'Dobre rękawice to dobre ręce.', effects: { money: -cash(s, 0.02, 350, 1500) } },
+      { label: 'Sklejasz taśmą', desc: 'Jakoś to będzie.', effects: { form: -1, note: 'taśma odkleja się na trzecim sparingu' } },
+    ],
+  },
+  {
+    id: 'pies_rekawice_gg',
+    title: 'Pies i rękawice',
+    brand: 'banda',
+    weight: 3,
+    cond: (s) => s.age >= 19 && inBanda(s),
+    text: () => 'Pies pogryzł ci rękawice sparingowe na strzępy. Na szczęście jesteś w Ground Game Bandzie: piszesz do sponsora i nowe są u ciebie po dwóch dniach. Za darmo.',
+    choices: () => [
+      { label: 'Wrzucasz unboxing', desc: 'Pies w roli głównej, oznaczasz Ground Game.', effects: { media: 2, form: 1, note: 'nowe rękawice od sponsora' } },
+      { label: 'Po prostu dziękujesz', desc: 'Krótka wiadomość i na trening.', effects: { form: 1, note: 'nowe rękawice od sponsora' } },
+    ],
+  },
+  {
+    id: 'kradziez_torby_gg',
+    title: 'Skradziona torba',
+    brand: 'banda',
+    weight: 2,
+    cond: (s) => inBanda(s),
+    text: () => 'Ktoś wyniósł z szatni twoją torbę ze sprzętem. Dzwonisz do Ground Game. Pół godziny później masz potwierdzenie: nowy rashguard, spodenki i rękawice jadą do ciebie kurierem.',
+    choices: () => [
+      { label: 'Trenujesz w nowym', desc: 'Pachnie nowością, leży jak ulał.', effects: { form: 1, note: 'sponsor pokrył cały sprzęt' } },
+    ],
+  },
+  {
+    id: 'rashguard_rozdarty',
+    title: 'Rozdarty rashguard',
+    weight: 2,
+    cond: (s) => s.tier >= 1,
+    text: (s) =>
+      inBanda(s)
+        ? 'Na ostatnim sparingu rozdarłeś rashguard od szyi do pasa. Ground Game wysyła nowy komplet przed walką, z twoim nazwiskiem na rękawie.'
+        : 'Na ostatnim sparingu rozdarłeś rashguard od szyi do pasa. Tydzień przed walką. Ten na wagę też już pamięta lepsze czasy.',
+    choices: (s) =>
+      inBanda(s)
+        ? [{ label: 'Odbierasz paczkę', desc: 'Komplet na walkę od sponsora.', effects: { form: 1, media: 1, note: 'sprzęt od Ground Game' } }]
+        : [
+            { label: 'Kupujesz nowy komplet', desc: 'Rashguard i spodenki na walkę.', effects: { money: -cash(s, 0.015, 300, 1200) } },
+            { label: 'Walczysz w starym', desc: 'Zszyty przez mamę.', effects: { form: -1, relations: 1 } },
+          ],
   },
   {
     id: 'pizzeria_reklama',
@@ -177,17 +232,6 @@ export const MONEY_EVENTS: EventDef[] = [
     choices: (s) => [
       { label: 'Idziesz na sesję', desc: 'Garnitur, uśmiech, zdjęcie z burmistrzem.', effects: { money: cash(s, 0.09, 1500, 25000), rep: 2 } },
       { label: 'Wysyłasz trenera', desc: 'Ty masz trening.', effects: { money: cash(s, 0.09, 1500, 25000), relations: -1 } },
-    ],
-  },
-  {
-    id: 'weterynarz',
-    title: 'Pies u weterynarza',
-    weight: 2,
-    cond: (s) => s.age >= 21,
-    text: () => 'Twój pies zjadł skarpetkę. Całą. Weterynarz mówi, że trzeba operować, i to dzisiaj.',
-    choices: (s) => [
-      { label: 'Operacja', desc: 'Pies to rodzina.', effects: { money: -cash(s, 0.03, 600, 5000), relations: 1 } },
-      { label: 'Czekacie na naturalny bieg rzeczy', desc: 'Weterynarz kręci głową.', chance: 50, success: { note: 'skarpetka wyszła sama' }, fail: { money: -cash(s, 0.05, 900, 8000), form: -1, note: 'nocna operacja' }, successText: 'Po dwóch dniach skarpetka wychodzi sama. Nikt nie chce wiedzieć jak.', failText: 'W nocy pies dostaje gorączki. Operacja na ostrym dyżurze, drożej i bez snu.' },
     ],
   },
   {

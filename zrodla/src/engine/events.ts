@@ -789,9 +789,9 @@ export const EVENTS: EventDef[] = [
     choices: (s) => [
       {
         label: 'Dołączasz do Bandy',
-        desc: 'Wychodzisz do klatki w spodenkach GG, a ludzie kupują z twoim kodem.',
+        desc: 'Wychodzisz do klatki w spodenkach GG, ludzie kupują z twoim kodem, a sprzęt masz z głowy.',
         effects: {
-          sponsor: { name: 'Ground Game', perSeason: [2000, 3000, 9000, 20000, 45000][s.tier], seasonsLeft: 4, clause: 'kod rabatowy z twoim nazwiskiem' },
+          sponsor: { name: 'Ground Game', perSeason: [2000, 3000, 9000, 20000, 45000][s.tier], seasonsLeft: 4, clause: 'kod rabatowy z twoim nazwiskiem, sprzęt na koszt sponsora' },
           media: 3,
           rep: 1,
         },
