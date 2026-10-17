@@ -5,6 +5,16 @@ import type { GameState } from './types';
 /** Wybór wariantu tekstu zależny od sezonu, żeby powtarzalne zdarzenia nie brzmiały tak samo. */
 const vary = (s: GameState, arr: string[]) => arr[(s.season * 7 + s.age * 3) % arr.length];
 
+const rivalOf = (s: GameState) => s.peers.find((p) => p.id === s.rivalId && !p.retired);
+const rivalHere = (s: GameState) => {
+  const r = rivalOf(s);
+  return !!r && r.tier === s.tier && s.tier > 0;
+};
+const rn = (s: GameState) => {
+  const r = rivalOf(s);
+  return r ? `${r.firstName} ${r.lastName}` : 'twój rywal';
+};
+
 export const EXTRA_EVENTS: EventDef[] = [
   // ---------- Amatorka ----------
   {
@@ -476,6 +486,54 @@ export const EXTRA_EVENTS: EventDef[] = [
     choices: () => [
       { label: 'Idziesz do lekarza', desc: 'Lepiej sprawdzić.', effects: { money: -400, form: -1 } },
       { label: 'Zaciskasz zęby', desc: 'Lód i będzie dobrze.', chance: 50, success: { note: 'przeszło samo' }, fail: { injury: { name: 'skręcona kostka', seasons: 1, penalty: 4 } }, successText: 'Po trzech dniach kostka wraca do normy. Dziecko zjeżdża dalej, ty patrzysz z ławki.', failText: 'Kostka nie przechodzi. Lekarz po tygodniu mówi, że trzeba było przyjść od razu.' },
+    ],
+  },
+  // ---------- Odwieczny rywal ----------
+  {
+    id: 'rywal_social',
+    title: 'Rywal w internecie',
+    weight: 7,
+    cond: rivalHere,
+    text: (s) =>
+      vary(s, [
+        `${rn(s)} wrzuca filmik, na którym przewraca się manekin w twojej koszulce. Podpis: „sezon na dziki otwarty”.`,
+        `${rn(s)} w podcaście opowiada, że w waszej ostatniej walce „sędziowie ci pomogli”. Klip ma ćwierć miliona wyświetleń.`,
+        `${rn(s)} nagrywa relację spod twojej sali treningowej. „Puk, puk, jest ktoś odważny?”`,
+      ]),
+    choices: () => [
+      { label: 'Odpowiadasz i wyzywasz go', desc: 'Niech organizator zrobi tę walkę.', effects: { media: 4, rep: -1, flag: 'rivalCallout', note: 'w tym sezonie się spotkacie' } },
+      { label: 'Nagrywasz parodię', desc: 'Śmiech to też broń.', effects: { media: 3, relations: 1 } },
+      { label: 'Ignorujesz', desc: 'Odpowiesz w klatce.', effects: { rep: 2, form: 1 } },
+    ],
+  },
+  {
+    id: 'rywal_nagrania',
+    title: 'Były sparingpartner rywala',
+    weight: 4,
+    cond: rivalHere,
+    text: (s) => `Odzywa się chłopak, który przez rok sparował z ${rn(s)}. Za dwa tysiące odda pendrive z nagraniami jego treningów.`,
+    choices: () => [
+      { label: 'Kupujesz nagrania', desc: 'Wiedza to przewaga.', effects: { money: -2000, form: 2, note: 'znasz jego nawyki' } },
+      { label: 'Odmawiasz', desc: 'Nie tak się wygrywa.', effects: { rep: 2 } },
+    ],
+  },
+  {
+    id: 'rywal_konferencja',
+    title: 'Face to face z rywalem',
+    weight: 5,
+    cond: rivalHere,
+    text: (s) => `Konferencja przed galą. ${rn(s)} staje centymetr od twojej twarzy i coś szepcze. Kamery czekają, co zrobisz.`,
+    choices: () => [
+      {
+        label: 'Odpychasz go',
+        desc: 'Show musi trwać.',
+        chance: 50,
+        success: { media: 5, form: 1, note: 'klip dnia' },
+        fail: { media: 3, form: -2, money: -1500, note: 'kara od federacji' },
+        successText: 'Ochrona was rozdziela, a klip z konferencji leci we wszystkich serwisach. Bilety schodzą w godzinę.',
+        failText: 'Federacja nakłada karę za naruszenie nietykalności. On się tylko uśmiecha. Wyprowadził cię z równowagi.',
+      },
+      { label: 'Uśmiechasz się i milczysz', desc: 'Zimna krew.', effects: { rep: 2, form: 1 } },
     ],
   },
 ];

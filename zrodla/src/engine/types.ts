@@ -228,6 +228,12 @@ export interface FightReport {
   sim: FightSim;
   purse: number;
   earned: number;
+  /** ile wziął menedżer */
+  mgrCut?: number;
+  /** plakat gali: miasto, hala i inne walki w karcie */
+  poster?: { city: string; venue: string; bouts: { a: string; ar: string; b: string; br: string; tag: string }[] };
+  winBonus?: number;
+  rival?: boolean;
   cards?: [number, number][];
   headline?: string;
 }
@@ -260,6 +266,29 @@ export interface SeasonRun {
   startRank: number | null;
   startMedia: number;
   intro: string[];
+  /** oferta kolejnej walki czekająca na decyzję gracza (zawodowcy) */
+  offer?: FightOffer | null;
+  /** odrzucone oferty w tym sezonie */
+  declines?: number;
+  /** czy menedżer zajmuje się tobą w tym sezonie */
+  mgrFocus?: boolean;
+  /** krótkie notki z sezonu (odrzucone oferty itp.) */
+  notes?: string[];
+}
+
+export interface FightOffer {
+  opp: Fighter;
+  title: boolean;
+  defense: boolean;
+  grudge?: boolean;
+  rival?: boolean;
+  spot?: CardSpot;
+  gala: string;
+  purse: number;
+  winBonus: number;
+  negotiated: boolean;
+  /** komunikat po negocjacjach */
+  note?: string;
 }
 
 export interface SeasonSummary {
@@ -356,6 +385,10 @@ export interface GameState {
   /** wynik ostatniego szukania sponsora na własną rękę */
   pitch?: { season: number; ok: boolean; text: string; name?: string; slot: string } | null;
   loans: Loan[];
+  /** menedżer (id) albo null, gdy sam prowadzisz karierę */
+  manager?: string | null;
+  /** odwieczny rywal z rocznika (id zawodnika) */
+  rivalId?: string | null;
   /** poziom własnej akademii (0 = brak) */
   academy?: number;
   /** obóz zagraniczny z ostatniego okresu przygotowawczego */

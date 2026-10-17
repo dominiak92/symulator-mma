@@ -1,5 +1,7 @@
+import { activeManager, currentManager, managerBlocked, managerById } from './managers';
 import { createRng, type Rng } from './rng';
 import type {
+  FightOffer,
   Club,
   Contract,
   Effects,
@@ -502,7 +504,7 @@ export function budgetBalance(s: GameState) {
 }
 
 export function expectedPurses(s: GameState) {
-  return (s.contract.purse + s.contract.winBonus * 0.5) * s.contract.fights;
+  return (s.contract.purse + s.contract.winBonus * 0.5) * plannedFights(s) * (1 - (currentManager(s)?.cut ?? 0));
 }
 
 /** Ile maksymalnie da bank na danym szczeblu kariery. */
@@ -834,7 +836,7 @@ const SPONSOR_CLAUSES = [
 function maybeAutoSponsor(rng: Rng, s: GameState): string | null {
   const cap = 1 + s.tier;
   if (s.sponsors.length >= cap) return null;
-  const p = clamp((s.media + s.rep * 0.3) / 120, 0.08, 0.7) * (s.profile.difficulty === 'hard' ? 0.6 : 1);
+  const p = clamp((s.media + s.rep * 0.3) / 120 + (currentManager(s)?.sponsor ?? 0) / 100, 0.08, 0.75) * (s.profile.difficulty === 'hard' ? 0.6 : 1);
   if (!rng.chance(p)) return null;
   const name = rng.pick(SPONSOR_NAMES.filter((n) => !s.sponsors.some((x) => x.name === n)));
   const base = [1500, 4000, 12000, 30000, 80000][s.tier];
@@ -884,7 +886,7 @@ export function pitchBlocked(s: GameState): string | null {
 export function pitchChance(s: GameState, slot: PitchSlot): number {
   const sl = PITCH_SLOTS.find((x) => x.id === slot)!;
   const mediaW = slot === 'social' ? 1 / 70 : 1 / 160;
-  let c = sl.base + s.media * mediaW + s.rep / 350 + s.tier * 0.05 - s.sponsors.length * 0.1;
+  let c = sl.base + s.media * mediaW + s.rep / 350 + s.tier * 0.05 - s.sponsors.length * 0.1 + (currentManager(s)?.sponsor ?? 0) / 200;
   if ((s.flags.freakStigma ?? 0) > 0 && slot !== 'social') c -= 0.05;
   if (s.profile.difficulty === 'hard') c *= 0.8;
   return Math.round(clamp(c, 0.05, 0.85) * 100);
@@ -1013,6 +1015,7 @@ export function applyEffects(s: GameState, e: Effects, rng: Rng) {
     s.flags[`sponsor:${e.sponsor.name}`] = 1;
   }
   if (e.flag) s.flags[e.flag] = (s.flags[e.flag] ?? 0) + 1;
+  if (e.flag === 'manager') s.manager = 'okulary';
   if (e.form) s.flags.formBonus = (s.flags.formBonus ?? 0) + e.form;
   if (e.loan) {
     s.money += e.loan.amount;
@@ -1112,8 +1115,14 @@ function beginRun(s: GameState) {
     if (s.injury) intro.push(`Wchodzisz w sezon z kontuzją: ${s.injury.name}. Każda szansa jest o ${s.injury.penalty} pkt mniejsza.`);
     if (bonus > 0) intro.push(`To, co działo się przed sezonem, dodaje ci pewności: forma +${bonus}.`);
     if (bonus < 0) intro.push(`To, co działo się przed sezonem, siedzi ci w głowie: forma −${Math.abs(bonus)}.`);
-    let planned = s.contract.fights;
-    if (s.contract.kind === 'freak') planned = 2;
+    const planned = plannedFights(s);
+    const mgr = currentManager(s);
+    const mgrFocus = mgr ? rng.chance(mgr.focus) : undefined;
+    if (mgr && s.tier > 0) {
+      if (mgrFocus) intro.push(`${mgr.name} załatwia ci walki w tym sezonie (bierze ${Math.round(mgr.cut * 100)}% gaży).`);
+      else intro.push(`${mgr.name} cały sezon zajmuje się ${mgr.stable ? rng.pick(mgr.stable) : 'innymi zawodnikami'}. Na ciebie nie ma czasu, ale procent bierze.`);
+    }
+    if (planned > 3) intro.push(`${planned} walki w sezonie: więcej gaż, ale pod koniec organizm nie nadąża.`);
     s.run = {
       tourneys,
       tIdx: 0,
@@ -1126,6 +1135,7 @@ function beginRun(s: GameState) {
       startRank: s.rank,
       startMedia: s.media,
       intro,
+      mgrFocus,
     };
     if (tourneys) s.run.planned = plannedAmateur(s.run);
   });
@@ -1186,17 +1196,31 @@ function pickOpponent(rng: Rng, s: GameState, idx: number): { opp: Fighter; titl
     const opp = generateOpponent(rng, tier, 0, hard);
     return { opp, title: true, defense: false, peer: null };
   }
+  // odwieczny rywal wraca częściej niż inni z rocznika
+  const rival = s.rivalId ? peers.find((p) => p.id === s.rivalId) : undefined;
+  const rivalCall = (s.flags.rivalCallout ?? 0) > 0 && !!rival;
+  if (rivalCall) s.flags.rivalCallout = 0;
+  if (rival && !wantPeer && (rivalCall || rng.chance(0.28))) {
+    const opp: Fighter = { ...rival, stats: { ...rival.stats }, record: { ...rival.record }, rank: rival.rank ?? null, peer: true };
+    return { opp, title: false, defense: false, peer: rival };
+  }
   if (peers.length && (wantPeer || rng.chance(0.18))) return peerPick();
   const mine = s.rank ?? size + 2;
+  const mg = activeManager(s);
+  const q = mg?.quality ?? 0;
+  if (mg?.titleShot && s.rank !== null && s.rank <= 3 && last) {
+    const opp = generateOpponent(rng, tier, 0, hard);
+    return { opp, title: true, defense: false, peer: null };
+  }
   if ((s.flags.grudge ?? 0) > 0) {
     s.flags.grudge = 0;
     const opp = generateOpponent(rng, tier, clamp(mine - rng.int(2, 4), 1, size), hard);
     opp.nickname = opp.nickname || 'Pyskaty';
     return { opp, title: false, defense: false, peer: null, grudge: true };
   }
-  let r: number | null = clamp(mine + rng.int(-3, 1), 1, size + 3);
+  let r: number | null = clamp(mine + rng.int(-3, 1) - q, 1, size + 3);
   if (r > size) r = null;
-  if (s.rank === null && rng.chance(0.5)) r = null;
+  if (s.rank === null && rng.chance(0.5 - q * 0.15)) r = null;
   return { opp: generateOpponent(rng, tier, r, hard), title: false, defense: false, peer: null };
 }
 
@@ -1205,7 +1229,8 @@ function fightCtx(s: GameState, opp: Fighter): FightCtx {
     me: effectiveStats(s),
     meName: fullName(s),
     opp,
-    form: s.run!.form.mod,
+    // czwarta i piąta walka w sezonie: organizm nie nadąża
+    form: s.run!.form.mod - Math.max(0, s.run!.fights.length - 3) * 5 + (s.run!.planned < s.contract.fights && s.contract.kind !== 'freak' ? 3 : 0),
     penalty: s.injury?.penalty ?? 0,
     allowDecision: true,
     decisionChance: 0.55,
@@ -1219,7 +1244,8 @@ function purseFor(s: GameState, opp: Fighter, title: boolean, spot: CardSpot | u
   else if (spot === 'główna') p *= 1.15;
   else if (spot === 'wieczoru') p *= 1.35;
   if (opp.peer) p *= 1.1;
-  if (s.flags.manager) p *= 1.15;
+  const mg = activeManager(s);
+  if (mg) p *= mg.purse;
   return Math.round(p / 100) * 100;
 }
 
@@ -1248,29 +1274,126 @@ function finishTime(rng: Rng, rep: FightReport) {
 }
 
 /** Rozgrywa kolejną walkę sezonu (albo do decyzji). */
+/** Oferta kolejnej walki (zawodowcy): rywal, miejsce w karcie i gaża. */
+function buildOffer(rng: Rng, s: GameState, idx: number): FightOffer {
+  const { opp, title, defense, grudge, peer } = pickOpponent(rng, s, idx);
+  avoidMyName(rng, s, opp);
+  const freak = s.contract.kind === 'freak';
+  const fed = freak ? s.contract.fed : s.fed;
+  const spot = cardSpot(rng, s, title, opp, freak);
+  const rival = !!peer && !!s.rivalId && peer.id === s.rivalId;
+  let purse = purseFor(s, opp, title, spot) * (rival ? 1.15 : 1);
+  // organizator raz daje więcej, raz próbuje zaoszczędzić
+  purse = Math.round((purse * (0.85 + rng.next() * 0.3)) / 100) * 100;
+  return {
+    opp,
+    title,
+    defense,
+    grudge,
+    rival,
+    spot,
+    gala: galaName(rng, s, fed),
+    purse,
+    winBonus: Math.round(s.contract.winBonus * (title ? 1.8 : 1)),
+    negotiated: false,
+  };
+}
+
 export function seasonNext(s0: GameState): GameState {
   const s = clone(s0);
   const run = s.run;
   if (!run || run.done) return s;
   const cur = run.fights[run.fights.length - 1];
   if (cur && !cur.sim.finished) return s; // czeka na decyzję
+  if (run.offer) return s; // czeka na odpowiedź na ofertę
   withRng(s, (rng) => {
     const idx = run.fights.length;
-    const amateur = isAmateurRun(s);
-    const t = amateur ? run.tourneys![run.tIdx ?? 0] : undefined;
+    if (!isAmateurRun(s)) {
+      run.offer = buildOffer(rng, s, idx);
+      return;
+    }
     const { opp, title, defense, grudge } = pickOpponent(rng, s, idx);
     avoidMyName(rng, s, opp);
+    startFight(rng, s, { opp, title, defense, grudge, gala: '', purse: 0, winBonus: 0, negotiated: false });
+  });
+  return s;
+}
+
+const VENUES: { city: string; venue: string }[][] = [
+  [],
+  [
+    { city: 'Radom', venue: 'Hala MOSiR' },
+    { city: 'Zielona Góra', venue: 'Hala CRS' },
+    { city: 'Bydgoszcz', venue: 'Hala Łuczniczka' },
+    { city: 'Rzeszów', venue: 'Hala Podpromie' },
+    { city: 'Olsztyn', venue: 'Hala Urania' },
+    { city: 'Kielce', venue: 'Hala Legionów' },
+  ],
+  [
+    { city: 'Łódź', venue: 'Atlas Arena' },
+    { city: 'Katowice', venue: 'Spodek' },
+    { city: 'Wrocław', venue: 'Hala Stulecia' },
+    { city: 'Gdańsk', venue: 'Arena nad morzem' },
+    { city: 'Kraków', venue: 'Arena Kraków' },
+    { city: 'Warszawa', venue: 'Torwar' },
+  ],
+  [
+    { city: 'Londyn', venue: 'Arena nad Tamizą' },
+    { city: 'Paryż', venue: 'Hala Bercy' },
+    { city: 'Dublin', venue: 'Arena Liffey' },
+    { city: 'Praga', venue: 'Hala na Libni' },
+    { city: 'Sztokholm', venue: 'Globe' },
+    { city: 'Berlin', venue: 'Arena przy Szprewie' },
+  ],
+  [
+    { city: 'Las Vegas', venue: 'Arena na pustyni' },
+    { city: 'Nowy Jork', venue: 'Garden' },
+    { city: 'Abu Zabi', venue: 'Arena na wyspie' },
+    { city: 'Rio de Janeiro', venue: 'Hala Jeunesse' },
+    { city: 'Tokio', venue: 'Saitama Arena' },
+    { city: 'Sydney', venue: 'Arena w zatoce' },
+  ],
+];
+
+function makePoster(rng: Rng, s: GameState, rep: FightReport): FightReport['poster'] {
+  const tier = Math.max(1, s.tier);
+  const v = rep.freak ? { city: rng.pick(['Warszawa', 'Łódź', 'Gliwice']), venue: 'Hala Expo' } : rng.pick(VENUES[tier]);
+  const tags = ['Walka wieczoru', 'Co-main event', 'Karta główna', 'Karta główna', 'Karta wstępna', 'Karta wstępna'];
+  const mine = rep.spot === 'wieczoru' ? 0 : rep.spot === 'główna' ? rng.int(1, 3) : rng.int(4, 5);
+  const bouts: NonNullable<FightReport['poster']>['bouts'] = [];
+  for (let i = 0; i < 6; i++) {
+    if (i === mine) {
+      bouts.push({ a: s.profile.lastName, ar: recStr(mainRecord(s)), b: rep.opp.lastName, br: rep.opp.freak ? 'debiut' : recStr(rep.opp.record), tag: '' });
+      continue;
+    }
+    const rk = i <= 1 ? rng.int(1, 5) : i <= 3 ? rng.int(4, 12) : null;
+    const x = rep.freak ? generateFreak(rng) : generateOpponent(rng, tier, rk, false);
+    const y = rep.freak ? generateFreak(rng) : generateOpponent(rng, tier, rk === null ? null : rk + rng.int(1, 3), false);
+    bouts.push({ a: x.lastName, ar: x.freak ? 'freak' : recStr(x.record), b: y.lastName, br: y.freak ? 'freak' : recStr(y.record), tag: tags[i] });
+  }
+  bouts[mine].tag = tags[mine];
+  return { city: v.city, venue: v.venue, bouts };
+}
+
+function startFight(rng: Rng, s: GameState, o: FightOffer) {
+  const run = s.run!;
+  const idx = run.fights.length;
+  const { opp, title, defense, grudge } = o;
+  const amateur = isAmateurRun(s);
+  const t = amateur ? run.tourneys![run.tIdx ?? 0] : undefined;
+  {
+    {
     const freak = s.contract.kind === 'freak';
     const fed = freak ? s.contract.fed : s.fed;
     const stage = t?.stage ?? undefined;
     const rounds = amateur ? (stage === 'qf' || stage === 'sf' ? 1 : 3) : title ? 5 : 3;
-    const spot = amateur ? undefined : cardSpot(rng, s, title, opp, freak);
+    const spot = amateur ? undefined : o.spot;
     const rep: FightReport = {
       idx,
       amateur,
       stage,
       tourney: t ? `${t.name} · ${t.city}` : undefined,
-      gala: amateur ? undefined : galaName(rng, s, fed),
+      gala: amateur ? undefined : o.gala,
       spot,
       opp,
       fed,
@@ -1286,9 +1409,12 @@ export function seasonNext(s0: GameState): GameState {
       detail: '',
       moments: [],
       sim: newSim(rounds),
-      purse: amateur ? 0 : purseFor(s, opp, title, spot),
+      purse: amateur ? 0 : o.purse,
+      winBonus: amateur ? 0 : o.winBonus,
+      rival: o.rival,
       earned: 0,
     };
+    if (!amateur) rep.poster = makePoster(rng, s, rep);
     run.fights.push(rep);
     if (!amateur && !freak && !s.proDebut)
       rep.moments.push({
@@ -1336,8 +1462,8 @@ export function seasonNext(s0: GameState): GameState {
     }
     advanceFight(rng, fightCtx(s, opp), rep.sim, rep);
     if (rep.sim.finished) finalizeFight(rng, s, rep);
-  });
-  return s;
+    }
+  }
 }
 
 export function decide(s0: GameState, key: string): GameState {
@@ -1362,8 +1488,118 @@ export function seasonSkip(s0: GameState): GameState {
     if (!run || run.done) break;
     const cur = run.fights[run.fights.length - 1];
     if (cur && cur.sim.pending) break;
+    if (run.offer) break;
     s = seasonNext(s);
+    if (s.run?.offer) break;
   }
+  return s;
+}
+
+// ---------------------------------------------------------------------------
+// Oferty walk: przyjmujesz, negocjujesz albo odrzucasz
+// ---------------------------------------------------------------------------
+
+export function negotiateChance(s: GameState): number {
+  const o = s.run?.offer;
+  if (!o) return 0;
+  const mg = activeManager(s);
+  let c = 28 + (mg?.negotiate ?? 0) + s.media / 4 + (s.rank !== null && s.rank <= 5 ? 10 : 0) + (o.title ? 10 : 0) + (o.rival ? 8 : 0);
+  if (s.tier >= 3 && s.rank === null) c -= 10;
+  if (s.contract.kind === 'freak') c += 10;
+  return Math.round(clamp(c, 10, 85));
+}
+
+export function declineBlocked(s: GameState): string | null {
+  const o = s.run?.offer;
+  if (!o) return null;
+  if (o.title) return o.defense ? 'Mistrz nie odmawia obrony pasa.' : 'O pas się nie odmawia.';
+  return null;
+}
+
+export function acceptOffer(s0: GameState): GameState {
+  const s = clone(s0);
+  const o = s.run?.offer;
+  if (!o) return s0;
+  s.run!.offer = null;
+  withRng(s, (rng) => startFight(rng, s, o));
+  return s;
+}
+
+/** Odpada oferta: albo przychodzi następna, albo w tym sezonie będzie jedna walka mniej. */
+function offerGone(rng: Rng, s: GameState, lostP: number, text: string) {
+  const run = s.run!;
+  run.notes = run.notes ?? [];
+  if (rng.chance(lostP)) {
+    run.planned -= 1;
+    run.notes.push(`${text} Innej oferty nie ma, w tym sezonie jedna walka mniej.`);
+    run.offer = null;
+    if (run.fights.length >= run.planned) run.done = true;
+    else run.offer = buildOffer(rng, s, run.fights.length);
+  } else {
+    run.notes.push(`${text} Po kilku dniach przychodzi inna propozycja.`);
+    run.offer = buildOffer(rng, s, run.fights.length);
+  }
+}
+
+export function negotiateOffer(s0: GameState): GameState {
+  const s = clone(s0);
+  const o = s.run?.offer;
+  if (!o || o.negotiated) return s0;
+  withRng(s, (rng) => {
+    const ok = rng.chance(negotiateChance(s0) / 100);
+    if (ok) {
+      o.purse = Math.round((o.purse * 1.25) / 100) * 100;
+      o.winBonus = Math.round((o.winBonus * 1.2) / 100) * 100;
+      o.negotiated = true;
+      o.note = `Organizator podnosi gażę do ${o.purse.toLocaleString('pl-PL')} zł.`;
+    } else if (!o.title && rng.chance(0.35)) {
+      offerGone(rng, s, 0, `Organizator nie podniósł stawki i wziął do walki z ${o.opp.lastName} kogoś innego.`);
+    } else {
+      o.negotiated = true;
+      o.note = 'Organizator nie da ani złotówki więcej. Bierzesz albo nie.';
+    }
+  });
+  return s;
+}
+
+export function declineOffer(s0: GameState): GameState {
+  if (declineBlocked(s0) || !s0.run?.offer) return s0;
+  const s = clone(s0);
+  const run = s.run!;
+  const o = run.offer!;
+  run.declines = (run.declines ?? 0) + 1;
+  // grymaszenie kosztuje: promotorzy mają długą pamięć
+  if (run.declines >= 2) s.rep = clamp(s.rep - 2, 0, 100);
+  withRng(s, (rng) => offerGone(rng, s, 0.2 + 0.15 * (run.declines! - 1), `Odrzucasz walkę z ${o.opp.firstName} ${o.opp.lastName}.`));
+  return s;
+}
+
+/** Ile walk chcesz stoczyć w sezonie (przed startem sezonu). */
+export function fightRange(s: GameState): [number, number] | null {
+  if (s.tier === 0 || s.contract.kind === 'freak') return null;
+  const f = s.contract.fights;
+  return [Math.max(1, f - 1), Math.min(5, f + 1)];
+}
+export function plannedFights(s: GameState): number {
+  const r = fightRange(s);
+  if (!r) return s.contract.kind === 'freak' ? 2 : s.contract.fights;
+  return clamp(s.flags.wantFights || s.contract.fights, r[0], r[1]);
+}
+export function setWantFights(s0: GameState, n: number): GameState {
+  const s = clone(s0);
+  s.flags.wantFights = n;
+  return s;
+}
+
+export function setManager(s0: GameState, id: string | null): GameState {
+  const m = managerById(id);
+  if (m && managerBlocked(s0, m)) return s0;
+  const s = clone(s0);
+  const prev = currentManager(s0);
+  s.manager = id;
+  if (!id) s.flags.manager = 0;
+  if (m && prev?.id !== m.id) log(s, `Nowy menedżer: ${m.name}.`);
+  if (!m && prev) log(s, `Rozstajesz się z menedżerem (${prev.name}).`);
   return s;
 }
 
@@ -1503,7 +1739,7 @@ function finalizeFight(rng: Rng, s: GameState, rep: FightReport) {
   if (rep.freak) s.freakFights++;
 
   // pieniądze i bonusy
-  let earned = rep.amateur ? 0 : rep.purse + (res === 'W' ? Math.round(s.contract.winBonus * (rep.title ? 1.8 : 1)) : 0);
+  let earned = rep.amateur ? 0 : rep.purse + (res === 'W' ? rep.winBonus ?? Math.round(s.contract.winBonus * (rep.title ? 1.8 : 1)) : 0);
   if (!rep.amateur && s.tier >= 1) {
     const amount = [0, 1500, 10000, 30000, 200000][s.tier];
     let bonus: string | null = null;
@@ -1522,6 +1758,12 @@ function finalizeFight(rng: Rng, s: GameState, rep: FightReport) {
         tone: 'purple',
       });
     }
+  }
+  const mgr = currentManager(s);
+  if (mgr && !rep.amateur && earned > 0) {
+    const cut = Math.round((earned * mgr.cut) / 100) * 100;
+    earned -= cut;
+    rep.mgrCut = cut;
   }
   rep.earned = earned;
   s.money += earned;
@@ -1549,7 +1791,9 @@ function finalizeFight(rng: Rng, s: GameState, rep: FightReport) {
   // zużycie i kontuzje
   const dmgTaken = rep.sim.me.dmg;
   s.wear = clamp(s.wear + (dmgTaken / 10) * (rep.amateur ? 0.4 : 1) + (res === 'L' && (rep.method === 'KO/TKO' || rep.method === 'Lekarz') ? (rep.amateur ? 3 : 7) : 0) + (s.age >= 32 ? 1.5 : 0), 0, 100);
-  const injP = ((dmgTaken > 50 ? 0.22 : dmgTaken > 30 ? 0.07 : 0.02) + s.wear / 600 + (s.age >= 32 ? 0.03 : 0)) * (rep.amateur ? 0.5 : 0.8);
+  const extra = !rep.amateur && s.run ? Math.max(0, s.run.fights.length - 3) : 0;
+  if (extra) s.wear = clamp(s.wear + 2 * extra, 0, 100);
+  const injP = (extra * 0.03 + (dmgTaken > 50 ? 0.22 : dmgTaken > 30 ? 0.07 : 0.02) + s.wear / 600 + (s.age >= 32 ? 0.03 : 0)) * (rep.amateur ? 0.5 : 0.8);
   if (!s.injury && rng.chance(injP)) {
     const roll = rng.next();
     if (roll < 0.6) {
@@ -1587,6 +1831,7 @@ function finalizeFight(rng: Rng, s: GameState, rep: FightReport) {
       if (res === 'W') {
         p.h2h.w++;
         p.record.l++;
+        if (s.rivalId === p.id) s.media = clamp(s.media + 3, 0, 100);
       } else if (res === 'L') {
         p.h2h.l++;
         p.record.w++;
@@ -1594,7 +1839,29 @@ function finalizeFight(rng: Rng, s: GameState, rep: FightReport) {
         p.h2h.d++;
         p.record.d++;
       }
-      if (p.metCount === 1)
+      // narodziny rywalizacji: porażka z kimś z rocznika albo drugie spotkanie
+      if (!s.rivalId && !rep.amateur && (res === 'L' || p.metCount >= 2)) {
+        s.rivalId = p.id;
+        rep.rival = true;
+        rep.moments.push({
+          round: rep.round,
+          title: 'Rywalizacja',
+          text:
+            res === 'L'
+              ? `${p.lastName} po walce rzuca do kamery, że „to był trening”. Od dziś to twój rywal. Jeszcze się spotkacie.`
+              : `Drugi raz ${p.lastName}. Kibice już mówią o was jak o serialu. Od dziś to twój rywal.`,
+          tone: 'purple',
+        });
+        log(s, `Rywal na całą karierę: ${p.firstName} ${p.lastName}.`);
+      }
+      if (rep.rival && p.metCount > 1)
+        rep.moments.unshift({
+          round: 0,
+          title: 'Odwieczny rywal',
+          text: `${p.firstName} ${p.lastName}. Wasz bilans przed walką: ${p.h2h.w - (res === 'W' ? 1 : 0)}-${p.h2h.l - (res === 'L' ? 1 : 0)}. Hala jest pełna, bo wszyscy wiedzą, że tu nie chodzi tylko o ranking.`,
+          tone: 'purple',
+        });
+      else if (p.metCount === 1)
         rep.moments.unshift({ round: 0, title: 'Znajoma twarz', text: `${p.firstName} ${p.lastName}. Znacie się z pierwszych turniejów, nieraz jechaliście jednym busem. Dziś koleżeństwo zostaje w szatni.`, tone: 'neutral' });
       else
         rep.moments.unshift({
@@ -1735,6 +2002,10 @@ export function toSummary(s0: GameState): GameState {
   else if (w === total && total > 1) lines.push(`Sezon bez porażki, ${w} na ${total}.`);
   else if (l === total) lines.push(`Rok do wymazania. ${l} ${pl(l, 'porażka', 'porażki', 'porażek')} i ani jednego powodu do radości.`);
   else lines.push(`Bilans roku: ${w}-${l}${d ? `-${d}` : ''}.`);
+  if (!amateur && fights.length === 0) {
+    lines.push('Cały sezon bez walki. Organizatorzy zapominają nazwiska szybciej, niż myślisz.');
+    if (s.rank !== null && s.rank > 0) s.rank = s.rank + 3 > RANK_SIZE[s.tier] ? null : s.rank + 3;
+  }
   if (finishes >= 2) lines.push(`${finishes} ${pl(finishes, 'walkę', 'walki', 'walk')} skończyłeś przed czasem.`);
   else if (fights.length >= 2 && fights.every((f) => f.method?.startsWith('Decyzja'))) lines.push('Wszystkie walki do ostatniego gongu, sędziowie mieli co robić.');
   const peerFight = fights.find((f) => f.peer);
@@ -1926,7 +2197,7 @@ export function buildMarket(rng: Rng, s: GameState) {
     !cut &&
     (s.rank === 0 ||
       (s.rank !== null && s.rank <= (s.tier >= 2 ? 2 : 3)) ||
-      (s.flags.manager && s.rank !== null && s.rank <= 5) ||
+      ((currentManager(s)?.promo ?? 0) > 0 && s.rank !== null && s.rank <= (s.tier >= 2 ? 2 : 3) + (currentManager(s)?.promo ?? 0)) ||
       (s.tier === 1 && s.media >= 45 && seasonW >= 2) ||
       // wyższa federacja wypatruje wyraźnie lepszych od stawki
       (ovr(s.stats) >= TIER_LEVEL[s.tier + 1] + 4 && seasonW >= 2));
@@ -2177,6 +2448,9 @@ export function legacyScore(s: GameState): number {
   pts -= s.brokenPromises * 20;
   // akademia zostaje po karierze: wychowankowie, nazwisko na drzwiach
   pts += [0, 60, 160, 320, 550][s.academy ?? 0];
+  // wygrane z odwiecznym rywalem pamięta się dłużej
+  const rv = s.peers.find((p) => p.id === s.rivalId);
+  if (rv) pts += rv.h2h.w * 15 - rv.h2h.l * 5;
   const sp = START_PROFILES[s.profile.start].mult ?? 0;
   const diff = DIFFICULTY[s.profile.difficulty].mult;
   return Math.max(0, Math.round(pts * sp * diff));
@@ -2222,8 +2496,10 @@ export function careerStory(s: GameState): string {
   if (s.proDebut) parts.push(`Zawodowo ${recStr(s.record)}, debiut w wieku ${s.proDebut.age} lat.`);
   if (belts) parts.push(`${belts} ${pl(belts, 'tytuł', 'tytuły', 'tytułów')} w gablocie.`);
   if (s.finishes.ko + s.finishes.sub > s.record.w * 0.6 && s.record.w > 5) parts.push('Kończyłeś walki przed czasem jak mało kto.');
-  const bestPeer = s.peers.filter((p) => p.metCount > 0).sort((a, b) => b.metCount - a.metCount)[0];
+  const bestPeer = s.peers.find((p) => p.id === s.rivalId) ?? s.peers.filter((p) => p.metCount > 0).sort((a, b) => b.metCount - a.metCount)[0];
   if (bestPeer) parts.push(`Odwieczny rywal: ${bestPeer.firstName} ${bestPeer.lastName}, bilans ${bestPeer.h2h.w}-${bestPeer.h2h.l}.`);
+  const mgr = currentManager(s);
+  if (mgr) parts.push(`Menedżer: ${mgr.name}.`);
   if (s.freakFights) parts.push(`Freak fightów: ${s.freakFights}.`);
   if (s.academy) parts.push(`Po karierze zostaje ${academyName(s)}: ${ACADEMY_LEVELS[s.academy - 1].name}.`);
   if (!first) parts.push('Kariera skończyła się, zanim na dobre się zaczęła.');
