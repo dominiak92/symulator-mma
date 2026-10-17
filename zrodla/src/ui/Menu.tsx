@@ -198,7 +198,7 @@ export default function Menu({
             <Icon name="sliders" size={20} />
           </span>
           <strong>Ustawienia</strong>
-          <span>Animacje i zapis gry</span>
+          <span>Dźwięki, animacje, podpowiedzi i zapis</span>
         </button>
       </div>
 
