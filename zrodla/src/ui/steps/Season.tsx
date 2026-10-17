@@ -114,14 +114,24 @@ function FormReel({ g, spinning, onDone }: { g: GameState; spinning: boolean; on
             }}
           >
             <div className="fm-card">
-              <span className="fm-kicker">
+              <div className="fm-top">
                 <Icon name="flame" size={14} />
-                Sezon {g.season} · forma
-              </span>
-              <div className="fm-reel">{reel}</div>
-              <div className="fm-mod">{mod}</div>
+                <span>Forma na sezon {g.season}</span>
+              </div>
+              <div className={`fm-value tone-${tone}`}>
+                <span key={landed ? 'final' : step.idx + '-' + step.ms} className={landed ? 'fm-lock' : 'fm-tick'} style={{ ['--tick' as string]: `${Math.max(50, step.ms - 10)}ms` }}>
+                  {show.label}
+                </span>
+              </div>
+              <div className="fm-chip-row">
+                {landed && (
+                  <span className={`fm-chip ${form.mod > 0 ? 'good' : form.mod < 0 ? 'bad' : ''}`}>
+                    {form.mod === 0 ? 'bez premii' : `${form.mod > 0 ? '+' : '−'}${Math.abs(form.mod)} pkt do każdej walki`}
+                  </span>
+                )}
+              </div>
               <p className="fm-text">{landed ? meaning : 'Jak organizm zniesie ten rok?'}</p>
-              <small className="fm-hint">{landed ? 'dotknij, żeby przejść dalej' : 'dotknij, żeby pominąć'}</small>
+              <span className="fm-hint">{landed ? 'dotknij, żeby przejść dalej' : 'dotknij, żeby pominąć'}</span>
             </div>
           </div>,
           document.body,
