@@ -58,7 +58,7 @@ type Policy = {
   pitch?: boolean;
   events?: 'safe' | 'risky' | 'first';
   contract?: 'promo' | 'stay' | 'freak' | 'cap2';
-  fightPick?: 'best' | 'risky' | 'smart' | 'normal';
+  fightPick?: 'best' | 'risky' | 'smart' | 'normal' | 'random';
   camps?: boolean;
   academy?: boolean;
   offers?: 'accept' | 'picky' | 'negotiate';
@@ -170,7 +170,8 @@ function play(seed: number, p: Policy) {
           const st = cur.sim.pending.status;
           const byKind = (k: string) => opts.filter((x) => x.kind === k).sort((a, b) => b.chance - a.chance)[0];
           let o = opts.sort((a, b) => b.chance - a.chance)[0];
-          if (p.fightPick === 'risky') o = byKind('risk') ?? o;
+          if (p.fightPick === 'random') o = opts[(s.season * 7 + s.history.length * 3 + opts.length) % opts.length];
+          else if (p.fightPick === 'risky') o = byKind('risk') ?? o;
           else if (p.fightPick === 'normal') o = byKind('normal') ?? o;
           else if (p.fightPick === 'smart') {
             // gra pod sytuację: obity → odpoczynek, przegrywa albo rywal słabnie → ryzyko, inaczej najlepsza zwykła
@@ -248,6 +249,7 @@ const POLICIES_ALL: Policy[] = [
   { name: 'ryzyko w walce', fightPick: 'risky' },
   { name: 'zwykłe opcje w walce', fightPick: 'normal' },
   { name: 'walka pod sytuację', fightPick: 'smart' },
+  { name: 'walka: losowo', fightPick: 'random' },
   { name: 'tylko zapasy', train: () => 'wrest' },
   { name: 'tylko parter', train: () => 'bjj' },
   { name: 'tylko kondycja', train: () => 'cardio' },
@@ -274,7 +276,8 @@ const POLICIES_ALL: Policy[] = [
   { name: 'zaplecze: fizjo', backroom: ['physio'] },
   { name: 'zaplecze: lekarz', backroom: ['doctor'] },
   { name: 'zaplecze: suple', backroom: ['supps'] },
-  { name: 'zaplecze: wszystko', backroom: ['physio', 'doctor', 'supps'] },
+  { name: 'zaplecze: wszystko', backroom: ['physio', 'doctor', 'supps', 'sparring'] },
+  { name: 'zaplecze: sparing', backroom: ['sparring'] },
   { name: 'odbudowa: nigdy', tuneup: 'never' },
   { name: 'dziwni sponsorzy', shady: true },
   { name: 'wyjazd: Dagestan', exp: 'dagestan' },
