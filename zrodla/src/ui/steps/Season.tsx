@@ -468,32 +468,8 @@ export default function Season({ game, setGame }: StepProps) {
     <section className="step season-step">
       <div className="kicker season-kicker">{amateur ? 'Turnieje amatorskie' : g.contract.kind === 'freak' ? g.contract.fed : g.fed}</div>
       <div className="season-head">
-        <div className="season-title">
-          <h2>Sezon {g.season}</h2>
-        </div>
-        {!run.done && !waiting && (
-          <div className="season-ctrl">
-            <button className={`icon-pill ${fast ? 'on' : ''}`} onClick={() => setFast((x) => !x)} aria-pressed={fast} aria-label={fast ? 'Wolniej' : 'Szybciej'}>
-              <Icon name="ff" size={16} />
-            </button>
-            <button
-              className="icon-pill text"
-              onClick={() => {
-                setSpinning(false);
-                setGame(seasonSkip(gameRef.current));
-              }}
-            >
-              <Icon name="skip" size={14} />
-              Pomiń
-            </button>
-          </div>
-        )}
-      </div>
-
-      <div className="season-bar">
-        <FormReel g={g} spinning={spinning} />
-        <div className={`rec-pill ${lastRes === 'W' ? 'up' : lastRes === 'L' ? 'down' : ''}`} key={recKey}>
-          <Icon name="glove" size={14} />
+        <h2>Sezon {g.season}</h2>
+        <div className={`rec-pill ${lastRes === 'W' ? 'up' : lastRes === 'L' ? 'down' : ''}`} key={recKey} title="Bilans w tym sezonie">
           <small>Bilans</small>
           <b>
             {w}-{l}
@@ -503,9 +479,10 @@ export default function Season({ game, setGame }: StepProps) {
           {lastRes === 'L' && <i>▼</i>}
         </div>
       </div>
+      <FormReel g={g} spinning={spinning} />
 
       <CoachTip id="season">
-        Walki lecą same. <Icon name="ff" size={13} /> przyspiesza, a „Pomiń” od razu pokazuje wyniki.
+        Walki lecą same, a ekran sam przewija się do bieżącej. Przyciski na dole przyspieszają sezon albo od razu pokazują wyniki.
       </CoachTip>
       {run.intro.length > 0 && (
         <details className="intro-notes">
@@ -533,6 +510,25 @@ export default function Season({ game, setGame }: StepProps) {
           </div>
         ))}
       </div>
+
+      {!run.done && !waiting && (
+        <div className="play-ctrl" role="group" aria-label="Tempo sezonu">
+          <button className={`icon-pill ${fast ? 'on' : ''}`} onClick={() => setFast((x) => !x)} aria-pressed={fast}>
+            <Icon name="ff" size={16} />
+            {fast ? 'Szybko' : 'Szybciej'}
+          </button>
+          <button
+            className="icon-pill"
+            onClick={() => {
+              setSpinning(false);
+              setGame(seasonSkip(gameRef.current));
+            }}
+          >
+            <Icon name="skip" size={14} />
+            Pomiń
+          </button>
+        </div>
+      )}
 
       {run.done && (
         <div className="cta-bar float" style={d(anim ? revealMs : 0)}>

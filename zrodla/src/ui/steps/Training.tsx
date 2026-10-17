@@ -40,7 +40,7 @@ export default function Training({ game, setGame }: StepProps) {
         Wybrana umiejętność urośnie najbardziej.{g.age >= 31 ? ' Po trzydziestce organizm bierze już mniej.' : ''}
       </p>
       <CoachTip id="training">
-        Wybierz umiejętność na obóz. Zielona liczba to wynik po nim. U góry masz <b>OVR</b> (ogólną siłę), budżet, rekord i wiek.
+        Wybierz umiejętność na obóz. Zielona liczba to wynik po nim. Na belce u góry masz <b>OVR</b> (ogólną siłę), budżet, rekord i wiek. Dotknij ich, żeby zobaczyć szczegóły.
       </CoachTip>
       {clubLimits(g) && <div className="warn">{g.club.name} niewiele cię już nauczy. Lepszy klub wybierzesz na rynku po sezonie.</div>}
       <div className="choice-list train-list" style={{ marginTop: 12 }} role="radiogroup" aria-label="Trening">

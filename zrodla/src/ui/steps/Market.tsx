@@ -1,4 +1,4 @@
-import { STAT_LABELS, TIER_LEVEL, TIER_NAMES } from '../../engine/data';
+import { STAT_LABELS, TIER_LEVEL } from '../../engine/data';
 import { ovr } from '../../engine/fighter';
 import { clubAvailability, clubLimits, confirmMarket, marketWarnings, pickClub, pickContract, retire } from '../../engine/game';
 import type { Contract } from '../../engine/types';
@@ -128,31 +128,38 @@ export default function Market({ game, setGame }: StepProps) {
           })}
         </div>
 
+        {g.tier === 0 && watching.some((c) => c.tier === 1) && (
+          <p className="debut-note">
+            <Icon name="sparkle" size={14} />
+            <span>
+              <b>Debiut zawodowy:</b> {watching.find((c) => c.tier === 1)!.reason}
+            </span>
+          </p>
+        )}
         {watching.length > 0 && (
-          <>
-            <div className="panel-title pt-ico" style={{ marginTop: 18 }}>
-              <Icon name="clock" size={15} />
-              Jeszcze nie teraz
+          <details className="acc" style={{ marginTop: 10 }}>
+            <summary>
+              <span>
+                <Icon name="clock" size={15} />
+                Jeszcze nie teraz
+              </span>
+              <b>{watching.length}</b>
+            </summary>
+            <div className="acc-body locked-clubs">
+              {watching.map((c) => (
+                <div key={c.id} className="locked-club">
+                  <Emblem spec={crestFor(c.fed)} size={26} title={c.fed} />
+                  <span>
+                    <b>{c.fed}</b>
+                    <small>
+                      {c.kind === 'stay' ? 'Powód: ' : 'Warunek: '}
+                      {c.reason}
+                    </small>
+                  </span>
+                </div>
+              ))}
             </div>
-            {watching.map((c) => (
-              <div key={c.id} className="offer locked">
-                <span className="offer-top">
-                  <span className="fed-row">
-                    <Emblem spec={crestFor(c.fed)} size={34} title={c.fed} />
-                    <span className="fed">{c.fed}</span>
-                  </span>
-                  <span className="tag">
-                    <Icon name="clock" size={12} />
-                    {g.tier === 0 ? 'zawodowstwo' : TIER_NAMES[c.tier]}
-                  </span>
-                </span>
-                <span className="offer-note">{c.note}</span>
-                <span className="offer-note">
-                  <b>{c.kind === 'stay' ? 'Powód:' : 'Warunek:'}</b> {c.reason}
-                </span>
-              </div>
-            ))}
-          </>
+          </details>
         )}
       </section>
 
