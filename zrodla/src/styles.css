@@ -5625,3 +5625,215 @@ button.hs:active,
   cursor: pointer;
 }
 .ofr-auto { justify-self: center; }
+
+/* menedżer jako pełna sekcja rynku */
+.mgr-ava {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  font-family: var(--display);
+  font-size: 0.82rem;
+  letter-spacing: 0.02em;
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.15);
+}
+.locked-club .mgr-ava { width: 26px; height: 26px; font-size: 0.66rem; }
+.mgr-new { margin-left: 8px; font-size: 0.66rem; vertical-align: 3px; animation: pulseTag 1.8s ease-in-out infinite; }
+@keyframes pulseTag {
+  50% { box-shadow: 0 0 0 4px rgba(245, 183, 0, 0.18); }
+}
+
+/* =====================================================================
+   Pojedynek z tabliczkami (plakat gali, turnieju, oferta)
+   ===================================================================== */
+.vs-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: end;
+  gap: 2px;
+  position: relative;
+}
+.vh-side { display: grid; justify-items: center; min-width: 0; }
+.vh-art {
+  position: relative;
+  display: grid;
+  place-items: end center;
+  width: 100%;
+}
+.vh-art::before {
+  content: '';
+  position: absolute;
+  inset: 18% 12% 0;
+  border-radius: 50%;
+  filter: blur(14px);
+  opacity: 0.55;
+}
+.vh-side.me .vh-art::before { background: radial-gradient(closest-side, rgba(1, 174, 238, 0.7), transparent); }
+.vh-side.opp .vh-art::before { background: radial-gradient(closest-side, rgba(225, 29, 72, 0.7), transparent); }
+.vh-art .fighter-art { position: relative; }
+.vh-side.me .vh-art { animation: vhInL 0.5s 0.1s cubic-bezier(0.2, 1.3, 0.4, 1) both; }
+.vh-side.opp .vh-art { animation: vhInR 0.5s 0.1s cubic-bezier(0.2, 1.3, 0.4, 1) both; }
+@keyframes vhInL { from { opacity: 0; transform: translateX(-30px); } }
+@keyframes vhInR { from { opacity: 0; transform: translateX(30px); } }
+.vh-plate {
+  position: relative;
+  margin-top: -6px;
+  width: 100%;
+  max-width: 150px;
+  display: grid;
+  justify-items: center;
+  gap: 0;
+  padding: 5px 8px 6px;
+  text-align: center;
+  clip-path: polygon(6% 0, 100% 0, 94% 100%, 0 100%);
+}
+.vh-side.me .vh-plate { background: linear-gradient(135deg, #0b5f86, #0a2a4a); }
+.vh-side.opp .vh-plate { background: linear-gradient(135deg, #8a1230, #3a0d18); }
+.vh-plate small {
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.75);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+.vh-plate b {
+  font-family: var(--display);
+  font-size: 1.15rem;
+  line-height: 1.05;
+  text-transform: uppercase;
+  color: #fff;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+.vh-plate span {
+  font-size: 0.66rem;
+  color: rgba(255, 255, 255, 0.8);
+  max-width: 100%;
+}
+.vh-mid { display: grid; justify-items: center; padding-bottom: 34px; }
+.vh-vs {
+  font-family: var(--display);
+  font-size: 2rem;
+  font-style: italic;
+  color: var(--gold);
+  text-shadow: 0 0 18px rgba(245, 183, 0, 0.55);
+  animation: vsPop 0.5s 0.35s cubic-bezier(0.2, 1.6, 0.4, 1) both;
+}
+@keyframes vsPop { from { opacity: 0; transform: scale(2.2) rotate(-8deg); } }
+.vh-mid small {
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+/* plakat gali: nagłówek i karta walk */
+.pst-brand { display: inline-flex; align-items: center; gap: 6px; }
+.poster .pst-head h2 {
+  background: linear-gradient(180deg, #fff 30%, #9fd8f5);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: none;
+  filter: drop-shadow(0 4px 18px rgba(1, 174, 238, 0.45));
+}
+.poster.title-bout .pst-head h2 {
+  background: linear-gradient(180deg, #fff3c4 20%, #f5b700);
+  -webkit-background-clip: text;
+  background-clip: text;
+  filter: drop-shadow(0 4px 18px rgba(245, 183, 0, 0.45));
+}
+.pst-card-wrap { display: grid; gap: 4px; }
+.pst-card-title {
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: var(--faint);
+  text-align: center;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.pst-card-title::before,
+.pst-card-title::after { content: ''; flex: 1; height: 1px; background: var(--line); }
+.pst-card li { animation: rowIn 0.35s calc(0.45s + var(--i, 0) * 0.06s) ease-out both; }
+@keyframes rowIn { from { opacity: 0; transform: translateY(6px); } }
+.pst-bout { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: baseline; gap: 6px; }
+.pst-bout .pa { text-align: right; min-width: 0; }
+.pst-bout .pb { text-align: left; min-width: 0; }
+.pst-bout b { font-size: 0.84rem; }
+.pst-bout small { margin-left: 4px; }
+.pst-bout .pa small { margin-left: 0; margin-right: 4px; }
+.pst-bout .pa { display: flex; flex-direction: row-reverse; justify-content: flex-start; align-items: baseline; gap: 4px; flex-wrap: wrap; }
+.pst-bout .pb { display: flex; align-items: baseline; gap: 4px; flex-wrap: wrap; }
+.pst-card li { padding: 5px 8px; }
+.pst-card li .pst-tag { text-align: center; }
+
+/* oferta: ten sam pojedynek */
+.offer-modal .vs-hero { margin-top: 2px; }
+
+/* =====================================================================
+   Animowane alerty: powiadomienia, podpowiedzi, ostrzeżenia, notki
+   ===================================================================== */
+.toast { position: relative; overflow: hidden; }
+.toast::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 2px;
+  width: 100%;
+  background: var(--gold);
+  transform-origin: left;
+  animation: toastTimer var(--toast-ms, 2600ms) linear both;
+}
+.toast.multi::after { --toast-ms: 3400ms; }
+@keyframes toastTimer { to { transform: scaleX(0); } }
+.toast.reveal .toast-ico { animation: icoSpin 0.6s 0.15s cubic-bezier(0.2, 1.5, 0.4, 1) both; }
+@keyframes icoSpin { from { transform: scale(0.3) rotate(-60deg); opacity: 0; } }
+.coach { animation: alertIn 0.4s ease-out both; }
+.warn,
+.debut-note,
+.ofr-note,
+.season-note,
+.money-trouble,
+.mt-note.bad { animation: alertIn 0.4s ease-out both; }
+.warn { animation: alertIn 0.4s ease-out both, warnNudge 0.5s 0.4s ease-in-out; }
+@keyframes alertIn { from { opacity: 0; transform: translateY(-6px); } }
+@keyframes warnNudge {
+  25% { transform: translateX(-3px); }
+  75% { transform: translateX(3px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .vh-side .vh-art,
+  .vh-vs,
+  .pst-card li,
+  .coach,
+  .warn,
+  .debut-note,
+  .ofr-note,
+  .season-note,
+  .money-trouble,
+  .toast.reveal .toast-ico { animation: none !important; }
+}
+.vh-plate b {
+  overflow-wrap: normal;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: clamp(0.9rem, 4.4vw, 1.15rem);
+}
+@media (max-width: 380px) {
+  .pst-bout small { display: none; }
+  .pst-bout b { font-size: 0.8rem; }
+}
+@media (max-height: 700px) {
+  .pst-card li:nth-child(n + 3):not(.me) { display: none; }
+  .pst-head h2 { font-size: 1.9rem; }
+}
