@@ -86,6 +86,8 @@ with sync_playwright() as p:
     page.wait_for_timeout(500)
     snap(page, "01-menu")
     page.get_by_role("button", name="Graj").first.click()
+    if page.locator(".tutorial").count():
+        page.locator(".tut-skip").click(); page.wait_for_timeout(150)
     page.wait_for_timeout(200)
     snap(page, "02-sloty")
     page.locator(".btn-primary").first.click()

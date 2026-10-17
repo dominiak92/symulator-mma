@@ -32,6 +32,8 @@ with sync_playwright() as p:
         page.route("https://groundgame.com/**", lambda r: r.abort())
         page.goto(URL); page.evaluate("localStorage.clear()"); page.goto(URL)
         page.get_by_role("button", name="Graj").first.click()
+        if page.locator(".tutorial").count():
+            page.locator(".tut-skip").click(); page.wait_for_timeout(150)
         page.locator(".btn-primary").first.click()
         page.locator(".btn-primary").last.click()
         page.wait_for_timeout(200)

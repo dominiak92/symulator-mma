@@ -42,6 +42,10 @@ with sync_playwright() as p:
     page.wait_for_timeout(600)
     shot(page, "01-menu")
     click_text(page, "Graj")
+    page.wait_for_timeout(150)
+    if page.locator(".tutorial").count():
+        shot(page, "01b-tutorial")
+        page.locator(".tut-skip").click(); page.wait_for_timeout(150)
     page.wait_for_timeout(200)
     shot(page, "02-slots")
     page.get_by_role("button", name="Zacznij").first.click()

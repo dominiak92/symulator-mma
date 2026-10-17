@@ -17,6 +17,8 @@ with sync_playwright() as p:
             pg.screenshot(path=f"{OUT}/{tag}-{name}.png", full_page=True)
             pg.get_by_role("button", name="Wróć do menu").click(); pg.wait_for_timeout(100)
         pg.get_by_role("button", name="Graj").first.click(); pg.wait_for_timeout(150)
+        if pg.locator(".tutorial").count():
+            pg.locator(".tut-skip").click(); pg.wait_for_timeout(150)
         pg.screenshot(path=f"{OUT}/{tag}-sloty.png", full_page=True)
         pg.locator(".btn-primary").first.click(); pg.wait_for_timeout(150)
         pg.screenshot(path=f"{OUT}/{tag}-nowa.png", full_page=True)
