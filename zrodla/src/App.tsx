@@ -92,9 +92,21 @@ export default function App() {
     if (fresh.length) setToasts((t) => [...t, ...fresh.map((a, i) => ({ id: Date.now() + i, a }))]);
   }, []);
 
+  // powiadomienie znika, gdy gracz zaczyna przewijać (nie zasłania tego, co chce przeczytać)
   useEffect(() => {
     if (!toasts.length) return;
-    const t = setTimeout(() => setToasts((x) => x.slice(1)), toasts.length > 1 ? 1800 : 2800);
+    const start = window.scrollY;
+    const onScroll = () => {
+      if (Math.abs(window.scrollY - start) > 40) setToasts([]);
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, [toasts.length > 0]);
+
+  useEffect(() => {
+    if (!toasts.length) return;
+    // kilka naraz pokazujemy jednym powiadomieniem, a potem znikają wszystkie
+    const t = setTimeout(() => setToasts([]), toasts.length > 1 ? 3400 : 2600);
     return () => clearTimeout(t);
   }, [toasts]);
 
@@ -184,19 +196,34 @@ export default function App() {
         )}
       </div>
       <div className="toasts" aria-live="polite">
-        {toasts.slice(0, 1).map((t) => (
-          <button key={t.id} className="toast reveal" onClick={() => setToasts((x) => x.slice(1))} aria-label={`${t.a.kind}: ${t.a.title}. Dotknij, żeby zamknąć.`}>
+        {toasts.length > 1 ? (
+          <button key={toasts[0].id} className="toast reveal multi" onClick={() => setToasts([])} aria-label="Nowe osiągnięcia. Dotknij, żeby zamknąć.">
             <span className="toast-ico">
               <Icon name="trophy" size={18} />
             </span>
             <small>
-              {t.a.kind}
-              {toasts.length > 1 ? ` · jeszcze ${toasts.length - 1}` : ''}
+              {toasts.length} {toasts.length >= 5 ? 'nowych osiągnięć' : 'nowe osiągnięcia'}
             </small>
-            <strong>{t.a.title}</strong>
-            <span>{t.a.desc}</span>
+            <strong>
+              {toasts
+                .slice(0, 3)
+                .map((t) => t.a.title)
+                .join(' · ')}
+              {toasts.length > 3 ? ` i jeszcze ${toasts.length - 3}` : ''}
+            </strong>
           </button>
-        ))}
+        ) : (
+          toasts.slice(0, 1).map((t) => (
+            <button key={t.id} className="toast reveal" onClick={() => setToasts([])} aria-label={`${t.a.kind}: ${t.a.title}. Dotknij, żeby zamknąć.`}>
+              <span className="toast-ico">
+                <Icon name="trophy" size={18} />
+              </span>
+              <small>{t.a.kind}</small>
+              <strong>{t.a.title}</strong>
+              <span>{t.a.desc}</span>
+            </button>
+          ))
+        )}
       </div>
     </>
   );
