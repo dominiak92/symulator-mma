@@ -1288,7 +1288,7 @@ function fightMods(s: GameState): number {
   const cur = s.run?.fights[s.run.fights.length - 1];
   if (!cur || cur.amateur) return 0;
   const sh = weightShift(s);
-  let m = sh < 0 ? 4 : sh > 0 ? -4 : 0;
+  let m = sh < 0 ? 4 : sh > 0 ? -2 : 0;
   if (cur.weightMiss) m -= 5;
   if (cur.prep === 'rival') m += 4;
   if (cur.prep === 'hard') m += 3;
@@ -1667,7 +1667,7 @@ export function pressAnswer(s0: GameState, key: PressAnswer): GameState {
     } else {
       s.media = clamp(s.media + 3, 0, 100);
       s.rep = clamp(s.rep - 3, 0, 100);
-      if (rng.chance(0.45)) {
+      if (rng.chance(0.4)) {
         o.pressMod = 4;
         o.pressNote = 'Klip z konferencji ma milion wyświetleń. Rywal przez cały tydzień myśli tylko o tobie, a nie o planie na walkę.';
       } else {
@@ -1974,7 +1974,7 @@ function finalizeFight(rng: Rng, s: GameState, rep: FightReport) {
   const extra = !rep.amateur && s.run ? Math.max(0, s.run.fights.length - 3) : 0;
   // zbijanie wagi i ciężki obóz męczą organizm
   if (!rep.amateur && weightShift(s) < 0) s.wear = clamp(s.wear + 1, 0, 100);
-  if (!rep.amateur && weightShift(s) > 0) s.wear = clamp(s.wear - 0.5, 0, 100);
+  if (!rep.amateur && weightShift(s) > 0) s.wear = clamp(s.wear - 1.5, 0, 100);
   if (rep.prep === 'hard') s.wear = clamp(s.wear + 1, 0, 100);
   if (extra) s.wear = clamp(s.wear + 2 * extra, 0, 100);
   const injP = (extra * 0.03 + (rep.prep === 'hard' ? 0.03 : 0) + (dmgTaken > 50 ? 0.22 : dmgTaken > 30 ? 0.07 : 0.02) + s.wear / 600 + (s.age >= 32 ? 0.03 : 0)) * (rep.amateur ? 0.5 : 0.8);
