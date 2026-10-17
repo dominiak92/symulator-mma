@@ -69,7 +69,7 @@ for (let i = 0; i < N; i++) {
             checkText('oferta walki', run.offer.note);
             checkText('rywal', run.offer.opp.lastName);
             const r = rng.next();
-            s = r < 0.15 && !G.declineBlocked(s) ? G.declineOffer(s) : r < 0.3 && !run.offer.negotiated ? G.negotiateOffer(s) : G.acceptOffer(s);
+            s = r < 0.15 && !G.declineBlocked(s) ? G.declineOffer(s) : r < 0.3 && !run.offer.negotiated ? G.negotiateOffer(s) : r < 0.4 ? G.acceptAllOffers(s) : G.acceptOffer(s);
             for (const n of s.run?.notes ?? []) checkText('notka', n);
           } else if (cur?.sim.pending) {
             checkText('decyzja', cur.sim.pending.text);
