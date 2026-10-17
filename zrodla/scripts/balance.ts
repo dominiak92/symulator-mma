@@ -68,6 +68,8 @@ type Policy = {
   press?: 'calm' | 'provoke' | 'insult';
   division?: -1 | 1;
   exp?: 'dagestan' | 'floryda' | 'trondheim';
+  tuneup?: 'always' | 'never';
+  shady?: boolean;
 };
 
 const weakest = (s: GameState) => [...STAT_KEYS].sort((a, b) => s.stats[a] - s.stats[b])[0];
@@ -103,6 +105,7 @@ function play(seed: number, p: Policy) {
         break;
       }
       case 'budget': {
+        if (p.shady && s.shadyDeal?.status === 'open') s = G.acceptShadyDeal(s);
         if (p.pitch && !pitchBlocked(s)) {
           const best = [...PITCH_SLOTS].sort((a, b) => pitchChance(s, b.id) * pitchPay(s, b.id) - pitchChance(s, a.id) * pitchPay(s, a.id))[0];
           s = pitchSponsor(s, best.id);
@@ -155,7 +158,9 @@ function play(seed: number, p: Policy) {
         if (run.press) s = pressAnswer(s, p.press ?? 'calm');
         else if (run.offer) {
           const o = run.offer;
-          if (p.offers === 'negotiate' && !o.negotiated) s = negotiateOffer(s);
+          // walkę na odbudowę rozsądny gracz bierze tylko, gdy wypadł z rankingu (albo gdy strategia każe)
+          if (o.tuneup && (p.tuneup === 'never' || (p.tuneup !== 'always' && s.rank !== null))) s = declineOffer(s);
+          else if (p.offers === 'negotiate' && !o.negotiated) s = negotiateOffer(s);
           else if (p.offers === 'picky' && !declineBlocked(s) && o.purse < s.contract.purse * 0.95 && (run.declines ?? 0) < 2) s = declineOffer(s);
           else s = acceptOffer(s, p.prep ?? 'std');
         } else if (cur?.sim.pending) {
@@ -263,6 +268,9 @@ const POLICIES_ALL: Policy[] = [
   { name: 'zbija wagę', division: -1 },
   { name: 'kategoria wyżej', division: 1 },
   { name: 'obozy', camps: true },
+  { name: 'odbudowa: zawsze', tuneup: 'always' },
+  { name: 'odbudowa: nigdy', tuneup: 'never' },
+  { name: 'dziwni sponsorzy', shady: true },
   { name: 'wyjazd: Dagestan', exp: 'dagestan' },
   { name: 'wyjazd: Floryda', exp: 'floryda' },
   { name: 'wyjazd: Trondheim', exp: 'trondheim' },

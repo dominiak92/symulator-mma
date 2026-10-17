@@ -26,10 +26,10 @@ with sync_playwright() as p:
         if pg.locator('.press-modal').count():
             shot(pg, 'konferencja'); pg.locator('.press-opt').nth(1).click(); pg.wait_for_timeout(300); continue
         if pg.locator('.offer-modal').count():
-            shot(pg, 'oferta')
+            shot(pg, 'oferta-odbudowa' if pg.locator('.fi-card.tuneup').count() else 'oferta')
             if step % 3 == 0 and pg.get_by_role('button', name='Chcę więcej').count() and pg.get_by_role('button', name='Chcę więcej').is_enabled():
-                pg.get_by_role('button', name='Chcę więcej').click(); pg.wait_for_timeout(300); shot(pg, 'oferta-po-negocjacji'); continue
-            pg.get_by_role('button', name='Przyjmuję walkę').click(); pg.wait_for_timeout(300); continue
+                pg.get_by_role('button', name='Chcę więcej').click(); pg.wait_for_timeout(1500); shot(pg, 'oferta-po-negocjacji'); continue
+            pg.locator('.ofr-actions .btn-primary').click(); pg.wait_for_timeout(300); continue
         if pg.locator('.poster-modal').count():
             pg.wait_for_timeout(400); shot(pg, 'plakat'); pg.locator('.fi-go').click(); pg.wait_for_timeout(300); continue
         if pg.locator('.fight-intro .fi-go').count():

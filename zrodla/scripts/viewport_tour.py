@@ -110,7 +110,7 @@ with sync_playwright() as p:
         elif pg.locator(".press-modal").count():
             pg.locator(".press-opt").first.click(); pg.wait_for_timeout(200)
         elif pg.locator(".offer-modal").count():
-            pg.get_by_role("button", name="Przyjmuję walkę").click(); pg.wait_for_timeout(200)
+            pg.locator(".ofr-actions .btn-primary").click(); pg.wait_for_timeout(200)
         elif pg.locator(".fight-intro").count():
             if once("intro"): snap(pg, "s0-4b-zapowiedz", problems)
             (lambda: pg.locator(".fi-go").click(timeout=2000) if pg.locator(".fi-go").count() else None)()
