@@ -30,6 +30,7 @@ import { STAT_KEYS } from '../src/engine/data';
 const N = Number(process.argv[2] ?? 300);
 const START = (process.argv[3] ?? 'osiedle') as StartProfile;
 const NAIVE = process.argv[4] === 'naive';
+const FREAK = process.argv[4] === 'freak';
 
 function botTrain(s: GameState): StatKey {
   // podkręca najsłabszą z sensownych statystyk
@@ -103,7 +104,8 @@ function play(seed: number) {
           break;
         }
         // preferuje awans, potem zostań
-        let ci = m.contracts.findIndex((c) => c.available && c.kind === 'promotion');
+        let ci = FREAK ? m.contracts.findIndex((c) => c.available && c.kind === 'freak') : -1;
+        if (ci < 0) ci = m.contracts.findIndex((c) => c.available && c.kind === 'promotion');
         if (ci < 0) ci = m.contracts.findIndex((c) => c.available && c.kind !== 'freak');
         if (ci < 0) ci = m.contracts.findIndex((c) => c.available);
         s = pickContract(s, ci);
