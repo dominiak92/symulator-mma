@@ -1248,9 +1248,9 @@ function pickOpponent(rng: Rng, s: GameState, idx: number): { opp: Fighter; titl
     opp.nickname = opp.nickname || 'Pyskaty';
     return { opp, title: false, defense: false, peer: null, grudge: true };
   }
-  let r: number | null = clamp(mine + rng.int(-3, 1) - q, 1, size + 3);
+  let r: number | null = clamp(mine + rng.int(-3, 1) - Math.floor(q / 2), 1, size + 3);
   if (r > size) r = null;
-  if (s.rank === null && rng.chance(0.5 - q * 0.15)) r = null;
+  if (s.rank === null && rng.chance(0.5 - q * 0.1)) r = null;
   return { opp: generateOpponent(rng, tier, r, hard), title: false, defense: false, peer: null };
 }
 
@@ -1719,6 +1719,8 @@ function updateRank(s: GameState, rep: FightReport) {
     let next: number;
     if (opp.rank !== null && opp.rank > 0 && opp.rank < cur) next = opp.rank;
     else next = cur - 1 - (finish ? 1 : 0) - (opp.rank !== null ? 1 : 0);
+    // dobry menedżer umie sprzedać zwycięstwo: większy skok w rankingu
+    next -= activeManager(s)?.quality ?? 0;
     s.rank = clamp(next, 1, size + 2);
   } else if (res === 'L') {
     s.rank = cur + 2 + (finish ? 1 : 0);
