@@ -6239,3 +6239,40 @@ button.hs:active,
 .shady-act .btn { justify-content: center; }
 .shady-done { display: flex; gap: 6px; align-items: flex-start; margin: 0; font-size: 0.84rem; color: var(--good); }
 .shady-done .ico { flex: none; margin-top: 2px; }
+
+/* zaplecze: fizjo, lekarz, suplementy */
+.backroom { margin-top: 14px; display: grid; gap: 8px; }
+.br-head { display: flex; align-items: center; gap: 6px; }
+.br-head .ico { color: var(--cyan); }
+.br-head b { font-family: var(--display); font-weight: 400; font-size: 1.1rem; letter-spacing: 0.02em; }
+.br-list { display: grid; gap: 6px; }
+.br-row {
+  display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; gap: 10px; align-items: center; width: 100%;
+  padding: 10px 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--panel-2);
+  color: inherit; font: inherit; text-align: left; cursor: pointer; transition: border-color 0.2s, background 0.2s;
+}
+.br-row.on { border-color: var(--cyan); background: linear-gradient(120deg, rgba(1, 174, 238, 0.1), transparent 70%), var(--panel-2); }
+.br-ico { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 10px; background: var(--cyan-soft); color: var(--cyan); }
+.br-row:not(.on) .br-ico { filter: grayscale(1); opacity: 0.6; }
+.br-txt { display: grid; gap: 2px; min-width: 0; }
+.br-txt strong { font-size: 0.92rem; }
+.br-txt span { font-size: 0.78rem; line-height: 1.3; color: var(--muted); }
+.br-side { display: grid; justify-items: end; gap: 6px; }
+.br-cost { font-family: var(--cond); font-weight: 700; font-size: 0.85rem; white-space: nowrap; color: var(--muted); }
+.br-row.on .br-cost { color: var(--bad); }
+.br-cost.free, .br-row.on .br-cost.free { color: var(--good); font-family: inherit; font-size: 0.7rem; font-weight: 800; }
+.br-toggle { position: relative; width: 36px; height: 20px; border-radius: 999px; background: var(--line); transition: background 0.2s; }
+.br-toggle i { position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: #fff; transition: transform 0.2s cubic-bezier(0.2, 1.4, 0.4, 1); }
+.br-row.on .br-toggle { background: var(--cyan); }
+.br-row.on .br-toggle i { transform: translateX(16px); }
+
+/* pasek formy po losowaniu: równa wysokość, bez skakania czcionki */
+.form-strip { min-height: 44px; margin-top: 8px; margin-bottom: 10px; }
+.form-strip.rolling .form-val, .form-strip.landed .form-val.lock { font-size: 1.08rem; }
+.form-strip .form-window { height: auto; }
+.form-strip small { line-height: 1; }
+/* „Plan sezonu”: Safari pokazuje własny znacznik, chowamy go i rysujemy jeden */
+details summary::-webkit-details-marker { display: none; }
+details.intro-notes summary { display: flex; align-items: center; gap: 6px; }
+details.intro-notes summary::before { content: '▸'; display: inline-block; transition: transform 0.2s; }
+details.intro-notes[open] summary::before { content: '▸'; transform: rotate(90deg); }
