@@ -9,9 +9,11 @@ import './styles.css';
 import App from './App';
 import { installTypography } from './typography';
 import { unlockAudio } from './ui/sound';
+import { applyFontScale } from './storage';
 
 const root = document.getElementById('root')!;
 installTypography(document.body);
+applyFontScale();
 // przeglądarki pozwalają grać dźwięk dopiero po pierwszym dotknięciu
 const unlock = () => {
   unlockAudio();

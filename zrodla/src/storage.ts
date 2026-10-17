@@ -71,10 +71,12 @@ export interface Settings {
   tutorialSeen: boolean;
   /** delikatne dźwięki w ważnych momentach */
   sound: boolean;
+  /** rozmiar tekstu w procentach (100, 112, 125) */
+  fontScale: number;
 }
 export function loadSettings(): Settings {
   const raw = safeGet(SETTINGS);
-  const def: Settings = { animations: true, cardTheme: 'gg', tips: true, tipsSeen: [], tutorialSeen: false, sound: true };
+  const def: Settings = { animations: true, cardTheme: 'gg', tips: true, tipsSeen: [], tutorialSeen: false, sound: true, fontScale: 100 };
   if (!raw) return def;
   try {
     return { ...def, ...JSON.parse(raw) };
@@ -84,6 +86,16 @@ export function loadSettings(): Settings {
 }
 export function saveSettings(s: Settings) {
   safeSet(SETTINGS, JSON.stringify(s));
+}
+export const FONT_SCALES = [
+  { value: 100, label: 'Normalny' },
+  { value: 112, label: 'Większy' },
+  { value: 125, label: 'Duży' },
+];
+/** Ustawia rozmiar tekstu całej gry (rozmiary w CSS są w rem). */
+export function applyFontScale(scale = loadSettings().fontScale) {
+  if (typeof document === 'undefined') return;
+  document.documentElement.style.fontSize = scale === 100 ? '' : `${scale}%`;
 }
 
 // ---------- Meta między karierami ----------

@@ -6367,3 +6367,10 @@ details.intro-notes[open] summary::before { content: '▸'; transform: rotate(90
 .cc-text { min-width: 0; }
 .career-chart > svg { max-width: 640px; width: 100%; margin: 0 auto; }
 @media (min-width: 900px) { .career-chart { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 10px 24px; align-items: start; } .cc-tabs { grid-column: 1 / -1; max-width: 420px; } .cc-axis-note { grid-column: 1; } .career-chart > svg { grid-column: 1; grid-row: 2; } .cc-moments { grid-column: 2; grid-row: 2 / span 2; align-self: center; } }
+
+/* ---------- Rozmiar tekstu ---------- */
+.text-size { display: flex; flex-direction: column; gap: 6px; width: 100%; }
+.text-size-label { font-weight: 700; }
+.text-size-seg { display: flex; gap: 6px; }
+.text-size-seg button { flex: 1 1 0; min-width: 0; padding: 8px 6px; border-radius: var(--r-md); border: 1px solid var(--line); background: var(--panel-2); color: var(--muted); font-family: var(--body); font-weight: 600; cursor: pointer; }
+.text-size-seg button.on { border-color: var(--cyan); background: var(--cyan-soft); color: var(--text); }
