@@ -41,7 +41,11 @@ for (let i = 0; i < N; i++) {
       checkState(s, s.phase);
       switch (s.phase) {
         case 'training':
-          if (rng.chance(0.08) && !G.dagestanBlocked(s)) s = G.goDagestan(s);
+          if (rng.chance(0.1)) {
+            const e = rng.pick(G.EXPEDITIONS);
+            if (!G.expeditionBlocked(s, e)) s = G.goExpedition(s, e.id);
+            else s = G.doTraining(s, rng.pick(STAT_KEYS), null);
+          }
           else s = G.doTraining(s, rng.pick(STAT_KEYS), rng.chance(0.5) ? rng.pick(G.CAMPS).id : null);
           break;
         case 'budget':

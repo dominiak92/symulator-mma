@@ -1,3 +1,4 @@
+import * as G from '../src/engine/game';
 // Porównanie strategii gracza — szukanie luk w ekonomii i balansie.
 // Uruchom: npx tsx scripts/balance.ts [liczba karier na strategię]
 import {
@@ -66,6 +67,7 @@ type Policy = {
   prep?: 'std' | 'rival' | 'hard';
   press?: 'calm' | 'provoke' | 'insult';
   division?: -1 | 1;
+  exp?: 'dagestan' | 'floryda' | 'montreal';
 };
 
 const weakest = (s: GameState) => [...STAT_KEYS].sort((a, b) => s.stats[a] - s.stats[b])[0];
@@ -84,6 +86,13 @@ function play(seed: number, p: Policy) {
     moneyAt[s.age] = s.money;
     switch (s.phase) {
       case 'training': {
+        if (p.exp) {
+          const e = G.EXPEDITIONS.find((x) => x.id === p.exp)!;
+          if (!G.expeditionBlocked(s, e) && s.money - G.expeditionCost(s, e) > 30000) {
+            s = G.goExpedition(s, e.id);
+            break;
+          }
+        }
         const k = (p.train ?? weakest)(s);
         let camp: string | null = null;
         if (p.camps && !campBlocked(s) && s.money - campCost(s) + budgetBalance(s) > 20000) {
@@ -254,6 +263,9 @@ const POLICIES_ALL: Policy[] = [
   { name: 'zbija wagę', division: -1 },
   { name: 'kategoria wyżej', division: 1 },
   { name: 'obozy', camps: true },
+  { name: 'wyjazd: Dagestan', exp: 'dagestan' },
+  { name: 'wyjazd: Floryda', exp: 'floryda' },
+  { name: 'wyjazd: Montreal', exp: 'montreal' },
   { name: 'akademia', academy: true },
   { name: 'obozy+akademia', camps: true, academy: true },
 ];
