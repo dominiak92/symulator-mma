@@ -139,7 +139,7 @@ with sync_playwright() as p:
         elif page.locator(".fight-intro").count():
             if first_time("intro"):
                 shot(page, "08a-zapowiedz")
-            page.locator(".fi-go").click()
+            (lambda: page.locator(".fi-go").click(timeout=2000) if page.locator(".fi-go").count() else None)()
         elif page.locator(".icon-pill.next").count() and not page.locator(".decision .choice").count():
             page.locator(".icon-pill.next").click()
         elif page.locator(".decision").count():

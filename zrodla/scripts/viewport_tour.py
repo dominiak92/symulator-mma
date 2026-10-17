@@ -111,7 +111,7 @@ with sync_playwright() as p:
             pg.get_by_role("button", name="Przyjmuję walkę").click(); pg.wait_for_timeout(200)
         elif pg.locator(".fight-intro").count():
             if once("intro"): snap(pg, "s0-4b-zapowiedz", problems)
-            pg.locator(".fi-go").click()
+            (lambda: pg.locator(".fi-go").click(timeout=2000) if pg.locator(".fi-go").count() else None)()
         elif pg.locator(".icon-pill.next").count() and not pg.locator(".decision .choice").count():
             pg.locator(".icon-pill.next").click()
         elif pg.locator(".decision .choice").count():
