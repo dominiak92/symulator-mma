@@ -1,5 +1,5 @@
 import { STAT_LABELS } from '../../engine/data';
-import { cheaperClub, downgradeClub, fightRange, plannedFights, setWantFights, ACADEMY_LEVELS, academyName, academyNext, investAcademy, OVERDRAFT, PITCH_SLOTS, pitchBlocked, pitchChance, pitchPay, pitchSponsor, breakPreview, budgetBalance, budgetLines, canStartSeason, expectedPurses, loanOffer, loanRefusal, startSeason, takeBreakYear, takeLoan } from '../../engine/game';
+import { acceptShadyDeal, refuseShadyDeal, cheaperClub, downgradeClub, fightRange, plannedFights, setWantFights, ACADEMY_LEVELS, academyName, academyNext, investAcademy, OVERDRAFT, PITCH_SLOTS, pitchBlocked, pitchChance, pitchPay, pitchSponsor, breakPreview, budgetBalance, budgetLines, canStartSeason, expectedPurses, loanOffer, loanRefusal, startSeason, takeBreakYear, takeLoan } from '../../engine/game';
 import { useState, type CSSProperties } from 'react';
 import type { StatKey } from '../../engine/types';
 import { money, plural } from '../../format';
@@ -207,6 +207,60 @@ export default function Budget({ game, setGame }: StepProps) {
             <p className="mt-note bad">Z takim minusem nie wystartujesz. Weź kredyt albo zrób rok przerwy.</p>
           )}
         </div>
+      )}
+
+      {g.shadyDeal && g.shadyDeal.season === g.season && g.shadyDeal.status !== 'refused' && (
+        <section className={`shady ${g.shadyDeal.status}`}>
+          <div className="shady-head">
+            <span className="mgr-tip-ico">
+              <Icon name="briefcase" size={16} />
+            </span>
+            <div>
+              <small>{g.shadyDeal.from} dzwoni</small>
+              <b>„Mam sponsora. Tylko się nie śmiej.”</b>
+            </div>
+          </div>
+          <div className="shady-body">
+            <SponsorLogo name={g.shadyDeal.name} size={40} />
+            <div>
+              <strong>{g.shadyDeal.name}</strong>
+              <span>{g.shadyDeal.product}</span>
+            </div>
+          </div>
+          <p className="shady-pitch">{g.shadyDeal.pitch}</p>
+          <div className="shady-fx">
+            <span className="tag good">
+              <Icon name="coins" size={12} />+{money(g.shadyDeal.perSeason)} na sezon
+            </span>
+            <span className="tag">{g.shadyDeal.seasons} sezony</span>
+            <span className="tag red">
+              <Icon name="star" size={12} />
+              reputacja −{Math.abs(g.shadyDeal.rep)}
+            </span>
+          </div>
+          {g.shadyDeal.status === 'taken' ? (
+            <p className="shady-done">
+              <Icon name="check" size={14} />
+              Podpisane. Kasa jest już w rachunku powyżej, a koledzy z klubu już wysyłają memy.
+            </p>
+          ) : (
+            <div className="shady-act">
+              <button className="btn btn-small btn-ghost" onClick={() => setGame(refuseShadyDeal(g))}>
+                Nie, dziękuję
+              </button>
+              <button
+                className="btn btn-small btn-gold btn-ico"
+                onClick={() => {
+                  sfxCash();
+                  setGame(acceptShadyDeal(g));
+                }}
+              >
+                <Icon name="check" size={15} />
+                Biorę kasę
+              </button>
+            </div>
+          )}
+        </section>
       )}
 
       <section className="pitch">

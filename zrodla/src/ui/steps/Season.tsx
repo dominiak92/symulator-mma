@@ -848,11 +848,11 @@ function OfferCard({ g, o, n, total, setGame }: { g: GameState; o: FightOffer; n
   const neg = negotiateChance(g);
   const notes = g.run?.notes ?? [];
   const lastNote = notes[notes.length - 1];
-  const head = o.title ? (o.defense ? 'Obrona pasa' : 'Walka o pas') : `Oferta walki ${n} z ${Math.max(n, total)}`;
+  const head = o.tuneup ? 'Walka na odbudowę' : o.title ? (o.defense ? 'Obrona pasa' : 'Walka o pas') : `Oferta walki ${n} z ${Math.max(n, total)}`;
   const spot = o.spot ? SPOT[o.spot] : '';
   return (
     <div className="fight-intro offer-modal" role="dialog" aria-modal="true" aria-label={head}>
-      <div className={`fi-card ${o.title ? 'title-bout' : ''} ${asking ? 'asking' : ''} ${fx ? `fx-${fx.kind}` : ''}`}>
+      <div className={`fi-card ${o.title ? 'title-bout' : ''} ${o.tuneup ? 'tuneup' : ''} ${asking ? 'asking' : ''} ${fx ? `fx-${fx.kind}` : ''}`}>
         <div className="fi-top">
           <span className="fi-num">{head}</span>
           <span className="fi-ctx">
@@ -860,7 +860,15 @@ function OfferCard({ g, o, n, total, setGame }: { g: GameState; o: FightOffer; n
             {spot ? ` · ${spot}` : ''}
           </span>
         </div>
-        {lastNote && !o.note && (
+        {o.tip && (
+          <div className="mgr-tip">
+            <span className="mgr-tip-ico">
+              <Icon name="briefcase" size={16} />
+            </span>
+            <p>{o.tip}</p>
+          </div>
+        )}
+        {lastNote && !o.note && !o.tip && (
           <p key={`n-${opp.id}`} className={`ofr-note ${fx?.kind === 'swap' ? 'ofr-banner swap' : ''}`}>
             {fx?.kind === 'swap' && (
               <b className="ofr-banner-tag">
@@ -894,8 +902,28 @@ function OfferCard({ g, o, n, total, setGame }: { g: GameState; o: FightOffer; n
               {opp.rank === 0 ? 'mistrz' : `#${opp.rank} w rankingu`}
             </span>
           )}
-          {!opp.freak && opp.rank === null && <span className="tag">poza rankingiem</span>}
+          {!opp.freak && opp.rank === null && !o.tuneup && <span className="tag">poza rankingiem</span>}
+          {o.tuneup && (
+            <>
+              <span className="tag">
+                {opp.flag} {opp.country}, {opp.age} lat
+              </span>
+              <span className="tag red">bilans {recStr(opp.record)}</span>
+            </>
+          )}
         </div>
+        {o.tuneup && (
+          <div className="tuneup-fx">
+            <span className="good">
+              <Icon name="check" size={13} />
+              łatwa wygrana, ładniejszy rekord, ranking w górę
+            </span>
+            <span className="bad">
+              <Icon name="x" size={13} />
+              reputacja spada, a porażka byłaby kompromitacją
+            </span>
+          </div>
+        )}
         <div className="ofr-pay">
           <div className={fx?.kind === 'up' ? 'pay-up' : ''}>
             <small>Gaża</small>
@@ -952,8 +980,14 @@ function OfferCard({ g, o, n, total, setGame }: { g: GameState; o: FightOffer; n
         <div className="ofr-actions">
           <button ref={goRef} className="btn btn-primary btn-block btn-ico" disabled={!!asking} onClick={() => setGame(acceptOffer(g, prep))}>
             <Icon name="glove" />
-            Przyjmuję walkę
+            {o.tuneup ? 'Biorę tę walkę' : 'Przyjmuję walkę'}
           </button>
+          {o.tuneup ? (
+            <button className="btn btn-ghost btn-block btn-ico" disabled={!!asking} onClick={() => call('decline', () => declineOffer(g))}>
+              <Icon name="x" size={15} />
+              {asking === 'decline' ? 'Odmawiasz…' : 'Wolę walkę w federacji'}
+            </button>
+          ) : (
           <div className="ofr-row">
             <button className={`btn btn-ghost btn-small btn-ico ${asking === 'neg' ? 'is-asking' : ''}`} disabled={o.negotiated || !!asking} onClick={() => call('neg', () => negotiateOffer(g))}>
               <Icon name="coins" size={15} />
@@ -974,12 +1008,13 @@ function OfferCard({ g, o, n, total, setGame }: { g: GameState; o: FightOffer; n
               {asking === 'decline' ? 'Odrzucasz…' : 'Odrzucam'}
             </button>
           </div>
-          {total - n > 0 && (
+          )}
+          {total - n > 0 && !o.tuneup && (
             <button className="link-btn ofr-auto" onClick={() => setGame(acceptAllOffers(g, prep))}>
               Przyjmuj też kolejne oferty w tym sezonie
             </button>
           )}
-          <p className="faint small ofr-help">{blocked ?? 'Po odmowie przyjdzie inna oferta albo nic. Grymaszenie psuje opinię u promotorów.'}</p>
+          <p className="faint small ofr-help">{o.tuneup ? 'Odmowa nic nie kosztuje: federacja da ci zwykłego rywala.' : blocked ?? 'Po odmowie przyjdzie inna oferta albo nic. Grymaszenie psuje opinię u promotorów.'}</p>
         </div>
       </div>
     </div>
