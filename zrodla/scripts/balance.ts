@@ -69,6 +69,7 @@ type Policy = {
   division?: -1 | 1;
   exp?: 'dagestan' | 'floryda' | 'trondheim';
   tuneup?: 'always' | 'never';
+  backroom?: ('physio' | 'doctor' | 'supps')[];
   shady?: boolean;
 };
 
@@ -105,6 +106,7 @@ function play(seed: number, p: Policy) {
         break;
       }
       case 'budget': {
+        if (p.backroom && G.backroomOpen(s)) for (const b of p.backroom) if (!s.backroom?.[b]) s = G.setBackroom(s, b, true);
         if (p.shady && s.shadyDeal?.status === 'open') s = G.acceptShadyDeal(s);
         if (p.pitch && !pitchBlocked(s)) {
           const best = [...PITCH_SLOTS].sort((a, b) => pitchChance(s, b.id) * pitchPay(s, b.id) - pitchChance(s, a.id) * pitchPay(s, a.id))[0];
@@ -269,6 +271,10 @@ const POLICIES_ALL: Policy[] = [
   { name: 'kategoria wyżej', division: 1 },
   { name: 'obozy', camps: true },
   { name: 'odbudowa: zawsze', tuneup: 'always' },
+  { name: 'zaplecze: fizjo', backroom: ['physio'] },
+  { name: 'zaplecze: lekarz', backroom: ['doctor'] },
+  { name: 'zaplecze: suple', backroom: ['supps'] },
+  { name: 'zaplecze: wszystko', backroom: ['physio', 'doctor', 'supps'] },
   { name: 'odbudowa: nigdy', tuneup: 'never' },
   { name: 'dziwni sponsorzy', shady: true },
   { name: 'wyjazd: Dagestan', exp: 'dagestan' },

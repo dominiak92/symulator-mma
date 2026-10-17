@@ -60,6 +60,8 @@ for (let i = 0; i < N; i++) {
             checkText('dziwny sponsor', s.shadyDeal.product);
             s = rng.chance(0.5) ? G.acceptShadyDeal(s) : G.refuseShadyDeal(s);
           }
+          if (G.backroomOpen(s) && rng.chance(0.4)) s = G.setBackroom(s, rng.pick(['physio', 'doctor', 'supps'] as const), rng.chance(0.6));
+          for (const l of G.budgetLines(s)) checkText('zaplecze', l.sub);
           if (rng.chance(0.3)) s = G.investAcademy(s);
           { const fr = G.fightRange(s); if (fr && rng.chance(0.5)) s = G.setWantFights(s, rng.int(fr[0], fr[1])); }
           if (s.money + G.budgetBalance(s) < 0 && G.loanOffer(s) && rng.chance(0.7)) s = G.takeLoan(s);
