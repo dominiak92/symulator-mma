@@ -1,3 +1,4 @@
+import { Fighter } from './Art';
 import { useMemo, useState } from 'react';
 import type { GameState, Profile, StartProfile, Style } from '../engine/types';
 import { DIFFICULTY, HOMETOWNS, NICKNAMES, START_PROFILES, STYLE_DESC, STYLE_LABELS, VOIVODESHIPS, WEIGHTS, WEIGHT_KEYS } from '../engine/data';
@@ -34,7 +35,13 @@ export default function Create({ slot, onBack, onStart }: { slot: number; onBack
 
   return (
     <main style={{ maxWidth: 760, margin: '0 auto', padding: '40px 0 80px' }}>
-      <h2>Nowa kariera</h2>
+      <div className="create-head">
+        <div>
+          <h2>Nowa kariera</h2>
+          <p className="muted small">Tak wygląda twój zawodnik. Zmień imię, a zmieni się też on.</p>
+        </div>
+        <Fighter key={`${p.firstName.trim()}${p.lastName.trim()}`} className="pop" seed={`${p.firstName.trim()}${p.lastName.trim()}`} corner="blue" size={86} />
+      </div>
 
       <section className="form-section">
         <div className="label">Imię i nazwisko</div>

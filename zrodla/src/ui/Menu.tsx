@@ -6,6 +6,7 @@ import { loadAchievements, loadGoals, loadMuseum } from '../storage';
 import { todaysGoals, weekEndsIn } from '../engine/goals';
 import { plural } from '../format';
 import { ACHIEVEMENTS } from '../engine/achievements';
+import { Fighter } from './Art';
 
 export default function Menu({
   onPlay,
@@ -43,6 +44,11 @@ export default function Menu({
           Symulator Polskiego
           <span className="red">Zawodnika MMA</span>
         </h1>
+        <div className="menu-faceoff" aria-hidden="true">
+          <Fighter seed="GroundGameHero" corner="blue" size={110} />
+          <span className="vs-word">VS</span>
+          <Fighter seed="RywalZRocznika7" corner="red" size={110} mirror />
+        </div>
         <p>Zaczynasz w wieku 16 lat na turniejach amatorskich. Medale, debiut zawodowy, gale regionalne, pas mistrza Polski, a może i świata. Reszta zależy od ciebie.</p>
       </header>
 
@@ -75,7 +81,7 @@ export default function Menu({
               {gs.dailyDone.length}/{goals.daily.length}
             </b>
           </div>
-          <p className="muted">Cele sprawdzamy, kiedy kariera się kończy. Seria rośnie, jeśli kończysz karierę codziennie.</p>
+          <p className="muted small">Sprawdzane na koniec kariery. Seria rośnie, gdy kończysz karierę codziennie.</p>
         </div>
         <ul className="goal-list">
           {goals.daily.map((g) => {
@@ -124,14 +130,16 @@ export default function Menu({
         </button>
       </div>
 
-      <section className="panel" style={{ maxWidth: 760 }}>
-        <div className="panel-title">Jak to działa</div>
-        <p className="muted">
+      <details className="acc how-acc" style={{ maxWidth: 760 }}>
+        <summary>
+          <span>Jak to działa</span>
+        </summary>
+        <p className="muted acc-body">
           Każdy rok to jeden sezon. Wybierasz, co trenujesz, sprawdzasz budżet i decydujesz, co zrobić z tym, co przynosi życie. Potem
           oglądasz swoje walki, a w ważnych momentach sam wybierasz plan i widzisz, jaką masz szansę. Po sezonie wybierasz, gdzie walczysz i w
           jakim klubie trenujesz. Na koniec dostajesz kartę kariery, którą możesz wysłać znajomym.
         </p>
-      </section>
+      </details>
 
       <a className="shop-link" style={{ maxWidth: 760 }} href={`${SHOP_URL}menu`} target="_blank" rel="noopener">
         <img className="shop-logo" src={GG.stacked} alt="" aria-hidden="true" />

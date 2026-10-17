@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { GameState, Phase } from '../engine/types';
 import { STAT_KEYS, STAT_LABELS, STAT_DESC, START_PROFILES, STYLE_LABELS, TIER_NAMES, DIFFICULTY, WEIGHTS, amateurDivision } from '../engine/data';
 import { debutCheck, displayName, mainRecord, rankStr, rankingTable, recStr, tourneyResultText } from '../engine/game';
@@ -39,9 +39,8 @@ export function shortName(g: GameState) {
 }
 
 export function careerLine(g: GameState) {
-  const w = WEIGHTS[g.profile.weight ?? 'polsrednia'].label;
-  if (g.contract.kind === 'freak') return `${w} · freak fighty`;
-  return `${w} · ${TIER_NAMES[g.tier]}`;
+  if (g.contract.kind === 'freak') return 'freak fighty';
+  return TIER_NAMES[g.tier];
 }
 
 export default function Game({
@@ -70,13 +69,31 @@ export default function Game({
   }, [sheet]);
 
   const phaseIdx = PHASES.indexOf(g.phase);
+  const hudRef = useRef<HTMLElement>(null);
+  useLayoutEffect(() => {
+    const el = hudRef.current;
+    if (!el) return;
+    const set = () => document.documentElement.style.setProperty('--hud-h', `${el.offsetHeight}px`);
+    set();
+    const ro = new ResizeObserver(set);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  // miganie budżetu przy zmianie
+  const prevMoney = useRef(g.money);
+  const [moneyFlash, setMoneyFlash] = useState<{ dir: 'up' | 'down'; n: number } | null>(null);
+  useEffect(() => {
+    if (g.money === prevMoney.current) return;
+    setMoneyFlash((f) => ({ dir: g.money > prevMoney.current ? 'up' : 'down', n: (f?.n ?? 0) + 1 }));
+    prevMoney.current = g.money;
+  }, [g.money]);
   const rec = mainRecord(g);
   const amateur = !g.proDebut;
   const medals = g.medals.gold + g.medals.silver + g.medals.bronze;
 
   return (
     <>
-      <header className="hud">
+      <header className={`hud ${g.phase !== 'ended' ? 'has-progress' : ''}`} ref={hudRef}>
         <div className="hud-inner">
           <div className="hud-top">
             <div className="ovr" title="Ogólna ocena zawodnika (średnia umiejętności)">
@@ -86,7 +103,9 @@ export default function Game({
             <div className="hud-name">
               <strong className="full">{displayName(g)}</strong>
               <strong className="short">{shortName(g)}</strong>
-              <span>{careerLine(g)}</span>
+              <span>
+                Sezon {g.season} · {careerLine(g)}
+              </span>
             </div>
             <img className="hud-logo" src={GG.icon} alt="Ground Game" />
             <button className="icon-btn" aria-label="Menu gry" onClick={() => setSheet('menu')}>
@@ -98,7 +117,9 @@ export default function Game({
           <div className="hud-chips">
             <div className="hud-chip">
               <small>Budżet</small>
-              <b className={g.money < 0 ? 'neg' : ''}>{moneyShort(g.money)} zł</b>
+              <b key={moneyFlash?.n ?? 0} className={`${g.money < 0 ? 'neg' : ''} ${moneyFlash ? `flash-${moneyFlash.dir}` : ''}`}>
+                {moneyShort(g.money)} zł
+              </b>
             </div>
             <div className="hud-chip">
               <small>{amateur ? 'Rekord am.' : 'Rekord'}</small>
@@ -123,23 +144,14 @@ export default function Game({
             </div>
           </div>
         </div>
-      </header>
-
-      {g.phase !== 'ended' && (
-        <div className="progress-wrap">
-          <div className="progress-label">
-            <b>
-              Sezon {g.season} · {g.year}
-            </b>
-            <span>{PHASE_LABEL[g.phase]}</span>
-          </div>
-          <div className="progress" aria-label={`Etap sezonu: ${PHASE_LABEL[g.phase]}`}>
+        {g.phase !== 'ended' && (
+          <div className="hud-progress" aria-label={`Sezon ${g.season}, etap: ${PHASE_LABEL[g.phase]}`}>
             {PHASES.map((p, i) => (
               <span key={p} className={i < phaseIdx ? 'on' : i === phaseIdx ? 'now' : ''} />
             ))}
           </div>
-        </div>
-      )}
+        )}
+      </header>
 
       {g.phase !== 'ended' && (
         <nav className="dock" aria-label="Informacje o zawodniku">
@@ -259,6 +271,8 @@ function SkillsPanel({ g, plain }: { g: GameState; plain?: boolean }) {
         </p>
       )}
       <div className="kv-grid">
+        <span>Waga</span>
+        <b>{WEIGHTS[g.profile.weight ?? 'polsrednia'].label}</b>
         <span>Styl</span>
         <b>{STYLE_LABELS[g.profile.style]}</b>
         <span>Media / reputacja</span>
