@@ -328,6 +328,12 @@ export function newGame(opts: NewGameOpts): GameState {
   for (const peer of s.peers) if (peer.lastName === p.lastName) peer.lastName = otherLastName(rng, p.lastName);
   s.rngState = rng.state();
   log(s, `Pierwszy trening: ${club.name}, ${club.city}.`);
+  // kariera zaczyna się od sparingu kontrolnego, dopiero potem obóz przygotowawczy
+  const tryout = findEvent('sparing_kontrolny');
+  if (tryout) {
+    s.phase = 'event';
+    s.event = { id: tryout.id, brand: tryout.brand, title: tryout.title ?? 'Sparing kontrolny', text: tryout.text(s), choices: tryout.choices(s) };
+  }
   return s;
 }
 
@@ -340,6 +346,9 @@ function otherLastName(rng: Rng, avoid: string) {
 }
 
 export function introText(s: GameState) {
+  // po sparingu kontrolnym trener mówi, gdzie startujesz; stare zapisy dostają wstęp postaci
+  if (s.flags.tryout === 2) return 'Po sparingu trener nie ma wątpliwości: jedziesz od razu na Amatorski Puchar Polski. Ale najpierw obóz przygotowawczy, bo tam nikt nie da ci forów.';
+  if (s.flags.tryout === 1) return 'Po sparingu trener mówi wprost: na start zawody wojewódzkie, tam się otrzaskasz. Najpierw obóz przygotowawczy, żeby było z czym jechać.';
   return START_PROFILES[s.profile.start].intro;
 }
 
@@ -1238,6 +1247,12 @@ export function chooseEvent(s0: GameState, idx: number): GameState {
 
 export function continueAfterEvent(s0: GameState): GameState {
   const s = clone(s0);
+  // po sparingu na starcie kariery idziemy na obóz przygotowawczy, a nie do sezonu
+  if (s0.event?.id === 'sparing_kontrolny' && !s0.run && s0.eventQueue.length === 0 && s0.event.picked !== undefined) {
+    s.event = null;
+    s.phase = 'training';
+    return s;
+  }
   return nextEventOrSeason(s);
 }
 

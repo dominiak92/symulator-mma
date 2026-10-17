@@ -1,5 +1,5 @@
 import type { EventChoice, GameState } from './types';
-import { BELT_NAMES } from './data';
+import { BELT_NAMES, START_PROFILES } from './data';
 import { EXTRA_EVENTS } from './events_extra';
 import { MONEY_EVENTS } from './events_money';
 import { REP_EVENTS } from './events_rep';
@@ -240,7 +240,7 @@ export const EVENTS: EventDef[] = [
         'Pawła, kickboksera z amatorskim pasem K-1, szybszego niż wygląda',
       ];
       const who = partners[(s.profile.lastName.length + s.profile.firstName.length) % partners.length];
-      return `Pierwszy tydzień w klubie. Trener stawia cię naprzeciw ${who}. „Trzy rundy, zasady MMA. Nie musisz wygrać, chcę zobaczyć, co w tobie siedzi. Od tego zależy, gdzie cię wyślę na pierwsze amatorskie zawody.”`;
+      return `${START_PROFILES[s.profile.start].intro}\n\nPo kilku tygodniach treningów trener stawia cię naprzeciw ${who}. „Trzy rundy, zasady MMA. Nie musisz wygrać, chcę zobaczyć, co w tobie siedzi. Od tego zależy, gdzie cię wyślę na pierwsze amatorskie zawody.”`;
     },
     choices: (s) => {
       const ch = (v: number) => Math.max(25, Math.min(80, Math.round(30 + (v - 20) * 3.5)));
