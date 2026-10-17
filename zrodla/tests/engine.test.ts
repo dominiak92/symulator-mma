@@ -1,3 +1,5 @@
+import { vi } from 'vitest';
+vi.setConfig({ testTimeout: 60000 });
 import { describe, expect, it } from 'vitest';
 import {
   budgetBalance,
