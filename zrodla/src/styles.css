@@ -207,12 +207,12 @@ p {
   padding: 48px 0;
 }
 
-.poster {
+.menu-hero {
   text-align: left;
   max-width: 760px;
 }
 
-.poster .kicker {
+.menu-hero .kicker {
   font-family: var(--cond);
   font-stretch: 112%;
   font-weight: 600;
@@ -220,18 +220,18 @@ p {
   font-size: 1.05rem;
 }
 
-.poster h1 {
+.menu-hero h1 {
   font-size: clamp(3rem, 10vw, 6.4rem);
   line-height: 0.92;
   margin-top: 6px;
 }
 
-.poster h1 .red {
+.menu-hero h1 .red {
   color: var(--cyan);
   display: block;
 }
 
-.poster p {
+.menu-hero p {
   margin-top: 16px;
   color: var(--muted);
   font-size: 1.1rem;
@@ -5956,3 +5956,71 @@ button.hs:active,
   .ofr-row .btn { font-size: 0.86rem; padding-inline: 8px; }
   .offer .terms { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
+
+/* menu v2: krócej na telefonie */
+.how.compact .how-steps { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 10px; }
+.how.compact .how-steps li { gap: 10px; }
+.how.compact .how-ico { width: 34px; height: 34px; border-radius: 10px; }
+.how.compact .how-steps strong { font-size: 0.98rem; }
+.how.compact .how-steps li > div > span { font-size: 0.8rem; line-height: 1.3; }
+@media (min-width: 641px) { .how.compact .how-steps { grid-template-columns: repeat(4, minmax(0, 1fr)); } .how.compact .how-steps li { grid-template-columns: 1fr; } }
+
+.goals.compact { padding: 0; overflow: hidden; }
+.goals-sum {
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) auto; align-items: center; gap: 8px;
+  width: 100%; padding: 12px 14px; background: none; border: 0; color: inherit; font: inherit; text-align: left; cursor: pointer;
+}
+.gs-item { display: grid; gap: 2px; min-width: 0; }
+.gs-item small { display: inline-flex; align-items: center; gap: 4px; color: var(--muted); font-size: 0.72rem; white-space: nowrap; }
+.gs-item small .ico { color: var(--gold); }
+.gs-item b { font-family: var(--display); font-weight: 400; font-size: 1.15rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.gs-item b.ok { color: var(--good); }
+.gs-more { display: inline-flex; align-items: center; gap: 4px; font-size: 0.78rem; font-weight: 700; color: var(--cyan); text-transform: uppercase; letter-spacing: 0.04em; }
+.gs-chev { transition: transform 0.2s ease; }
+.goals.open .gs-chev { transform: rotate(90deg); }
+.goals.compact .goals-note { margin: 0; padding: 0 14px 8px; }
+.goals.compact .goal-list { margin: 0; padding: 0 14px 14px; }
+
+.menu-mini { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; max-width: 760px; }
+.menu-mini button {
+  display: grid; justify-items: center; gap: 4px; padding: 12px 6px; text-align: center; cursor: pointer;
+  border: 1px solid var(--line); border-radius: var(--r-md); background: var(--panel); color: inherit; font: inherit;
+  transition: border-color 0.15s, transform 0.15s;
+}
+.menu-mini button:hover { border-color: var(--muted); }
+.menu-mini button:active { transform: scale(0.97); }
+.menu-mini .tile-ico { margin: 0; }
+.menu-mini strong { font-family: var(--display); font-weight: 400; font-size: 0.98rem; line-height: 1.1; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+.menu-mini small { color: var(--muted); font-size: 0.72rem; }
+
+@media (max-width: 640px) {
+  .menu { gap: 14px; padding: 16px 0 28px; }
+  .menu-hero .kicker { font-size: 0.9rem; }
+  .menu-hero h1 { font-size: clamp(2.4rem, 12vw, 3.4rem); }
+  .menu-hero p { margin-top: 8px; font-size: 0.95rem; }
+  .menu-faceoff { margin: 4px 0 0; }
+  .menu-faceoff .fighter-art { width: 84px !important; height: auto !important; }
+  .menu-faceoff .vs-word { font-size: 1.7rem; padding-bottom: 36px; }
+  .menu-tile { padding: 14px 16px; }
+  .menu-tile strong { font-size: 1.35rem; }
+  .menu-tile span { font-size: 0.88rem; }
+  .menu-grid { gap: 8px; }
+  .how { padding: 12px; }
+  .footer { font-size: 0.74rem; }
+}
+
+.menu-hero {
+  width: 100%;
+  max-width: 760px;
+  padding: 20px 18px 18px;
+  border-radius: 18px;
+  border: 1px solid var(--line);
+  overflow: hidden;
+  background:
+    repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.025) 0 12px, transparent 12px 24px),
+    radial-gradient(110% 60% at 30% 0%, rgba(1, 174, 238, 0.24), transparent 65%),
+    radial-gradient(90% 50% at 70% 100%, rgba(225, 29, 72, 0.18), transparent 70%),
+    #0c0c10;
+  box-shadow: 0 30px 80px -30px rgba(0, 0, 0, 0.9);
+}
+@media (min-width: 641px) { .menu-hero { padding: 28px 30px 26px; } }
