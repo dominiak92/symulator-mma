@@ -11,7 +11,7 @@ import { loadSettings } from '../../storage';
 import type { StepProps } from '../Game';
 import { GG } from '../brand';
 import { Belt, Confetti, Fighter, Medal } from '../Art';
-import { clubCrest } from '../Emblem';
+import { Emblem, clubCrest, crestFor } from '../Emblem';
 import { Icon, STAT_ICON } from '../Icon';
 import { CoachTip } from '../Tutorial';
 
@@ -525,53 +525,85 @@ function useGoKeys(onGo: () => void) {
   return goRef;
 }
 
+/** Wspólny „pojedynek” na plakatach i ofertach: dwaj zawodnicy z tabliczkami nazwisk. */
+function VsHero({ g, opp, label, size = 84, belt }: { g: GameState; opp: FightReport['opp']; label?: string; size?: number; belt?: boolean }) {
+  return (
+    <div className="vs-hero">
+      <div className="vh-side me">
+        <div className="vh-art">
+          <Fighter seed={`${g.profile.firstName}${g.profile.lastName}`} corner="blue" shorts={clubCrest(g.club).bg} size={size} belt={belt} />
+        </div>
+        <div className="vh-plate">
+          <small>{g.profile.firstName}</small>
+          <b>{g.profile.lastName}</b>
+          <span>{recStr(mainRecord(g))}</span>
+        </div>
+      </div>
+      <div className="vh-mid">
+        <span className="vh-vs">VS</span>
+        {label && <small>{label}</small>}
+      </div>
+      <div className="vh-side opp">
+        <div className="vh-art">
+          <Fighter seed={`${opp.firstName}${opp.lastName}`} corner="red" size={size} mirror />
+        </div>
+        <div className="vh-plate">
+          <small>
+            {opp.flag} {opp.nickname ? `„${opp.nickname}”` : opp.firstName}
+          </small>
+          <b>{opp.lastName}</b>
+          <span>{opp.freak ? opp.freak : `${recStr(opp.record)} · ${STYLE_LABELS[opp.style].toLowerCase()}`}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /** Plakat gali zawodowej: nazwa, miasto, hala i cała karta walk. */
 function GalaPoster({ g, f, n, total, onGo, paused }: { g: GameState; f: FightReport; n: number; total: number; onGo: () => void; paused: boolean }) {
   const goRef = useGoKeys(onGo);
   const p = f.poster;
   const mineIdx = p ? p.bouts.findIndex((b) => b.tag && b.a === g.profile.lastName && b.b === f.opp.lastName) : -1;
+  const spotLabel = f.title ? (f.defense ? 'obrona pasa' : 'walka o pas') : SPOT[f.spot ?? 'wstępna'];
   return (
     <div className="fight-intro poster-modal" role="dialog" aria-modal="true" aria-label={`Gala ${f.gala}`}>
       <div className={`poster ${f.title ? 'title-bout' : ''} ${f.freak ? 'freak' : ''}`}>
         <div className="pst-head">
-          <small>{galaPrefix(f.fed)} przedstawia</small>
+          <div className="pst-brand">
+            <Emblem spec={crestFor(f.fed)} size={30} title={f.fed} />
+            <small>{galaPrefix(f.fed)} przedstawia</small>
+          </div>
           <h2>{f.gala}</h2>
           {p && (
             <span className="pst-place">
               <Icon name="pin" size={13} />
-              {p.city} · {p.venue}
+              {p.city} · {p.venue} · sobota, 20:00
             </span>
           )}
         </div>
-        <div className="pst-vs">
-          <div className="fi-side me">
-            <Fighter seed={`${g.profile.firstName}${g.profile.lastName}`} corner="blue" shorts={clubCrest(g.club).bg} size={70} belt={g.rank === 0} />
-            <b>{g.profile.lastName}</b>
-          </div>
-          <div className="pst-mid">
-            <span className="fi-word">VS</span>
-            <small>{f.title ? (f.defense ? 'obrona pasa' : 'walka o pas') : SPOT[f.spot ?? 'wstępna']}</small>
-          </div>
-          <div className="fi-side opp">
-            <Fighter seed={`${f.opp.firstName}${f.opp.lastName}`} corner="red" size={70} mirror />
-            <b>{f.opp.lastName}</b>
-          </div>
-        </div>
+        <VsHero g={g} opp={f.opp} label={spotLabel} belt={g.rank === 0} size={78} />
         {p && (
-          <ol className="pst-card" aria-label="Karta walk">
-            {p.bouts.map((b, i) => (
-              <li key={i} className={i === mineIdx ? 'me' : ''}>
-                <span className="pst-tag">{b.tag}</span>
-                <span className="pst-bout">
-                  <b>{b.a}</b>
-                  <small>{b.ar}</small>
-                  <i>vs</i>
-                  <b>{b.b}</b>
-                  <small>{b.br}</small>
-                </span>
-              </li>
-            ))}
-          </ol>
+          <div className="pst-card-wrap">
+            <div className="pst-card-title">Karta walk</div>
+            <ol className="pst-card" aria-label="Karta walk">
+              {p.bouts.map((b, i) => (
+                <li key={i} className={i === mineIdx ? 'me' : ''} style={{ ['--i' as string]: i } as CSSProperties}>
+                  <span className="pst-tag">{b.tag}</span>
+                  <span className="pst-bout">
+                    <span className="pa">
+                      <b>{b.a}</b>
+                      <small>{b.ar}</small>
+                    </span>
+                    <i>vs</i>
+                    <span className="pb">
+                      <b>{b.b}</b>
+                      <small>{b.br}</small>
+                    </span>
+                  </span>
+                </li>
+              ))}
+            </ol>
+          </div>
         )}
         <div className="pst-foot faint small">
           Twoja walka {n} z {Math.max(n, total)} w sezonie
@@ -618,20 +650,7 @@ function TourneyPoster({ g, f, onGo, paused }: { g: GameState; f: FightReport; o
           </span>
         </div>
         <p className="pst-text">Ośmiu zawodników w drabince. Trzy wygrane walki dzielą cię od złota{t?.championship ? ' i tytułu mistrza Polski' : ''}.</p>
-        <div className="pst-vs">
-          <div className="fi-side me">
-            <Fighter seed={`${g.profile.firstName}${g.profile.lastName}`} corner="blue" shorts={clubCrest(g.club).bg} size={70} />
-            <b>{g.profile.lastName}</b>
-          </div>
-          <div className="pst-mid">
-            <span className="fi-word">VS</span>
-            <small>{f.stage ? STAGE_LABELS[f.stage].toLowerCase() : ''}</small>
-          </div>
-          <div className="fi-side opp">
-            <Fighter seed={`${f.opp.firstName}${f.opp.lastName}`} corner="red" size={70} mirror />
-            <b>{f.opp.lastName}</b>
-          </div>
-        </div>
+        <VsHero g={g} opp={f.opp} label={f.stage ? STAGE_LABELS[f.stage].toLowerCase() : ''} size={78} />
         <button ref={goRef} className="btn btn-primary btn-block btn-ico fi-go" onClick={onGo}>
           <Icon name="glove" />
           Walcz!
@@ -668,21 +687,7 @@ function OfferCard({ g, o, n, total, setGame }: { g: GameState; o: FightOffer; n
           </span>
         </div>
         {lastNote && !o.note && <p className="ofr-note">{lastNote}</p>}
-        <div className="fi-vs">
-          <div className="fi-side me">
-            <Fighter seed={`${g.profile.firstName}${g.profile.lastName}`} corner="blue" shorts={clubCrest(g.club).bg} size={80} belt={g.rank === 0} />
-            <b>{g.profile.lastName}</b>
-            <small>{recStr(mainRecord(g))}</small>
-          </div>
-          <span className="fi-word">VS</span>
-          <div className="fi-side opp">
-            <Fighter seed={`${opp.firstName}${opp.lastName}`} corner="red" size={80} mirror />
-            <b>{opp.lastName}</b>
-            <small>
-              {opp.flag} {opp.freak ? opp.freak : `${recStr(opp.record)} · ${STYLE_LABELS[opp.style].toLowerCase()}`}
-            </small>
-          </div>
-        </div>
+        <VsHero g={g} opp={opp} label={spot || 'walka'} belt={g.rank === 0} size={72} />
         <div className="fi-tags">
           {o.rival && (
             <span className="tag red">

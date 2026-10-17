@@ -182,6 +182,8 @@ export default function Market({ game, setGame }: StepProps) {
         )}
       </section>
 
+      {g.tier >= 1 && <ManagerPick game={g} setGame={setGame} />}
+
       <section className="step">
         <h3 className="pt-ico" style={{ marginBottom: 10 }}>
           <Icon name="home" size={18} />
@@ -256,8 +258,6 @@ export default function Market({ game, setGame }: StepProps) {
           </details>
         )}
 
-        {g.tier >= 1 && <ManagerPick game={g} setGame={setGame} />}
-
         {warnings.map((w, i) => (
           <div className="warn" key={i}>
             {w}
@@ -295,7 +295,24 @@ export default function Market({ game, setGame }: StepProps) {
 }
 
 function focusWord(f: number) {
-  return f >= 0.9 ? 'zawsze ma dla ciebie czas' : f >= 0.75 ? 'zwykle ma czas' : f >= 0.6 ? 'często zajęty innymi' : 'ma wielu zawodników';
+  return f >= 0.9 ? 'zawsze ma czas' : f >= 0.75 ? 'zwykle ma czas' : f >= 0.6 ? 'często zajęty' : 'wielu zawodników';
+}
+
+const MGR_LOOK: Record<string, { bg: string; fg: string; ini: string }> = {
+  zdzisiek: { bg: '#78350f', fg: '#fde68a', ini: 'WZ' },
+  okulary: { bg: '#18181b', fg: '#f5b700', ini: 'FO' },
+  spinacz: { bg: '#0c4a6e', fg: '#e0f2fe', ini: 'AS' },
+  paradygmat: { bg: '#581c87', fg: '#f5d0fe', ini: 'PS' },
+  dominacja: { bg: '#7f1d1d', fg: '#fecaca', ini: 'DM' },
+};
+
+function MgrAvatar({ id }: { id: string | null }) {
+  const l = id ? MGR_LOOK[id] : { bg: '#27272a', fg: '#a1a1aa', ini: 'JA' };
+  return (
+    <span className="mgr-ava" style={{ background: l.bg, color: l.fg }} aria-hidden="true">
+      {l.ini}
+    </span>
+  );
 }
 
 function ManagerPick({ game: g, setGame }: StepProps) {
@@ -303,61 +320,90 @@ function ManagerPick({ game: g, setGame }: StepProps) {
   const open = MANAGERS.filter((m) => !managerBlocked(g, m));
   const locked = MANAGERS.filter((m) => managerBlocked(g, m));
   return (
-    <details className="acc mgr-acc" style={{ marginTop: 10 }}>
-      <summary>
-        <span>
-          <Icon name="briefcase" size={15} />
-          Menedżer
-        </span>
-        <b>{cur ? `${cur.name} · ${Math.round(cur.cut * 100)}%` : 'sam prowadzisz karierę'}</b>
-      </summary>
-      <div className="acc-body">
-        <p className="muted small" style={{ marginTop: 0 }}>
-          Menedżer bierze procent od każdej gaży. W zamian wyższe stawki, mocniejsi rywale (szybciej w górę rankingu), łatwiejsze negocjacje i awanse. Duże agencje mają też innych zawodników.
-        </p>
-        <div role="radiogroup" aria-label="Menedżer" className="mgr-list">
-          <button className="offer mgr-opt" role="radio" aria-checked={!cur} onClick={() => setGame(setManager(g, null))}>
-            <span className="mgr-top">
-              <b>Sam sobie menedżerem</b>
-              <span className="tag">0%</span>
-            </span>
-            <span className="offer-note">Cała gaża twoja. Telefon dzwoni rzadziej.</span>
-          </button>
-          {open.map((m) => (
-            <button key={m.id} className="offer mgr-opt" role="radio" aria-checked={cur?.id === m.id} onClick={() => setGame(setManager(g, m.id))}>
-              <span className="mgr-top">
-                <b>{m.name}</b>
-                <span className="tag gold">{Math.round(m.cut * 100)}%</span>
-              </span>
-              <span className="offer-note">{m.desc}</span>
-              <span className="mgr-stats">
-                <span>
-                  <Icon name="coins" size={12} />
-                  gaże +{Math.round((m.purse - 1) * 100)}%
-                </span>
-                <span>
-                  <Icon name="trophy" size={12} />
-                  rywale {m.quality >= 2 ? 'z czołówki' : m.quality === 1 ? 'mocniejsi' : 'jak dotąd'}
-                </span>
-                {m.sponsor >= 8 && (
+    <section className="step mgr-section">
+      <h3 className="pt-ico" style={{ marginBottom: 4 }}>
+        <Icon name="briefcase" size={18} />
+        Menedżer
+        {!cur && open.length > 1 && <span className="tag gold mgr-new">nowe oferty</span>}
+      </h3>
+      <p className="muted small" style={{ margin: '0 0 10px' }}>
+        Bierze procent od gaż. W zamian wyższe stawki, łatwiejsze negocjacje, szybszy awans w rankingu i sponsorzy.
+      </p>
+      <div role="radiogroup" aria-label="Menedżer" className="club-pick">
+        <button className="offer club-offer" role="radio" aria-checked={!cur} onClick={() => setGame(setManager(g, null))}>
+          <span className="offer-top">
+            <span className="fed-row">
+              <MgrAvatar id={null} />
+              <span className="fed">
+                Sam sobie menedżerem
+                <small className="club-sub">
                   <span>
-                    <Icon name="shirt" size={12} />
-                    sponsorzy
+                    <Icon name="coins" size={12} />
+                    cała gaża twoja
                   </span>
-                )}
-                <span>
-                  <Icon name="clock" size={12} />
-                  {focusWord(m.focus)}
+                </small>
+              </span>
+            </span>
+            <span className="tag">0%</span>
+          </span>
+          {!cur && (
+            <span className="chips">
+              <span className="tag blue">teraz</span>
+            </span>
+          )}
+        </button>
+        {open.map((m) => (
+          <button key={m.id} className="offer club-offer" role="radio" aria-checked={cur?.id === m.id} onClick={() => setGame(setManager(g, m.id))}>
+            <span className="offer-top">
+              <span className="fed-row">
+                <MgrAvatar id={m.id} />
+                <span className="fed">
+                  {m.name}
+                  <small className="club-sub">
+                    <span>
+                      <Icon name="coins" size={12} />
+                      gaże +{Math.round((m.purse - 1) * 100)}%
+                    </span>
+                    {m.quality > 0 && (
+                      <span>
+                        <Icon name="trend" size={12} />
+                        szybciej w rankingu
+                      </span>
+                    )}
+                    {m.sponsor >= 8 && (
+                      <span>
+                        <Icon name="shirt" size={12} />
+                        sponsorzy
+                      </span>
+                    )}
+                    <span>
+                      <Icon name="clock" size={12} />
+                      {focusWord(m.focus)}
+                    </span>
+                  </small>
                 </span>
               </span>
-            </button>
-          ))}
-        </div>
-        {locked.length > 0 && (
-          <div className="locked-clubs" style={{ marginTop: 8 }}>
+              <span className="tag gold">{Math.round(m.cut * 100)}%</span>
+            </span>
+            <span className="offer-note">{m.desc}</span>
+            {cur?.id === m.id && (
+              <span className="chips">
+                <span className="tag blue">twój menedżer</span>
+              </span>
+            )}
+          </button>
+        ))}
+      </div>
+      {locked.length > 0 && (
+        <details className="acc" style={{ marginTop: 8 }}>
+          <summary>
+            <span>Menedżerowie poza zasięgiem</span>
+            <b>{locked.length}</b>
+          </summary>
+          <div className="acc-body locked-clubs">
             {locked.map((m) => (
               <div key={m.id} className="locked-club">
-                <Icon name="briefcase" size={18} />
+                <MgrAvatar id={m.id} />
                 <span>
                   <b>{m.name}</b>
                   <small>{managerBlocked(g, m)}</small>
@@ -365,8 +411,8 @@ function ManagerPick({ game: g, setGame }: StepProps) {
               </div>
             ))}
           </div>
-        )}
-      </div>
-    </details>
+        </details>
+      )}
+    </section>
   );
 }
