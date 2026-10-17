@@ -1,0 +1,115 @@
+import { choiceChance, chooseEvent, continueAfterEvent, effectChips, type Chip } from '../../engine/game';
+import { STAT_LABELS } from '../../engine/data';
+import { distFrom } from '../../engine/fight';
+import type { StepProps } from '../Game';
+import { GG } from '../brand';
+
+export function Chips({ chips }: { chips: Chip[] }) {
+  if (!chips.length) return null;
+  return (
+    <span className="chips">
+      {chips.map((c, i) => (
+        <span key={i} className={`tag ${c.tone}`}>
+          {c.text}
+        </span>
+      ))}
+    </span>
+  );
+}
+
+export function Dist({ dist, stat }: { dist: [number, number, number]; stat?: string }) {
+  return (
+    <span className="dist-wrap">
+      <span className="dist" aria-hidden="true">
+        <i style={{ width: `${dist[0]}%` }} />
+        <i style={{ width: `${dist[1]}%` }} />
+        <i style={{ width: `${dist[2]}%` }} />
+      </span>
+      <span className="dist-legend">
+        <span>
+          <i className="dot gold" />
+          pełen sukces {dist[0]}%
+        </span>
+        <span>
+          <i className="dot good" />
+          udało się {dist[1]}%
+        </span>
+        <span>
+          <i className="dot bad" />
+          nie wyszło {dist[2]}%
+        </span>
+        {stat && <span className="dist-stat">test: {stat.toLowerCase()}</span>}
+      </span>
+    </span>
+  );
+}
+
+export default function EventStep({ game, setGame }: StepProps) {
+  const g = game;
+  const ev = g.event!;
+  const picked = ev.picked;
+
+  return (
+    <section className="step">
+      {ev.brand && GG[ev.brand as keyof typeof GG] && <img className="event-brand" src={GG[ev.brand as keyof typeof GG]} alt={ev.title} />}
+      <div className="kicker">Przed sezonem</div>
+      <h2>{ev.title}</h2>
+      <p className="lead" style={{ marginTop: 10 }}>
+        {ev.text}
+      </p>
+
+      {picked === undefined ? (
+        <div className="choice-list" style={{ marginTop: 16 }}>
+          {ev.choices.map((c, i) => {
+            const ch = choiceChance(g, i);
+            const risky = ch !== null && (c.success || c.fail);
+            return (
+              <button key={i} className="choice" onClick={() => setGame(chooseEvent(g, i))}>
+                <span className="opt-top">
+                  <span className="opt-label">{c.label}</span>
+                  {risky && <span className="chance-big">{ch}%</span>}
+                </span>
+                <span className="desc">{c.desc}</span>
+                {risky ? (
+                  <>
+                    <span className="outcome-line">
+                      <span className="ok">Jeśli się uda:</span>
+                      <Chips chips={effectChips(c.success)} />
+                    </span>
+                    <span className="outcome-line">
+                      <span className="ko">Jeśli nie:</span>
+                      <Chips chips={effectChips(c.fail)} />
+                    </span>
+                    <Dist dist={distFrom(ch!)} stat={c.test ? STAT_LABELS[c.test] : undefined} />
+                  </>
+                ) : (
+                  <Chips chips={effectChips(c.effects)} />
+                )}
+              </button>
+            );
+          })}
+        </div>
+      ) : (
+        <>
+          <div className="event-result reveal">
+            <div className="event-result-head">
+              <strong>{ev.choices[picked].label}</strong>
+              {ev.rolled && (
+                <span className={`tag ${ev.rolled === 'fail' ? 'bad' : ev.rolled === 'super' ? 'gold' : 'good'}`}>
+                  {ev.rolled === 'super' ? 'pełen sukces' : ev.rolled === 'success' ? 'udało się' : 'nie wyszło'}
+                </span>
+              )}
+            </div>
+            <p>{ev.resultText ?? ev.choices[picked].desc}</p>
+            <Chips chips={effectChips(ev.resultEffects)} />
+          </div>
+          <div className="cta-bar">
+            <button className="btn btn-primary btn-block" onClick={() => setGame(continueAfterEvent(g))}>
+              Dalej
+            </button>
+          </div>
+        </>
+      )}
+    </section>
+  );
+}
