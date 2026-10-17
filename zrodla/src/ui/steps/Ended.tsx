@@ -179,7 +179,7 @@ export default function Ended({ game, onNewCareer, onMenu }: { game: GameState; 
               <b>{money(g.totalEarned)}</b>
             </div>
             <div className="kv">
-              <span>Sezony</span>
+              <span>Lata kariery</span>
               <b>{g.seasons.length}</b>
             </div>
           </div>

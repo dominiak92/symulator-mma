@@ -83,13 +83,13 @@ function FormReel({ g, spinning, onDone }: { g: GameState; spinning: boolean; on
   );
   const meaning =
     form.mod >= 8
-      ? 'Wszystko się układa. Każda walka w tym sezonie będzie łatwiejsza.'
+      ? 'Wszystko się układa. Każda walka w tym roku będzie łatwiejsza.'
       : form.mod > 0
         ? 'Organizm dobrze reaguje na treningi. Masz lekką przewagę w walkach.'
         : form.mod === 0
           ? 'Ani lepiej, ani gorzej. O wszystkim zdecyduje klatka.'
           : form.mod <= -8
-            ? 'Coś jest nie tak. Każda walka w tym sezonie będzie trudniejsza.'
+            ? 'Coś jest nie tak. Każda walka w tym roku będzie trudniejsza.'
             : 'Słabszy rok. Rywale będą mieć lekką przewagę.';
   return (
     <>
@@ -116,7 +116,7 @@ function FormReel({ g, spinning, onDone }: { g: GameState; spinning: boolean; on
             <div className="fm-card">
               <div className="fm-top">
                 <Icon name="flame" size={14} />
-                <span>Forma na sezon {g.season}</span>
+                <span>Forma w tym roku</span>
               </div>
               <div className={`fm-value tone-${tone}`}>
                 <span key={landed ? 'final' : step.idx + '-' + step.ms} className={landed ? 'fm-lock' : 'fm-tick'} style={{ ['--tick' as string]: `${Math.max(50, step.ms - 10)}ms` }}>
@@ -706,7 +706,7 @@ function GalaPoster({ g, f, n, total, onGo, paused }: { g: GameState; f: FightRe
           </div>
         )}
         <div className="pst-foot faint small">
-          Twoja walka {n} z {Math.max(n, total)} w sezonie
+          Twoja walka {n} z {Math.max(n, total)} w tym roku
         </div>
         <button ref={goRef} className="btn btn-primary btn-block btn-ico fi-go" onClick={onGo}>
           <Icon name="glove" />
@@ -973,7 +973,7 @@ function OfferCard({ g, o, n, total, setGame }: { g: GameState; o: FightOffer; n
             </div>
           )}
         </div>
-        {busy && <p className="ofr-note">{mgr!.name} w tym sezonie zajmuje się innymi. Ofertę przyniósł organizator.</p>}
+        {busy && <p className="ofr-note">{mgr!.name} w tym roku zajmuje się innymi. Ofertę przyniósł organizator.</p>}
         {o.note && (
           <p key={o.note} className={`ofr-note strong ofr-banner ${fx?.kind === 'up' ? 'up' : fx?.kind === 'flat' ? 'flat' : ''}`}>
             <Icon name={fx?.kind === 'up' ? 'trend' : fx?.kind === 'flat' ? 'x' : 'coins'} size={14} />
@@ -1039,7 +1039,7 @@ function OfferCard({ g, o, n, total, setGame }: { g: GameState; o: FightOffer; n
           )}
           {total - n > 0 && !o.tuneup && (
             <button className="link-btn ofr-auto" disabled={!!asking} onClick={() => setGame(acceptAllOffers(g, prep))}>
-              Przyjmuj też kolejne oferty w tym sezonie
+              Przyjmuj też kolejne oferty w tym roku
             </button>
           )}
           <p className="faint small ofr-help">{o.tuneup ? 'Odmowa nic nie kosztuje: federacja da ci zwykłego rywala.' : blocked ?? 'Po odmowie przyjdzie inna oferta albo nic. Grymaszenie psuje opinię u promotorów.'}</p>
@@ -1065,7 +1065,7 @@ export default function Season({ game, setGame }: StepProps) {
   const anim = animate && !fast;
 
   // gdy gracz sam przewija albo czyta, gra nie przechodzi dalej sama
-  // (na starcie pierwszego sezonu czeka, aż gracz przeczyta podpowiedź trenera)
+  // (na starcie pierwszego roku czeka, aż gracz przeczyta podpowiedź trenera)
   const [paused, setPaused] = useState(() => {
     const st = loadSettings();
     return run.fights.length === 0 && st.tips && !st.tipsSeen.includes('season');
@@ -1077,7 +1077,7 @@ export default function Season({ game, setGame }: StepProps) {
       if (e.key === ' ' && (e.target as HTMLElement | null)?.closest?.('button, summary, input')) return;
       if (['ArrowDown', 'ArrowUp', 'PageDown', 'PageUp', 'Home', 'End', ' '].includes(e.key)) stop();
     };
-    // każde dotknięcie ekranu (poza sterowaniem sezonem, zapowiedzią i decyzją) zatrzymuje automat
+    // każde dotknięcie ekranu (poza sterowaniem rokiem, zapowiedzią i decyzją) zatrzymuje automat
     const onDown = (e: PointerEvent) => {
       const t = e.target as HTMLElement | null;
       if (t?.closest?.('.play-ctrl, .fight-intro, .decision, .decision-sheet, .sheet, .icon-btn, .form-modal')) return;
@@ -1247,8 +1247,8 @@ export default function Season({ game, setGame }: StepProps) {
     <section className={`step season-step ${waiting ? 'has-decision' : ''}`}>
       <div className="kicker season-kicker">{amateur ? 'Turnieje amatorskie' : g.contract.kind === 'freak' ? g.contract.fed : g.fed}</div>
       <div className="season-head">
-        <h2>Sezon {g.season}</h2>
-        <div className={`rec-pill ${lastRes === 'W' ? 'up' : lastRes === 'L' ? 'down' : ''}`} key={recKey} title="Bilans w tym sezonie">
+        <h2>Rok {g.season}</h2>
+        <div className={`rec-pill ${lastRes === 'W' ? 'up' : lastRes === 'L' ? 'down' : ''}`} key={recKey} title="Bilans w tym roku">
           <small>Bilans</small>
           <b>
             {w}-{l}
@@ -1270,7 +1270,7 @@ export default function Season({ game, setGame }: StepProps) {
       </CoachTip>
       {run.intro.length > 0 && (
         <details className="intro-notes">
-          <summary>{amateur ? 'Plan sezonu: turnieje' : 'Przed sezonem'}</summary>
+          <summary>{amateur ? 'Plan roku: turnieje' : 'Przed startem'}</summary>
           {run.intro.map((t, i) => (
             <p key={i}>{t}</p>
           ))}
@@ -1312,7 +1312,7 @@ export default function Season({ game, setGame }: StepProps) {
       </div>
 
       {!run.done && !waiting && !introOpen && !run.offer && !run.press && (
-        <div className="play-ctrl" role="group" aria-label="Tempo sezonu">
+        <div className="play-ctrl" role="group" aria-label="Tempo roku">
                     {!last && paused && anim && !spinning && (
             <button className="icon-pill next" onClick={advance}>
               Pierwsza walka
@@ -1332,7 +1332,7 @@ export default function Season({ game, setGame }: StepProps) {
           </button>
           <button
             className="icon-pill"
-            aria-label="Pomiń do końca sezonu albo do decyzji"
+            aria-label="Pomiń do końca roku albo do decyzji"
             onClick={() => {
               setSpinning(false);
               setIntroIdx(null);
@@ -1349,7 +1349,7 @@ export default function Season({ game, setGame }: StepProps) {
         <div className="cta-bar float" style={d(anim ? revealMs : 0)}>
           <button className="btn btn-primary btn-block btn-ico" onClick={() => setGame(toSummary(g))}>
             <Icon name="chart" />
-            Podsumowanie sezonu
+            Podsumowanie roku
           </button>
         </div>
       )}

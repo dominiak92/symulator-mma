@@ -12,11 +12,11 @@ export default function Summary({ game, setGame, onPeers }: StepProps & { onPeer
   const g = game;
   const s = g.lastSummary!;
   const gradeTone =
-    s.beltWon || s.grade === 'Sezon wybitny' ? 'gold' : s.grade === 'Udany sezon' ? 'good' : s.grade === 'Katastrofa' || s.grade === 'Sezon do zapomnienia' ? 'bad' : '';
+    s.beltWon || s.grade === 'Rok wybitny' || s.grade === 'Sezon wybitny' ? 'gold' : s.grade === 'Udany rok' || s.grade === 'Udany sezon' ? 'good' : s.grade === 'Katastrofa' || s.grade === 'Rok do zapomnienia' || s.grade === 'Sezon do zapomnienia' ? 'bad' : '';
   const activePeers = g.peers.filter((p) => !p.retired);
   const amateur = s.tier === 0;
   const medals = amateur ? (g.run?.tourneys ?? []).map((t) => t.medal).filter((m): m is 'gold' | 'silver' | 'bronze' => !!m) : [];
-  const party = s.beltWon || medals.includes('gold') || s.grade === 'Sezon wybitny';
+  const party = s.beltWon || medals.includes('gold') || s.grade === 'Rok wybitny' || s.grade === 'Sezon wybitny';
 
   return (
     <section className="step summary-step">
@@ -32,9 +32,9 @@ export default function Summary({ game, setGame, onPeers }: StepProps & { onPeer
         </div>
         <div className="sum-head">
           <div className="kicker">
-            Sezon {s.season} · {s.year}
+            Rok {s.season} kariery · {s.year}
           </div>
-          <div className={`grade ${gradeTone}`}>{s.beltWon ? (amateur ? 'Mistrz Polski amatorów!' : 'Sezon z pasem!') : s.grade}</div>
+          <div className={`grade ${gradeTone}`}>{s.beltWon ? (amateur ? 'Mistrz Polski amatorów!' : 'Rok z pasem!') : s.grade}</div>
           <div className="sum-rec">
             {s.w}-{s.l}
             {s.d ? `-${s.d}` : ''}
@@ -93,7 +93,7 @@ export default function Summary({ game, setGame, onPeers }: StepProps & { onPeer
       </div>
 
       <CoachTip id="summary">
-        Tak poszedł sezon. Dotknij sekcji na dole, żeby zobaczyć szczegóły.
+        Tak poszedł rok. Dotknij sekcji na dole, żeby zobaczyć szczegóły.
       </CoachTip>
       <p className="story">{s.story}</p>
 
@@ -124,7 +124,7 @@ export default function Summary({ game, setGame, onPeers }: StepProps & { onPeer
           </summary>
           <div className="acc-body">
             <p className="muted small">
-              Media {g.media}/100 · reputacja {g.rep}/100 · forma w sezonie: {s.form.toLowerCase()}
+              Media {g.media}/100 · reputacja {g.rep}/100 · forma w tym roku: {s.form.toLowerCase()}
             </p>
             {g.seasons.length >= 2 && <CareerChart g={g} />}
           </div>

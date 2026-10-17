@@ -36,13 +36,13 @@ export default function Training({ game, setGame }: StepProps) {
           <Icon name="bandage" size={14} />
           Rehabilitacja
         </div>
-        <h2>Ten sezon spędzasz u fizjoterapeuty</h2>
+        <h2>Ten rok spędzasz u fizjoterapeuty</h2>
         <div className="rehab-card">
           <Icon name="bandage" size={28} />
           <div>
             <b>{g.injury.name}</b>
             <p className="muted small" style={{ margin: '4px 0 0' }}>
-              Lekarze nie dają zgody na walki przez cały sezon. Umiejętności trochę spadną, ale organizm odpocznie (zużycie spadnie).
+              Lekarze nie dają zgody na walki przez cały rok. Umiejętności trochę spadną, ale organizm odpocznie (zużycie spadnie).
               {g.tier > 0 ? ' Z rankingu wypadniesz.' : ''}
             </p>
           </div>
@@ -74,7 +74,7 @@ export default function Training({ game, setGame }: StepProps) {
       ) : (
         last && (
           <p className="muted small">
-            Poprzedni sezon: {last.grade.toLowerCase()}, bilans {last.w}-{last.l}
+            Poprzedni rok: {last.grade.toLowerCase()}, bilans {last.w}-{last.l}
             {last.d ? `-${last.d}` : ''}. Masz {lat(g.age)}.
           </p>
         )
@@ -83,7 +83,7 @@ export default function Training({ game, setGame }: StepProps) {
         <div className="train-tabs" role="tablist" aria-label="Rodzaj przygotowań">
           <button role="tab" aria-selected={tab === 'season'} className={tab === 'season' ? 'on' : ''} onClick={() => setTab('season')}>
             <Icon name="dumbbell" size={15} />
-            Sezon
+            Obóz
           </button>
           <button role="tab" aria-selected={tab === 'exp'} className={tab === 'exp' ? 'on' : ''} onClick={() => setTab('exp')}>
             <Icon name="pin" size={15} />
@@ -107,7 +107,7 @@ export default function Training({ game, setGame }: StepProps) {
       <CoachTip id="training">
         Wybierz umiejętność na obóz. Zielona liczba to wynik po nim. Na belce u góry masz <b>OVR</b> (ogólną siłę), budżet, rekord i wiek. Dotknij ich, żeby zobaczyć szczegóły.
       </CoachTip>
-      {clubLimits(g) && <div className="warn">{g.club.name} niewiele cię już nauczy. Lepszy klub wybierzesz na rynku po sezonie.</div>}
+      {clubLimits(g) && <div className="warn">{g.club.name} niewiele cię już nauczy. Lepszy klub wybierzesz na rynku na koniec roku.</div>}
       <div className="choice-list train-list" style={{ marginTop: 12 }} role="radiogroup" aria-label="Trening">
         {STAT_KEYS.map((k) => {
           const now = g.stats[k];
@@ -199,7 +199,7 @@ function ExpeditionCard({ g, e, setGame }: { g: GameState; e: Expedition; setGam
   const m = g.age >= 28 ? 0.7 : 1;
   const gains = (Object.keys(e.gains) as StatKey[]).sort((a, b) => e.gains[b][1] - e.gains[a][1]).slice(0, 4);
   const rng = (k: StatKey) => `+${Math.round(e.gains[k][0] * m)}–${Math.round(e.gains[k][1] * m)}`;
-  const seasons = e.years === 1 ? '1 sezon' : `${e.years} sezony`;
+  const seasons = e.years === 1 ? '1 rok' : `${e.years} lata`;
   return (
     <article className={`exp-card exp-${e.id}${lock ? ' locked' : ''}`}>
       <header className="exp-head">
@@ -278,7 +278,7 @@ function ExpeditionTab({ g, exps, setGame }: { g: GameState; exps: Expedition[];
       </div>
       <h2>Wyjazd na lata</h2>
       <p className="muted small" style={{ marginTop: 4 }}>
-        Kilka sezonów samego treningu za granicą. Wracasz dużo mocniejszy, ale starszy, bez rankingu i kontraktu. Każdy wyjazd raz na karierę.
+        Kilka lat samego treningu za granicą. Wracasz dużo mocniejszy, ale starszy, bez rankingu i kontraktu. Każdy wyjazd raz na karierę.
       </p>
       <div className="exp-list">
         {exps.map((e) => (

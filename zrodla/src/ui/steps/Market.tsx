@@ -45,7 +45,7 @@ export default function Market({ game, setGame }: StepProps) {
       <section className="step">
         <div className="kicker pt-ico">
           <Icon name="briefcase" size={14} />
-          Rynek · przed sezonem {g.season}
+          Rynek · rok {g.season} kariery
         </div>
         <h2>Gdzie walczysz w tym roku?</h2>
         <p className="muted small" style={{ marginTop: 4 }}>
@@ -240,7 +240,7 @@ export default function Market({ game, setGame }: StepProps) {
                 {current && (
                   <span className="chips">
                     <span className="tag blue">
-                      twój klub · {g.clubSeasons} {plural(g.clubSeasons, 'sezon', 'sezony', 'sezonów')}
+                      twój klub · {g.clubSeasons} {plural(g.clubSeasons, 'rok', 'lata', 'lat')}
                     </span>
                     {clubLimits(g) && <span className="tag bad">hamuje twój rozwój</span>}
                   </span>
@@ -289,7 +289,7 @@ export default function Market({ game, setGame }: StepProps) {
         <div className="cta-bar">
           <button className="btn btn-primary btn-block btn-ico" disabled={!picked} onClick={() => setGame(confirmMarket(g))}>
             <Icon name="pen" />
-            Podpisuję · sezon {g.season}
+            Podpisuję · rok {g.season}
           </button>
         </div>
 

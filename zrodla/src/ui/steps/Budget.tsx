@@ -52,7 +52,7 @@ export default function Budget({ game, setGame }: StepProps) {
       <div className="kicker">Budżet</div>
       <h2>Za co płacisz w tym roku</h2>
       <CoachTip id="budget">
-        Tyle wydasz w tym sezonie. W amatorce nikt nie płaci, gaże przyjdą z zawodowstwem.
+        Tyle wydasz w tym roku. W amatorce nikt nie płaci, gaże przyjdą z zawodowstwem.
       </CoachTip>
       <div className="money-line">
         <span className="muted pt-ico">
@@ -110,7 +110,7 @@ export default function Budget({ game, setGame }: StepProps) {
         <div className="fights-pick">
           <span className="pt-ico">
             <Icon name="calendar" size={15} />
-            Ile walk w tym sezonie?
+            Ile walk w tym roku?
           </span>
           <div className="seg" role="radiogroup" aria-label="Liczba walk">
             {Array.from({ length: range[1] - range[0] + 1 }, (_, i) => range[0] + i).map((n) => (
@@ -124,7 +124,7 @@ export default function Budget({ game, setGame }: StepProps) {
               ? 'Więcej gaż, ale czwarta i piąta walka w roku to zmęczenie i większe ryzyko kontuzji.'
               : want < g.contract.fights
                 ? 'Mniej walk: organizm odpocznie, ale ranking i konto rosną wolniej.'
-                : `${want} ${plural(want, 'walka', 'walki', 'walk')} w sezonie to standard w tym kontrakcie.`}
+                : `${want} ${plural(want, 'walka', 'walki', 'walk')} w roku to standard w tym kontrakcie.`}
           </small>
         </div>
       )}
@@ -144,7 +144,7 @@ export default function Budget({ game, setGame }: StepProps) {
           <div className="br-head">
             <Icon name="users" size={15} />
             <b>Zaplecze</b>
-            <span className="faint small">opcjonalnie, płatne co sezon</span>
+            <span className="faint small">opcjonalnie, płatne co roku</span>
           </div>
           <div className="br-list">
             {BACKROOM.map((b) => {
@@ -236,7 +236,7 @@ export default function Budget({ game, setGame }: StepProps) {
             )}
           </div>
           {canStart ? (
-            <p className="mt-note">Możesz też wejść w sezon na lekkim minusie (do {money(OVERDRAFT)}), ale długi zabierają czas na trening.</p>
+            <p className="mt-note">Możesz też zacząć rok na lekkim minusie (do {money(OVERDRAFT)}), ale długi zabierają czas na trening.</p>
           ) : (
             <p className="mt-note bad">Z takim minusem nie wystartujesz. Weź kredyt albo zrób rok przerwy.</p>
           )}
@@ -267,9 +267,9 @@ export default function Budget({ game, setGame }: StepProps) {
           </div>
           <div className="shady-fx">
             <span className="tag good">
-              <Icon name="coins" size={12} />+{money(g.shadyDeal.perSeason)} na sezon
+              <Icon name="coins" size={12} />+{money(g.shadyDeal.perSeason)} na rok
             </span>
-            <span className="tag">{g.shadyDeal.seasons === 1 ? "1 sezon" : `${g.shadyDeal.seasons} sezony`}</span>
+            <span className="tag">{g.shadyDeal.seasons === 1 ? "1 rok" : `${g.shadyDeal.seasons} lata`}</span>
             <span className="tag red">
               <Icon name="star" size={12} />
               reputacja −{Math.abs(g.shadyDeal.rep)}
@@ -307,7 +307,7 @@ export default function Budget({ game, setGame }: StepProps) {
           </span>
           <div>
             <b>Poszukaj sponsora</b>
-            <small>Raz na sezon możesz sam napisać do firm z okolicy.</small>
+            <small>Raz na rok możesz sam napisać do firm z okolicy.</small>
           </div>
         </div>
         {pitchDone ? (
@@ -336,7 +336,7 @@ export default function Budget({ game, setGame }: StepProps) {
                   <span className="desc">{sl.desc}</span>
                   <span className="pitch-pay">
                     <Icon name="coins" size={12} />
-                    ok. {money(pitchPay(g, sl.id))} na sezon
+                    ok. {money(pitchPay(g, sl.id))} na rok
                   </span>
                 </button>
               );
@@ -360,8 +360,8 @@ export default function Budget({ game, setGame }: StepProps) {
               <b>{acad ? academyName(g) : 'Własna akademia'}</b>
               <small>
                 {acad
-                  ? `Poziom ${acad} z ${ACADEMY_LEVELS.length}: ${ACADEMY_LEVELS[acad - 1].name}. Zarabia co sezon i zostaje po karierze.`
-                  : 'Inwestycja na lata: przychód co sezon i punkty legacy po karierze.'}
+                  ? `Poziom ${acad} z ${ACADEMY_LEVELS.length}: ${ACADEMY_LEVELS[acad - 1].name}. Zarabia co roku i zostaje po karierze.`
+                  : 'Inwestycja na lata: przychód co roku i punkty legacy po karierze.'}
               </small>
             </div>
           </div>
@@ -376,7 +376,7 @@ export default function Budget({ game, setGame }: StepProps) {
                 <div className="acad-txt">
                   <strong>{acadNext.name}</strong>
                   <span>
-                    {acadNext.note} · {money(acadNext.cost)} · ok. {money(acadNext.income)} na sezon
+                    {acadNext.note} · {money(acadNext.cost)} · ok. {money(acadNext.income)} na rok
                   </span>
                 </div>
                 {confirmAcad ? (
@@ -410,7 +410,7 @@ export default function Budget({ game, setGame }: StepProps) {
       <div className="cta-bar">
         <button className="btn btn-primary btn-block btn-ico" disabled={!canStart} onClick={() => setGame(startSeason(g))}>
           <Icon name="glove" />
-          {canStart ? 'Zaczynam sezon' : 'Brakuje pieniędzy na sezon'}
+          {canStart ? 'Zaczynam rok' : 'Brakuje pieniędzy na ten rok'}
         </button>
       </div>
     </section>
