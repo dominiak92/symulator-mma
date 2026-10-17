@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { GameState } from '../../engine/types';
-import { displayName, mainRecord, medalCount, recStr } from '../../engine/game';
+import { displayName, mainRecord, medalCount, recStr, divisionKey } from '../../engine/game';
 import { START_PROFILES } from '../../engine/data';
 import { CARD_THEMES, drawCard } from '../card';
 import { loadAchievements, loadSettings, saveSettings } from '../../storage';
@@ -77,7 +77,7 @@ export default function Ended({ game, onNewCareer, onMenu }: { game: GameState; 
         <div className={`sum-hero ${g.belts.length ? 'gold' : ''}`}>
           {g.belts.length > 0 && <Confetti />}
           <div className="sum-art">
-            <Fighter seed={`${g.profile.firstName}${g.profile.lastName}`} corner="blue" shorts={clubCrest(g.club).bg} size={96} belt={g.belts.length > 0} />
+            <Fighter weight={divisionKey(g)} seed={`${g.profile.firstName}${g.profile.lastName}`} corner="blue" shorts={clubCrest(g.club).bg} size={96} belt={g.belts.length > 0} />
           </div>
           <div className="sum-head">
             <div className="kicker">Koniec kariery · {lat(g.age)}</div>

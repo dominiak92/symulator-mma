@@ -1,4 +1,4 @@
-import { toMarket } from '../../engine/game';
+import { toMarket, divisionKey } from '../../engine/game';
 import { moneyShort, signed } from '../../format';
 import type { StepProps } from '../Game';
 import CareerChart from '../CareerChart';
@@ -23,7 +23,7 @@ export default function Summary({ game, setGame, onPeers }: StepProps & { onPeer
       <div className={`sum-hero ${gradeTone}`}>
         {party && <Confetti />}
         <div className="sum-art">
-          <Fighter seed={`${g.profile.firstName}${g.profile.lastName}`} corner="blue" shorts={clubCrest(g.club).bg} size={92} belt={s.champion && !amateur} hurt={gradeTone === 'bad'} />
+          <Fighter weight={divisionKey(g)} seed={`${g.profile.firstName}${g.profile.lastName}`} corner="blue" shorts={clubCrest(g.club).bg} size={92} belt={s.champion && !amateur} hurt={gradeTone === 'bad'} />
           {(s.beltWon || medals.length > 0) && (
             <div className="sum-trophies">
               {s.beltWon && !amateur ? <Belt size={96} /> : medals.map((m, i) => <Medal key={i} kind={m} size={34} />)}

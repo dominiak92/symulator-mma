@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from
 import { createPortal } from 'react-dom';
 import type { CardSpot, DecisionOption, DecisionPoint, FightOffer, FightReport, GameState, Moment } from '../../engine/types';
 import { galaPrefix, SEASON_FORMS, STAGE_LABELS, STAT_LABELS, STYLE_LABELS } from '../../engine/data';
-import { PRESS_OPTIONS, pressAnswer, prepCost, acceptAllOffers, acceptOffer, declineBlocked, declineOffer, decide, mainRecord, negotiateChance, negotiateOffer, recStr, seasonNext, seasonSkip, toSummary } from '../../engine/game';
+import { divisionKey, PRESS_OPTIONS, pressAnswer, prepCost, acceptAllOffers, acceptOffer, declineBlocked, declineOffer, decide, negotiateChance, negotiateOffer, recStr, seasonNext, seasonSkip, toSummary } from '../../engine/game';
 import { activeManager, currentManager } from '../../engine/managers';
 import { sfxCash, sfxClick, sfxCrowd, sfxGong, sfxLoss, sfxThud } from '../sound';
 import { OUTCOME_LABEL } from '../../engine/fight';
@@ -15,6 +15,7 @@ import { Emblem, clubCrest, crestFor } from '../Emblem';
 import { Icon, STAT_ICON } from '../Icon';
 import { CoachTip } from '../Tutorial';
 import { chanceWord } from '../Chance';
+import { setHudHold, shownRecord, useHudHold } from '../hudHold';
 
 const reduced = () => typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 
@@ -319,6 +320,7 @@ function FightRow({ f, open, onToggle }: { f: FightReport; open: boolean; onTogg
 
 /** Bieżąca walka: karta VS z rundami, pieczątką wyniku i decyzją. */
 function LiveCard({ g, f, start, animate, setGame }: { g: GameState; f: FightReport; start: number; animate: boolean; setGame: (s: GameState) => void }) {
+  const hold = useHudHold();
   const pending = f.sim.pending;
   const done = f.sim.finished;
   const rounds = f.sim.maxRounds;
@@ -398,12 +400,12 @@ function LiveCard({ g, f, start, animate, setGame }: { g: GameState; f: FightRep
       <div className="vs-hero live-vs">
         <div className={`vh-side me ${done && f.result === 'L' && finish ? 'ko' : ''} ${done && won ? 'win' : ''}`} style={d(stampAt)}>
           <div className="vh-art">
-            <Fighter seed={`${g.profile.firstName}${g.profile.lastName}`} corner="blue" shorts={myShorts} size={80} belt={g.rank === 0 && !f.amateur} hurt={done && f.result === 'L' && finish} />
+            <Fighter weight={divisionKey(g)} seed={`${g.profile.firstName}${g.profile.lastName}`} corner="blue" shorts={myShorts} size={80} belt={g.rank === 0 && !f.amateur} hurt={done && f.result === 'L' && finish} />
           </div>
           <div className="vh-plate">
             <small>{g.profile.firstName}</small>
             <b>{g.profile.lastName}</b>
-            <span>{recStr(mainRecord(g))}</span>
+            <span>{recStr(shownRecord(g, hold))}</span>
           </div>
         </div>
         <div className="vh-mid live-mid">
@@ -423,7 +425,7 @@ function LiveCard({ g, f, start, animate, setGame }: { g: GameState; f: FightRep
         </div>
         <div className={`vh-side opp ${done && won && finish ? 'ko' : ''} ${done && f.result === 'L' ? 'win' : ''}`} style={d(stampAt)}>
           <div className="vh-art">
-            <Fighter seed={`${f.opp.firstName}${f.opp.lastName}`} corner="red" size={80} mirror hurt={done && won && finish} />
+            <Fighter weight={f.opp.freak ? undefined : divisionKey(g)} seed={`${f.opp.firstName}${f.opp.lastName}`} corner="red" size={80} mirror hurt={done && won && finish} />
           </div>
           <div className="vh-plate">
             <small>
@@ -518,6 +520,7 @@ const SCOUT: Record<string, string> = {
 
 /** Zapowiedź walki: krótki „plakat” przed każdą walką. */
 function FightIntro({ g, f, n, total, onGo, paused }: { g: GameState; f: FightReport; n: number; total: number | null; onGo: () => void; paused: boolean }) {
+  const hold = useHudHold();
   const o = f.opp;
   const head = f.amateur ? (f.stage ? STAGE_LABELS[f.stage] : 'Walka') : total ? `Walka ${n} z ${total}` : `Walka ${n}`;
   const goRef = useRef<HTMLButtonElement>(null);
@@ -550,13 +553,13 @@ function FightIntro({ g, f, n, total, onGo, paused }: { g: GameState; f: FightRe
         )}
         <div className="fi-vs">
           <div className="fi-side me">
-            <Fighter seed={`${g.profile.firstName}${g.profile.lastName}`} corner="blue" shorts={clubCrest(g.club).bg} size={96} belt={g.rank === 0 && !f.amateur} />
+            <Fighter weight={divisionKey(g)} seed={`${g.profile.firstName}${g.profile.lastName}`} corner="blue" shorts={clubCrest(g.club).bg} size={96} belt={g.rank === 0 && !f.amateur} />
             <b>{g.profile.lastName}</b>
-            <small>{recStr(mainRecord(g))}</small>
+            <small>{recStr(shownRecord(g, hold))}</small>
           </div>
           <span className="fi-word">VS</span>
           <div className="fi-side opp">
-            <Fighter seed={`${o.firstName}${o.lastName}`} corner="red" size={96} mirror />
+            <Fighter weight={o.freak ? undefined : divisionKey(g)} seed={`${o.firstName}${o.lastName}`} corner="red" size={96} mirror />
             <b>{o.lastName}</b>
             <small>
               {o.flag} {o.freak ? o.freak : `${recStr(o.record)} · ${STYLE_LABELS[o.style].toLowerCase()}`}
@@ -613,16 +616,17 @@ function useGoKeys(onGo: () => void) {
 
 /** Wspólny „pojedynek” na plakatach i ofertach: dwaj zawodnicy z tabliczkami nazwisk. */
 function VsHero({ g, opp, label, size = 84, belt }: { g: GameState; opp: FightReport['opp']; label?: string; size?: number; belt?: boolean }) {
+  const hold = useHudHold();
   return (
     <div className="vs-hero">
       <div className="vh-side me">
         <div className="vh-art">
-          <Fighter seed={`${g.profile.firstName}${g.profile.lastName}`} corner="blue" shorts={clubCrest(g.club).bg} size={size} belt={belt} />
+          <Fighter weight={divisionKey(g)} seed={`${g.profile.firstName}${g.profile.lastName}`} corner="blue" shorts={clubCrest(g.club).bg} size={size} belt={belt} />
         </div>
         <div className="vh-plate">
           <small>{g.profile.firstName}</small>
           <b>{g.profile.lastName}</b>
-          <span>{recStr(mainRecord(g))}</span>
+          <span>{recStr(shownRecord(g, hold))}</span>
         </div>
       </div>
       <div className="vh-mid">
@@ -631,7 +635,7 @@ function VsHero({ g, opp, label, size = 84, belt }: { g: GameState; opp: FightRe
       </div>
       <div className="vh-side opp">
         <div className="vh-art">
-          <Fighter seed={`${opp.firstName}${opp.lastName}`} corner="red" size={size} mirror />
+          <Fighter weight={opp.freak ? undefined : divisionKey(g)} seed={`${opp.firstName}${opp.lastName}`} corner="red" size={size} mirror />
         </div>
         <div className="vh-plate">
           <small>
@@ -1119,7 +1123,7 @@ export default function Season({ game, setGame }: StepProps) {
     if (spinning || run.done || waiting || introOpen || run.offer || run.press) return;
     if (last && !last.sim.finished) return;
     if (paused && anim) return;
-    const delay = !animate ? 0 : fast ? 260 : !last ? 400 : revealMs + NEXT_MS;
+    const delay = !animate ? 0 : fast ? 260 : !last ? 1600 : revealMs + NEXT_MS;
     const t = setTimeout(advance, delay);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1167,6 +1171,12 @@ export default function Season({ game, setGame }: StepProps) {
   const amateur = !!run.tourneys;
   const recKey = `${w}-${l}-${dr}`;
   const lastRes = last?.sim.finished && revealedKey === lastKey && !introOpen ? last.result : null;
+  // dopóki wynik nie jest odsłonięty, belka i karty pokazują stan sprzed walki
+  const hidden = last && last.sim.finished && !(revealedKey === lastKey && !introOpen) ? last : null;
+  useLayoutEffect(() => {
+    setHudHold(hidden ? { result: hidden.result, amateur: !!hidden.amateur, earned: hidden.earned ?? 0 } : null);
+  }, [hidden?.idx, !!hidden]);
+  useEffect(() => () => setHudHold(null), []);
 
   // dźwięki: gong na start walki, potem wynik (nokaut, doping, porażka)
   const gonged = useRef(run.fights.length ? run.fights[run.fights.length - 1].idx : -1);

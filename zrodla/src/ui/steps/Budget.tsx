@@ -1,5 +1,5 @@
 import { STAT_LABELS } from '../../engine/data';
-import { acceptShadyDeal, refuseShadyDeal, cheaperClub, downgradeClub, fightRange, plannedFights, setWantFights, ACADEMY_LEVELS, academyName, academyNext, investAcademy, OVERDRAFT, PITCH_SLOTS, pitchBlocked, pitchChance, pitchPay, pitchSponsor, breakPreview, budgetBalance, budgetLines, canStartSeason, expectedPurses, loanOffer, loanRefusal, startSeason, takeBreakYear, takeLoan } from '../../engine/game';
+import { acceptShadyDeal, refuseShadyDeal, BACKROOM, backroomCost, backroomOpen, hasLabs, setBackroom, cheaperClub, downgradeClub, fightRange, plannedFights, setWantFights, ACADEMY_LEVELS, academyName, academyNext, investAcademy, OVERDRAFT, PITCH_SLOTS, pitchBlocked, pitchChance, pitchPay, pitchSponsor, breakPreview, budgetBalance, budgetLines, canStartSeason, expectedPurses, loanOffer, loanRefusal, startSeason, takeBreakYear, takeLoan } from '../../engine/game';
 import { useState, type CSSProperties } from 'react';
 import type { StatKey } from '../../engine/types';
 import { money, plural } from '../../format';
@@ -86,7 +86,7 @@ export default function Budget({ game, setGame }: StepProps) {
                 {l.sub && <small>{l.sub}</small>}
               </div>
             </div>
-            <span className={`amt ${l.amount >= 0 ? 'plus' : 'minus'}`}>{money(l.amount, true)}</span>
+            <span className={`amt ${l.amount >= 0 ? 'plus' : 'minus'}`}>{l.amount === 0 ? 'gratis' : money(l.amount, true)}</span>
           </div>
         ))}
         {lines.length === 0 && (
@@ -137,6 +137,40 @@ export default function Budget({ game, setGame }: StepProps) {
         <p className="muted" style={{ marginTop: 12 }}>
           W amatorce nikt ci nie płaci. Walczysz o medale, doświadczenie i to, żeby ktoś cię zauważył.
         </p>
+      )}
+
+      {backroomOpen(g) && (
+        <section className="backroom">
+          <div className="br-head">
+            <Icon name="users" size={15} />
+            <b>Zaplecze</b>
+            <span className="faint small">opcjonalnie, płatne co sezon</span>
+          </div>
+          <div className="br-list">
+            {BACKROOM.map((b) => {
+              const on = !!g.backroom?.[b.id];
+              const cost = backroomCost(g, b.id);
+              const free = b.id === 'supps' && hasLabs(g);
+              return (
+                <button key={b.id} className={`br-row${on ? ' on' : ''}`} role="switch" aria-checked={on} onClick={() => setGame(setBackroom(g, b.id, !on))}>
+                  <span className="br-ico">
+                    <Icon name={b.icon} size={16} />
+                  </span>
+                  <span className="br-txt">
+                    <strong>{b.name}</strong>
+                    <span>{b.effect}</span>
+                  </span>
+                  <span className="br-side">
+                    <span className={`br-cost${free ? ' free' : ''}`}>{free ? 'Ground Game Labs' : `−${money(cost)}`}</span>
+                    <span className="br-toggle" aria-hidden="true">
+                      <i />
+                    </span>
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </section>
       )}
 
       {after < 0 && (
