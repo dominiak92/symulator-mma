@@ -239,7 +239,24 @@ function addMoment(rep: FightReport, m: Moment) {
 
 // ---------- Jedna runda ----------
 
+/** Stan obu zawodników po rundzie (paski zdrowia i kondycji w walce na żywo). */
+function snapRound(sim: FightSim) {
+  const t = (sim.track ??= []);
+  const k = (n: number) => Math.round(Math.max(0, Math.min(100, n)));
+  t[sim.round] = [k(100 - sim.me.dmg), k(sim.me.stam), k(100 - sim.opp.dmg), k(sim.opp.stam)];
+}
+
 function simulateRound(rng: Rng, ctx: FightCtx, sim: FightSim, rep: FightReport) {
+  simulateRoundInner(rng, ctx, sim, rep);
+  snapRound(sim);
+  if (sim.finished) {
+    const t = sim.track![sim.round];
+    if (rep.result === 'W' && rep.method !== 'Lekarz') t[2] = 0;
+    if (rep.result === 'L' && rep.method !== 'Lekarz') t[0] = 0;
+  }
+}
+
+function simulateRoundInner(rng: Rng, ctx: FightCtx, sim: FightSim, rep: FightReport) {
   sim.round += 1;
   const r = sim.round;
   const opp = ctx.opp;

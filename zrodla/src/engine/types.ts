@@ -283,6 +283,8 @@ export interface FightSim {
   pro?: boolean;
   /** wybrany plan: ustawia styl walki gracza na całą walkę */
   plan?: 'stand' | 'wrest' | 'bjj';
+  /** po każdej rundzie: [zdrowie ja, kondycja ja, zdrowie rywal, kondycja rywal] 0–100 */
+  track?: number[][];
 }
 
 export interface FightReport {
