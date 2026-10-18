@@ -10,7 +10,6 @@ import { ChanceTag } from './Chance';
 import { CoachTip } from './Tutorial';
 
 /** Ile „atramentu” trzeba zostawić, żeby podpis się liczył (w pikselach długości linii). */
-const MIN_INK = 120;
 
 /**
  * Kontrakt na kartce: warunki, drobny druk i miejsce na podpis palcem.
@@ -60,7 +59,6 @@ export default function ContractSheet({
       ro?.disconnect();
     };
   }, []);
-  const [nudge, setNudge] = useState(0);
   const toSign = () => {
     const el = paperRef.current;
     el?.querySelector('.cp-sign')?.scrollIntoView({ behavior: 'smooth', block: 'end' });
@@ -72,34 +70,7 @@ export default function ContractSheet({
     if (c.nego && !prevNego.current && c.nego.ok) sfxCash();
     prevNego.current = c.nego;
   }, [c.nego]);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const drawing = useRef(false);
-  const last = useRef<{ x: number; y: number } | null>(null);
-  const [ink, setInk] = useState(0);
   const [signed, setSigned] = useState(false);
-
-  // płótno w rozdzielczości ekranu, żeby linia była ostra
-  useEffect(() => {
-    const cv = canvasRef.current;
-    if (!cv) return;
-    const fit = () => {
-      const r = cv.getBoundingClientRect();
-      const dpr = Math.min(3, window.devicePixelRatio || 1);
-      cv.width = Math.round(r.width * dpr);
-      cv.height = Math.round(r.height * dpr);
-      const ctx = cv.getContext('2d');
-      if (!ctx) return;
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
-      ctx.lineWidth = 2.6;
-      ctx.strokeStyle = '#1b2a6b';
-    };
-    fit();
-    setInk(0);
-    window.addEventListener('resize', fit);
-    return () => window.removeEventListener('resize', fit);
-  }, []);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && !asking && !signed && onCancel();
@@ -107,58 +78,13 @@ export default function ContractSheet({
     return () => window.removeEventListener('keydown', onKey);
   }, [onCancel, asking, signed]);
 
-  const pos = (e: React.PointerEvent<HTMLCanvasElement>) => {
-    const r = e.currentTarget.getBoundingClientRect();
-    return { x: e.clientX - r.left, y: e.clientY - r.top };
-  };
-  const down = (e: React.PointerEvent<HTMLCanvasElement>) => {
-    e.currentTarget.setPointerCapture(e.pointerId);
-    drawing.current = true;
-    last.current = pos(e);
-  };
-  const move = (e: React.PointerEvent<HTMLCanvasElement>) => {
-    if (!drawing.current || !last.current) return;
-    const ctx = canvasRef.current?.getContext('2d');
-    if (!ctx) return;
-    const p = pos(e);
-    ctx.beginPath();
-    ctx.moveTo(last.current.x, last.current.y);
-    ctx.lineTo(p.x, p.y);
-    ctx.stroke();
-    setInk((v) => v + Math.hypot(p.x - last.current!.x, p.y - last.current!.y));
-    last.current = p;
-  };
-  const up = () => {
-    drawing.current = false;
-    last.current = null;
-  };
-  const clear = () => {
-    const cv = canvasRef.current;
-    const ctx = cv?.getContext('2d');
-    if (cv && ctx) ctx.clearRect(0, 0, cv.width, cv.height);
-    setInk(0);
-  };
-  // dla klawiatury i osób, które nie mogą rysować: podpis inicjałami
-  const signInitials = () => {
-    const cv = canvasRef.current;
-    const ctx = cv?.getContext('2d');
-    if (!cv || !ctx) return;
-    const r = cv.getBoundingClientRect();
-    ctx.clearRect(0, 0, cv.width, cv.height);
-    ctx.save();
-    ctx.fillStyle = '#1b2a6b';
-    ctx.font = `italic 600 ${Math.round(r.height * 0.5)}px Georgia, 'Times New Roman', serif`;
-    ctx.textBaseline = 'middle';
-    ctx.fillText(`${g.profile.firstName[0]}. ${g.profile.lastName}`, 12, r.height * 0.55);
-    ctx.restore();
-    setInk(MIN_INK + 1);
-  };
+  // podpis jednym przyciskiem: nazwisko wpisuje się w pole, pieczątka i dalej
   const sign = () => {
-    if (ink < MIN_INK || signed) return;
+    if (signed || asking) return;
     sfxClick();
+    toSign();
     setSigned(true);
-    // chwila na pieczątkę, potem dalej
-    window.setTimeout(onSign, 650);
+    window.setTimeout(onSign, 1300);
   };
 
   const fedShort = c.fed.split(' – ')[0];
@@ -209,8 +135,8 @@ export default function ContractSheet({
           </li>
           {c.exclusive && (
             <li className="cp-excl">
-              <span>Wyłączność</span>
-              <b>tak, bez walk na innych galach</b>
+              <span>Wyłączność (bez walk MMA na innych galach)</span>
+              <b>tak</b>
             </li>
           )}
         </ol>
@@ -224,29 +150,10 @@ export default function ContractSheet({
             <small>Organizator</small>
           </div>
           <div className="cp-sign-me">
-            <canvas
-              ref={canvasRef}
-              className="cp-canvas"
-              onPointerDown={down}
-              onPointerMove={move}
-              onPointerUp={up}
-              onPointerCancel={up}
-              onPointerLeave={up}
-              aria-label="Pole na podpis: podpisz się palcem albo myszką"
-            />
-            {ink === 0 && (
-              <span key={nudge} className={`cp-hint ${nudge ? 'nudge' : ''}`}>
-                podpisz się tutaj palcem
-              </span>
-            )}
-            <small>
-              Zawodnik
-              {ink === 0 && (
-                <button type="button" className="cp-initials" onClick={signInitials}>
-                  podpisz inicjałami
-                </button>
-              )}
-            </small>
+            <div className="cp-sigline" aria-live="polite">
+              {signed ? <span className="cp-sig">{g.profile.firstName[0]}. {g.profile.lastName}</span> : <span className="cp-hint">miejsce na podpis</span>}
+            </div>
+            <small>Zawodnik</small>
           </div>
         </div>
         {signed && <span className="cp-approved">Podpisane</span>}
@@ -305,24 +212,12 @@ export default function ContractSheet({
         </div>
       )}
       <div className="contract-actions">
-        <button className="btn btn-ghost btn-small" onClick={ink > 0 ? clear : onCancel} disabled={signed || !!asking}>
-          {ink > 0 ? 'Wyczyść podpis' : 'Jeszcze się zastanowię'}
+        <button className="btn btn-ghost btn-small" onClick={onCancel} disabled={signed || !!asking}>
+          Jeszcze się zastanowię
         </button>
-        <button
-          className={`btn btn-primary btn-ico ${ink < MIN_INK ? 'is-waiting' : ''}`}
-          onClick={() => {
-            // bez podpisu przycisk pokazuje, gdzie się podpisać
-            if (ink < MIN_INK) {
-              toSign();
-              setNudge((n) => n + 1);
-              return;
-            }
-            sign();
-          }}
-          disabled={signed || !!asking}
-        >
+        <button className="btn btn-primary btn-ico" onClick={sign} disabled={signed || !!asking}>
           <Icon name="pen" />
-          {ink < MIN_INK ? 'Najpierw podpis' : 'Zatwierdzam'}
+          {signed ? 'Podpisane' : 'Podpisuję kontrakt'}
         </button>
       </div>
     </div>,
