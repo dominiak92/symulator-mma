@@ -6378,3 +6378,8 @@ details.intro-notes[open] summary::before { content: '▸'; transform: rotate(90
 .predict-note.hot { color: var(--bad); background: var(--bad-soft); }
 .predict-note svg { flex: none; margin-top: 2px; }
 .goal-list li.now .goal-check { background: var(--cyan-soft); color: var(--cyan); border-color: var(--cyan); }
+/* nagłówek walki: etykiety (plan, rywal, pas) zawijają się pod nazwą gali */
+.live .live-ctx { flex-wrap: wrap; align-items: flex-start; }
+.live .live-ctx > span:first-child { flex: 1 1 160px; }
+.live .live-ctx > .row { flex-wrap: wrap; justify-content: flex-end; flex: 0 1 auto; }
+.live .live-ctx .tag { white-space: nowrap; }
