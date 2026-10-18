@@ -234,7 +234,7 @@ function oppName(f: FightReport) {
 const STAKE: Record<string, { icon: string; text: string }> = {
   risk: { icon: 'bolt', text: 'może skończyć walkę' },
   normal: { icon: 'trophy', text: 'wygrywasz rundę' },
-  safe: { icon: 'heart', text: 'łapiesz oddech, mniej obrywasz' },
+  safe: { icon: 'heart', text: 'odpoczynek: pomaga, gdy jesteś obity lub zmęczony' },
 };
 
 // zwykłe opcje różnią się tym, co dają, a nie tylko szansą
@@ -379,7 +379,11 @@ function LiveCard({ g, f, start, animate, setGame }: { g: GameState; f: FightRep
       <h3>{pending.title}</h3>
       <p className="decision-text">{pending.text}</p>
       {pending.status && <FightStatus st={pending.status} />}
-      <CoachTip id="decision">Prowadzisz? Graj spokojnie. Przegrywasz albo rywal słabnie? Zaryzykuj. Obity? Odpocznij.</CoachTip>
+      {pending.id === 'plan' ? (
+        <CoachTip id="plan">Plan ustawia twój styl na całą walkę. Celuj w słaby punkt rywala z nagrań, ale patrz też na szanse: liczą się twoje umiejętności.</CoachTip>
+      ) : (
+        <CoachTip id="decision">Prowadzisz? Graj spokojnie. Przegrywasz albo rywal słabnie? Zaryzykuj. Obity? Odpocznij.</CoachTip>
+      )}
       <div className="choice-list">
         {pending.options.map((o) => (
           <OptionButton
