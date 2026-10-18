@@ -6607,3 +6607,38 @@ details.intro-notes[open] summary::before { content: '▸'; transform: rotate(90
 @media (prefers-reduced-motion: reduce) { .inv-lines li { animation: none; } }
 .br-row.locked { opacity: 0.5; cursor: default; }
 .br-row.locked .br-ico { filter: grayscale(1); }
+.outside-list { display: grid; gap: 6px; }
+.outside-row { display: grid; grid-template-columns: 16px minmax(0, 1fr); gap: 2px 8px; align-items: start; font-size: 0.84rem; }
+.outside-row .ico { color: var(--cyan); margin-top: 2px; }
+.outside-row span { color: var(--muted); }
+.outside-row b { grid-column: 2; font-weight: 600; }
+.chin-good { color: var(--good); }
+.chin-bad { color: var(--bad); }
+.honours { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+
+/* atuty z obozu */
+.perks { margin-top: 14px; display: grid; gap: 8px; }
+.perk-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.perk { display: grid; gap: 3px; padding: 8px 10px; border-radius: 12px; border: 1px solid var(--line); background: var(--panel-2); color: inherit; font: inherit; text-align: left; cursor: pointer; min-width: 0; }
+.perk.on { border-color: var(--gold); background: linear-gradient(120deg, rgba(245, 183, 0, 0.12), transparent 70%), var(--panel-2); }
+.perk:disabled { opacity: 0.45; cursor: not-allowed; }
+.perk-top { display: flex; align-items: center; gap: 5px; font-size: 0.86rem; }
+.perk-top b { flex: 1; min-width: 0; }
+.perk.on .perk-top .ico:last-child { color: var(--gold); }
+.perk-desc { font-size: 0.72rem; line-height: 1.3; color: var(--muted); }
+.perk-tag { display: inline-flex; align-items: center; gap: 4px; font-size: 0.7rem; font-weight: 600; color: var(--gold); }
+.opt-meta { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 10px; }
+
+/* plakaty: Japonia, freak fighty, turnieje amatorskie */
+.poster.th-japan { --p-base: #0d0608; --p-g1: rgba(230, 0, 38, 0.5); --p-g2: rgba(255, 255, 255, 0.07); --p-pat: radial-gradient(circle at 50% 18%, rgba(230, 0, 38, 0.35) 0 22%, transparent 23%), repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.025) 0 1px, transparent 1px 12px); --p-t1: #fff; --p-t2: #ffd9df; --p-glow: rgba(230, 0, 38, 0.55); --p-acc: #ff3355; --p-rb: #fff; --p-rf: #c4001f; --p-font: 'Oswald', 'Arial Narrow', sans-serif; }
+.poster.th-f-flame { --p-base: #140602; --p-g1: rgba(255, 90, 0, 0.5); --p-g2: rgba(255, 200, 0, 0.25); --p-pat: repeating-linear-gradient(170deg, rgba(255, 120, 0, 0.06) 0 6px, transparent 6px 18px); --p-t2: #ffb347; --p-glow: rgba(255, 90, 0, 0.6); --p-acc: #ff7a1a; --p-rb: linear-gradient(90deg, #ff3d00, #ffb300); --p-rf: #1a0700; --p-skew: -6deg; }
+.poster.th-f-primo { --p-base: #0b0612; --p-g1: rgba(150, 70, 230, 0.4); --p-g2: rgba(245, 190, 60, 0.3); --p-pat: repeating-linear-gradient(45deg, rgba(245, 190, 60, 0.04) 0 2px, transparent 2px 14px); --p-t1: #fff7e0; --p-t2: #f5c542; --p-glow: rgba(245, 190, 60, 0.5); --p-acc: #f5c542; --p-rb: linear-gradient(90deg, #6d2bd9, #f5c542); --p-rf: #fff; }
+.poster.th-f-hype { --p-base: #050d06; --p-g1: rgba(60, 255, 120, 0.35); --p-g2: rgba(255, 40, 200, 0.3); --p-pat: repeating-linear-gradient(0deg, rgba(60, 255, 120, 0.04) 0 2px, transparent 2px 6px); --p-t2: #7dffb0; --p-glow: rgba(60, 255, 120, 0.55); --p-acc: #3cff78; --p-rb: linear-gradient(90deg, #3cff78, #ff28c8); --p-rf: #031; --p-skew: -4deg; }
+.poster.th-f-klout { --p-base: #03080c; --p-g1: rgba(0, 220, 255, 0.4); --p-g2: rgba(255, 0, 80, 0.25); --p-pat: repeating-linear-gradient(0deg, rgba(0, 220, 255, 0.05) 0 1px, transparent 1px 4px); --p-t1: #e9fbff; --p-t2: #66e8ff; --p-glow: rgba(0, 220, 255, 0.55); --p-acc: #00dcff; --p-rb: #00dcff; --p-rf: #001018; }
+.poster.th-f-klout .pst-head h2 { text-shadow: 2px 0 rgba(255, 0, 80, 0.6), -2px 0 rgba(0, 220, 255, 0.6); }
+.poster.th-am-local { --p-base: #07100a; --p-g1: rgba(60, 180, 90, 0.3); --p-g2: rgba(255, 255, 255, 0.05); --p-pat: repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.02) 0 10px, transparent 10px 20px); --p-t2: #b7f0c5; --p-glow: rgba(60, 180, 90, 0.4); --p-acc: #4cc06a; --p-rb: #2e8f4a; --p-rf: #fff; }
+.poster.th-am-cup { --p-base: #050b16; --p-g1: rgba(40, 120, 255, 0.35); --p-g2: rgba(220, 220, 255, 0.08); --p-pat: repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.025) 0 1px, transparent 1px 14px); --p-t2: #a9c8ff; --p-glow: rgba(40, 120, 255, 0.45); --p-acc: #4d8dff; --p-rb: #1f5fd6; --p-rf: #fff; }
+.poster.th-am-mp { --p-base: #120507; --p-g1: rgba(220, 20, 60, 0.38); --p-g2: rgba(255, 255, 255, 0.12); --p-pat: linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0 50%, rgba(220, 20, 60, 0.06) 50% 100%); --p-t1: #fff; --p-t2: #ffc2cc; --p-glow: rgba(220, 20, 60, 0.5); --p-acc: #ff4466; --p-rb: linear-gradient(180deg, #fff 50%, #dc143c 50%); --p-rf: #2a0008; }
+.post-ico.inv-grapple1 { background: rgba(1, 174, 238, 0.14); color: var(--cyan); animation: none; }
+.post-ico.inv-kick { background: rgba(239, 68, 68, 0.14); color: var(--bad); animation: none; }
+.post-ico.inv-film { background: var(--gold-soft); color: var(--gold); animation: none; }

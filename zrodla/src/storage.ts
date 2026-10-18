@@ -73,6 +73,8 @@ export interface Settings {
   sound: boolean;
   /** rozmiar tekstu w procentach (100, 112, 125) */
   fontScale: number;
+  /** mniej pytań w trakcie roku: drobne decyzje rozstrzygają się same */
+  fewer?: boolean;
 }
 export function loadSettings(): Settings {
   const raw = safeGet(SETTINGS);
