@@ -157,6 +157,17 @@ export function FighterGallery() {
         </div>
       ))}
       <div style={{ flexBasis: '100%' }} />
+      {names.slice(0, 8).map((n) => (
+        <div key={'w' + n} style={{ display: 'flex', gap: 2, textAlign: 'center', color: '#aaa', fontSize: 11 }}>
+          {[18, 27, 37].map((a) => (
+            <div key={a}>
+              <Fighter seed={`Jan${n}`} age={a} size={80} />
+              <div>{a}</div>
+            </div>
+          ))}
+        </div>
+      ))}
+      <div style={{ flexBasis: '100%' }} />
       {names.map((n, i) => (
         <div key={n} style={{ textAlign: 'center', color: '#aaa', fontSize: 11 }}>
           <Fighter seed={`Jan${n}`} corner={i % 2 ? 'red' : 'blue'} size={110} mirror={i % 2 === 1} belt={i === 4} hurt={i === 7} />

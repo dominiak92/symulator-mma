@@ -5,14 +5,14 @@
  * Wygląd wynika z ziarna, więc jest stały dla danej osoby.
  */
 import { useId, type CSSProperties } from 'react';
-import { BODY, HAIR, BEARD, FACE_B, type Layer } from './fighterData';
+import { ART, type Layer } from './fighterData';
 
 const SKINS = ['#f7d3b8', '#f1b08c', '#e6a27c', '#d48f66', '#bb7650', '#9c5f3d', '#7c4a2f', '#5c3520'];
 const HAIRS = ['#1b1512', '#2c211b', '#3d2c22', '#5a3d27', '#7a5232', '#a77a45', '#d8b26c', '#93421f', '#3a3a3e', '#b4aea5'];
 const INKS = ['#1f2a44', '#26303f', '#2c2440'];
 const OUT = '#381608';
 
-type HairStyle = 'short' | 'bald' | 'fade' | 'slick' | 'curly' | 'mohawk' | 'bun' | 'buzz';
+type HairStyle = 'short' | 'bald' | 'fade' | 'slick' | 'curly' | 'mohawk' | 'bun' | 'buzz' | 'messy' | 'spiky';
 type BeardStyle = 'none' | 'full' | 'goatee';
 type Tattoo = 'chest' | 'forearmL' | 'forearmR' | 'shoulder' | 'ribs' | 'cross';
 
@@ -52,8 +52,8 @@ export function lookFor(seed: string): FighterLook {
   const skin = pick(SKINS);
   const dark = SKINS.indexOf(skin) >= 5;
   const styles: HairStyle[] = dark
-    ? ['short', 'bald', 'fade', 'curly', 'buzz', 'short', 'curly', 'mohawk', 'fade', 'short']
-    : ['short', 'bald', 'fade', 'slick', 'curly', 'mohawk', 'bun', 'buzz', 'short', 'fade', 'slick', 'short', 'curly'];
+    ? ['short', 'bald', 'fade', 'curly', 'buzz', 'short', 'curly', 'mohawk', 'fade', 'spiky']
+    : ['short', 'bald', 'fade', 'slick', 'curly', 'mohawk', 'bun', 'buzz', 'short', 'fade', 'slick', 'messy', 'spiky', 'messy'];
   const beardRoll = r();
   const beard: BeardStyle = beardRoll < 0.68 ? 'none' : beardRoll < 0.86 ? 'full' : 'goatee';
   const all: Tattoo[] = ['chest', 'forearmL', 'forearmR', 'shoulder', 'ribs', 'cross'];
@@ -79,6 +79,12 @@ export function lookFor(seed: string): FighterLook {
     age,
     face: r() < 0.42 ? 1 : 0,
   };
+}
+
+/** Grupa wieku: twarz i sylwetka zmieniają się z wiekiem, reszta wyglądu zostaje. */
+export function ageBand(age?: number): 'young' | 'adult' | 'vet' {
+  if (age === undefined) return 'adult';
+  return age <= 21 ? 'young' : age >= 33 ? 'vet' : 'adult';
 }
 
 /** Budowa ciała wg kategorii wagowej (0 chudy … 3 ciężki). */
@@ -112,8 +118,11 @@ export function Fighter({
   className,
   style,
   weight,
+  age,
 }: {
   seed: string;
+  /** wiek w latach: młody (do 21), dorosły, weteran (33+) */
+  age?: number;
   weight?: string;
   corner?: 'blue' | 'red';
   shorts?: string;
@@ -161,13 +170,16 @@ export function Fighter({
   const sx = [0.93, 0.98, 1.03, 1.08][l.build] ?? 1;
   const flip = mirror ? -1 : 1;
   const tf = `translate(512 0) scale(${sx * flip} 1) translate(-512 0)`;
-  const hairLayers = l.style === 'bald' ? null : HAIR[l.style];
+  const band = ageBand(age);
+  const A = ART[band];
+  const hairLayers = l.style === 'bald' ? null : (A.hair[l.style] ?? A.hair.short);
+  const beardLayers = l.beard === 'none' || band === 'young' ? null : A.beard[l.beard];
 
   return (
     <svg className={`fighter-art ${className ?? ''}`} style={style} width={size} height={size * 1.2} viewBox="62 10 900 1080" aria-hidden="true">
       <defs>
         <clipPath id={`sil${uid}`}>
-          <path d={BODY[0][1]} />
+          <path d={A.body[0][1]} />
         </clipPath>
         <filter id={`fo${uid}`} x="-8%" y="-8%" width="116%" height="116%">
           <feMorphology operator="dilate" radius="9" in="SourceAlpha" result="d" />
@@ -183,7 +195,7 @@ export function Fighter({
         <g transform={tf}>
           {/* spodenki pod tułowiem */}
           <path d="M312 982 Q512 1012 712 982 L722 1160 L302 1160 Z" fill={sh} stroke={OUT} strokeWidth="9" strokeLinejoin="round" />
-          {draw(BODY, 'body')}
+          {draw(A.body, 'body')}
           {/* pas spodenek */}
           <path d="M310 994 Q512 1030 714 994 L718 1036 Q512 1072 306 1036 Z" fill={shD} stroke={OUT} strokeWidth="9" strokeLinejoin="round" />
           <path d="M322 1018 Q512 1050 702 1018" stroke="#fff" strokeOpacity=".35" strokeWidth="5" fill="none" />
@@ -241,9 +253,9 @@ export function Fighter({
           )}
 
           {/* głowa: fryzura, zarost, ślady walk */}
-          {l.face === 1 && draw(FACE_B, 'face')}
+          {l.face === 1 && draw(A.faceB, 'face')}
           {hairLayers && draw(hairLayers, 'hair')}
-          {l.beard !== 'none' && draw(BEARD[l.beard], 'beard')}
+          {beardLayers && draw(beardLayers, 'beard')}
           {l.ear && (
             <g>
               <path d="M382 262 C362 268 360 292 370 300 C360 312 368 330 384 330 C394 316 396 280 382 262 Z" fill={pal.skinS} stroke={OUT} strokeWidth="7" />
