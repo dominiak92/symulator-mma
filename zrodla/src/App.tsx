@@ -2,7 +2,8 @@ import { Icon, IconGallery } from './ui/Icon';
 import hallBg from './assets/bg/menu.webp';
 import { FighterGallery } from './ui/Art';
 import { Tutorial, tutorialSeen } from './ui/Tutorial';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { flushSync } from 'react-dom';
 import type { GameState } from './engine/types';
 import { addToMuseum, clearSlot, loadAchievements, loadGoals, loadSlot, saveAchievements, saveGoals, saveSlot } from './storage';
 import { goalMet, todaysGoals } from './engine/goals';
@@ -89,8 +90,16 @@ export default function App() {
   const [game, setGameState] = useState<GameState | null>(null);
   const [toasts, setToasts] = useState<{ id: number; a: Toast }[]>([]);
 
+  const phaseRef = useRef<string | null>(null);
   const setGame = useCallback((s: GameState) => {
-    setGameState(s);
+    // zmiana ekranu: płynne przejście (View Transitions), jeśli przeglądarka umie i gracz nie wyłączył ruchu
+    const doc = document as Document & { startViewTransition?: (cb: () => void) => unknown };
+    const changed = phaseRef.current !== null && phaseRef.current !== s.phase;
+    phaseRef.current = s.phase;
+    const calm = typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    if (changed && doc.startViewTransition && !calm) {
+      doc.startViewTransition(() => flushSync(() => setGameState(s)));
+    } else setGameState(s);
     saveSlot(s);
     const fresh = recordMeta(s);
     if (fresh.length) setToasts((t) => [...t, ...fresh.map((a, i) => ({ id: Date.now() + i, a }))]);

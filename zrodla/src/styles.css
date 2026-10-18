@@ -3785,10 +3785,10 @@ details.intro-notes p {
   height: 2px;
   background: linear-gradient(90deg, transparent, var(--cyan), var(--red), transparent);
 }
-.menu-faceoff .fighter-art:first-child {
+.menu-faceoff svg.fighter-art:first-of-type {
   animation: slideL 0.6s cubic-bezier(0.2, 1.3, 0.4, 1) both, bob 1.1s 0.6s ease-in-out infinite;
 }
-.menu-faceoff .fighter-art:last-child {
+.menu-faceoff svg.fighter-art:last-of-type {
   animation: slideR 0.6s cubic-bezier(0.2, 1.3, 0.4, 1) both, bob 1.1s 1.15s ease-in-out infinite;
 }
 .menu-faceoff .vs-word {
@@ -6995,3 +6995,60 @@ details.intro-notes[open] summary::before { content: '▸'; transform: rotate(90
 .vh-side.opp .lv-crest { right: 0; rotate: 8deg; }
 .live-vs .vh-plate span { font-size: 0.68rem; }
 .live-vs .vh-plate b { font-size: 1rem; overflow-wrap: normal; white-space: nowrap; overflow: hidden; text-overflow: clip; }
+
+/* przejścia między ekranami (View Transitions API) */
+::view-transition-old(root) { animation: vtOut 0.22s cubic-bezier(0.4, 0, 1, 1) both; }
+::view-transition-new(root) { animation: vtIn 0.34s cubic-bezier(0.2, 0.9, 0.3, 1) both; }
+@keyframes vtOut { to { opacity: 0; transform: translateY(-10px) scale(0.985); filter: blur(2px); } }
+@keyframes vtIn { from { opacity: 0; transform: translateY(14px) scale(0.99); } }
+.hud { view-transition-name: hud; }
+::view-transition-group(hud) { animation-duration: 0.3s; }
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root), ::view-transition-new(root) { animation: none; }
+}
+
+/* typografia: wyważone nagłówki i akapity bez wdów */
+h1, h2, h3, .pst-head h2, .rv-head { text-wrap: balance; }
+p, .offer-note, .frow-ctx, .pst-text { text-wrap: pretty; }
+/* podsumowanie roku: hala w tle, herb klubu jako znak wodny */
+.sum-hero { overflow: hidden; isolation: isolate; min-height: 150px; }
+.sum-bg {
+  position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
+  opacity: 0.18; z-index: -1; pointer-events: none;
+  mask-image: linear-gradient(180deg, #000 30%, transparent);
+}
+.sum-crest {
+  position: absolute; right: -26px; top: -18px; width: 150px; height: 150px; object-fit: contain;
+  opacity: 0.1; rotate: 10deg; z-index: -1; pointer-events: none;
+}
+.sum-art .fighter-art { filter: drop-shadow(0 10px 16px rgba(0, 0, 0, 0.6)); }
+.sum-kicker { display: inline-flex; align-items: center; gap: 6px; }
+.sum-fed { width: 22px; height: 22px; object-fit: contain; }
+/* zapisy: twarz zawodnika i herb klubu */
+.slot-card { position: relative; overflow: hidden; isolation: isolate; }
+.slot-card.empty { border-style: dashed; background: transparent; }
+.slot-wm { position: absolute; right: -20px; top: 50%; translate: 0 -50%; width: 150px; height: 150px; object-fit: contain; opacity: 0.08; rotate: -10deg; z-index: -1; pointer-events: none; }
+.slot-av { width: 58px; height: 58px; border-radius: 50%; overflow: hidden; flex: none; background: radial-gradient(circle at 50% 35%, #2a3550, #121a2c); box-shadow: inset 0 0 0 2px rgba(1, 174, 238, 0.35); }
+.slot-av .fighter-art { display: block; }
+.tiles .tile small { letter-spacing: 0.03em; font-size: 0.68rem; }
+
+/* wjazd elementów list przy przewijaniu (scroll-driven animations) */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .frow, .club-pick .offer, .choice-list > .choice, .tot div, .pst-card li {
+      animation: sdIn linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 60%;
+    }
+  }
+}
+@keyframes sdIn { from { opacity: 0.35; transform: translateY(14px) scale(0.98); } }
+.menu-faceoff { isolation: isolate; }
+.menu-faceoff .fighter-art { filter: drop-shadow(0 10px 14px rgba(0, 0, 0, 0.6)); }
+.mf-beam {
+  position: absolute; left: 50%; bottom: 0; width: 320px; height: 230px; translate: -50% 0; z-index: -1; pointer-events: none;
+  background:
+    radial-gradient(50% 18% at 50% 100%, rgba(1, 174, 238, 0.35), transparent),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.1), transparent 85%);
+  clip-path: polygon(38% 0, 62% 0, 100% 100%, 0 100%);
+}
