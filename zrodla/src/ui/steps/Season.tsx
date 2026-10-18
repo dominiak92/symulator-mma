@@ -595,7 +595,7 @@ function LiveCard({ g, f, start, animate, setGame }: { g: GameState; f: FightRep
         <div className={`vh-side me ${done && f.result === 'L' && finish ? 'ko' : ''} ${done && won ? 'win' : ''}`} style={d(stampAt)}>
           <div className="vh-art">
             {clubLogo(g.club?.name) && <img className="lv-crest" src={clubLogo(g.club?.name)!} alt="" aria-hidden="true" />}
-            <Fighter weight={divisionKey(g)} age={g.age} seed={`${g.profile.firstName}${g.profile.lastName}`} corner="blue" shorts={myShorts} size={80} belt={g.rank === 0 && !f.amateur ? g.tier : false} hurt={done && f.result === 'L' && finish} />
+            <Fighter weight={divisionKey(g)} age={g.age} country={g.profile.origin} seed={`${g.profile.firstName}${g.profile.lastName}`} corner="blue" shorts={myShorts} size={80} belt={g.rank === 0 && !f.amateur ? g.tier : false} hurt={done && f.result === 'L' && finish} />
           </div>
           <div className="vh-plate">
             <small>{g.profile.firstName}</small>
@@ -763,7 +763,7 @@ function FightIntro({ g, f, n, total, onGo, paused }: { g: GameState; f: FightRe
         )}
         <div className="fi-vs">
           <div className="fi-side me">
-            <Fighter weight={divisionKey(g)} age={g.age} seed={`${g.profile.firstName}${g.profile.lastName}`} corner="blue" shorts={clubCrest(g.club).bg} size={96} belt={g.rank === 0 && !f.amateur ? g.tier : false} />
+            <Fighter weight={divisionKey(g)} age={g.age} country={g.profile.origin} seed={`${g.profile.firstName}${g.profile.lastName}`} corner="blue" shorts={clubCrest(g.club).bg} size={96} belt={g.rank === 0 && !f.amateur ? g.tier : false} />
             <b>{g.profile.lastName}</b>
             <small>{recStr(shownRecord(g, hold))}</small>
           </div>
@@ -831,7 +831,7 @@ function VsHero({ g, opp, label, size = 84, belt }: { g: GameState; opp: FightRe
     <div className="vs-hero">
       <div className="vh-side me">
         <div className="vh-art">
-          <Fighter weight={divisionKey(g)} age={g.age} seed={`${g.profile.firstName}${g.profile.lastName}`} corner="blue" shorts={clubCrest(g.club).bg} size={size} belt={belt} />
+          <Fighter weight={divisionKey(g)} age={g.age} country={g.profile.origin} seed={`${g.profile.firstName}${g.profile.lastName}`} corner="blue" shorts={clubCrest(g.club).bg} size={size} belt={belt} />
         </div>
         <div className="vh-plate">
           <small>{g.profile.firstName}</small>
@@ -878,7 +878,7 @@ function PosterHero({ g, opp, label, title, interim, fed, medal }: { g: GameStat
         <i className="ph-floor" aria-hidden="true" />
         <div className="ph-side me">
           {myCrest ? <img className="ph-crest" src={myCrest} alt="" aria-hidden="true" /> : <span className="ph-crest ph-flag">🇵🇱</span>}
-          <Fighter weight={divisionKey(g)} age={g.age} seed={`${g.profile.firstName}${g.profile.lastName}`} corner="blue" shorts={clubCrest(g.club).bg} size={150} belt={g.rank === 0 && !title && g.tier > 0 ? g.tier : false} />
+          <Fighter weight={divisionKey(g)} age={g.age} country={g.profile.origin} seed={`${g.profile.firstName}${g.profile.lastName}`} corner="blue" shorts={clubCrest(g.club).bg} size={150} belt={g.rank === 0 && !title && g.tier > 0 ? g.tier : false} />
         </div>
         <div className="ph-side opp">
           {oppCrest ? <img className="ph-crest" src={oppCrest} alt="" aria-hidden="true" /> : !opp.freak && <span className="ph-crest ph-flag">{opp.flag}</span>}
