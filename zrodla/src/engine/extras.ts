@@ -9,7 +9,7 @@ import type { FightOffer, GameState, JobMode, SocialMode, TicketPlan } from './t
 export const JOB_OPTIONS: { id: JobMode; label: string; short: string; living: number; form: number; desc: string }[] = [
   { id: 'full', label: 'Pełny etat', short: 'etat', living: 0.15, form: -2, desc: 'Praca pokrywa prawie całe życie. Trenujesz po ośmiu godzinach w robocie, więc forma cierpi.' },
   { id: 'half', label: 'Pół etatu', short: 'pół etatu', living: 0.5, form: 0, desc: 'Połowa kosztów z pensji, rano trening, popołudniu praca.' },
-  { id: 'none', label: 'Tylko trening', short: 'bez pracy', living: 1, form: 3, desc: 'Żyjesz z walk i oszczędności. Dwa treningi dziennie i regeneracja, ale każda złotówka się liczy.' },
+  { id: 'none', label: 'Tylko trening', short: 'bez pracy', living: 1, form: 4, desc: 'Żyjesz z walk i oszczędności. Dwa treningi dziennie i regeneracja, ale każda złotówka się liczy.' },
 ];
 
 /** Czy w tym roku w ogóle wybierasz pracę (pełnoletni, do krajowej federacji). */
@@ -44,9 +44,9 @@ export function jobForm(s: GameState): number {
 // ---------------------------------------------------------------------------
 
 export const SOCIAL_OPTIONS: { id: SocialMode; label: string; desc: string; gain: number; form: number }[] = [
-  { id: 'off', label: 'Wcale', desc: 'Zero stresu, zero zasięgów. Obserwujący przybywają tylko po głośnych walkach.', gain: 0.6, form: 0 },
-  { id: 'self', label: 'Sam', desc: 'Relacje z treningów i odpowiadanie na komentarze. Przybywa ludzi, a marki płacą za posty, ale telefon zjada czas i skupienie.', gain: 1.4, form: -1 },
-  { id: 'pro', label: 'Social media manager', desc: 'Ktoś montuje filmy i ogarnia współprace. Płacisz, ale rośniesz najszybciej i nie tracisz skupienia.', gain: 2.1, form: 0 },
+  { id: 'off', label: 'Wcale', desc: 'Telefon w szafce, pełne skupienie na treningu (forma +1). Obserwujący przybywają tylko po głośnych walkach, a rozpoznawalność sama nie rośnie.', gain: 0.6, form: 1 },
+  { id: 'self', label: 'Sam', desc: 'Relacje z treningów i odpowiadanie na komentarze. Co rok rośnie rozpoznawalność, przybywa ludzi, a marki płacą za posty. Kosztuje tylko skupienie, które dałby telefon w szafce.', gain: 1.3, form: 0 },
+  { id: 'pro', label: 'Social media manager', desc: 'Ktoś montuje filmy i ogarnia współprace. Płacisz, ale obserwujących przybywa najszybciej, a współprace są lepiej płatne.', gain: 2.1, form: 0 },
 ];
 
 export const SMM_COST = [3000, 4000, 9000, 24000, 60000];
@@ -75,7 +75,7 @@ export function socialIncome(s: GameState): number {
   if (m === 'off') return 0;
   const k = followersOf(s) / 1000;
   if (k < 2) return 0;
-  return Math.round((k * (m === 'pro' ? 170 : 110)) / 500) * 500;
+  return Math.round((k * (m === 'pro' ? 420 : 300)) / 500) * 500;
 }
 
 export function socialForm(s: GameState): number {

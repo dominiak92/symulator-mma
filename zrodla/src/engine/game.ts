@@ -1218,6 +1218,8 @@ export function startSeason(s0: GameState): GameState {
   const s = clone(s0);
   withRng(s, (rng) => {
     s.money += budgetBalance(s);
+    // prowadzone social media podbijają rozpoznawalność
+    if (followersOf(s) >= 2000 && (s.social === 'self' || s.social === 'pro')) s.media = clamp(s.media + 2, 0, 100);
     if (jobDef(s)?.id === 'none' && !s.flags.quitJob) {
       s.flags.quitJob = 1;
       log(s, 'Rzucasz etat. Od teraz żyjesz z walk.');
@@ -1536,7 +1538,9 @@ function pickOpponent(rng: Rng, s: GameState, idx: number): { opp: Fighter; titl
   // obrona pasa
   if (s.rank === 0) {
     if (rivalPeer && rivalPeer.rank !== null && rivalPeer.rank <= 8 && rng.chance(0.55)) return { opp: asRival(rivalPeer, rivalPeer.rank), title: true, defense: true, peer: rivalPeer };
-    const opp = generateOpponent(rng, tier, rng.int(1, 3), hard);
+    const top = (s.flags.superLoss ?? 0) > 0;
+    s.flags.superLoss = 0;
+    const opp = generateOpponent(rng, tier, top ? 1 : rng.int(1, 3), hard);
     return { opp, title: true, defense: true, peer: null };
   }
   // walka o pas
@@ -1588,7 +1592,7 @@ function fightMods(s: GameState): number {
   let m = sh < 0 ? 4 : sh > 0 ? -2 : 0;
   m += cur.weighMod ?? 0;
   // zastępstwo: kilka dni na przygotowanie zamiast obozu
-  if (cur.short) m -= 6;
+  if (cur.short) m -= 5;
   // superfight: rywal z innej kategorii (większy albo szybszy)
   if (cur.superfight) m -= 3;
   if (cur.tickets?.plan === 'push') m -= 2;
@@ -1787,7 +1791,7 @@ function buildSuperfight(rng: Rng, s: GameState): FightOffer {
     winBonus: Math.round(s.contract.winBonus * 2),
     negotiated: false,
     superfight: label,
-    hook: `Superfight: mistrz kontra mistrz. ${opp.firstName} ${opp.lastName} trzyma pas wagi ${label}. ${up ? 'Idziesz kategorię wyżej, rywal będzie cięższy.' : 'Schodzisz kategorię niżej, rywal będzie szybszy.'} Wygrana to drugi pas i miejsce w historii. Twój pas nie jest stawką.`,
+    hook: `Superfight: mistrz kontra mistrz. ${opp.firstName} ${opp.lastName} trzyma pas wagi ${label}. ${up ? 'Idziesz kategorię wyżej, rywal będzie cięższy.' : 'Schodzisz kategorię niżej, rywal będzie szybszy.'} Wygrana to drugi pas i miejsce w historii. Twój pas nie jest stawką, ale po porażce reputacja spadnie, a w następnej obronie czeka numer 1 rankingu.`,
   };
 }
 
@@ -1809,7 +1813,7 @@ function buildShortNotice(rng: Rng, s: GameState): FightOffer {
   avoidMyName(rng, s, opp);
   const spot: CardSpot = s.tier <= 1 ? 'główna' : rng.chance(0.5) ? 'główna' : 'wieczoru';
   const base = purseFor(s, opp, false, spot);
-  const purse = Math.round((base * 1.45 * (0.95 + rng.next() * 0.1)) / 100) * 100;
+  const purse = Math.round((base * 1.6 * (0.95 + rng.next() * 0.1)) / 100) * 100;
   const who = currentManager(s)?.name ?? 'Organizator';
   return {
     opp,
@@ -1821,7 +1825,7 @@ function buildShortNotice(rng: Rng, s: GameState): FightOffer {
     winBonus: Math.round(s.contract.winBonus * 1.3),
     negotiated: true,
     short: true,
-    tip: `${who}: „Rywal z karty głównej wypadł, gala za sześć dni. Bierzesz? Płacą prawie półtorej stawki, a ${opp.lastName} jest wyżej w rankingu. Bez obozu, ${weightShift(s) < 0 ? 'wagę trzeba zbić na szybko' : 'ale wagę masz'}.”`,
+    tip: `${who}: „Rywal z karty głównej wypadł, gala za sześć dni. Bierzesz? Płacą ponad półtorej stawki, a ${opp.lastName} jest wyżej w rankingu. Przegrana na zastępstwie mniej boli. Bez obozu, ${weightShift(s) < 0 ? 'wagę trzeba zbić na szybko' : 'ale wagę masz'}.”`,
   };
 }
 
@@ -2750,7 +2754,14 @@ function updateRank(s: GameState, rep: FightReport) {
       const name = `${BELT_NAMES[s.tier]} wagi ${rep.superfight} (superfight)`;
       s.belts.push({ name, season: s.season, age: s.age });
       log(s, `👑 Podwójny mistrz! Superfight wygrany z ${opp.firstName} ${opp.lastName} (w wadze ${rep.superfight}).`);
-    } else s.flags.superDone = (s.flags.superDone ?? 0) + 1;
+    } else {
+      s.flags.superDone = (s.flags.superDone ?? 0) + 1;
+      // przegrany superfight podważa pozycję mistrza: następna obrona z numerem 1
+      s.flags.superLoss = 1;
+      s.rep = clamp(s.rep - 6, 0, 100);
+      s.media = clamp(s.media - 2, 0, 100);
+      log(s, `Przegrany superfight z ${opp.firstName} ${opp.lastName}. Pas zostaje, ale pozycja mistrza się chwieje.`);
+    }
     return;
   }
   // pas tymczasowy: wygrany czeka na unifikację
@@ -2801,10 +2812,11 @@ function updateRank(s: GameState, rep: FightReport) {
     // dobry menedżer umie sprzedać zwycięstwo: większy skok w rankingu
     next -= activeManager(s)?.quality ?? 0;
     // uratowana gala: organizator i ranking to pamiętają
-    if (rep.short) next -= 1;
+    if (rep.short) next -= 2;
     s.rank = clamp(next, 1, size + 2);
   } else if (res === 'L') {
-    s.rank = cur + 2 + (finish ? 1 : 0);
+    // przegrana na zastępstwie nikogo nie dziwi: w rankingu tylko o jedno miejsce w dół
+    s.rank = rep.short ? cur + 1 : cur + 2 + (finish ? 1 : 0);
   }
   if (s.rank !== null && s.rank > size) s.rank = null;
 }
@@ -2894,7 +2906,7 @@ function finalizeFight(rng: Rng, s: GameState, rep: FightReport) {
     if (rep.freak) s.rep = clamp(s.rep - 4, 0, 100);
   } else if (res === 'L') {
     s.media = clamp(s.media + (rep.freak ? -3 : 0), 0, 100);
-    s.rep = clamp(s.rep - (rep.freak ? 8 : 1), 0, 100);
+    s.rep = clamp(s.rep - (rep.freak ? 8 : rep.short ? 0 : 1), 0, 100);
   }
   if (rep.freak) {
     s.media = clamp(s.media + 5, 0, 100);
@@ -3580,9 +3592,10 @@ export function negotiateContract(s0: GameState, idx: number, ask: ContractAsk):
       if (ask === 'signing') c.signing = signingAmount(c);
       const what = ask === 'purse' ? `gaża ${c.purse.toLocaleString('pl-PL')} zł za walkę` : ask === 'bonus' ? `premia za wygraną ${c.winBonus.toLocaleString('pl-PL')} zł` : `bonus za podpis ${c.signing!.toLocaleString('pl-PL')} zł`;
       c.nego = { ask, ok: true, text: `Federacja się zgadza: ${what}. Dopisują to długopisem nad podpisem.` };
-    } else if (ask === 'purse' && rng.chance(0.25)) {
-      c.purse = Math.round((c.purse * 0.95) / 100) * 100;
-      c.nego = { ask, ok: false, text: `Federacja się obraża: „Takie stawki to nie u nas”. Nowa wersja umowy jest o 5% gorsza.` };
+    } else if (rng.chance(ask === 'purse' ? 0.4 : ask === 'signing' ? 0.3 : 0.2)) {
+      // przeciąganie liny kosztuje: federacja wraca z gorszą wersją
+      c.purse = Math.round((c.purse * 0.94) / 100) * 100;
+      c.nego = { ask, ok: false, text: `Federacja się obraża: „${ask === 'signing' ? 'Pieniądze za sam podpis? Chyba żartujesz' : ask === 'bonus' ? 'Premie mamy takie same dla wszystkich' : 'Takie stawki to nie u nas'}”. Nowa wersja umowy ma gażę niższą o 6%.` };
     } else {
       c.nego = { ask, ok: false, text: 'Federacja nie ustępuje. Warunki zostają, jakie były.' };
     }
