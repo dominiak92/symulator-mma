@@ -26,7 +26,7 @@ with sync_playwright() as p:
         if pg.locator('.wo').count():
             shot(pg, 'wejscie'); pg.locator('.wo').click(force=True); pg.wait_for_timeout(300); continue
         if pg.locator('.notice-modal .btn-primary').count():
-            shot(pg, 'komunikat'); pg.locator('.notice-modal .btn-primary').click(); pg.wait_for_timeout(300); continue
+            t = pg.locator('.notice-modal').inner_text(); pg.wait_for_timeout(1400); shot(pg, 'kontuzja' if ('ontuzj' in t.lower() or 'uraz' in t.lower()) else 'komunikat'); pg.locator('.notice-modal .btn-primary').click(); pg.wait_for_timeout(300); continue
         if pg.locator('.rv-scene .btn').count():
             shot(pg, 'scena-wyniku'); pg.locator('.rv-scene .btn').first.click(); pg.wait_for_timeout(300); continue
         if pg.locator('.post-modal .btn-primary, .weigh-modal .choice, .post-modal .choice, .invite-modal .btn-primary').count():
