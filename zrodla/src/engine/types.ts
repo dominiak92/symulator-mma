@@ -508,7 +508,7 @@ export interface GameState {
   wear: number; // 0..100
   injury: Injury | null;
   sponsors: Sponsor[];
-  /** zaplecze opłacane co roku (od polskiej federacji): fizjo, lekarz, suplementy */
+  /** zaplecze opłacane co roku (od debiutu zawodowego): fizjo, lekarz, suplementy */
   backroom?: { physio?: boolean; doctor?: boolean; supps?: boolean; sparring?: boolean };
   /** wynik ostatniego szukania sponsora na własną rękę */
   pitch?: { season: number; ok: boolean; text: string; name?: string; slot: string } | null;

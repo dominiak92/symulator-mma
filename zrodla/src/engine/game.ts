@@ -620,24 +620,25 @@ export function investAcademy(s0: GameState): GameState {
 }
 
 // ---------------------------------------------------------------------------
-// Zaplecze: fizjoterapeuta, lekarz, suplementy (opcjonalne, od polskiej federacji)
+// Zaplecze: fizjoterapeuta, lekarz, suplementy (opcjonalne, od debiutu zawodowego)
 // ---------------------------------------------------------------------------
 export type BackroomId = 'physio' | 'doctor' | 'supps' | 'sparring';
 export const BACKROOM: { id: BackroomId; name: string; short: string; effect: string; icon: string; cost: number[]; minTier?: number }[] = [
-  { id: 'physio', name: 'Fizjoterapeuta', short: 'masaże, rozluźnianie, taping', effect: 'Organizm wolniej się zużywa, kariera trwa dłużej.', icon: 'heart', cost: [0, 0, 3000, 7000, 20000] },
-  { id: 'doctor', name: 'Lekarz sportowy', short: 'badania i opieka przed walką', effect: 'Rzadsze kontuzje, a jeśli już, to lżejsze.', icon: 'bandage', cost: [0, 0, 5000, 12000, 30000] },
-  { id: 'supps', name: 'Suplementacja', short: 'odżywki, witaminy, elektrolity', effect: 'Lekko lepsza forma w każdej walce.', icon: 'flame', cost: [0, 0, 1500, 4000, 9000] },
+  { id: 'physio', name: 'Fizjoterapeuta', short: 'masaże, rozluźnianie, taping', effect: 'Organizm wolniej się zużywa, kariera trwa dłużej.', icon: 'heart', cost: [0, 1500, 3000, 7000, 20000] },
+  { id: 'doctor', name: 'Lekarz sportowy', short: 'badania i opieka przed walką', effect: 'Rzadsze kontuzje, a jeśli już, to lżejsze.', icon: 'bandage', cost: [0, 2500, 5000, 12000, 30000] },
+  { id: 'supps', name: 'Suplementacja', short: 'odżywki, witaminy, elektrolity', effect: 'Lekko lepsza forma w każdej walce.', icon: 'flame', cost: [0, 800, 1500, 4000, 9000] },
   { id: 'sparring', name: 'Elitarni sparingpartnerzy', short: 'sparingpartnerzy z czołówki, ściągani na obóz', effect: 'Wyraźnie lepsza forma w każdej walce. Drogo, ale na tym poziomie liczy się każdy procent.', icon: 'glove', cost: [0, 0, 0, 70000, 180000], minTier: 3 },
 ];
 export function backroomAvailable(s: GameState, id: BackroomId) {
-  return s.tier >= (BACKROOM.find((b) => b.id === id)!.minTier ?? 2);
+  return s.tier >= (BACKROOM.find((b) => b.id === id)!.minTier ?? 1);
 }
 export const LABS_SPONSOR = 'Ground Game Labs';
 export function hasLabs(s: GameState) {
   return s.sponsors.some((x) => x.name === LABS_SPONSOR);
 }
+/** Zaplecze jest dostępne przez całe zawodowstwo (także w roku freak fightów). */
 export function backroomOpen(s: GameState) {
-  return s.tier >= 2 && s.contract.kind !== 'freak';
+  return s.tier >= 1;
 }
 export function backroomCost(s: GameState, id: BackroomId): number {
   if (id === 'supps' && hasLabs(s)) return 0;
