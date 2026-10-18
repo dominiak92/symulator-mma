@@ -1,8 +1,9 @@
 # Przerysowanie zawodników
 
-Z dwóch obrazów wzorcowych (`wzor-postac.png`, `wzor-glowy.png`, tło magenta) powstaje
-`src/ui/fighterData.ts`: warstwy wektorowe (kontur, tony skóry, włosy, rękawice, taśma),
-które `FighterArt.tsx` przemalowuje (skóra, włosy, narożnik) i składa z fryzurami i zarostem.
+Trzy pary obrazów wzorcowych (postać + arkusz głów, tło magenta): dorosły, młody, weteran.
+Z nich powstaje `src/ui/fighterData.ts`: dla każdego wieku ciało z łysą głową, fryzury i zarost
+przeniesione na tę głowę oraz druga twarz. `FighterArt.tsx` przemalowuje warstwy (skóra, włosy,
+narożnik) i wybiera wersję wg wieku (do 21 lat młody, od 33 weteran).
 
     pip install potracer scikit-learn scipy pillow
-    python3 build_body.py && python3 build_heads.py && python3 gen_ts.py
+    python3 build_all.py && python3 gen_all_ts.py
