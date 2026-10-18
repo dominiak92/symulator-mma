@@ -19,11 +19,11 @@ const SKINS_FAIR = ['#f7d3b8', '#f5c9ad', '#f3c1a0', '#f1b893', '#eeb18c', '#f4c
 const SKINS_OLIVE = ['#efb893', '#e6a77f', '#dc9a72', '#cf8c64'];
 const SKINS_DARK = ['#9c5f3d', '#7c4a2f', '#5c3520'];
 const FAIR = ['Polska', 'Czechy', 'Słowacja', 'Niemcy', 'Szwecja', 'Holandia', 'Irlandia', 'Anglia', 'Ukraina', 'Australia'];
-const OLIVE = ['Francja', 'Hiszpania', 'Gruzja', 'Dagestan', 'Meksyk', 'Kazachstan', 'Japonia'];
+const OLIVE = ['Wietnam', 'Turcja', 'Francja', 'Hiszpania', 'Gruzja', 'Dagestan', 'Meksyk', 'Kazachstan', 'Japonia'];
 function skinPool(country?: string): string[] {
   if (!country || FAIR.includes(country)) return SKINS_FAIR;
   if (OLIVE.includes(country)) return SKINS_OLIVE;
-  if (country === 'Nigeria') return SKINS_DARK;
+  if (country === 'Nigeria' || country === 'Kongo') return SKINS_DARK;
   return SKINS; // USA, Brazylia: pełny przekrój
 }
 const HAIRS = ['#1b1512', '#2c211b', '#3d2c22', '#5a3d27', '#7a5232', '#a77a45', '#d8b26c', '#93421f', '#3a3a3e', '#b4aea5'];
@@ -75,7 +75,7 @@ export function lookFor(seed: string, country?: string): FighterLook {
     : ['short', 'bald', 'fade', 'slick', 'curly', 'mohawk', 'bun', 'buzz', 'short', 'fade', 'slick', 'messy', 'spiky', 'messy'];
   const beardRoll = r();
   const beard: BeardStyle = beardRoll < 0.68 ? 'none' : beardRoll < 0.86 ? 'full' : 'goatee';
-  const all: Tattoo[] = ['chest', 'forearmL', 'forearmR', 'shoulder', 'ribs', 'cross'];
+  const all: Tattoo[] = ['chest', 'forearmL', 'forearmR', 'ribs', 'cross', 'forearmL'];
   const n = r() < 0.4 ? 0 : r() < 0.65 ? 1 : r() < 0.88 ? 2 : 3;
   const tattoos: Tattoo[] = [];
   for (let i = 0; i < n; i++) {
@@ -165,7 +165,9 @@ export function Fighter({
   const base = lookFor(seed, country);
   const l = weight && WEIGHT_BUILD[weight] !== undefined ? { ...base, build: WEIGHT_BUILD[weight] } : base;
   const S = hex(l.skin);
-  const Hc = hex(l.hair);
+  // siwizna dopiero u weterana (wiek z gry), wcześniej naturalny kolor
+  const hairHex = l.hair === HAIRS[9] && (age === undefined || age < 33) ? (SKINS.indexOf(l.skin) >= 5 ? HAIRS[1] : HAIRS[3]) : l.hair;
+  const Hc = hex(hairHex);
   const light = Hc[0] + Hc[1] + Hc[2] > 330;
   const c = CORNER[corner];
   const pal: Record<string, string> = {
@@ -204,7 +206,7 @@ export function Fighter({
   const beardLayers = l.beard === 'none' || band === 'young' ? null : A.beard[l.beard];
 
   return (
-    <svg className={`fighter-art ${head ? 'fighter-head' : ''} ${className ?? ''}`} style={style} width={size} height={head ? size : size * 1.2} viewBox={head ? `${mirror ? 1024 - 690 : 334} 40 356 356` : '62 10 900 1080'} aria-hidden="true">
+    <svg className={`fighter-art ${head ? 'fighter-head' : ''} ${className ?? ''}`} style={style} width={size} height={head ? size : size * 1.2} viewBox={head ? `${mirror ? 1024 - 717 : 307} 12 410 410` : '62 10 900 1080'} aria-hidden="true">
       <defs>
         <clipPath id={`sil${uid}`}>
           <path d={A.body[0][1]} />
@@ -283,17 +285,12 @@ export function Fighter({
               <path d="M376 282 q-6 8 2 14 M378 306 q-6 6 2 12" stroke={OUT} strokeWidth="5" fill="none" strokeLinecap="round" />
             </g>
           )}
-          {l.scar && (
-            <g stroke={css(mix(S, [255, 240, 232], 0.55))} strokeLinecap="round">
-              <path d="M572 214 L556 262" strokeWidth="9" />
-              <path d="M552 226 l20 7 M548 244 l20 7" strokeWidth="4" />
-            </g>
-          )}
+          {l.scar && <path d="M601 226 L589 258" stroke={css(mix(S, [235, 170, 160], 0.5))} strokeWidth="6" strokeLinecap="round" opacity=".9" />}
           {hurt && (
             <g>
-              <ellipse cx="562" cy="268" rx="44" ry="32" fill="#6d2f5c" opacity=".5" />
-              <ellipse cx="566" cy="252" rx="30" ry="14" fill="#8a3d70" opacity=".45" />
-              <path d="M584 236 l26 18" stroke="#c0162f" strokeWidth="9" strokeLinecap="round" />
+              <ellipse cx="583" cy="274" rx="40" ry="28" fill="#6d2f5c" opacity=".45" />
+              <ellipse cx="587" cy="258" rx="28" ry="12" fill="#8a3d70" opacity=".4" />
+              <path d="M606 236 l22 14" stroke="#c0162f" strokeWidth="9" strokeLinecap="round" />
               <path d="M538 398 q4 18 -2 30" stroke="#c0162f" strokeWidth="8" strokeLinecap="round" fill="none" />
             </g>
           )}

@@ -8,6 +8,16 @@ import { Icon } from './Icon';
 
 const STYLES: Style[] = ['boxer', 'kickboxer', 'wrestler', 'grappler', 'brawler', 'allround'];
 const STARTS: StartProfile[] = ['osiedle', 'biznes', 'junior', 'wybraniec'];
+/** Korzenie zawodnika: zmieniają tylko wygląd (karnację). */
+const ORIGINS: [string, string, string][] = [
+  ['Polska', '🇵🇱', 'Polak'],
+  ['Ukraina', '🇺🇦', 'ukraińskie'],
+  ['Gruzja', '🇬🇪', 'gruzińskie'],
+  ['Turcja', '🇹🇷', 'tureckie'],
+  ['Wietnam', '🇻🇳', 'wietnamskie'],
+  ['Brazylia', '🇧🇷', 'brazylijskie'],
+  ['Nigeria', '🇳🇬', 'nigeryjskie'],
+];
 
 export default function Create({ slot, onBack, onStart }: { slot: number; onBack: () => void; onStart: (s: GameState) => void }) {
   const rng = useMemo(() => createRng((Date.now() ^ (Math.random() * 1e9)) >>> 0), []);
@@ -43,7 +53,7 @@ export default function Create({ slot, onBack, onStart }: { slot: number; onBack
           <h2>Nowa kariera</h2>
           <p className="muted small">Tak wygląda twój zawodnik. Zmień imię, a zmieni się też on.</p>
         </div>
-        <Fighter weight={p.weight} age={16} key={`${p.firstName.trim()}${p.lastName.trim()}`} className="pop" seed={`${p.firstName.trim()}${p.lastName.trim()}`} corner="blue" size={86} />
+        <Fighter weight={p.weight} age={16} country={p.origin} key={`${p.firstName.trim()}${p.lastName.trim()}${p.origin ?? ''}`} className="pop" seed={`${p.firstName.trim()}${p.lastName.trim()}`} corner="blue" size={86} />
       </div>
 
       <section className="form-section">
@@ -122,6 +132,24 @@ export default function Create({ slot, onBack, onStart }: { slot: number; onBack
               <option key={v}>{v}</option>
             ))}
           </select>
+        </div>
+      </section>
+
+      <section className="form-section">
+        <div className="label pt-ico">
+          <Icon name="users" size={16} />
+          Korzenie
+        </div>
+        <p className="muted small" style={{ margin: '0 0 8px' }}>
+          Walczysz dla Polski. Korzenie zmieniają tylko wygląd zawodnika.
+        </p>
+        <div className="origin-pick" role="radiogroup" aria-label="Korzenie">
+          {ORIGINS.map(([c, flag]) => (
+            <button key={c} className="origin-chip" role="radio" aria-checked={(p.origin ?? 'Polska') === c} onClick={() => set({ origin: c === 'Polska' ? undefined : c })}>
+              <span aria-hidden="true">{flag}</span>
+              {c}
+            </button>
+          ))}
         </div>
       </section>
 
