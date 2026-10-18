@@ -4,7 +4,7 @@ import { Tutorial, tutorialSeen } from './ui/Tutorial';
 import { useCallback, useEffect, useState } from 'react';
 import type { GameState } from './engine/types';
 import { addToMuseum, clearSlot, loadAchievements, loadGoals, loadSlot, saveAchievements, saveGoals, saveSlot } from './storage';
-import { todaysGoals } from './engine/goals';
+import { goalMet, todaysGoals } from './engine/goals';
 import Menu from './ui/Menu';
 import Slots from './ui/Slots';
 import Create from './ui/Create';
@@ -46,11 +46,11 @@ function recordMeta(s: GameState): Toast[] {
     const t = todaysGoals();
     const g = loadGoals(t.day, t.week);
     for (const goal of t.daily)
-      if (!g.dailyDone.includes(goal.id) && goal.check(s)) {
+      if (!g.dailyDone.includes(goal.id) && goalMet(goal, s)) {
         g.dailyDone.push(goal.id);
         out.push({ kind: 'Cel dnia', title: goal.title, desc: goal.desc });
       }
-    if (!g.weeklyDone && t.weekly.check(s)) {
+    if (!g.weeklyDone && goalMet(t.weekly, s)) {
       g.weeklyDone = true;
       out.push({ kind: 'Wyzwanie tygodnia', title: t.weekly.title, desc: t.weekly.desc });
     }
