@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import menuBg from '../assets/bg/menu.webp';
 import { dailyDone } from '../storage';
 import { dailySeed } from '../engine/rng';
 import Logo, { SHOP_URL } from './Logo';
@@ -36,6 +37,7 @@ export default function Menu({
   const [goalsOpen, setGoalsOpen] = useState(false);
   return (
     <main className="menu">
+      <div className="menu-bg" aria-hidden="true" style={{ backgroundImage: `url(${menuBg})` }} />
       <img className="menu-deco" src={GG.icon} alt="" aria-hidden="true" />
       <header className="menu-hero">
         <div className="menu-brand">
