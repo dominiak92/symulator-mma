@@ -209,6 +209,7 @@ export interface NewGameOpts {
   seed: number;
   dailyLabel?: string;
   profile: Profile;
+  quick?: boolean;
 }
 
 export function randomProfile(rng: Rng): Profile {
@@ -269,6 +270,7 @@ export function newGame(opts: NewGameOpts): GameState {
     slot: opts.slot,
     rngState: rng.state(),
     mode: opts.mode,
+    quick: opts.quick || undefined,
     dailyLabel: opts.dailyLabel,
     createdAt: Date.now(),
     profile: { ...p },
@@ -459,6 +461,8 @@ export function doTraining(s0: GameState, k: StatKey, campId?: string | null): G
     offerShadyDeal(rng, s);
   });
   s.phase = 'budget';
+  if (s.quick && !quickNeedsBudget(s)) return startSeason(s);
+  if (s.quick) s.flags.quickBudgetTier = s.tier;
   return s;
 }
 
@@ -1193,8 +1197,8 @@ export function startSeason(s0: GameState): GameState {
     s.loans = s.loans.filter((l) => l.left > 0);
     // wydarzenia przedsezonowe
     s.eventQueue = [];
-    const n = rng.chance(0.85) ? 1 : 0;
-    const extra = rng.chance(0.18) ? 1 : 0;
+    const n = rng.chance(s.quick ? 0.5 : 0.85) ? 1 : 0;
+    const extra = !s.quick && rng.chance(0.18) ? 1 : 0;
     for (let i = 0; i < n + extra; i++) {
       const pool = EVENTS.map((e) => ({ item: e.id, w: eventWeight(e, s) * (s.eventQueue.includes(e.id) ? 0 : 1) })).filter(
         (x) => x.w > 0,
@@ -1270,6 +1274,7 @@ export function continueAfterEvent(s0: GameState): GameState {
   if (s0.event?.id === 'sparing_kontrolny' && !s0.run && s0.eventQueue.length === 0 && s0.event.picked !== undefined) {
     s.event = null;
     s.phase = 'training';
+    if (s.quick) return quickAmateur(s);
     return s;
   }
   return nextEventOrSeason(s);
@@ -1644,7 +1649,7 @@ function rivalHook(p: Peer, title: boolean, defense: boolean, trilogy: boolean):
 /** Czy menedżer (albo znajomy promotor) podsunie walkę na odbudowę rekordu. */
 function tuneupWanted(rng: Rng, s: GameState, _idx: number): boolean {
   const run = s.run!;
-  if (s.tier < 2 || s.contract.kind === 'freak' || run.tuneupOffered || run.autoAccept) return false;
+  if (s.quick || s.tier < 2 || s.contract.kind === 'freak' || run.tuneupOffered || run.autoAccept) return false;
   if (s.rank === 0) return false;
   // nie częściej niż co dwa lata
   if (s.flags.lastTuneup && s.season - s.flags.lastTuneup < 2) return false;
@@ -1700,6 +1705,12 @@ export function seasonNext(s0: GameState): GameState {
         return;
       }
       const o = buildOffer(rng, s, idx);
+      // szybka kariera: ofertę widzisz tylko przy walce o pas i z rywalem, resztę narożnik przyjmuje sam
+      if (s.quick && !(o.title || o.rival)) {
+        o.prep = 'std';
+        startFight(rng, s, o);
+        return;
+      }
       if (run.autoAccept) {
         const p = run.autoPrep ?? 'std';
         o.prep = p === 'rival' && s.money < prepCost(s, o) ? 'std' : p;
@@ -1896,8 +1907,23 @@ function startFight(rng: Rng, s: GameState, o: FightOffer) {
       return;
     }
     advanceFight(rng, fightCtx(s, opp), rep.sim, rep);
+    quickAutoResolve(rng, s, rep);
     if (rep.sim.finished) finalizeFight(rng, s, rep);
     }
+  }
+}
+
+/** Szybka kariera: w zwykłych walkach decyzje podejmuje narożnik (wybór z największą szansą). */
+function quickAutoResolve(rng: Rng, s: GameState, rep: FightReport) {
+  if (!s.quick || rep.sim.big) return;
+  for (let i = 0; i < 12 && rep.sim.pending && !rep.sim.finished; i++) {
+    const dp = rep.sim.pending;
+    const best = [...dp.options].sort((a, b) => b.chance - a.chance)[0];
+    const ctx = fightCtx(s, rep.opp);
+    applyDecision(rng, ctx, rep.sim, rep, best.key);
+    const m = rep.moments[rep.moments.length - 1];
+    if (m?.decision) m.text = m.text.replace(/^Wybierasz:/, 'Narożnik decyduje:');
+    if (!rep.sim.finished) advanceFight(rng, ctx, rep.sim, rep);
   }
 }
 
@@ -2738,6 +2764,7 @@ function ageOneYear(rng: Rng, s: GameState) {
 
 export function checkEnd(s: GameState): string | null {
   if (s.age >= 40) return 'Czterdziestka na karku. Komisja lekarska nie przedłuża ci licencji.';
+  if (s.quick && s.age >= 35) return 'Szybka kariera dobiega końca: 35 lat i czas zawiesić rękawice.';
   if (s.wear >= 100) return 'Lekarze nie dają ci zgody na kolejne walki. Za dużo przyjętych ciosów.';
   if ((s.flags.lastSeason ?? 0) > 0) return 'Obiecałeś rodzinie, że to ostatni rok. Dotrzymujesz słowa.';
   if (s.age >= 27 && s.finishes.koLosses >= 5 && s.history.slice(-4).filter((h) => h.result === 'L' && h.method === 'KO/TKO').length >= 3)
@@ -3084,6 +3111,72 @@ export function confirmMarket(s0: GameState): GameState {
 // ---------------------------------------------------------------------------
 // Koniec kariery
 // ---------------------------------------------------------------------------
+
+// ---------------------------------------------------------------------------
+// Szybka kariera
+// ---------------------------------------------------------------------------
+
+/** Amatorka w szybkiej karierze rozgrywa się sama (rozsądny plan), aż pojawi się kontrakt zawodowy. */
+export function quickAmateur(s0: GameState): GameState {
+  let s = s0;
+  const weakest = (x: GameState) => [...STAT_KEYS].sort((a, b) => x.stats[a] - x.stats[b])[0];
+  for (let guard = 0; guard < 600 && s.phase !== 'ended'; guard++) {
+    if (s.phase === 'market' && s.age >= 18 && s.market?.contracts.some((c) => c.available && c.kind === 'promotion')) break;
+    switch (s.phase) {
+      case 'training':
+        s = doTraining(s, weakest(s));
+        break;
+      case 'budget':
+        if (s.money + budgetBalance(s) < 0 && loanOffer(s)) s = takeLoan(s);
+        s = canStartSeason(s) ? startSeason(s) : takeBreakYear(s);
+        break;
+      case 'event':
+        s = s.event!.picked === undefined ? chooseEvent(s, 0) : continueAfterEvent(s);
+        break;
+      case 'season': {
+        const run = s.run!;
+        const cur = run.fights[run.fights.length - 1];
+        if (run.press) s = pressAnswer(s, 'calm');
+        else if (run.offer) s = acceptOffer(s);
+        else if (cur?.sim.pending) s = decide(s, [...cur.sim.pending.options].sort((a, b) => b.chance - a.chance)[0].key);
+        else if (run.done) s = toSummary(s);
+        else s = seasonSkip(s);
+        break;
+      }
+      case 'summary':
+        s = toMarket(s);
+        break;
+      case 'market': {
+        const ci = s.market!.contracts.findIndex((c) => c.available && c.kind !== 'freak');
+        s = pickContract(s, Math.max(0, ci));
+        s = confirmMarket(s);
+        break;
+      }
+    }
+  }
+  s = clone(s);
+  s.flags.quickAm = 1;
+  // w szybkiej karierze po amatorce zostają tylko kontrakty zawodowe
+  if (s.market) {
+    const pro = s.market.contracts.filter((c) => c.available && c.kind === 'promotion');
+    if (pro.length) {
+      s.market.contracts = pro;
+      s.market.pickedContract = 0;
+    }
+  }
+  log(s, `Amatorka w skrócie: ${recStr(s.amRecord)}, ${s.medals.gold + s.medals.silver + s.medals.bronze} ${pl(s.medals.gold + s.medals.silver + s.medals.bronze, 'medal', 'medale', 'medali')}.`);
+  return s;
+}
+
+/** Szybka kariera: ekran budżetu tylko, gdy jest o czym decydować. */
+export function quickNeedsBudget(s: GameState): boolean {
+  if (!s.quick) return true;
+  if (s.shadyDeal?.status === 'open') return true;
+  if (!canStartSeason(s) || s.money + budgetBalance(s) < 0) return true;
+  // raz na każdym nowym szczeblu: zaplecze, akademia, liczba walk
+  if ((s.flags.quickBudgetTier ?? -1) !== s.tier) return true;
+  return false;
+}
 
 /** Odwieczny rywal idzie za tobą przez karierę: awansuje razem z tobą, a jego rok trafia do podsumowania. */
 export function syncRival(rng: Rng, s: GameState): string | null {

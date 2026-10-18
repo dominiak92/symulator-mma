@@ -408,6 +408,8 @@ export interface GameState {
   slot: number; // 1..3, 0 = kariera dnia
   rngState: number;
   mode: 'normal' | 'daily';
+  /** szybka kariera: start od zawodowstwa, mniejsze walki rozgrywa narożnik */
+  quick?: boolean;
   dailyLabel?: string;
   createdAt: number;
 
