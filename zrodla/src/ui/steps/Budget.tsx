@@ -151,8 +151,26 @@ export default function Budget({ game, setGame }: StepProps) {
             <span className="faint small">opcjonalnie, płatne co roku</span>
           </div>
           <div className="br-list">
-            {BACKROOM.filter((b) => backroomAvailable(g, b.id)).map((b) => {
+            {BACKROOM.map((b) => {
               const on = !!g.backroom?.[b.id];
+              // niedostępne na tym szczeblu: widać, ale zablokowane (nic nie znika bez słowa)
+              if (!backroomAvailable(g, b.id))
+                return (
+                  <div key={b.id} className="br-row locked" aria-disabled="true">
+                    <span className="br-ico">
+                      <Icon name={b.icon} size={16} />
+                    </span>
+                    <span className="br-txt">
+                      <strong>{b.name}</strong>
+                      <span>Dostępne od federacji europejskiej.{on ? ' Wróci, gdy znów tam awansujesz.' : ''}</span>
+                    </span>
+                    <span className="br-side">
+                      <span className="br-cost">
+                        <Icon name="x" size={13} />
+                      </span>
+                    </span>
+                  </div>
+                );
               const cost = backroomCost(g, b.id);
               const free = b.id === 'supps' && hasLabs(g);
               return (
