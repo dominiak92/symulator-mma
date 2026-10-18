@@ -7116,3 +7116,17 @@ p, .offer-note, .frow-ctx, .pst-text { text-wrap: pretty; }
 }
 @media (prefers-reduced-motion: reduce) { .poster .fi-go { animation: none; } }
 .poster .fi-go { bottom: -16px; box-shadow: 0 -18px 22px 4px var(--p-base, #0c0c10), 0 16px 0 0 var(--p-base, #0c0c10); }
+/* oferta: przyciski negocjacji i odmowy jako dwie czytelne opcje */
+.ofr-row .btn { justify-content: flex-start; text-align: left; padding: 10px 12px; min-height: 56px; border-radius: var(--r-md); }
+.ofr-row .btn .ico { flex: none; color: var(--cyan); }
+.ofr-row .ofr-no .ico { color: var(--muted); }
+.ofr-opt { display: grid; gap: 1px; min-width: 0; }
+.ofr-opt b { font-size: 0.92rem; font-weight: 700; white-space: nowrap; }
+.ofr-opt small { font-size: 0.72rem; font-weight: 600; color: var(--faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ofr-opt small.tone-good { color: var(--good); }
+.ofr-opt small.tone-mid { color: var(--gold); }
+.ofr-opt small.tone-bad { color: var(--bad); }
+@media (max-width: 640px) { .ofr-row { grid-template-columns: 1fr 1fr; } .ofr-row .btn { font-size: 0.9rem; } }
+/* kafelki podsumowania: etykiety bez ucinania */
+.tiles .tile small { text-transform: none; letter-spacing: 0; font-size: 0.76rem; white-space: nowrap; }
+@media (max-width: 420px) { .tiles .tile small .ico { display: none; } }
