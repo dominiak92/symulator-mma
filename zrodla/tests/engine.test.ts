@@ -230,7 +230,7 @@ describe('szybka kariera', () => {
   it('startuje od kontraktu zawodowego, kończy się najpóźniej w wieku 35 lat i ma niższe LEGACY niż pełna', () => {
     let quickSum = 0;
     let fullSum = 0;
-    for (let seed = 1; seed <= 12; seed++) {
+    for (let seed = 1; seed <= 30; seed++) {
       for (const quick of [true, false]) {
         const rng = createRng(seed);
         let s = newGame({ slot: 1, mode: 'normal', seed, quick, profile: { ...randomProfile(rng), start: 'osiedle' } });
