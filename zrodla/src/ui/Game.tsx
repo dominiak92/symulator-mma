@@ -1,5 +1,5 @@
 import TextSize from './TextSize';
-import { fmtFans, followersOf } from '../engine/extras';
+import { chinState, fmtFans, followersOf } from '../engine/extras';
 import { shownRecord, useHudHold } from './hudHold';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { GameState, Phase } from '../engine/types';
@@ -321,6 +321,7 @@ export default function Game({
                     Cele dnia i wyzwanie tygodnia
                   </button>
                   <SoundToggle />
+                  <FewerToggle />
                   <TextSize />
                   <button
                     className="btn btn-ghost btn-block btn-ico"
@@ -355,6 +356,26 @@ export default function Game({
         </div>
       )}
     </>
+  );
+}
+
+function FewerToggle() {
+  const [on, setOn] = useState(() => !!loadSettings().fewer);
+  return (
+    <button
+      className="btn btn-ghost btn-block btn-ico"
+      role="switch"
+      aria-checked={on}
+      title="Drobne decyzje (mikrofon po zwykłej walce, zaproszenia, zastępstwa, konferencje przed zwykłymi walkami) rozstrzygają się same"
+      onClick={() => {
+        const st = loadSettings();
+        saveSettings({ ...st, fewer: !on });
+        setOn(!on);
+      }}
+    >
+      <Icon name="ff" />
+      Mniej pytań: {on ? 'włączone' : 'wyłączone'}
+    </button>
   );
 }
 
@@ -436,6 +457,21 @@ function SkillsPanel({ g, plain }: { g: GameState; plain?: boolean }) {
         </b>
         <span>Obserwujący</span>
         <b>{fmtFans(followersOf(g))}</b>
+        {g.proDebut && (
+          <>
+            <span>Szczęka</span>
+            <b className={`chin-${chinState(g).tone}`}>
+              {chinState(g).label}
+              {g.finishes.koLosses > 0 ? ` (${g.finishes.koLosses} KO)` : ''}
+            </b>
+          </>
+        )}
+        {g.fanNick && g.fanNick !== g.profile.nickname && (
+          <>
+            <span>Kibice mówią</span>
+            <b>„{g.fanNick}”</b>
+          </>
+        )}
         <span>Start</span>
         <b>{START_PROFILES[g.profile.start].label}</b>
         <span>Skąd</span>

@@ -1,4 +1,5 @@
 import type { GameState } from '../engine/types';
+import { honours } from '../engine/extras';
 import { TIER_NAMES, WEIGHTS } from '../engine/data';
 import { recStr } from '../engine/game';
 import { lat, money } from '../format';
@@ -205,6 +206,17 @@ export async function drawCard(g: GameState, withLogo = true, theme: CardTheme =
   y += 124;
 
   const footerTop = H - 205;
+  // wyróżnienia: podwójny mistrz, grappling, obserwujący…
+  const hon = honours(g).slice(0, 3);
+  if (hon.length) {
+    y += 52;
+    ctx.fillStyle = C.cyan;
+    ctx.font = body(27, 600);
+    const txt = hon.map((h) => `${h.emoji} ${h.text}`).join('   ');
+    fitText(ctx, txt, (n: number) => body(n, 600), 27, R - L);
+    ctx.fillText(txt, L, y);
+  }
+
   // pasy
   if (g.belts.length) {
     y += 56;

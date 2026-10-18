@@ -151,6 +151,11 @@ export function SettingsScreen({ onBack }: { onBack: () => void }) {
       sfxClick();
     }
   };
+  const toggleFewer = () => {
+    const n = { ...st, fewer: !st.fewer };
+    setSt(n);
+    saveSettings(n);
+  };
   const toggleTips = () => {
     const n = { ...st, tips: !st.tips, tipsSeen: st.tips ? st.tipsSeen : [] };
     setSt(n);
@@ -175,6 +180,13 @@ export function SettingsScreen({ onBack }: { onBack: () => void }) {
           <span className={`tag ${st.sound ? 'good' : ''}`}>{st.sound ? 'włączone' : 'wyłączone'}</span>
         </span>
         <span className="desc">Cicho, tylko w ważnych momentach: gong, nokaut, doping, kasa.</span>
+      </button>
+      <button className="choice" role="switch" aria-checked={!!st.fewer} onClick={toggleFewer} style={{ marginTop: 8 }}>
+        <span className="title">
+          Mniej pytań w trakcie roku
+          <span className={`tag ${st.fewer ? 'good' : ''}`}>{st.fewer ? 'włączone' : 'wyłączone'}</span>
+        </span>
+        <span className="desc">Mikrofon po zwykłych walkach, zaproszenia spoza MMA, zastępstwa, gale za granicą i konferencje przed zwykłymi walkami rozstrzygają się same (bezpiecznie). Walki o pas, z rywalem, ważenie i oferty dalej wybierasz ty.</span>
       </button>
       <button className="choice" role="switch" aria-checked={st.tips} onClick={toggleTips} style={{ marginTop: 8 }}>
         <span className="title">

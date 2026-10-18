@@ -6,6 +6,7 @@ import { Icon } from './Icon';
 import { sfxCash, sfxClick } from './sound';
 import { CONTRACT_ASKS, contractNegoChance, signingAmount, type ContractAsk } from '../engine/game';
 import { ChanceTag } from './Chance';
+import { CoachTip } from './Tutorial';
 
 /** Ile „atramentu” trzeba zostawić, żeby podpis się liczył (w pikselach długości linii). */
 const MIN_INK = 120;
@@ -290,6 +291,7 @@ export default function ContractSheet({
                   </button>
                 ))}
               </div>
+              <CoachTip id="nego">Masz jedną próbę na cały rynek. Wyższa gaża opłaca się przy dłuższym kontrakcie, premia gdy często wygrywasz, a bonus za podpis daje kasę od razu. Każda odmowa grozi gorszą wersją umowy.</CoachTip>
               <small className="cn-risk">Po odmowie federacja może się obrazić i obniżyć gażę o 6% (najczęściej przy żądaniu wyższej gaży, najrzadziej przy premii).</small>
             </>
           ) : (
