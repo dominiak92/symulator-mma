@@ -182,12 +182,12 @@ export function Fighter({
       <g filter={`url(#fo${uid})`}>
         <g transform={tf}>
           {/* spodenki pod tułowiem */}
-          <path d="M282 978 Q512 1010 742 978 L760 1160 L264 1160 Z" fill={sh} stroke={OUT} strokeWidth="9" strokeLinejoin="round" />
+          <path d="M312 982 Q512 1012 712 982 L722 1160 L302 1160 Z" fill={sh} stroke={OUT} strokeWidth="9" strokeLinejoin="round" />
           {draw(BODY, 'body')}
           {/* pas spodenek */}
-          <path d="M286 992 Q512 1030 738 992 L742 1036 Q512 1074 282 1036 Z" fill={shD} stroke={OUT} strokeWidth="9" strokeLinejoin="round" />
-          <path d="M300 1018 Q512 1052 724 1018" stroke="#fff" strokeOpacity=".35" strokeWidth="5" fill="none" />
-          <path d="M300 1046 L292 1160 M724 1046 L732 1160" stroke={c.strap} strokeWidth="16" />
+          <path d="M310 994 Q512 1030 714 994 L718 1036 Q512 1072 306 1036 Z" fill={shD} stroke={OUT} strokeWidth="9" strokeLinejoin="round" />
+          <path d="M322 1018 Q512 1050 702 1018" stroke="#fff" strokeOpacity=".35" strokeWidth="5" fill="none" />
+          <path d="M326 1048 L320 1160 M698 1048 L704 1160" stroke={c.strap} strokeWidth="16" />
 
           {/* brzuch u ciężkich */}
           {l.build === 3 && (
@@ -231,7 +231,7 @@ export function Fighter({
           {/* pas mistrzowski */}
           {belt && (
             <g>
-              <path d="M276 962 Q512 1004 748 962 L752 1044 Q512 1088 272 1044 Z" fill="#17171b" stroke={OUT} strokeWidth="9" strokeLinejoin="round" />
+              <path d="M304 966 Q512 1004 720 966 L724 1044 Q512 1084 300 1044 Z" fill="#17171b" stroke={OUT} strokeWidth="9" strokeLinejoin="round" />
               <path d="M392 948 L632 948 L656 1020 L512 1100 L368 1020 Z" fill="#f2b400" stroke="#6f4f00" strokeWidth="9" strokeLinejoin="round" />
               <path d="M424 972 L600 972 L618 1022 L512 1076 L406 1022 Z" fill="#ffd54a" />
               <path d="M436 982 L512 982 L478 1018 Z" fill="#fff6c9" opacity=".7" />
