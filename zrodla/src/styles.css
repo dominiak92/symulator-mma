@@ -7202,3 +7202,17 @@ p, .offer-note, .frow-ctx, .pst-text { text-wrap: pretty; }
 .cr-pane { animation: crIn 0.3s cubic-bezier(0.2, 0.9, 0.3, 1) both; }
 @keyframes crIn { from { opacity: 0; transform: translateX(16px); } }
 @media (prefers-reduced-motion: reduce) { .cr-pane { animation: none; } }
+.hist-row { display: flex; align-items: flex-start; }
+.hist-row .hist-main { flex: 1; min-width: 0; }
+.hist-row .frow-av, .peer-row .frow-av { flex: none; margin-top: 1px; }
+.peer-row { justify-content: flex-start; }
+/* arkusz Zawodnik: portret na górze */
+.sk-hero { position: relative; display: flex; align-items: flex-end; gap: 12px; margin: 0 0 12px; padding: 10px 12px 0; border-radius: 14px; overflow: hidden; isolation: isolate;
+  background: radial-gradient(70% 90% at 20% 100%, rgba(1, 174, 238, 0.25), transparent 70%), var(--bg-deep); border: 1px solid var(--line); }
+.sk-wm { position: absolute; right: -16px; top: -10px; width: 130px; height: 130px; object-fit: contain; opacity: 0.1; rotate: 10deg; z-index: -1; }
+.sk-hero .fighter-art { display: block; flex: none; }
+.sk-id { display: grid; gap: 3px; padding-bottom: 14px; min-width: 0; }
+.sk-id b { font-family: var(--display); font-size: 1.3rem; line-height: 1.05; text-transform: uppercase; }
+.sk-id b em { font-style: normal; color: var(--gold); }
+.sk-id span { font-size: 0.82rem; color: var(--muted); }
+.sk-id .sk-ovr { color: var(--cyan); font-weight: 800; }
