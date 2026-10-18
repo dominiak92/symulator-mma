@@ -588,7 +588,7 @@ function LiveCard({ g, f, start, animate, setGame }: { g: GameState; f: FightRep
       <div className="vs-hero live-vs">
         <div className={`vh-side me ${done && f.result === 'L' && finish ? 'ko' : ''} ${done && won ? 'win' : ''}`} style={d(stampAt)}>
           <div className="vh-art">
-            <Fighter weight={divisionKey(g)} seed={`${g.profile.firstName}${g.profile.lastName}`} corner="blue" shorts={myShorts} size={80} belt={g.rank === 0 && !f.amateur} hurt={done && f.result === 'L' && finish} />
+            <Fighter weight={divisionKey(g)} age={g.age} seed={`${g.profile.firstName}${g.profile.lastName}`} corner="blue" shorts={myShorts} size={80} belt={g.rank === 0 && !f.amateur} hurt={done && f.result === 'L' && finish} />
           </div>
           <div className="vh-plate">
             <small>{g.profile.firstName}</small>
@@ -613,7 +613,7 @@ function LiveCard({ g, f, start, animate, setGame }: { g: GameState; f: FightRep
         </div>
         <div className={`vh-side opp ${done && won && finish ? 'ko' : ''} ${done && f.result === 'L' ? 'win' : ''}`} style={d(stampAt)}>
           <div className="vh-art">
-            <Fighter weight={f.opp.freak ? undefined : divisionKey(g)} seed={`${f.opp.firstName}${f.opp.lastName}`} corner="red" size={80} mirror hurt={done && won && finish} />
+            <Fighter weight={f.opp.freak ? undefined : divisionKey(g)} age={f.opp.age} seed={`${f.opp.firstName}${f.opp.lastName}`} corner="red" size={80} mirror hurt={done && won && finish} />
           </div>
           <div className="vh-plate">
             <small>
@@ -752,13 +752,13 @@ function FightIntro({ g, f, n, total, onGo, paused }: { g: GameState; f: FightRe
         )}
         <div className="fi-vs">
           <div className="fi-side me">
-            <Fighter weight={divisionKey(g)} seed={`${g.profile.firstName}${g.profile.lastName}`} corner="blue" shorts={clubCrest(g.club).bg} size={96} belt={g.rank === 0 && !f.amateur} />
+            <Fighter weight={divisionKey(g)} age={g.age} seed={`${g.profile.firstName}${g.profile.lastName}`} corner="blue" shorts={clubCrest(g.club).bg} size={96} belt={g.rank === 0 && !f.amateur} />
             <b>{g.profile.lastName}</b>
             <small>{recStr(shownRecord(g, hold))}</small>
           </div>
           <span className="fi-word">VS</span>
           <div className="fi-side opp">
-            <Fighter weight={o.freak ? undefined : divisionKey(g)} seed={`${o.firstName}${o.lastName}`} corner="red" size={96} mirror />
+            <Fighter weight={o.freak ? undefined : divisionKey(g)} age={o.age} seed={`${o.firstName}${o.lastName}`} corner="red" size={96} mirror />
             <b>{o.lastName}</b>
             <small>
               {o.flag} {o.freak ? o.freak : `${recStr(o.record)} · ${STYLE_LABELS[o.style].toLowerCase()}`}
@@ -820,7 +820,7 @@ function VsHero({ g, opp, label, size = 84, belt }: { g: GameState; opp: FightRe
     <div className="vs-hero">
       <div className="vh-side me">
         <div className="vh-art">
-          <Fighter weight={divisionKey(g)} seed={`${g.profile.firstName}${g.profile.lastName}`} corner="blue" shorts={clubCrest(g.club).bg} size={size} belt={belt} />
+          <Fighter weight={divisionKey(g)} age={g.age} seed={`${g.profile.firstName}${g.profile.lastName}`} corner="blue" shorts={clubCrest(g.club).bg} size={size} belt={belt} />
         </div>
         <div className="vh-plate">
           <small>{g.profile.firstName}</small>
@@ -834,7 +834,7 @@ function VsHero({ g, opp, label, size = 84, belt }: { g: GameState; opp: FightRe
       </div>
       <div className="vh-side opp">
         <div className="vh-art">
-          <Fighter weight={opp.freak ? undefined : divisionKey(g)} seed={`${opp.firstName}${opp.lastName}`} corner="red" size={size} mirror />
+          <Fighter weight={opp.freak ? undefined : divisionKey(g)} age={opp.age} seed={`${opp.firstName}${opp.lastName}`} corner="red" size={size} mirror />
         </div>
         <div className="vh-plate">
           <small>
