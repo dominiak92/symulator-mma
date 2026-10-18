@@ -613,7 +613,7 @@ function LiveCard({ g, f, start, animate, setGame }: { g: GameState; f: FightRep
         </div>
         <div className={`vh-side opp ${done && won && finish ? 'ko' : ''} ${done && f.result === 'L' ? 'win' : ''}`} style={d(stampAt)}>
           <div className="vh-art">
-            <Fighter weight={f.opp.freak ? undefined : divisionKey(g)} age={f.opp.age} seed={`${f.opp.firstName}${f.opp.lastName}`} corner="red" size={80} mirror hurt={done && won && finish} />
+            <Fighter weight={f.opp.freak ? undefined : divisionKey(g)} age={f.opp.age} country={f.opp.country} seed={`${f.opp.firstName}${f.opp.lastName}`} corner="red" size={80} mirror hurt={done && won && finish} />
           </div>
           <div className="vh-plate">
             <small>
@@ -758,7 +758,7 @@ function FightIntro({ g, f, n, total, onGo, paused }: { g: GameState; f: FightRe
           </div>
           <span className="fi-word">VS</span>
           <div className="fi-side opp">
-            <Fighter weight={o.freak ? undefined : divisionKey(g)} age={o.age} seed={`${o.firstName}${o.lastName}`} corner="red" size={96} mirror />
+            <Fighter weight={o.freak ? undefined : divisionKey(g)} age={o.age} country={o.country} seed={`${o.firstName}${o.lastName}`} corner="red" size={96} mirror />
             <b>{o.lastName}</b>
             <small>
               {o.flag} {o.freak ? o.freak : `${recStr(o.record)} · ${STYLE_LABELS[o.style].toLowerCase()}`}
@@ -834,7 +834,7 @@ function VsHero({ g, opp, label, size = 84, belt }: { g: GameState; opp: FightRe
       </div>
       <div className="vh-side opp">
         <div className="vh-art">
-          <Fighter weight={opp.freak ? undefined : divisionKey(g)} age={opp.age} seed={`${opp.firstName}${opp.lastName}`} corner="red" size={size} mirror />
+          <Fighter weight={opp.freak ? undefined : divisionKey(g)} age={opp.age} country={opp.country} seed={`${opp.firstName}${opp.lastName}`} corner="red" size={size} mirror />
         </div>
         <div className="vh-plate">
           <small>
