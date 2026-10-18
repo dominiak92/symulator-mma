@@ -23,6 +23,10 @@ with sync_playwright() as p:
     for step in range(600):
         if season >= SEASONS: break
         main = pg.locator('.main').inner_text() if pg.locator('.main').count() else ''
+        if pg.locator('.wo').count():
+            shot(pg, 'wejscie'); pg.locator('.wo').click(force=True); pg.wait_for_timeout(300); continue
+        if pg.locator('.notice-modal .btn-primary').count():
+            shot(pg, 'komunikat'); pg.locator('.notice-modal .btn-primary').click(); pg.wait_for_timeout(300); continue
         if pg.locator('.rv-scene .btn').count():
             shot(pg, 'scena-wyniku'); pg.locator('.rv-scene .btn').first.click(); pg.wait_for_timeout(300); continue
         if pg.locator('.post-modal .btn-primary, .weigh-modal .choice, .post-modal .choice, .invite-modal .btn-primary').count():
@@ -39,9 +43,9 @@ with sync_playwright() as p:
                 pass  # oferta schowana za sceną wyniku: następny krok ją zamknie
             pg.wait_for_timeout(300); continue
         if pg.locator('.poster-modal').count():
-            pg.wait_for_timeout(400); shot(pg, 'plakat'); pg.locator('.fi-go').click(); pg.wait_for_timeout(300); continue
+            pg.wait_for_timeout(400); shot(pg, 'plakat'); pg.locator('.fi-go').click(force=True); pg.wait_for_timeout(300); continue
         if pg.locator('.fight-intro .fi-go').count():
-            pg.locator('.fi-go').click(); pg.wait_for_timeout(300); continue
+            pg.locator('.fi-go').click(force=True); pg.wait_for_timeout(300); continue
         if pg.locator('.decision .choice').count():
             shot(pg, 'decyzja'); pg.locator('.decision .choice').first.click(); pg.wait_for_timeout(400); continue
         if pg.locator('.train-opt').count():
@@ -66,7 +70,10 @@ with sync_playwright() as p:
         if pg.locator('.step .choice').count() and 'Kontrakty ·' not in main and not pg.locator('.offer').count():
             shot(pg, 'wydarzenie'); pg.locator('.step .choice').first.click(); pg.wait_for_timeout(500); continue
         if pg.get_by_role('button', name='Podsumowanie roku').count():
-            pg.wait_for_timeout(1500); shot(pg, 'sezon-koniec'); pg.get_by_role('button', name='Podsumowanie roku').click(); pg.wait_for_timeout(600); continue
+            pg.wait_for_timeout(1500); shot(pg, 'sezon-koniec')
+            try: pg.get_by_role('button', name='Podsumowanie roku').click(timeout=4000)
+            except Exception: pass
+            pg.wait_for_timeout(600); continue
         if pg.get_by_role('button', name='Dalej: kontrakty').count():
             shot(pg, 'podsumowanie'); pg.get_by_role('button', name='Dalej: kontrakty').click(); pg.wait_for_timeout(600); continue
         if pg.locator('.mgr-section:not(.coach-section)').count() or pg.get_by_role('button', name='Podpisuję').count():
