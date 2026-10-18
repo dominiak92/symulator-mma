@@ -59,7 +59,7 @@ export default function Market({ game, setGame }: StepProps) {
           </div>
         )}
         <p className="muted small" style={{ marginTop: 4 }}>
-          Masz {lat(g.age)}. Wybierz galę, niżej klub.
+          {g.quick && g.tier === 0 ? 'Wybierz galę, niżej klub.' : `Masz ${lat(g.age)}. Wybierz galę, niżej klub.`}
         </p>
 
         <CoachTip id="market">

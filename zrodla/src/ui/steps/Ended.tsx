@@ -210,7 +210,7 @@ export default function Ended({ game, onNewCareer, onMenu }: { game: GameState; 
       </section>
 
       {(() => {
-        const got = ACHIEVEMENTS.filter((a) => a.check(g));
+        const got = ACHIEVEMENTS.filter((a) => a.check(g) && !(g.quick && (a.id === 'medal' || a.id === 'belt0')));
         if (!got.length) return null;
         return (
           <section className="step">
