@@ -63,11 +63,11 @@ with sync_playwright() as p:
             pg.wait_for_timeout(1500); shot(pg, 'sezon-koniec'); pg.get_by_role('button', name='Podsumowanie roku').click(); pg.wait_for_timeout(600); continue
         if pg.get_by_role('button', name='Dalej: kontrakty').count():
             shot(pg, 'podsumowanie'); pg.get_by_role('button', name='Dalej: kontrakty').click(); pg.wait_for_timeout(600); continue
-        if pg.locator('.mgr-section').count() or pg.get_by_role('button', name='Podpisuję').count():
+        if pg.locator('.mgr-section:not(.coach-section)').count() or pg.get_by_role('button', name='Podpisuję').count():
             shot(pg, 'rynek')
-            if pg.locator('.mgr-section').count():
-                pg.locator('.mgr-section').scroll_into_view_if_needed(); pg.wait_for_timeout(300); shot(pg, 'rynek-menedzer')
-                opts = pg.locator('.mgr-section .club-offer')
+            if pg.locator('.mgr-section:not(.coach-section)').count():
+                pg.locator('.mgr-section:not(.coach-section)').scroll_into_view_if_needed(); pg.wait_for_timeout(300); shot(pg, 'rynek-menedzer')
+                opts = pg.locator('.mgr-section:not(.coach-section) .club-offer')
                 if opts.count() > 1: opts.nth(1).click(); pg.wait_for_timeout(200)
             pg.locator('.offer').first.click()
             pg.get_by_role('button', name='Podpisuję').click(); pg.wait_for_timeout(600); (pg.locator(".contract-actions .btn-primary").click(), pg.wait_for_timeout(1600)) if pg.locator('.contract-veil').count() else None; season += 1; continue

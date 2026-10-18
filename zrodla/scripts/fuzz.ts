@@ -27,6 +27,8 @@ function checkState(s: GameState, where: string) {
   if (s.media < 0 || s.media > 100 || s.rep < 0 || s.rep > 100) note(`${where}: media/rep poza zakresem ${s.media}/${s.rep}`);
   if (s.wear < 0 || s.wear > 100) note(`${where}: zużycie ${s.wear}`);
   if (s.followers !== undefined && (!Number.isFinite(s.followers) || s.followers < 0)) note(`${where}: obserwujący ${s.followers}`);
+  if ((s.rosterArchive?.length ?? 0) > 6) note(`${where}: za duże archiwum składów`);
+  for (const n of s.run?.news ?? []) checkText('wiadomość', n.text);
   if (s.run && s.run.planned > 6) note(`${where}: za dużo walk w roku (${s.run.planned})`);
   if (s.run && G.isExclusiveContract(s) && s.run.fights.some((f) => f.abroad)) note(`${where}: gala za granicą mimo wyłączności`);
   if ((s.flags.interim ?? 0) > 0 && s.rank === 0) note(`${where}: pas tymczasowy u pełnego mistrza`);
@@ -35,6 +37,8 @@ function checkState(s: GameState, where: string) {
     if (new Set(ranks).size !== ranks.length) note(`${where}: zdublowane miejsca w rankingu składu`);
     const champs = ranks.filter((r) => r === 0).length;
     if (s.rank === 0 && champs > 0) note(`${where}: dwóch mistrzów (gracz i ktoś ze składu)`);
+    const nm = s.nemesis;
+    if (nm && nm.fed === s.fed && nm.tier === s.tier && (s.roster.div ?? nm.div) === nm.div && !s.roster.list.some((f) => f.id === nm.id) && where !== 'season') note(`${where}: zadra spoza składu`);
     if (s.rank !== 0 && champs !== 1 && s.contract.kind !== 'freak') { note(`${where}: skład bez mistrza (${champs})`); if (process.env.DBG) console.log(where, s.rank, s.tier, s.fed, s.contract.kind, s.phase, JSON.stringify(ranks)); }
   }
   if (s.run && [s.run.offer, s.run.press, s.run.weigh, s.run.post, s.run.invite].filter(Boolean).length > 1) note(`${where}: dwie decyzje naraz`);

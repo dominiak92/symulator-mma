@@ -54,6 +54,7 @@ import { STAT_KEYS } from '../src/engine/data';
 
 type Policy = {
   name: string;
+  coach?: 'boks' | 'parter' | 'naroznik' | 'kontakty';
   train?: (s: GameState) => StatKey;
   club?: 'cheap' | 'best' | 'smart';
   pitch?: boolean;
@@ -228,6 +229,7 @@ function play(seed: number, p: Policy) {
         s = toMarket(s);
         break;
       case 'market': {
+        if (p.coach) s = G.setCoach(s, p.coach);
         const m = s.market!;
         let ci = -1;
         if (p.contract === 'freak') ci = m.contracts.findIndex((c) => c.available && c.kind === 'freak');
@@ -294,6 +296,10 @@ const POLICIES_ALL: Policy[] = [
   { name: 'SZYBKA: rozsądnie', quick: true } as Policy,
   { name: 'SZYBKA: przeklikanie', quick: true, fightPick: 'random', events: 'first', contract: 'stay' } as Policy,
   { name: 'SZYBKA: losowo w walce', quick: true, fightPick: 'random' } as Policy,
+  { name: 'trener: boks', coach: 'boks' },
+  { name: 'trener: parter', coach: 'parter' },
+  { name: 'trener: narożnik', coach: 'naroznik' },
+  { name: 'trener: kontakty', coach: 'kontakty' },
   { name: 'tylko zapasy', train: () => 'wrest' },
   { name: 'tylko parter', train: () => 'bjj' },
   { name: 'tylko kondycja', train: () => 'cardio' },
