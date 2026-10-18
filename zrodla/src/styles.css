@@ -7324,3 +7324,26 @@ p, .offer-note, .frow-ctx, .pst-text { text-wrap: pretty; }
 .wo-f .fighter-art { filter: drop-shadow(0 18px 26px rgba(0, 0, 0, 0.8)); }
 .btn-decline { justify-content: center; text-align: left; min-height: 54px; }
 .btn-decline .ofr-opt b { font-size: 0.95rem; }
+
+/* komunikat o kontuzji: karta medyczna z wagą urazu i osią konsekwencji */
+.inj-card { --inj: var(--red, #e5484d); margin: 10px 0 4px; padding: 14px; border-radius: 14px; background: color-mix(in oklab, var(--inj) 10%, transparent); border: 1px solid color-mix(in oklab, var(--inj) 40%, transparent); display: grid; gap: 12px; }
+.inj-card.lv1 { --inj: var(--gold, #f5b83d); }
+.inj-top { display: flex; align-items: center; gap: 12px; }
+.inj-ico { width: 48px; height: 48px; flex: none; display: grid; place-items: center; border-radius: 50%; color: #fff; background: var(--inj); box-shadow: 0 0 0 0 color-mix(in oklab, var(--inj) 60%, transparent); animation: injPulse 1.6s ease-out 2; }
+@keyframes injPulse { to { box-shadow: 0 0 0 14px transparent; } }
+.inj-sev { display: grid; gap: 6px; }
+.inj-sev b { font-family: var(--display); font-size: 1.15rem; letter-spacing: 0.02em; text-transform: uppercase; color: var(--inj); }
+.inj-meter { display: flex; gap: 4px; }
+.inj-meter i { width: 26px; height: 6px; border-radius: 3px; background: color-mix(in oklab, currentColor 18%, transparent); }
+.inj-meter i.on { background: var(--inj); }
+.inj-rows { margin: 0; display: grid; gap: 0; }
+.inj-row { display: grid; grid-template-columns: minmax(5.5em, auto) 1fr; gap: 10px; padding: 8px 0 8px 14px; position: relative; border-top: 1px solid color-mix(in oklab, currentColor 10%, transparent); animation: rowIn 0.35s calc(0.3s + var(--i, 0) * 0.3s) ease-out both; }
+.inj-row:first-child { border-top: 0; }
+.inj-row::before { content: ""; position: absolute; left: 0; top: calc(8px + 0.55em); width: 7px; height: 7px; border-radius: 50%; background: var(--good); }
+.inj-row.t-bad::before { background: var(--red, #e5484d); }
+.inj-row.t-warn::before { background: var(--gold, #f5b83d); }
+.inj-row dt { font-weight: 700; font-size: 0.85rem; opacity: 0.8; }
+.inj-row dd { margin: 0; font-size: 0.92rem; min-width: 0; }
+.inj-row.t-bad dd { color: var(--red, #e5484d); font-weight: 600; }
+.post-result.inj-text { color: inherit; }
+@media (prefers-reduced-motion: reduce) { .inj-ico, .inj-row { animation: none; } }
