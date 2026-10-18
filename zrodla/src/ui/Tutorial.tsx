@@ -1,8 +1,8 @@
 /** Samouczek dla nowego gracza (slajdy) i podpowiedzi trenera w trakcie gry. */
 import { useEffect, useState, type ReactNode } from 'react';
 import { loadSettings, saveSettings } from '../storage';
-import { Belt, Fighter } from './Art';
-import { Icon, STAT_ICON } from './Icon';
+import { StatArt, Belt, Fighter } from './Art';
+import { Icon } from './Icon';
 import { STAT_KEYS, STAT_LABELS } from '../engine/data';
 
 interface Slide {
@@ -30,7 +30,7 @@ const SLIDES: Slide[] = [
       <div className="tut-stats">
         {STAT_KEYS.map((k) => (
           <span key={k}>
-            <Icon name={STAT_ICON[k]} size={26} />
+            <StatArt stat={k} size={44} />
             <small>{STAT_LABELS[k]}</small>
           </span>
         ))}

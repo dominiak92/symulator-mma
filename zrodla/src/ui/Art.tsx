@@ -1,3 +1,15 @@
+import beltPolska from '../assets/belts/polska.webp';
+import beltEuropa from '../assets/belts/europa.webp';
+import beltInterim from '../assets/belts/interim.webp';
+import medalGold from '../assets/medals/gold.webp';
+import medalSilver from '../assets/medals/silver.webp';
+import medalBronze from '../assets/medals/bronze.webp';
+import statStand from '../assets/stats/stand.webp';
+import statWrest from '../assets/stats/wrest.webp';
+import statBjj from '../assets/stats/bjj.webp';
+import statCardio from '../assets/stats/cardio.webp';
+import statChin from '../assets/stats/chin.webp';
+import statIq from '../assets/stats/iq.webp';
 import beltAmator from '../assets/belts/amator.webp';
 import beltRegional from '../assets/belts/regional.webp';
 import beltWorld from '../assets/belts/world.webp';
@@ -291,10 +303,10 @@ export function Fighter({
 }
 
 /** Pas mistrzowski. */
-const BELT_IMG: Record<number, string> = { 0: beltAmator, 1: beltRegional, 4: beltWorld };
+const BELT_IMG: Record<number, string> = { 0: beltAmator, 1: beltRegional, 2: beltPolska, 3: beltEuropa, 4: beltWorld };
 
-export function Belt({ size = 120, className, tier }: { size?: number; className?: string; tier?: number }) {
-  const img = tier !== undefined ? BELT_IMG[tier] : undefined;
+export function Belt({ size = 120, className, tier, interim }: { size?: number; className?: string; tier?: number; interim?: boolean }) {
+  const img = interim ? beltInterim : tier !== undefined ? BELT_IMG[tier] : undefined;
   if (img) return <img className={`belt-art belt-img ${className ?? ''}`} src={img} alt="" aria-hidden="true" style={{ width: size * 1.15, height: 'auto' }} />;
   return (
     <svg className={`belt-art ${className ?? ''}`} width={size} height={size * 0.5} viewBox="0 0 120 60" aria-hidden="true">
@@ -315,7 +327,10 @@ const MEDAL: Record<'gold' | 'silver' | 'bronze', [string, string, string]> = {
   bronze: ['#f0a36a', '#c9773d', '#7f4519'],
 };
 
+const MEDAL_IMG = { gold: medalGold, silver: medalSilver, bronze: medalBronze };
+
 export function Medal({ kind, size = 64, className }: { kind: 'gold' | 'silver' | 'bronze'; size?: number; className?: string }) {
+  if (MEDAL_IMG[kind]) return <img className={`medal-art medal-img ${className ?? ''}`} src={MEDAL_IMG[kind]} alt="" aria-hidden="true" style={{ height: size * 1.25, width: 'auto' }} />;
   const [hi, mid, lo] = MEDAL[kind];
   const n = kind === 'gold' ? '1' : kind === 'silver' ? '2' : '3';
   return (
@@ -427,4 +442,11 @@ export function FighterGallery() {
       ))}
     </div>
   );
+}
+
+const STAT_ART: Record<string, string> = { stand: statStand, wrest: statWrest, bjj: statBjj, cardio: statCardio, chin: statChin, iq: statIq };
+
+/** Ilustracja umiejętności (kafelek), do większych miejsc: obóz, samouczek. */
+export function StatArt({ stat, size = 40 }: { stat: string; size?: number }) {
+  return <img className="stat-art" src={STAT_ART[stat]} alt="" aria-hidden="true" width={size} height={size} style={{ width: size, height: size }} />;
 }
