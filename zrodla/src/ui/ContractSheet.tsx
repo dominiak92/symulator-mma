@@ -100,10 +100,10 @@ export default function ContractSheet({
   }, []);
 
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onCancel();
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && !asking && !signed && onCancel();
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [onCancel]);
+  }, [onCancel, asking, signed]);
 
   const pos = (e: React.PointerEvent<HTMLCanvasElement>) => {
     const r = e.currentTarget.getBoundingClientRect();
@@ -301,7 +301,7 @@ export default function ContractSheet({
         </div>
       )}
       <div className="contract-actions">
-        <button className="btn btn-ghost btn-small" onClick={ink > 0 ? clear : onCancel} disabled={signed}>
+        <button className="btn btn-ghost btn-small" onClick={ink > 0 ? clear : onCancel} disabled={signed || !!asking}>
           {ink > 0 ? 'Wyczyść podpis' : 'Jeszcze się zastanowię'}
         </button>
         <button
@@ -315,7 +315,7 @@ export default function ContractSheet({
             }
             sign();
           }}
-          disabled={signed}
+          disabled={signed || !!asking}
         >
           <Icon name="pen" />
           {ink < MIN_INK ? 'Najpierw podpis' : 'Zatwierdzam'}
