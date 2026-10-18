@@ -131,7 +131,7 @@ export interface MuseumEntry {
   peakTier: number;
   earned: number;
   age: number;
-  mode: 'normal' | 'daily';
+  mode: 'normal' | 'daily' | 'quick';
   date: number;
 }
 

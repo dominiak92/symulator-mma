@@ -6383,3 +6383,38 @@ details.intro-notes[open] summary::before { content: '▸'; transform: rotate(90
 .live .live-ctx > span:first-child { flex: 1 1 160px; }
 .live .live-ctx > .row { flex-wrap: wrap; justify-content: flex-end; flex: 0 1 auto; }
 .live .live-ctx .tag { white-space: nowrap; }
+
+/* ---------- Scouting z nagrań (plan na walkę) ---------- */
+.scout { display: grid; gap: 6px; margin: 8px 0 6px; padding: 10px; border-radius: var(--r-lg); background: var(--panel-2); border: 1px solid var(--line); }
+.scout-head { display: grid; grid-template-columns: 1fr auto 1fr; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--faint); }
+.scout-head .me { color: var(--cyan); font-weight: 700; }
+.scout-head .op { color: var(--red); font-weight: 700; text-align: right; }
+.scout-row { display: grid; grid-template-columns: 26px 1fr minmax(86px, auto) 1fr 26px; align-items: center; gap: 6px; }
+.scout-row .sv { font-weight: 800; font-variant-numeric: tabular-nums; font-size: 0.95rem; }
+.scout-row .sv.op { text-align: right; }
+.sbar { height: 8px; border-radius: 8px; background: color-mix(in srgb, var(--muted) 18%, transparent); overflow: hidden; display: flex; }
+.sbar.me { justify-content: flex-end; }
+.sbar i { display: block; height: 100%; border-radius: inherit; }
+.sbar.me i { background: var(--cyan); }
+.sbar.op i { background: var(--red); }
+.scout-row .sl { display: flex; flex-direction: column; align-items: center; font-size: 0.78rem; font-weight: 700; line-height: 1.15; text-align: center; }
+.scout-row .sl svg { display: none; }
+.scout-row .sl b { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.05em; padding: 1px 6px; border-radius: 6px; margin-top: 2px; }
+.scout-row.adv .sl b { color: var(--good); background: var(--good-soft); }
+.scout-row.dis .sl b { color: var(--bad); background: var(--bad-soft); }
+.scout-row.even .sl b { color: var(--muted); background: color-mix(in srgb, var(--muted) 15%, transparent); }
+.scout-row.adv .sv.me, .scout-row.dis .sv.op { color: var(--text); }
+.scout-row.dis .sv.me, .scout-row.adv .sv.op { color: var(--faint); }
+.decision-text.small { font-size: 0.85rem; color: var(--muted); }
+
+/* ---------- Rekord LEGACY na stronie głównej ---------- */
+.legacy-best { display: flex; align-items: center; gap: 10px 18px; flex-wrap: wrap; margin: 12px 0; padding: 10px 14px; border-radius: var(--r-lg); background: var(--gold-soft); border: 1px solid color-mix(in srgb, var(--gold) 40%, transparent); }
+.legacy-best .lb-title { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; color: var(--gold); margin-right: auto; }
+.legacy-best .lb-item { display: flex; flex-direction: column; align-items: flex-end; }
+.legacy-best .lb-item small { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+.legacy-best .lb-item b { font-family: var(--display); font-size: 1.35rem; color: var(--text); line-height: 1.1; }
+.quick-am { display: flex; gap: 8px; align-items: flex-start; margin: 10px 0 4px; padding: 10px 12px; border-radius: var(--r-lg); background: var(--cyan-soft); border: 1px solid color-mix(in srgb, var(--cyan) 40%, transparent); font-size: 0.9rem; line-height: 1.4; }
+.quick-am svg { flex: none; margin-top: 2px; color: var(--cyan); }
+/* długie werdykty łamią się między słowami, nie w środku */
+.verdict-big { overflow-wrap: normal; word-break: normal; hyphens: none; font-size: clamp(1.6rem, 7.6vw, 2.6rem); line-height: 1.02; }
+.sum-head { min-width: 0; }

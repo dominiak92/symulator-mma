@@ -74,7 +74,7 @@ function recordMeta(s: GameState): Toast[] {
       peakTier: s.peakTier,
       earned: s.totalEarned,
       age: s.age,
-      mode: s.mode,
+      mode: s.quick ? 'quick' : s.mode,
       date: Date.now(),
     });
   }
