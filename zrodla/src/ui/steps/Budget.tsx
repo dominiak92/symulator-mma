@@ -464,7 +464,7 @@ function LifePicks({ g, setGame }: { g: StepProps['game']; setGame: StepProps['s
           {SOCIAL_OPTIONS.map((o) => (
             <button key={o.id} role="radio" aria-checked={sm === o.id} className={sm === o.id ? 'on' : ''} onClick={() => setGame(setSocial(g, o.id))}>
               <b>{o.id === 'pro' ? 'Manager' : o.label}</b>
-              <small className={o.id === 'self' ? 'bad' : ''}>{o.id === 'off' ? 'bez zysku' : o.id === 'self' ? 'forma −1' : `−${money(SMM_COST[g.tier] ?? 9000)}`}</small>
+              <small className={o.id === 'off' ? 'good' : ''}>{o.id === 'off' ? 'forma +1' : o.id === 'self' ? 'za darmo' : `−${money(SMM_COST[g.tier] ?? 9000)}`}</small>
             </button>
           ))}
         </div>

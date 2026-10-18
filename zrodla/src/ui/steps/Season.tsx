@@ -1271,11 +1271,11 @@ function OfferCard({ g, o, n, total, setGame }: { g: GameState; o: FightOffer; n
           <div className="tuneup-fx">
             <span className="good">
               <Icon name="check" size={13} />
-              prawie półtorej stawki, rywal wyżej w rankingu, wdzięczność organizatora
+              ponad półtorej stawki i rywal wyżej w rankingu, a porażka na zastępstwie prawie nie boli
             </span>
             <span className="bad">
               <Icon name="x" size={13} />
-              zero obozu: forma −6{weightMissChance(g) > 0 ? ', a waga dużo trudniejsza' : ''}
+              zero obozu: forma −5{weightMissChance(g) > 0 ? ', a waga dużo trudniejsza' : ''}
             </span>
           </div>
         )}
