@@ -23,7 +23,7 @@ import { Medal } from './Art';
 import { Tutorial } from './Tutorial';
 import { sfxClick, unlockAudio } from './sound';
 import { loadGoals, loadSettings, saveSettings } from '../storage';
-import { Emblem, SponsorLogo, clubCrest, crestFor } from './Emblem';
+import { Emblem, FedEmblem, SponsorLogo, clubCrest } from './Emblem';
 
 const PHASES: Phase[] = ['training', 'budget', 'event', 'season', 'summary', 'market'];
 const PHASE_LABEL: Record<Phase, string> = {
@@ -587,7 +587,7 @@ export function CareerPanel({ g, onRanking }: { g: GameState; onRanking?: () => 
     <section className="panel">
       <div className="panel-title">
         <span className="fed-row">
-          <Emblem spec={crestFor(g.contract.kind === 'freak' ? g.contract.fed : g.fed)} size={28} title={g.fed} />
+          <FedEmblem name={g.contract.kind === 'freak' ? g.contract.fed : g.fed} size={30} />
           <span>
             {g.contract.kind === 'freak' ? 'Freak fighty' : TIER_NAMES[g.tier]}
             <small className="fed-name">{g.contract.kind === 'freak' ? g.contract.fed : g.fed}</small>

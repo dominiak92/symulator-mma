@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { fedLogo } from './logos';
 import { createPortal } from 'react-dom';
 import type { Club, Contract, GameState } from '../engine/types';
 import { money, plural } from '../format';
@@ -169,6 +170,7 @@ export default function ContractSheet({
     <div className="contract-veil" role="dialog" aria-modal="true" aria-label={`Kontrakt: ${c.fed}`}>
       <div ref={paperRef} className={`contract-paper ${signed ? 'signed' : ''}`}>
         <div className="cp-head">
+          {fedLogo(c.fed) && <img className="cp-logo" src={fedLogo(c.fed)!} alt="" aria-hidden="true" />}
           <span className="cp-kicker">Umowa o walki zawodowe nr {g.season}/{g.year}</span>
           <h2>Kontrakt zawodniczy</h2>
           <p className="cp-parties">

@@ -1,4 +1,5 @@
 import type { GameState, HistoryEntry, Peer } from '../engine/types';
+import { fedLogo } from './logos';
 import { STAGE_LABELS, TIER_NAMES } from '../engine/data';
 import { METHOD_SHORT, rankingTable, recStr } from '../engine/game';
 import { ovr } from '../engine/fighter';
@@ -195,8 +196,9 @@ export function RankingSheet({ g, onClose }: { g: GameState; onClose: () => void
   return (
     <>
       <SheetHead title="Ranking" onClose={onClose} />
-      <p className="muted" style={{ margin: '0 0 12px' }}>
-        {g.fed}. Kto wygrywa, idzie w górę. Pierwsze miejsce oznacza walkę o pas.
+      <p className="muted rank-fed" style={{ margin: '0 0 12px' }}>
+        {fedLogo(g.fed) && <img className="fed-logo" src={fedLogo(g.fed)!} alt="" aria-hidden="true" width={40} height={40} />}
+        <span>{g.fed}. Kto wygrywa, idzie w górę. Pierwsze miejsce oznacza walkę o pas.</span>
       </p>
       <div className="rank-list">
         {rows.map((r) => (
@@ -206,6 +208,7 @@ export function RankingSheet({ g, onClose }: { g: GameState; onClose: () => void
               {r.flag} {r.name}
               {r.rank === 0 && <small>mistrz</small>}
               {r.peer && <small>z twojego rocznika</small>}
+              {r.met && !r.me && <small className="rank-met">wasz bilans {r.met}</small>}
             </span>
             <span className="num">{r.record}</span>
           </div>

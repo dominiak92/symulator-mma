@@ -3,6 +3,7 @@ import type { CrestSpec, CrestShape } from '../engine/data';
 import { CLUB_TEMPLATES } from '../engine/data';
 import type { Club } from '../engine/types';
 import { GG } from './brand';
+import { fedLogo } from './logos';
 
 // Ikony w polu 24×24. Wypełnione kształty albo linie (stroke).
 const ICONS: Record<string, { d: string; stroke?: boolean }[]> = {
@@ -216,4 +217,11 @@ export function EmblemGallery() {
       ))}
     </div>
   );
+}
+
+/** Logo federacji: prawdziwa grafika, gdy jest, a w innym razie wygenerowany herb. */
+export function FedEmblem({ name, size = 32 }: { name: string; size?: number }) {
+  const src = fedLogo(name);
+  if (src) return <img className="fed-logo" src={src} alt={name} title={name} width={size} height={size} style={{ width: size, height: size }} />;
+  return <Emblem spec={crestFor(name)} size={size} title={name} />;
 }
