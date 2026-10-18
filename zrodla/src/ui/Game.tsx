@@ -1,5 +1,6 @@
 import TextSize from './TextSize';
 import { chinState, fmtFans, followersOf } from '../engine/extras';
+import { coachOf, coachOpen } from '../engine/coaches';
 import { shownRecord, useHudHold } from './hudHold';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { GameState, Phase } from '../engine/types';
@@ -464,6 +465,18 @@ function SkillsPanel({ g, plain }: { g: GameState; plain?: boolean }) {
               {chinState(g).label}
               {g.finishes.koLosses > 0 ? ` (${g.finishes.koLosses} KO)` : ''}
             </b>
+          </>
+        )}
+        {coachOpen(g) && (
+          <>
+            <span>Trener</span>
+            <b>{coachOf(g).name.replace(/ „.*”/, '')} · {coachOf(g).role}</b>
+          </>
+        )}
+        {g.nemesis && (
+          <>
+            <span>Zadra</span>
+            <b className="chin-bad">{g.nemesis.name}</b>
           </>
         )}
         {g.fanNick && g.fanNick !== g.profile.nickname && (

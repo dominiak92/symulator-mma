@@ -11,7 +11,7 @@ function level(tier: number, rank: number | null) {
   return tier * 16 + inTier;
 }
 
-type View = 'road' | 'ovr' | 'fights';
+type View = 'road' | 'ovr' | 'fights' | 'money';
 
 interface KeyMoment {
   season: number;
@@ -155,6 +155,40 @@ export default function CareerChart({ g, full = false }: { g: GameState; full?: 
         <AgeAxis ss={ss} sx={sx} />
       </svg>
     );
+  } else if (view === 'money') {
+    // zarobki z walk rok po roku
+    const earned = new Map<number, number>();
+    for (const h of g.history) earned.set(h.season, (earned.get(h.season) ?? 0) + (h.earned ?? 0));
+    const vals = ss.map((s) => earned.get(s.season) ?? 0);
+    const maxV = Math.max(1000, ...vals);
+    const sy = (y: number) => padT + (1 - y / maxV) * (H - padT - padB);
+    const bw = Math.max(3, Math.min(16, ((W - padL - padR) / ss.length) * 0.6));
+    const yOf = (season: number) => sy(earned.get(season) ?? 0) - 10;
+    const short = (v: number) => (v >= 1e6 ? `${(v / 1e6).toFixed(v >= 1e7 ? 0 : 1).replace('.', ',')} mln` : v >= 1000 ? `${Math.round(v / 1000)} tys.` : String(v));
+    const ticks = [0, maxV / 2, maxV];
+    chart = (
+      <svg viewBox={`0 0 ${W} ${H}`} width="100%" role="img" aria-label="Zarobki z walk w kolejnych latach" style={{ display: 'block' }}>
+        {ticks.map((v, i) => (
+          <g key={i}>
+            <line x1={padL} x2={W - padR} y1={sy(v)} y2={sy(v)} stroke="var(--line)" strokeWidth="1" />
+            <text x={padL - 6} y={sy(v) + 4} textAnchor="end" fontSize="10" fill="var(--muted)">
+              {short(Math.round(v))}
+            </text>
+          </g>
+        ))}
+        {ss.map((s) => {
+          const v = earned.get(s.season) ?? 0;
+          return (
+            <g key={s.season}>
+              {v > 0 && <rect x={sx(s.season) - bw / 2} y={sy(v)} width={bw} height={sy(0) - sy(v)} rx="2" fill={s.champion ? 'var(--gold)' : 'var(--good)'} />}
+              <title>{`Rok ${s.season}: ${v.toLocaleString('pl-PL')} zł z walk`}</title>
+            </g>
+          );
+        })}
+        <Markers moments={moments} sx={sx} yOf={yOf} />
+        <AgeAxis ss={ss} sx={sx} />
+      </svg>
+    );
   } else {
     const maxN = Math.max(2, ...ss.map((s) => Math.max(s.w, s.l + s.d)));
     const mid = padT + (H - padT - padB) / 2;
@@ -193,8 +227,9 @@ export default function CareerChart({ g, full = false }: { g: GameState; full?: 
         {(
           [
             ['road', 'Droga'],
-            ['ovr', 'Forma (OVR)'],
+            ['ovr', 'Forma'],
             ['fights', 'Bilans'],
+            ['money', 'Zarobki'],
           ] as [View, string][]
         ).map(([k, label]) => (
           <button key={k} role="tab" aria-selected={view === k} className={view === k ? 'on' : ''} onClick={() => setView(k)}>

@@ -1,11 +1,10 @@
 import TextSize from './TextSize';
 import { sfxClick, unlockAudio } from './sound';
 import { useState } from 'react';
-import { ACHIEVEMENTS } from '../engine/achievements';
+import { ACHIEVEMENTS, achIcon } from '../engine/achievements';
 import { TIER_NAMES } from '../engine/data';
 import { loadAchievements, loadMuseum, loadSettings, saveSettings } from '../storage';
 import { money, plural } from '../format';
-import { GG } from './brand';
 import { Icon } from './Icon';
 
 function Shell({ title, sub, onBack, children }: { title: string; sub?: string; onBack: () => void; children: React.ReactNode }) {
@@ -40,9 +39,9 @@ export function AchievementsScreen({ onBack }: { onBack: () => void }) {
           const on = !!have[a.id];
           const hidden = a.secret && !on;
           return (
-            <div key={a.id} className={`ach ${on ? 'on' : ''}`}>
+            <div key={a.id} className={`ach ${on ? 'on' : ''} tone-${achIcon(a.id).tone}`}>
               <span className="ach-icon" aria-hidden="true">
-                <img src={GG.icon} alt="" />
+                <Icon name={hidden ? 'help' : achIcon(a.id).icon} size={18} />
               </span>
               <div>
                 <strong>{hidden ? 'Ukryte osiągnięcie' : a.title}</strong>
