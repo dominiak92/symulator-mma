@@ -40,7 +40,9 @@ function play(seed: number, start: StartProfile = 'osiedle', pickFirst = true): 
         break;
       case 'season': {
         const cur = s.run!.fights[s.run!.fights.length - 1];
-        if (s.run!.press) s = G2.pressAnswer(s, (['calm', 'provoke', 'insult'] as const)[guard % 3]);
+        if (s.run!.weigh) s = G2.weighIn(s, guard % 2 ? 'cut' : 'pay');
+        else if (s.run!.post) s = G2.postAnswer(s, s.run!.post.options[guard % s.run!.post.options.length].key);
+        else if (s.run!.press) s = G2.pressAnswer(s, (['calm', 'provoke', 'insult'] as const)[guard % 3]);
         else if (s.run!.offer) s = G2.acceptOffer(s, (['std', 'rival', 'hard'] as const)[guard % 3]);
         else if (cur?.sim.pending) s = decide(s, cur.sim.pending.options[guard % cur.sim.pending.options.length].key);
         else if (s.run!.done) s = toSummary(s);
@@ -202,7 +204,9 @@ describe('decyzje w walce', () => {
         else if (s.phase === 'season') {
           const run = s.run!;
           const cur = run.fights[run.fights.length - 1];
-          if (run.press) s = G2.pressAnswer(s, 'calm');
+          if (run.weigh) s = G2.weighIn(s, 'pay');
+          else if (run.post) s = G2.postAnswer(s, run.post.options[0].key);
+          else if (run.press) s = G2.pressAnswer(s, 'calm');
           else if (run.offer) s = G2.acceptOffer(s);
           else if (cur?.sim.pending) s = decide(s, cur.sim.pending.options[guard % cur.sim.pending.options.length].key);
           else if (run.done) {
@@ -247,7 +251,9 @@ describe('szybka kariera', () => {
           else if (s.phase === 'season') {
             const run = s.run!;
             const cur = run.fights[run.fights.length - 1];
-            if (run.press) s = G2.pressAnswer(s, 'calm');
+            if (run.weigh) s = G2.weighIn(s, 'pay');
+            else if (run.post) s = G2.postAnswer(s, run.post.options[0].key);
+            else if (run.press) s = G2.pressAnswer(s, 'calm');
             else if (run.offer) s = G2.acceptOffer(s);
             else if (cur?.sim.pending) s = decide(s, [...cur.sim.pending.options].sort((a, b) => b.chance - a.chance)[0].key);
             else if (run.done) s = toSummary(s);
@@ -264,5 +270,96 @@ describe('szybka kariera', () => {
       }
     }
     expect(quickSum).toBeLessThan(fullSum);
+  });
+});
+
+describe('v45: życie zawodnika', () => {
+  // gra botem do pierwszej sytuacji spełniającej warunek
+  function until(seed: number, cond: (s: GameState) => boolean, act?: (s: GameState) => GameState | null): GameState | null {
+    const rng = createRng(seed);
+    let s = newGame({ slot: 1, mode: 'normal', seed, profile: { ...randomProfile(rng), start: 'osiedle' } });
+    for (let guard = 0; guard < 4000 && s.phase !== 'ended'; guard++) {
+      if (cond(s)) return s;
+      const a = act?.(s);
+      if (a) {
+        s = a;
+        continue;
+      }
+      if (s.phase === 'training') s = doTraining(s, [...STAT_KEYS].sort((a, b) => s.stats[a] - s.stats[b])[0]);
+      else if (s.phase === 'budget') {
+        if (s.money + budgetBalance(s) < 0 && loanOffer(s)) s = takeLoan(s);
+        s = G2.canStartSeason(s) ? startSeason(s) : G2.takeBreakYear(s);
+      } else if (s.phase === 'event') s = s.event!.picked === undefined ? chooseEvent(s, 0) : continueAfterEvent(s);
+      else if (s.phase === 'season') {
+        const run = s.run!;
+        const cur = run.fights[run.fights.length - 1];
+        if (run.weigh) s = G2.weighIn(s, 'pay');
+        else if (run.post) s = G2.postAnswer(s, run.post.options[run.post.options.length - 1].key);
+        else if (run.press) s = G2.pressAnswer(s, 'calm');
+        else if (run.offer) s = G2.acceptOffer(s);
+        else if (cur?.sim.pending) s = decide(s, [...cur.sim.pending.options].sort((a, b) => b.chance - a.chance)[0].key);
+        else if (run.done) s = toSummary(s);
+        else s = seasonSkip(s);
+      } else if (s.phase === 'summary') s = toMarket(s);
+      else if (s.phase === 'market') s = confirmMarket(s);
+    }
+    return null;
+  }
+
+  it('bilety na regionalnej gali: prowizja trafia na konto i do raportu walki', () => {
+    let checked = 0;
+    for (let seed = 1; seed <= 12 && checked < 3; seed++) {
+      const s = until(seed, (x) => x.phase === 'season' && !!x.run?.offer && x.tier === 1 && !x.run.offer.tuneup && !x.run.offer.short && !x.run.offer.opp.freak);
+      if (!s) continue;
+      const before = s.money;
+      const n = G2.acceptOffer(s, 'std', 'push');
+      const f = n.run!.fights[n.run!.fights.length - 1] ?? null;
+      if (!f) continue; // ważenie albo konferencja: pomijamy
+      expect(f.tickets?.plan).toBe('push');
+      expect(f.tickets!.sold).toBeGreaterThan(0);
+      expect(n.money).toBeGreaterThanOrEqual(before + f.tickets!.cut);
+      checked++;
+    }
+    expect(checked).toBeGreaterThan(0);
+  });
+
+  it('ważenie czeka na decyzję i po niej walka rusza', () => {
+    let checked = 0;
+    for (let seed = 1; seed <= 40 && checked < 2; seed++) {
+      const s = until(
+        seed,
+        (x) => x.phase === 'season' && !!x.run?.weigh,
+        (x) => (x.phase === 'market' && x.tier >= 1 ? (() => { const y = G2.changeDivision(x, G2.divisionOptions(x)[0]); return y === x ? null : confirmMarket(y); })() : null),
+      );
+      if (!s) continue;
+      expect(G2.seasonNext(s)).toEqual(s);
+      const n = G2.weighIn(s, 'pay');
+      expect(n.run!.weigh).toBeFalsy();
+      const f = n.run!.fights[n.run!.fights.length - 1];
+      expect(f.weightMiss).toBe(true);
+      checked++;
+    }
+    expect(checked).toBeGreaterThan(0);
+  });
+
+  it('negocjacje kontraktu: jedna próba na rynek', () => {
+    const s = until(1, (x) => x.phase === 'market' && x.market!.contracts.some((c) => c.kind !== 'stay' && c.purse > 0));
+    expect(s).not.toBeNull();
+    const idx = s!.market!.contracts.findIndex((c) => c.kind !== 'stay' && c.purse > 0);
+    const a = G2.negotiateContract(G2.pickContract(s!, idx), idx, 'bonus');
+    expect(a.market!.negotiated).toBe(true);
+    expect(a.market!.contracts[idx].nego).toBeTruthy();
+    const b = G2.negotiateContract(a, idx, 'purse');
+    expect(b).toBe(a);
+  });
+
+  it('mikrofon po wygranej i decyzja przed kolejną walką', () => {
+    const s = until(2, (x) => x.phase === 'season' && x.run?.post?.kind === 'mic');
+    expect(s).not.toBeNull();
+    expect(G2.seasonNext(s!)).toEqual(s);
+    const n = G2.postAnswer(s!, 'thanks');
+    expect(n.run!.post).toBeFalsy();
+    const f = n.run!.fights[n.run!.fights.length - 1];
+    expect(f.moments[f.moments.length - 1].title).toBe('Mikrofon');
   });
 });
