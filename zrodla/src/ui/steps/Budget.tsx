@@ -465,6 +465,7 @@ function LifePicks({ g, setGame }: { g: StepProps['game']; setGame: StepProps['s
               </button>
             ))}
           </div>
+          <CoachTip id="job">Na początku kariery z walk się nie wyżyjesz. Pełny etat opłaca życie, ale zabiera formę. Tylko trening daje najlepszą formę, jeśli stać cię na życie z oszczędności i gaż.</CoachTip>
           <small className="prep-desc">
             {job.desc} {living > 0 && <>Życie kosztuje cię w tym roku {money(Math.round((living * job.living) / 500) * 500)}.</>}
           </small>
@@ -486,6 +487,7 @@ function LifePicks({ g, setGame }: { g: StepProps['game']; setGame: StepProps['s
             </button>
           ))}
         </div>
+        <CoachTip id="social">Obserwujący to osobna waluta: sprzedają bilety, przyciągają sponsorów i współprace. Prowadząc social media sam, co rok zyskujesz rozpoznawalność, ale tracisz skupienie, które daje telefon w szafce.</CoachTip>
         <small className="prep-desc">
           {soc.desc}
           {sm !== 'off' && inc > 0 ? ` Współprace: ok. ${money(inc)} w tym roku.` : sm !== 'off' ? ' Marki zaczną płacić od 2 tys. obserwujących.' : ''} Obserwujący pomagają sprzedawać bilety i szukać sponsorów.

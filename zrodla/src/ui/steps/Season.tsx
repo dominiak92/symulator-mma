@@ -278,6 +278,12 @@ function OptionButton({ o, onPick }: { o: DecisionOption; onPick: () => void }) 
           <Icon name={STAT_ICON[o.stat]} size={13} />
           zależy od: {STAT_LABELS[o.stat].toLowerCase()}
         </span>
+        {o.perk && (
+          <span className="perk-tag" title="Atut z obozu podbija tę opcję">
+            <Icon name="bolt" size={12} />
+            atut: {o.perk}
+          </span>
+        )}
       </span>
     </button>
   );
@@ -764,8 +770,19 @@ const FED_THEMES: [string, Omit<PosterTheme, 'key'> & { key: string }][] = [
   ['TWO FC', { key: 'two', ribbon: 'Asian Fight Week', tagline: 'Honor, dyscyplina, nokaut', day: 'piątek, 13:00 czasu polskiego' }],
   ['PLF', { key: 'plf', ribbon: 'Sezon ligowy · play-off', tagline: 'Wygrywasz turniej, bierzesz milion', day: 'czwartek, 2:00 czasu polskiego' }],
 ];
+const FREAK_THEMES: [string, PosterTheme][] = [
+  ['Flame', { key: 'f-flame', ribbon: 'Flame · ogień w klatce', tagline: 'Kto się sparzy, ten przegrał', day: 'sobota, 20:00 · PPV' }],
+  ['Primo', { key: 'f-primo', ribbon: 'Primo · gala premium', tagline: 'Luksus, dym i złote rękawice', day: 'sobota, 21:00 · PPV' }],
+  ['Hype', { key: 'f-hype', ribbon: 'Hype League · live', tagline: 'Wyświetlenia ważniejsze niż rekord', day: 'piątek, 20:00 · PPV' }],
+  ['Klout', { key: 'f-klout', ribbon: 'Klout · trending #1', tagline: 'Algorytm wybrał tę walkę', day: 'sobota, 20:00 · PPV' }],
+];
+
 function posterTheme(f: FightReport): PosterTheme {
-  if (f.freak) return { key: 'freak', ribbon: 'Hype · show · chaos', tagline: 'Wszyscy oglądają, nikt się nie przyzna', day: 'sobota, 20:00' };
+  if (f.freak) {
+    const ff = FREAK_THEMES.find(([k]) => f.fed.startsWith(k));
+    return ff ? { ...ff[1] } : { key: 'freak', ribbon: 'Hype · show · chaos', tagline: 'Wszyscy oglądają, nikt się nie przyzna', day: 'sobota, 20:00' };
+  }
+  if (f.abroad === 'Saitama') return { key: 'japan', ribbon: 'Sylwester · Saitama', tagline: 'Noc, w której Japonia nie śpi', day: '31 grudnia, 18:00 czasu lokalnego' };
   if (f.tuneup) return { key: 'cheap', ribbon: 'Wstęp 20 zł · bar czynny', tagline: 'Wielki powrót do formy', day: 'niedziela, 17:00' };
   if (f.abroad) return { key: 'desert', ribbon: `Live from ${f.abroad}`, tagline: 'Pustynia, złoto i noc walk', day: 'piątek, 21:00 czasu lokalnego' };
   const hit = FED_THEMES.find(([k]) => f.fed.startsWith(k) || galaPrefix(f.fed).startsWith(k));
@@ -843,9 +860,12 @@ function TourneyPoster({ g, f, onGo, paused }: { g: GameState; f: FightReport; o
     { k: 'sf', label: 'półfinał' },
     { k: 'f', label: 'finał' },
   ];
+  const tk = t?.championship ? 'am-mp' : /Puchar Polski/.test(t?.name ?? '') ? 'am-cup' : 'am-local';
+  const ribbon = t?.championship ? 'Mistrzostwa Polski · o tytuł' : /Puchar Polski/.test(t?.name ?? '') ? 'Puchar · ranking krajowy' : 'Zawody amatorskie';
   return (
     <div className="fight-intro poster-modal" role="dialog" aria-modal="true" aria-label={t?.name ?? 'Turniej'}>
-      <div className={`poster amateur ${t?.championship ? 'title-bout' : ''}`}>
+      <div className={`poster amateur th-${tk} ${t?.championship ? 'title-bout' : ''}`}>
+        <span className="pst-ribbon">{ribbon}</span>
         <div className="pst-head">
           <small>{t?.championship ? 'Turniej o tytuł' : 'Turniej amatorski'}</small>
           <h2>{t?.name ?? 'Turniej'}</h2>
@@ -944,6 +964,7 @@ function WeighCard({ g, o, setGame }: { g: GameState; o: FightOffer; setGame: (s
           </span>
           <span className="ws-label">ponad limit</span>
         </div>
+        <CoachTip id="weigh">Gdy zbijasz wagę, czasem jej nie zrobisz. Sauna daje szansę na całą gażę, ale nieudana kosztuje więcej. Szansa spada z wiekiem i zużyciem, rośnie z lekarzem w zapleczu.</CoachTip>
         <p className="weigh-txt">
           Stajesz na wadze i w sali robi się cicho. Do limitu brakuje ponad kilograma, a do oficjalnego ważenia zostały dwie godziny. {o.opp.lastName} już zrobił wagę i patrzy na ciebie z uśmiechem.
         </p>
@@ -980,8 +1001,24 @@ function WeighCard({ g, o, setGame }: { g: GameState; o: FightOffer; setGame: (s
   );
 }
 
-const INVITE_ICON: Record<SideInvite['kind'], string> = { grappling: 'knot', boxing: 'glove', seminar: 'users' };
-const INVITE_HEAD: Record<SideInvite['kind'], string> = { grappling: 'Turniej grapplingowy', boxing: 'Walka bokserska', seminar: 'Seminarium' };
+const INVITE_ICON: Record<SideInvite['kind'], string> = { grappling: 'knot', boxing: 'glove', seminar: 'users', grapple1: 'knot', kick: 'glove', film: 'star' };
+const INVITE_HEAD: Record<SideInvite['kind'], string> = { grappling: 'Turniej grapplingowy', boxing: 'Walka bokserska', seminar: 'Seminarium', grapple1: 'Superfight grapplingowy', kick: 'Walka kickbokserska', film: 'Propozycja z show-biznesu' };
+const INVITE_GOOD: Record<SideInvite['kind'], (inv: SideInvite) => string> = {
+  grappling: (inv) => `złoto: parter +2, zapasy +1 i ${money(inv.prize)}; srebro: parter +1`,
+  boxing: (inv) => `wygrana: stójka +1, ${money(inv.prize)}, media +2`,
+  seminar: (inv) => `${money(inv.prize)}, reputacja +1, media +1, bez ryzyka`,
+  grapple1: (inv) => `połowa stawki za wyjście; wygrana: cała ${money(inv.prize)}, parter +1, media i reputacja +2`,
+  kick: (inv) => `wygrana: stójka lub kondycja +1, ${money(inv.prize)}, media +2`,
+  film: (inv) => `${money(inv.prize)} i media +3, bez walki`,
+};
+const INVITE_BAD: Record<SideInvite['kind'], (inv: SideInvite) => string> = {
+  grappling: (inv) => `wpisowe ${money(inv.fee)}, małe ryzyko urazu, w najbliższej walce forma −2`,
+  boxing: () => 'porażka: połowa gaży, zużycie organizmu, w najbliższej walce forma −2',
+  seminar: () => 'weekend bez treningu: w najbliższej walce forma −2',
+  grapple1: () => 'specjalista na swojej macie, małe ryzyko urazu, w najbliższej walce forma −2',
+  kick: () => 'porażka: połowa gaży, zużycie, ryzyko nokautu kopnięciem; w najbliższej walce forma −2',
+  film: () => 'reputacja −1 (środowisko się podśmiewa), w najbliższej walce forma −2',
+};
 
 /** Zaproszenie na wydarzenie poza MMA: grappling, boks, seminarium. */
 type Notice = { head: string; ctx?: string; lines?: string[]; text: string; tone: Moment['tone']; cta: string };
@@ -1039,21 +1076,14 @@ function InviteCard({ g, inv, onDone }: { g: GameState; inv: SideInvite; onDone:
         <div className="tuneup-fx">
           <span className="good">
             <Icon name="check" size={13} />
-            {inv.kind === 'grappling'
-              ? `złoto: parter +2, zapasy +1 i ${money(inv.prize)}; srebro: parter +1`
-              : inv.kind === 'boxing'
-                ? `wygrana: stójka +1, ${money(inv.prize)}, media +2`
-                : `${money(inv.prize)}, reputacja +1, media +1, bez ryzyka`}
+            {INVITE_GOOD[inv.kind](inv)}
           </span>
           <span className="bad">
             <Icon name="x" size={13} />
-            {inv.kind === 'grappling'
-              ? `wpisowe ${money(inv.fee)}, małe ryzyko urazu, w najbliższej walce forma −2`
-              : inv.kind === 'boxing'
-                ? 'porażka: połowa gaży, zużycie organizmu, w najbliższej walce forma −2'
-                : 'weekend bez treningu: w najbliższej walce forma −2'}
+            {INVITE_BAD[inv.kind](inv)}
           </span>
         </div>
+        <CoachTip id="invite">Zaproszenia spoza MMA wolno brać nawet przy kontrakcie na wyłączność. Dają umiejętności, kasę albo rozpoznawalność, ale zabierają kilka dni treningu: w najbliższej walce forma −2.</CoachTip>
         {ch !== null && (
           <p className="inv-chance">
             {inv.kind === 'grappling' ? 'Szansa na złoto' : 'Szansa na wygraną'}: <ChanceTag p={ch} />
@@ -1074,7 +1104,7 @@ function InviteCard({ g, inv, onDone }: { g: GameState; inv: SideInvite; onDone:
             }}
           >
             <Icon name="check" />
-            {inv.kind === 'seminar' ? 'Jadę' : 'Startuję'}
+            {inv.kind === 'seminar' ? 'Jadę' : inv.kind === 'film' ? 'Biorę rolę' : 'Startuję'}
           </button>
           <button className="btn btn-ghost btn-block btn-ico" onClick={() => onDone(declineInvite(g), null)}>
             <Icon name="x" size={15} />
@@ -1106,6 +1136,11 @@ function PostCard({ g, post, onDone }: { g: GameState; post: PostFight; onDone: 
           </div>
         </div>
         {post.kind === 'robbed' && last?.cards && <ScoreCards f={last} />}
+        {post.kind === 'mic' ? (
+          <CoachTip id="mic">Po wygranej możesz kogoś wywołać. Udane wywołanie mistrza z top 3 daje walkę o pas, dalej w rankingu dostaniesz eliminator. Nieudane kosztuje reputację, a podziękowanie jest bezpieczne.</CoachTip>
+        ) : (
+          <CoachTip id="robbed">Po niejednogłośnej porażce możesz walczyć o rewanż, przyjąć werdykt z klasą (reputacja) albo zrobić szum w internecie (obserwujący kosztem reputacji).</CoachTip>
+        )}
         <div className="choice-list press-opts">
           {post.options.map((o) => (
             <button
@@ -1502,6 +1537,10 @@ function OfferCard({ g, o, n, total, setGame }: { g: GameState; o: FightOffer; n
         </div>
         )}
         <CoachTip id="offer">Na zawodowstwie każda walka to oferta. Przyjmij ją, spróbuj wynegocjować więcej albo odrzuć i poczekaj na lepszą.</CoachTip>
+        {showTix && <CoachTip id="tickets">Na galach regionalnych zawodnicy sami sprzedają bilety. Dostajesz 25% prowizji, a kto sprzedaje dużo, dostaje lepsze miejsce w karcie i wyższe stawki. Kampania kosztuje formę, odpuszczenie da formę +1, ale organizator to zapamięta.</CoachTip>}
+        {o.short && <CoachTip id="short">Zastępstwo to walka ponad plan roku. Płacą dużo więcej, a rywal jest wyżej w rankingu, ale nie masz obozu. Porażka prawie nie boli, wygrana daje duży skok.</CoachTip>}
+        {o.abroad && <CoachTip id="abroad">Gala za granicą to jednorazowa walka poza twoją federacją: duże pieniądze i szum w mediach, ale ranking się nie rusza. Federacja z kontraktem na wyłączność na to nie pozwala.</CoachTip>}
+        {o.superfight && <CoachTip id="superfight">Superfight to walka mistrza z mistrzem innej kategorii. Twój pas nie jest stawką, ale porażka kosztuje reputację, a w następnej obronie czeka numer 1.</CoachTip>}
         <div className="ofr-actions">
           <button ref={goRef} className="btn btn-primary btn-block btn-ico" disabled={!!asking} onClick={() => setGame(acceptOffer(g, prep, tix))}>
             <Icon name="glove" />
@@ -1633,6 +1672,21 @@ export default function Season({ game, setGame }: StepProps) {
   const finishedNow = !!last?.sim.finished;
   const nextReady = finishedNow && !run.done && !introOpen;
 
+
+  // tryb „mniej pytań”: drobne decyzje rozstrzygają się same, bezpiecznie
+  useEffect(() => {
+    if (!loadSettings().fewer) return;
+    const cur = gameRef.current;
+    const r = cur.run;
+    if (!r) return;
+    const lf = r.fights[r.fights.length - 1];
+    const big = !!lf && (lf.sim.big || lf.title || !!lf.superfight);
+    if (r.post && !big) return setGame(postAnswer(cur, r.post.kind === 'mic' ? 'thanks' : 'class'));
+    if (r.invite) return setGame(declineInvite(cur));
+    if (r.offer && (r.offer.short || r.offer.abroad)) return setGame(declineOffer(cur));
+    if (r.press && !(r.press.title || r.press.rival || r.press.superfight)) return setGame(pressAnswer(cur, 'calm'));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [!!run.post, !!run.invite, run.offer?.opp.id, !!run.press]);
 
   // wynik decyzji (mikrofon, zaproszenie) pokazany po zapisaniu stanu
   const [notice, setNotice] = useState<Notice | null>(null);

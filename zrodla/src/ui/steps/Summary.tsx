@@ -130,6 +130,26 @@ export default function Summary({ game, setGame, onPeers }: StepProps & { onPeer
             {g.seasons.length >= 2 && <CareerChart g={g} />}
           </div>
         </details>
+        {s.outside && s.outside.length > 0 && (
+          <details className="acc" open>
+            <summary>
+              <span>
+                <Icon name="star" size={15} />
+                Poza klatką
+              </span>
+              <b>{s.outside.length}</b>
+            </summary>
+            <div className="acc-body outside-list">
+              {s.outside.map((r, i) => (
+                <div key={i} className="outside-row">
+                  <Icon name={r.icon} size={14} />
+                  <span>{r.label}</span>
+                  <b>{r.value}</b>
+                </div>
+              ))}
+            </div>
+          </details>
+        )}
         <details className="acc">
           <summary>
             <span>

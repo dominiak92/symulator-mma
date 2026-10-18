@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { honours } from '../../engine/extras';
 import type { GameState } from '../../engine/types';
 import { displayName, mainRecord, medalCount, recStr, divisionKey } from '../../engine/game';
 import { START_PROFILES } from '../../engine/data';
@@ -128,6 +129,28 @@ export default function Ended({ game, onNewCareer, onMenu }: { game: GameState; 
             <b style={{ color: 'var(--gold)' }}>{unranked ? 'nie liczy się' : e.legacy}</b>
           </div>
         </div>
+        {(honours(g).length > 0 || g.fanNick) && (
+          <div className="honours">
+            {g.fanNick && (
+              <span className="tag purple">
+                <Icon name="megaphone" size={12} />
+                kibice mówili: „{g.fanNick}”
+              </span>
+            )}
+            {honours(g).map((h) => (
+              <span key={h.text} className={`tag ${h.icon === 'x' ? 'bad' : h.icon === 'trophy' ? 'gold' : ''}`}>
+                <Icon name={h.icon} size={12} />
+                {h.text}
+              </span>
+            ))}
+            {g.finishes.koLosses >= 3 && (
+              <span className="tag bad">
+                <Icon name="bandage" size={12} />
+                {g.finishes.koLosses} przyjęte nokauty
+              </span>
+            )}
+          </div>
+        )}
       </section>
 
       {g.seasons.length >= 2 && (

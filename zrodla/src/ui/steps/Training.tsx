@@ -2,13 +2,14 @@ import { useEffect, useState } from 'react';
 import { predictability } from '../../engine/fight';
 import type { StatKey } from '../../engine/types';
 import { STAT_KEYS, STAT_LABELS, STAT_TRAINING_DESC } from '../../engine/data';
-import { CAMPS, campBlocked, campCost, campGain, clubLimits, doTraining, EXPEDITIONS, expeditionBlocked, expeditionCost, goExpedition, introText, rehabCost, rehabYear, trainingForecast, type Expedition } from '../../engine/game';
+import { setPerks, CAMPS, campBlocked, campCost, campGain, clubLimits, doTraining, EXPEDITIONS, expeditionBlocked, expeditionCost, goExpedition, introText, rehabCost, rehabYear, trainingForecast, type Expedition } from '../../engine/game';
 import type { GameState } from '../../engine/types';
 import { money } from '../../format';
 import type { StepProps } from '../Game';
 import { lat } from '../../format';
 import { Icon, STAT_ICON } from '../Icon';
 import { CoachTip } from '../Tutorial';
+import { MAX_PERKS, PERKS, activePerks, perkUnlocked } from '../../engine/perks';
 
 export default function Training({ game, setGame }: StepProps) {
   const [pick, setPick] = useState<StatKey | null>(null);
@@ -154,6 +155,7 @@ export default function Training({ game, setGame }: StepProps) {
           );
         })}
       </div>
+      {g.proDebut && <PerkPicker g={g} setGame={setGame} />}
       {showCamps && (
         <section className="camps">
           <div className="camps-head">
@@ -296,5 +298,45 @@ function ExpeditionTab({ g, exps, setGame }: { g: GameState; exps: Expedition[];
         ))}
       </div>
     </div>
+  );
+}
+
+/** Atuty z obozu: dwa wybrane dają premię w pasujących decyzjach walki. */
+function PerkPicker({ g, setGame }: { g: StepProps['game']; setGame: StepProps['setGame'] }) {
+  const chosen = activePerks(g).map((p) => p.id);
+  const unlocked = PERKS.filter((p) => perkUnlocked(g, p));
+  const toggle = (id: string) => {
+    const on = chosen.includes(id);
+    const next = on ? chosen.filter((x) => x !== id) : [...chosen, id].slice(-MAX_PERKS);
+    setGame(setPerks(g, next));
+  };
+  return (
+    <section className="perks">
+      <div className="camps-head">
+        <Icon name="bolt" size={15} />
+        <b>Atuty na walki</b>
+        <span className="faint small">
+          {chosen.length}/{MAX_PERKS} wybrane
+        </span>
+      </div>
+      <CoachTip id="perks">Atuty to twoje firmowe zagrania. Wybierz dwa: w walkach podbiją szansę decyzji, które do nich pasują (oznaczone „atut”). Nowe odblokujesz, rozwijając umiejętności.</CoachTip>
+      {unlocked.length === 0 && <p className="muted small" style={{ margin: 0 }}>Na razie żaden atut nie jest odblokowany. Pierwsze otwierają się od 40 pkt w stójce, zapasach albo taktyce.</p>}
+      <div className="perk-list">
+        {PERKS.map((p) => {
+          const ok = perkUnlocked(g, p);
+          const on = chosen.includes(p.id);
+          return (
+            <button key={p.id} className={`perk ${on ? 'on' : ''}`} role="switch" aria-checked={on} disabled={!ok} onClick={() => toggle(p.id)}>
+              <span className="perk-top">
+                <Icon name={STAT_ICON[p.req.stat]} size={13} />
+                <b>{p.name}</b>
+                {on && <Icon name="check" size={13} />}
+              </span>
+              <span className="perk-desc">{ok ? p.desc : `odblokujesz od ${p.req.min} pkt: ${STAT_LABELS[p.req.stat].toLowerCase()}`}</span>
+            </button>
+          );
+        })}
+      </div>
+    </section>
   );
 }
