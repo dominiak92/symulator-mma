@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from
 import { createPortal } from 'react-dom';
 import type { CardSpot, DecisionOption, DecisionPoint, FightOffer, FightReport, GameState, Moment, Stats } from '../../engine/types';
 import { galaPrefix, SEASON_FORMS, STAGE_LABELS, STAT_LABELS, STYLE_LABELS } from '../../engine/data';
-import { divisionKey, effectiveStats, weightMissChance, PRESS_OPTIONS, pressAnswer, prepCost, acceptAllOffers, acceptOffer, declineBlocked, declineOffer, decide, negotiateChance, negotiateOffer, recStr, seasonNext, seasonSkip, toSummary } from '../../engine/game';
+import { cutChance, postAnswer, weighIn, divisionKey, effectiveStats, weightMissChance, PRESS_OPTIONS, pressAnswer, prepCost, acceptAllOffers, acceptOffer, declineBlocked, declineOffer, decide, negotiateChance, negotiateOffer, recStr, seasonNext, seasonSkip, toSummary } from '../../engine/game';
 import { activeManager, currentManager } from '../../engine/managers';
 import { sfxCash, sfxClick, sfxCrowd, sfxGong, sfxLoss, sfxThud } from '../sound';
 import { OUTCOME_LABEL } from '../../engine/fight';
@@ -17,6 +17,8 @@ import { Icon, STAT_ICON } from '../Icon';
 import { CoachTip } from '../Tutorial';
 import { chanceWord } from '../Chance';
 import { setHudHold, shownRecord, useHudHold } from '../hudHold';
+import { TICKET_CUT, TICKET_PRICE, TICKET_OPTIONS, fmtFans, ticketForecast, ticketsAvailable } from '../../engine/extras';
+import type { PostFight, TicketPlan } from '../../engine/types';
 
 const reduced = () => typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 
@@ -535,10 +537,9 @@ function LiveCard({ g, f, start, animate, setGame }: { g: GameState; f: FightRep
             <span>
               {methodShort(f) === 'decyzja' ? f.method?.replace('Decyzja ', 'decyzja ') : methodShort(f)}
               {finish && f.time ? ` ${f.time}` : ''}
-              {f.cards && !finish && f.method !== 'Remis' ? ` · ${f.cards.map((c) => (won ? `${c[0]}–${c[1]}` : `${c[1]}–${c[0]}`)).join(', ')}` : ''}
             </span>
           )}
-          {(f.earned > 0 || rankMove) && (
+          {(f.earned > 0 || rankMove || (f.fans ?? 0) > 0) && (
             <span className="stamp-foot">
               {f.earned > 0 && (
                 <b className="earned">
@@ -551,8 +552,19 @@ function LiveCard({ g, f, start, animate, setGame }: { g: GameState; f: FightRep
                   {rankMove}
                 </span>
               )}
+              {(f.fans ?? 0) > 0 && !f.amateur && (
+                <span className="fans">
+                  <Icon name="phone" size={13} />+{fmtFans(f.fans!)} fanów
+                </span>
+              )}
             </span>
           )}
+        </div>
+      )}
+
+      {done && f.cards && !finish && f.method !== 'Walkower' && (f.method?.startsWith('Decyzja') || f.method === 'Remis') && (
+        <div className="m-anim" style={d(stampAt + 250)}>
+          <ScoreCards f={f} />
         </div>
       )}
 
@@ -567,7 +579,8 @@ function LiveCard({ g, f, start, animate, setGame }: { g: GameState; f: FightRep
       {f.moments.length > 0 && (
         <div className="moments">
           {f.moments.map((m, i) => {
-            const fresh = animate && (m.round > start || (m.round === 0 && start === 0));
+            // odpowiedź z mikrofonu dopisuje się po walce: pokazujemy od razu
+            const fresh = animate && m.title !== 'Mikrofon' && m.title !== 'Po werdykcie' && (m.round > start || (m.round === 0 && start === 0));
             const at = m.round === 0 ? 0 : t(m.round) + ROUND_MS * 0.5;
             return <MomentView key={i} m={m} single={f.sim.maxRounds === 1} anim={fresh} style={fresh ? d(at) : undefined} />;
           })}
@@ -886,6 +899,169 @@ function PressCard({ g, o, setGame }: { g: GameState; o: FightOffer; setGame: (s
   );
 }
 
+/** Ważenie: waga nie wyszła. Sauna (szansa na pełną gażę) albo kara z gaży. */
+function WeighCard({ g, o, setGame }: { g: GameState; o: FightOffer; setGame: (s: GameState) => void }) {
+  const ch = cutChance(g);
+  const fine = Math.round((o.purse * 0.25) / 100) * 100;
+  return (
+    <div className="fight-intro offer-modal weigh-modal" role="dialog" aria-modal="true" aria-label="Ważenie">
+      <div className="fi-card">
+        <div className="fi-top">
+          <span className="fi-num">Ważenie</span>
+          <span className="fi-ctx">{o.gala} · dzień przed galą</span>
+        </div>
+        <div className="weigh-scale" aria-hidden="true">
+          <span className="ws-num">
+            +1,2<small>kg</small>
+          </span>
+          <span className="ws-label">ponad limit</span>
+        </div>
+        <p className="weigh-txt">
+          Stajesz na wadze i w sali robi się cicho. Do limitu brakuje ponad kilograma, a do oficjalnego ważenia zostały dwie godziny. {o.opp.lastName} już zrobił wagę i patrzy na ciebie z uśmiechem.
+        </p>
+        <div className="choice-list press-opts">
+          <button
+            className="choice"
+            onClick={() => {
+              sfxClick();
+              setGame(weighIn(g, 'cut'));
+            }}
+          >
+            <span className="opt-top">
+              <span className="title">Sauna i folie, zbijam do końca</span>
+              <ChanceTag p={ch} />
+            </span>
+            <span className="desc">Uda się: cała gaża, lekko osłabiony. Nie uda się: kara 30% i walka z pustym bakiem.</span>
+          </button>
+          <button
+            className="choice"
+            onClick={() => {
+              sfxClick();
+              setGame(weighIn(g, 'pay'));
+            }}
+          >
+            <span className="opt-top">
+              <span className="title">Odpuszczam, płacę karę</span>
+              <span className="tag red">−{money(fine)}</span>
+            </span>
+            <span className="desc">25% gaży idzie do rywala. Wchodzisz do klatki cięższy, ale wysuszony.</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** Po walce: mikrofon w klatce albo reakcja na kontrowersyjny werdykt. */
+function PostCard({ g, post, setGame }: { g: GameState; post: PostFight; setGame: (s: GameState) => void }) {
+  const last = g.run!.fights[g.run!.fights.length - 1];
+  // po wyborze najpierw pokazujemy, jak to się skończyło, dopiero potem gra idzie dalej
+  const [res, setRes] = useState<{ s: GameState; m: Moment } | null>(null);
+  if (res)
+    return (
+      <div className={`fight-intro offer-modal post-modal ${post.kind}`} role="dialog" aria-modal="true" aria-label={post.title}>
+        <div className="fi-card">
+          <div className="fi-top">
+            <span className="fi-num">{post.kind === 'mic' ? 'Mikrofon' : 'Po werdykcie'}</span>
+            <span className="fi-ctx">{last?.gala}</span>
+          </div>
+          <div className={`post-result tone-${res.m.tone}`}>
+            <Icon name={res.m.tone === 'bad' ? 'x' : res.m.tone === 'neutral' ? 'megaphone' : 'check'} size={20} />
+            <p>{res.m.text}</p>
+          </div>
+          <button className="btn btn-primary btn-block btn-ico" autoFocus onClick={() => setGame(res.s)}>
+            <Icon name="play" />
+            Dalej
+          </button>
+        </div>
+      </div>
+    );
+  return (
+    <div className={`fight-intro offer-modal post-modal ${post.kind}`} role="dialog" aria-modal="true" aria-label={post.title}>
+      <div className="fi-card">
+        <div className="fi-top">
+          <span className="fi-num">{post.kind === 'mic' ? 'Mikrofon' : 'Po werdykcie'}</span>
+          <span className="fi-ctx">{last?.gala}</span>
+        </div>
+        <div className="post-head">
+          <span className="post-ico">
+            <Icon name={post.kind === 'mic' ? 'mic' : 'scale'} size={26} />
+          </span>
+          <div>
+            <b>{post.title}</b>
+            <p>{post.text}</p>
+          </div>
+        </div>
+        {post.kind === 'robbed' && last?.cards && <ScoreCards f={last} />}
+        <div className="choice-list press-opts">
+          {post.options.map((o) => (
+            <button
+              key={o.key}
+              className="choice"
+              onClick={() => {
+                sfxClick();
+                const ns = postAnswer(g, o.key);
+                const f = ns.run?.fights[ns.run.fights.length - 1];
+                const m = f?.moments[f.moments.length - 1];
+                if (m && (m.title === 'Mikrofon' || m.title === 'Po werdykcie')) {
+                  if (m.tone === 'purple' || m.tone === 'good') sfxCrowd(false);
+                  setRes({ s: ns, m });
+                } else setGame(ns);
+              }}
+            >
+              <span className="opt-top">
+                <span className="title">{o.label}</span>
+                {o.chance !== undefined && <ChanceTag p={o.chance} />}
+              </span>
+              <span className="desc">{o.desc}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const JUDGES = ['Tomasz Wiśniewski', 'Anna Kowalczyk', 'Mark Dolan', 'Piotr Zając', 'Jean Moreau', 'Ewa Lis', 'Sal Romano', 'Marek Duda'];
+
+/** Karty trzech sędziów: kto ile dał i czy był głos odrębny. */
+export function ScoreCards({ f }: { f: FightReport }) {
+  if (!f.cards || !f.result) return null;
+  const won = f.result === 'W';
+  // sędzia nie może nazywać się tak samo jak rywal
+  const pool = JUDGES.filter((j) => !j.endsWith(` ${f.opp.lastName}`));
+  const seed = (f.opp.id.charCodeAt(0) + f.opp.id.length * 7 + f.idx * 3) % pool.length;
+  const rows = f.cards.map((c, i) => ({ name: pool[(seed + i * 3) % pool.length], me: c[0], op: c[1] }));
+  const mine = rows.filter((r) => r.me > r.op).length;
+  const theirs = rows.filter((r) => r.op > r.me).length;
+  const split = mine > 0 && theirs > 0;
+  return (
+    <div className={`scorecards ${split ? 'split' : ''}`} aria-label="Karty sędziów">
+      <div className="sc-head">
+        <span>Karty sędziów</span>
+        <span className="sc-who">
+          <b>Ty</b> · {f.opp.lastName}
+        </span>
+      </div>
+      {rows.map((r, i) => {
+        const res = r.me > r.op ? 'me' : r.op > r.me ? 'op' : 'eq';
+        const odd = split && ((won && res === 'op') || (!won && res === 'me'));
+        return (
+          <div key={i} className={`sc-row ${res} ${odd ? 'odd' : ''}`}>
+            <span className="sc-name">{r.name}</span>
+            <span className="sc-score">
+              <b className={res === 'me' ? 'win' : ''}>{r.me}</b>
+              <i>:</i>
+              <b className={res === 'op' ? 'win' : ''}>{r.op}</b>
+            </span>
+            {odd && <span className="sc-tag">głos odrębny</span>}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 /** Kwota, która płynnie dolicza się do nowej wartości. */
 function CountUp({ value, from }: { value: number; from: number | null }) {
   const [v, setV] = useState(from ?? value);
@@ -919,6 +1095,9 @@ function OfferCard({ g, o, n, total, setGame }: { g: GameState; o: FightOffer; n
     goRef.current?.focus({ preventScroll: true });
   }, [o.opp.id, o.purse]);
   const [prep, setPrep] = useState<'std' | 'rival' | 'hard'>('std');
+  const [tix, setTix] = useState<TicketPlan>('std');
+  const showTix = ticketsAvailable(g, o);
+  const special = !!(o.tuneup || o.short || o.superfight);
   // telefon do organizatora: chwila napięcia, potem widoczny efekt
   const [asking, setAsking] = useState<'neg' | 'decline' | null>(null);
   const [fx, setFx] = useState<OfferFx>(null);
@@ -965,11 +1144,29 @@ function OfferCard({ g, o, n, total, setGame }: { g: GameState; o: FightOffer; n
   const neg = negotiateChance(g);
   const notes = g.run?.notes ?? [];
   const lastNote = notes[notes.length - 1];
-  const head = o.tuneup ? 'Walka na odbudowę' : o.title ? (o.defense ? 'Obrona pasa' : 'Walka o pas') : `Oferta walki ${n} z ${Math.max(n, total)}`;
+  const head = o.tuneup
+    ? 'Walka na odbudowę'
+    : o.short
+      ? 'Zastępstwo · gala za 6 dni'
+      : o.superfight
+        ? 'Superfight'
+        : o.interim
+          ? 'Walka o pas tymczasowy'
+          : o.unify
+            ? 'Unifikacja pasów'
+            : o.title
+              ? o.defense
+                ? 'Obrona pasa'
+                : o.rematch
+                  ? 'Rewanż o pas'
+                  : 'Walka o pas'
+              : o.rematch
+                ? 'Rewanż'
+                : `Oferta walki ${n} z ${Math.max(n, total)}`;
   const spot = o.spot ? SPOT[o.spot] : '';
   return (
     <div className="fight-intro offer-modal" role="dialog" aria-modal="true" aria-label={head}>
-      <div className={`fi-card ${o.title ? 'title-bout' : ''} ${o.tuneup ? 'tuneup' : ''} ${asking ? 'asking' : ''} ${fx ? `fx-${fx.kind}` : ''}`}>
+      <div className={`fi-card ${o.title || o.superfight ? 'title-bout' : ''} ${o.tuneup ? 'tuneup' : ''} ${o.short ? 'short-notice' : ''} ${asking ? 'asking' : ''} ${fx ? `fx-${fx.kind}` : ''}`}>
         <div className="fi-top">
           <span className="fi-num">{head}</span>
           <span className="fi-ctx">
@@ -1002,6 +1199,24 @@ function OfferCard({ g, o, n, total, setGame }: { g: GameState; o: FightOffer; n
           {fx?.kind === 'swap' && <span className="ofr-stamp new">Nowy rywal</span>}
         </div>
         <div className="fi-tags">
+          {o.short && (
+            <span className="tag red">
+              <Icon name="clock" size={12} />
+              bez obozu
+            </span>
+          )}
+          {o.superfight && (
+            <span className="tag gold">
+              <Icon name="trophy" size={12} />
+              mistrz wagi {o.superfight}
+            </span>
+          )}
+          {o.rematch && (
+            <span className="tag red">
+              <Icon name="rotate" size={12} />
+              rewanż
+            </span>
+          )}
           {o.rival && (
             <span className="tag red">
               <Icon name="flame" size={12} />
@@ -1052,6 +1267,18 @@ function OfferCard({ g, o, n, total, setGame }: { g: GameState; o: FightOffer; n
             </>
           )}
         </div>
+        {o.short && (
+          <div className="tuneup-fx">
+            <span className="good">
+              <Icon name="check" size={13} />
+              prawie półtorej stawki, rywal wyżej w rankingu, wdzięczność organizatora
+            </span>
+            <span className="bad">
+              <Icon name="x" size={13} />
+              zero obozu: forma −6{weightMissChance(g) > 0 ? ', a waga dużo trudniejsza' : ''}
+            </span>
+          </div>
+        )}
         {o.tuneup && (
           <div className="tuneup-fx">
             <span className="good">
@@ -1106,6 +1333,23 @@ function OfferCard({ g, o, n, total, setGame }: { g: GameState; o: FightOffer; n
             </span>
           </p>
         )}
+        {showTix && (
+          <div className="prep tix">
+            <small className="prep-title">
+              Bilety · ok. {ticketForecast(g, tix)} szt.{tix !== 'none' ? ` ≈ ${money(Math.round((ticketForecast(g, tix) * TICKET_PRICE * TICKET_CUT) / 50) * 50)} prowizji` : ''}
+            </small>
+            <div className="seg prep-seg" role="radiogroup" aria-label="Sprzedaż biletów">
+              {TICKET_OPTIONS.map((x) => (
+                <button key={x.id} role="radio" aria-checked={tix === x.id} className={tix === x.id ? 'on' : ''} onClick={() => setTix(x.id)}>
+                  <b>{x.label}</b>
+                  <small>{x.sub}</small>
+                </button>
+              ))}
+            </div>
+            <small className="prep-desc">{TICKET_OPTIONS.find((x) => x.id === tix)!.desc}</small>
+          </div>
+        )}
+        {!o.short && (
         <div className="prep">
           <small className="prep-title">Obóz przed walką</small>
           <div className="seg prep-seg" role="radiogroup" aria-label="Obóz przed walką">
@@ -1130,16 +1374,17 @@ function OfferCard({ g, o, n, total, setGame }: { g: GameState; o: FightOffer; n
                 : 'Normalne przygotowania, bez premii i bez ryzyka.'}
           </small>
         </div>
+        )}
         <CoachTip id="offer">Na zawodowstwie każda walka to oferta. Przyjmij ją, spróbuj wynegocjować więcej albo odrzuć i poczekaj na lepszą.</CoachTip>
         <div className="ofr-actions">
-          <button ref={goRef} className="btn btn-primary btn-block btn-ico" disabled={!!asking} onClick={() => setGame(acceptOffer(g, prep))}>
+          <button ref={goRef} className="btn btn-primary btn-block btn-ico" disabled={!!asking} onClick={() => setGame(acceptOffer(g, prep, tix))}>
             <Icon name="glove" />
-            {o.tuneup ? 'Biorę tę walkę' : 'Przyjmuję walkę'}
+            {o.tuneup || o.short ? 'Biorę tę walkę' : o.superfight ? 'Biorę superfight' : 'Przyjmuję walkę'}
           </button>
-          {o.tuneup ? (
+          {special ? (
             <button className="btn btn-ghost btn-block btn-ico" disabled={!!asking} onClick={() => call('decline', declineOffer)}>
               <Icon name="x" size={15} />
-              {asking === 'decline' ? 'Odmawiasz…' : 'Wolę walkę w federacji'}
+              {asking === 'decline' ? 'Odmawiasz…' : o.short ? 'Nie, czekam na swoją walkę' : o.superfight ? 'Zostaję w swojej kategorii' : 'Wolę walkę w federacji'}
             </button>
           ) : (
           <div className="ofr-row">
@@ -1163,12 +1408,12 @@ function OfferCard({ g, o, n, total, setGame }: { g: GameState; o: FightOffer; n
             </button>
           </div>
           )}
-          {total - n > 0 && !o.tuneup && (
-            <button className="link-btn ofr-auto" disabled={!!asking} onClick={() => setGame(acceptAllOffers(g, prep))}>
+          {total - n > 0 && !special && (
+            <button className="link-btn ofr-auto" disabled={!!asking} onClick={() => setGame(acceptAllOffers(g, prep, tix))}>
               Przyjmuj też kolejne oferty w tym roku
             </button>
           )}
-          <p className="faint small ofr-help">{o.tuneup ? 'Odmowa nic nie kosztuje: federacja da ci zwykłego rywala.' : blocked ?? 'Po odmowie przyjdzie inna oferta albo nic. Grymaszenie psuje opinię u promotorów.'}</p>
+          <p className="faint small ofr-help">{o.short ? 'Odmowa nic nie kosztuje: to walka ponad plan, twoja zaplanowana walka nadal czeka.' : o.superfight ? 'Odmowa nic nie kosztuje, pas zostaje u ciebie.' : o.tuneup ? 'Odmowa nic nie kosztuje: federacja da ci zwykłego rywala.' : blocked ?? 'Po odmowie przyjdzie inna oferta albo nic. Grymaszenie psuje opinię u promotorów.'}</p>
         </div>
       </div>
     </div>
@@ -1270,14 +1515,14 @@ export default function Season({ game, setGame }: StepProps) {
 
   // pierwsza walka i kolejne: po wyniku chwila przerwy (albo przycisk „Następna walka”)
   useEffect(() => {
-    if (spinning || run.done || waiting || introOpen || run.offer || run.press) return;
+    if (spinning || run.done || waiting || introOpen || run.offer || run.press || run.weigh || run.post) return;
     if (last && !last.sim.finished) return;
     if (paused && anim) return;
     const delay = !animate ? 0 : fast ? 260 : !last ? 1600 : revealMs + NEXT_MS;
     const t = setTimeout(advance, delay);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [spinning, run.done, waiting, introOpen, last?.idx, finishedNow, fast, animate, paused, !!run.offer, !!run.press]);
+  }, [spinning, run.done, waiting, introOpen, last?.idx, finishedNow, fast, animate, paused, !!run.offer, !!run.press, !!run.weigh, !!run.post]);
 
   // przewijanie do karty walki (cała karta na ekranie), na koniec do przycisku
   useEffect(() => {
@@ -1315,6 +1560,19 @@ export default function Season({ game, setGame }: StepProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lastKey, anim]);
   const counted = revealedKey === lastKey && !introOpen ? run.fights : run.fights.slice(0, -1);
+  // decyzja po walce (mikrofon) dopiero, gdy gracz zobaczy wynik
+  const [postShown, setPostShown] = useState(false);
+  const postKey = run.post ? `${last?.idx}-${run.post.kind}` : '';
+  useEffect(() => {
+    if (!run.post) {
+      setPostShown(false);
+      return;
+    }
+    if (revealedKey !== lastKey || introOpen) return;
+    const tm = setTimeout(() => setPostShown(true), anim ? 1100 : 0);
+    return () => clearTimeout(tm);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [postKey, revealedKey, lastKey, introOpen, anim]);
   const w = counted.filter((f) => f.result === 'W').length;
   const l = counted.filter((f) => f.result === 'L').length;
   const dr = counted.filter((f) => f.result === 'D').length;
@@ -1437,7 +1695,7 @@ export default function Season({ game, setGame }: StepProps) {
         ))}
       </div>
 
-      {!run.done && !waiting && !introOpen && !run.offer && !run.press && (
+      {!run.done && !waiting && !introOpen && !run.offer && !run.press && !run.weigh && !run.post && (
         <div className="play-ctrl" role="group" aria-label="Tempo roku">
                     {!last && paused && anim && !spinning && (
             <button className="icon-pill next" onClick={advance}>
@@ -1471,7 +1729,7 @@ export default function Season({ game, setGame }: StepProps) {
         </div>
       )}
 
-      {run.done && (
+      {run.done && !run.post && (
         <div className="cta-bar float" style={d(anim ? revealMs : 0)}>
           <button className="btn btn-primary btn-block btn-ico" onClick={() => setGame(toSummary(g))}>
             <Icon name="chart" />
@@ -1481,6 +1739,8 @@ export default function Season({ game, setGame }: StepProps) {
       )}
 
       {run.press && !run.done && createPortal(<PressCard g={g} o={run.press} setGame={setGame} />, document.body)}
+      {run.weigh && createPortal(<WeighCard g={g} o={run.weigh} setGame={setGame} />, document.body)}
+      {run.post && postShown && createPortal(<PostCard key={postKey} g={g} post={run.post} setGame={setGame} />, document.body)}
       {run.offer && !run.done && createPortal(<OfferCard key={run.fights.length} g={g} o={run.offer} n={run.fights.length + 1} total={run.planned} setGame={setGame} />, document.body)}
       {introOpen &&
         last &&

@@ -1,4 +1,5 @@
 import { toMarket, divisionKey } from '../../engine/game';
+import { fmtFans, followersOf } from '../../engine/extras';
 import { moneyShort, signed } from '../../format';
 import type { StepProps } from '../Game';
 import CareerChart from '../CareerChart';
@@ -124,7 +125,7 @@ export default function Summary({ game, setGame, onPeers }: StepProps & { onPeer
           </summary>
           <div className="acc-body">
             <p className="muted small">
-              Media {g.media}/100 · reputacja {g.rep}/100 · forma w tym roku: {s.form.toLowerCase()}
+              Media {g.media}/100 · reputacja {g.rep}/100 · obserwujący: {fmtFans(followersOf(g))} · forma w tym roku: {s.form.toLowerCase()}
             </p>
             {g.seasons.length >= 2 && <CareerChart g={g} />}
           </div>

@@ -1,5 +1,5 @@
 import { STAT_LABELS } from '../../engine/data';
-import { acceptShadyDeal, refuseShadyDeal, BACKROOM, backroomAvailable, backroomCost, backroomOpen, hasLabs, setBackroom, cheaperClub, downgradeClub, fightRange, plannedFights, setWantFights, ACADEMY_LEVELS, academyName, academyNext, investAcademy, OVERDRAFT, PITCH_SLOTS, pitchBlocked, pitchChance, pitchPay, pitchSponsor, breakPreview, budgetBalance, budgetLines, canStartSeason, expectedPurses, loanOffer, loanRefusal, startSeason, takeBreakYear, takeLoan } from '../../engine/game';
+import { setJob, setSocial, acceptShadyDeal, refuseShadyDeal, BACKROOM, backroomAvailable, backroomCost, backroomOpen, hasLabs, setBackroom, cheaperClub, downgradeClub, fightRange, plannedFights, setWantFights, ACADEMY_LEVELS, academyName, academyNext, investAcademy, OVERDRAFT, PITCH_SLOTS, pitchBlocked, pitchChance, pitchPay, pitchSponsor, breakPreview, budgetBalance, budgetLines, canStartSeason, expectedPurses, loanOffer, loanRefusal, startSeason, takeBreakYear, takeLoan } from '../../engine/game';
 import { useState, type CSSProperties } from 'react';
 import type { StatKey } from '../../engine/types';
 import { money, plural } from '../../format';
@@ -9,6 +9,8 @@ import { Icon, STAT_ICON } from '../Icon';
 import { CoachTip } from '../Tutorial';
 import { sfxCash } from '../sound';
 import { ChanceTag } from '../Chance';
+import { JOB_OPTIONS, SMM_COST, SOCIAL_OPTIONS, followersOf, fmtFans, jobMode, socialIncome, socialMode } from '../../engine/extras';
+import { livingCost } from '../../engine/data';
 
 export default function Budget({ game, setGame }: StepProps) {
   const g = game;
@@ -138,6 +140,8 @@ export default function Budget({ game, setGame }: StepProps) {
           W amatorce nikt ci nie płaci. Walczysz o medale, doświadczenie i to, żeby ktoś cię zauważył.
         </p>
       )}
+
+      <LifePicks g={g} setGame={setGame} />
 
       {backroomOpen(g) && (
         <section className="backroom">
@@ -414,5 +418,61 @@ export default function Budget({ game, setGame }: StepProps) {
         </button>
       </div>
     </section>
+  );
+}
+
+/** Etat obok treningów i social media: dwa wybory na rok, od razu widać w rachunku. */
+function LifePicks({ g, setGame }: { g: StepProps['game']; setGame: StepProps['setGame'] }) {
+  const jm = jobMode(g);
+  const sm = socialMode(g);
+  const fans = followersOf(g);
+  const job = JOB_OPTIONS.find((j) => j.id === jm);
+  const soc = SOCIAL_OPTIONS.find((o) => o.id === sm)!;
+  const living = livingCost(g.age);
+  const inc = socialIncome({ ...g, social: sm === 'off' ? 'self' : sm });
+  return (
+    <>
+      {jm && job && (
+        <section className="life-pick">
+          <div className="br-head">
+            <Icon name="briefcase" size={15} />
+            <b>Praca obok treningów</b>
+            <span className="faint small">do krajowej federacji</span>
+          </div>
+          <div className="seg prep-seg" role="radiogroup" aria-label="Praca">
+            {JOB_OPTIONS.map((j) => (
+              <button key={j.id} role="radio" aria-checked={jm === j.id} className={jm === j.id ? 'on' : ''} onClick={() => setGame(setJob(g, j.id))}>
+                <b>{j.label}</b>
+                <small className={j.form > 0 ? 'good' : j.form < 0 ? 'bad' : ''}>forma {j.form > 0 ? `+${j.form}` : j.form < 0 ? `−${-j.form}` : '±0'}</small>
+              </button>
+            ))}
+          </div>
+          <small className="prep-desc">
+            {job.desc} {living > 0 && <>Życie kosztuje cię w tym roku {money(Math.round((living * job.living) / 500) * 500)}.</>}
+          </small>
+        </section>
+      )}
+      <section className="life-pick">
+        <div className="br-head">
+          <Icon name="phone" size={15} />
+          <b>Social media</b>
+          <span className="life-fans">
+            <b>{fmtFans(fans)}</b> obserwujących
+          </span>
+        </div>
+        <div className="seg prep-seg" role="radiogroup" aria-label="Social media">
+          {SOCIAL_OPTIONS.map((o) => (
+            <button key={o.id} role="radio" aria-checked={sm === o.id} className={sm === o.id ? 'on' : ''} onClick={() => setGame(setSocial(g, o.id))}>
+              <b>{o.id === 'pro' ? 'Manager' : o.label}</b>
+              <small className={o.id === 'self' ? 'bad' : ''}>{o.id === 'off' ? 'bez zysku' : o.id === 'self' ? 'forma −1' : `−${money(SMM_COST[g.tier] ?? 9000)}`}</small>
+            </button>
+          ))}
+        </div>
+        <small className="prep-desc">
+          {soc.desc}
+          {sm !== 'off' && inc > 0 ? ` Współprace: ok. ${money(inc)} w tym roku.` : sm !== 'off' ? ' Marki zaczną płacić od 2 tys. obserwujących.' : ''} Obserwujący pomagają sprzedawać bilety i szukać sponsorów.
+        </small>
+      </section>
+    </>
   );
 }

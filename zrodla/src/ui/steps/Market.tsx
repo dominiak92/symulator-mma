@@ -1,6 +1,6 @@
 import { STAT_LABELS, TIER_LEVEL } from '../../engine/data';
 import { ovr } from '../../engine/fighter';
-import { recStr, changeDivision, clubAvailability, clubLimits, confirmMarket, divisionKey, divisionOptions, marketWarnings, pickClub, pickContract, retire, retireBonus, setManager, weightMissChance } from '../../engine/game';
+import { negotiateContract, recStr, changeDivision, clubAvailability, clubLimits, confirmMarket, divisionKey, divisionOptions, marketWarnings, pickClub, pickContract, retire, retireBonus, setManager, weightMissChance } from '../../engine/game';
 import { WEIGHTS } from '../../engine/data';
 import { MANAGERS, currentManager, managerBlocked } from '../../engine/managers';
 import type { Contract } from '../../engine/types';
@@ -307,7 +307,15 @@ export default function Market({ game, setGame }: StepProps) {
         ))}
 
         {signing && picked && (
-          <ContractSheet g={g} c={picked} club={m.clubs[m.pickedClub] ?? g.club} onCancel={() => setSigning(false)} onSign={() => setGame(confirmMarket(g))} />
+          <ContractSheet
+            g={g}
+            c={picked}
+            club={m.clubs[m.pickedClub] ?? g.club}
+            onCancel={() => setSigning(false)}
+            onSign={() => setGame(confirmMarket(g))}
+            negotiated={!!m.negotiated}
+            onNegotiate={(ask) => setGame(negotiateContract(g, m.pickedContract, ask))}
+          />
         )}
         <div className="cta-bar">
           <button
