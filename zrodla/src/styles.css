@@ -6725,3 +6725,4 @@ details.intro-notes[open] summary::before { content: '▸'; transform: rotate(90
 .cn-grid small { font-size: 0.74rem; color: var(--faint); text-transform: uppercase; letter-spacing: 0.04em; font-weight: 700; }
 .cn-grid b { font-family: var(--display); font-size: 1.25rem; }
 .cn-grid em { font-style: normal; font-size: 0.76rem; color: var(--muted); }
+.belt-img { display: block; max-width: 100%; filter: drop-shadow(0 6px 16px rgba(0, 0, 0, 0.55)); }
