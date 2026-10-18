@@ -7059,3 +7059,60 @@ p, .offer-note, .frow-ctx, .pst-text { text-wrap: pretty; }
 }
 .origin-chip[aria-checked='true'] { border-color: var(--cyan); background: var(--cyan-soft); box-shadow: inset 0 0 0 1px var(--cyan); }
 .ph-wm { width: 190px; height: 190px; top: 42%; }
+
+/* ===== tworzenie postaci: zwarty formularz z podglądem ===== */
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.cr-hero {
+  position: relative; display: flex; align-items: flex-end; gap: 12px; padding: 14px 14px 0; overflow: hidden; isolation: isolate;
+  border-radius: var(--r-lg); border: 1px solid var(--line);
+  background: radial-gradient(70% 90% at 22% 100%, rgba(1, 174, 238, 0.28), transparent 70%), linear-gradient(160deg, var(--panel-2), var(--bg-deep));
+}
+.cr-hero::after { content: ''; position: absolute; inset: auto 0 0; height: 3px; background: linear-gradient(90deg, var(--cyan), transparent 70%); }
+.cr-art { flex: none; margin-bottom: -2px; }
+.cr-art .fighter-art { display: block; filter: drop-shadow(0 10px 16px rgba(0, 0, 0, 0.6)); }
+.cr-id { display: grid; gap: 4px; padding-bottom: 16px; min-width: 0; }
+.cr-kicker { font-size: 0.74rem; color: var(--cyan); font-weight: 700; }
+.cr-name { font-family: var(--display); font-size: 1.55rem; line-height: 1.02; text-transform: uppercase; overflow-wrap: anywhere; }
+.cr-name em { font-style: normal; color: var(--gold); }
+.cr-meta { display: inline-flex; align-items: center; gap: 4px; font-size: 0.8rem; color: var(--muted); }
+.cr-tags { display: flex; flex-wrap: wrap; gap: 4px; }
+.cr-card { margin-top: 10px; padding: 12px; border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--panel); display: grid; gap: 10px; }
+.cr-field { display: grid; gap: 4px; min-width: 0; }
+.cr-field > span { font-size: 0.74rem; color: var(--faint); font-weight: 600; }
+.cr-card .field-grid, .cr-card .field-inline { margin: 0; }
+.cr-card .field-inline { align-items: end; }
+.cr-dice { align-self: end; }
+.cr-selects { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.cr-selects .cr-field:last-child { grid-column: 1 / -1; }
+@media (min-width: 560px) { .cr-selects { grid-template-columns: 1fr 1fr 1fr; } .cr-selects .cr-field:last-child { grid-column: auto; } }
+.cr-label { display: flex; align-items: center; gap: 6px; font-family: var(--cond); font-weight: 600; color: var(--muted); font-size: 0.9rem; }
+.cr-label .ico { color: var(--cyan); }
+.cr-desc { margin: -2px 0 2px; font-size: 0.82rem; color: var(--muted); line-height: 1.4; }
+.cr-two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.seg { display: grid; gap: 4px; padding: 3px; border-radius: var(--r-md); background: var(--bg-deep); border: 1px solid var(--line); }
+.seg-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.seg-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.seg-btn {
+  appearance: none; border: 0; background: transparent; color: var(--muted); font: inherit; font-size: 0.84rem; font-weight: 600;
+  padding: 8px 4px; border-radius: calc(var(--r-md) - 3px); cursor: pointer; display: grid; gap: 1px; line-height: 1.15; min-height: 40px; place-content: center;
+  transition: background 0.15s, color 0.15s;
+}
+.seg-btn small { font-size: 0.68rem; font-weight: 500; color: var(--faint); }
+.seg-btn[aria-checked='true'] { background: var(--cyan-soft); color: var(--text); box-shadow: inset 0 0 0 1.5px var(--cyan); }
+.seg-btn[aria-checked='true'] small { color: var(--muted); }
+.seg-btn:focus-visible { outline: 2px solid var(--cyan); outline-offset: 1px; }
+.cr-field select.input { padding-right: 34px; text-overflow: ellipsis; }
+/* plakat: przycisk walki zawsze widoczny na dole, z delikatnym pulsowaniem */
+.poster .fi-go {
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
+  box-shadow: 0 -18px 22px 4px var(--p-base, #0c0c10), 0 10px 30px -6px rgba(42, 30, 255, 0.7);
+  animation: goPulse 1.8s 1.2s ease-in-out infinite;
+}
+@keyframes goPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.025); filter: brightness(1.12); }
+}
+@media (prefers-reduced-motion: reduce) { .poster .fi-go { animation: none; } }
+.poster .fi-go { bottom: -16px; box-shadow: 0 -18px 22px 4px var(--p-base, #0c0c10), 0 16px 0 0 var(--p-base, #0c0c10); }
