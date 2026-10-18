@@ -70,7 +70,8 @@ def body_layers(path):
     brow=outM&browband
     cls2=cls.copy()
     cls2[hair|hairH]=N['skin']
-    inner=outM&hairZ&~nearBg&(yy<2*(ey-35))
+    hairZ2=nd.binary_dilation(hair,iterations=22)
+    inner=(outM|(cls==N['skinL'])|(cls==N['glove'])|(cls==N['gloveH']))&hairZ2&~nearBg&(yy<2*(ey-50))
     cls2[inner]=N['skin']
     L=[]
     def add(role,mask,minarea=30,smooth=1):
@@ -80,7 +81,15 @@ def body_layers(path):
     for r in ['skinS','skinH','skinL','glove','gloveH','strap','strapS','strapH','white']:
         add(r,cls2==N[r])
     add('brow',brow,20,0)
-    add('out',(cls2==N['out'])&~brow,20,1)
+    ob=(cls2==N['out'])&~brow
+    lab,n=nd.label(ob)
+    if n:
+        sz=nd.sum(ob,lab,range(1,n+1)); cy=[c[0] for c in nd.center_of_mass(ob,lab,range(1,n+1))]
+        kill=np.zeros(n+1,bool)
+        for i in range(n):
+            if sz[i]<400 and cy[i]<2*(ey-45): kill[i+1]=True
+        ob=ob&~kill[lab]
+    add('out',ob,20,1)
     HL=[]
     def addh(role,mask,minarea=30,smooth=1):
         m=clean(mask,minarea,smooth)
@@ -97,7 +106,7 @@ def sheet_cells(path):
     boxes=sorted([(s[1].start,s[1].stop,s[0].start,s[0].stop) for s in sl], key=lambda b:(round(b[2]/250),b[0]))
     return cls,fg,boxes
 
-def overlay(cls,box,M_s,M_b,kind,TH=2*620,TW=2*1024):
+def overlay(cls,box,M_s,M_b,kind,TH=2*620,TW=2*1024,deskew=False):
     x0,x1,y0,y1=box
     SX=M_b['w']/M_s['w']
     rel_s=np.array([-600, M_s['top']-M_s['ey'], 0, M_s['mouth']-M_s['ey'], M_s['chin']-M_s['ey'], 600.])
@@ -118,6 +127,31 @@ def overlay(cls,box,M_s,M_b,kind,TH=2*620,TW=2*1024):
     else:
         m=hairc&(Y<2*(eyb-7))&~((Y>2*(eyb-56))&(np.abs(X-2*exb)<2*80))
         m=clean(m,minarea=2500,smooth=1)
+        if deskew:
+            # wyprostuj czub: oś pionowa przez środek głowy
+            rows=[]
+            for yv in range(0, int(2*(eyb-110)), 4):
+                xsr=np.where(m[yv])[0]
+                if len(xsr)>4: rows.append((yv,(xsr.min()+xsr.max())/2))
+            if len(rows)>8:
+                ry=np.array([r[0] for r in rows]); rx=np.array([r[1] for r in rows])
+                a_,b_=np.polyfit(ry,rx,1)
+                ybase=ry.max()
+                for yv in range(0, int(2*(eyb-60))):
+                    sh=-int(round(a_*(yv-ybase)))
+                    if sh:
+                        c[yv]=np.roll(c[yv],sh); m[yv]=np.roll(m[yv],sh)
+                f=c>=0; hairc=np.isin(c,HAIRC)
+        # wyśrodkuj fryzurę na głowie (arkusz bywa przesunięty)
+        top_part=m&(Y<2*(eyb-70))
+        if top_part.sum()>500:
+            ys_,xs_=np.where(top_part)
+            # środek liczony z lewej i prawej krawędzi, a nie ze średniej (grzywka na bok)
+            lo,hi=np.percentile(xs_,2),np.percentile(xs_,98)
+            dx=int(round(2*exb-(lo+hi)/2))
+            if abs(dx)<40:
+                c=np.roll(c,dx,axis=1); f=c>=0; hairc=np.isin(c,HAIRC)
+                m=np.roll(m,dx,axis=1)
     L=[]
     if kind=='face':
         R=f&(Y<2*(M_b['chin']+11)); R=clean(R,2000,2)
@@ -130,8 +164,12 @@ def overlay(cls,box,M_s,M_b,kind,TH=2*620,TW=2*1024):
         add('out',c==N['out'],30)
         return L
     if m.sum()==0: return L
+    if deskew:
+        m=nd.binary_fill_holes(nd.binary_closing(m,iterations=6))
     R=nd.binary_fill_holes(nd.binary_dilation(m,iterations=8))&f
     R=clean(R,minarea=400,smooth=2)
+    if deskew:
+        R=clean(nd.binary_fill_holes(nd.binary_closing(R,iterations=4)),minarea=400,smooth=3)
     near=nd.binary_dilation(m,iterations=6)
     def add(role,mask,minarea=40,smooth=1):
         mm=clean(mask&R,minarea,smooth)
@@ -141,5 +179,9 @@ def overlay(cls,box,M_s,M_b,kind,TH=2*620,TW=2*1024):
         for r in ['skin','skinS','skinH']: add(r,c==N[r],80)
     add('hairH',np.isin(c,[N['skinL'],N['gloveH']]),40)
     add('white',c==N['white'],30)
-    add('out',(c==N['out'])&(near|nd.binary_fill_holes(m)),40)
+    if deskew:
+        ring=R&~nd.binary_erosion(R,iterations=7)
+        add('out',ring|((c==N['out'])&nd.binary_erosion(R,iterations=7)),300)
+    else:
+        add('out',(c==N['out'])&(near|nd.binary_fill_holes(m)),160)
     return L

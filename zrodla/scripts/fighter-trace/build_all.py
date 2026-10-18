@@ -22,7 +22,7 @@ for k,(bp,hp,names) in SETS.items():
     d={'body':B,'hair':{'short':HS},'beard':{}}
     pref=[k]+[o for o in SETS if o!=k]
     for st in STYLES:
-        for src in pref:
+        for src in (['adult'] if st=='buzz' else ['young'] if st=='mohawk' else pref):
             cls,boxes,ms,nm=sheets[src]
             nm2=[('buzz' if (n=='beard' and src=='adult') else n) for n in nm]
             if st in nm and not (src=='adult' and st=='buzz'):
@@ -30,7 +30,7 @@ for k,(bp,hp,names) in SETS.items():
             elif st=='buzz' and src=='adult':
                 i=nm.index('beard')
             else: continue
-            d['hair'][st]=overlay(cls,boxes[i],ms[i],Mb,'hair'); break
+            d['hair'][st]=overlay(cls,boxes[i],ms[i],Mb,'hair',deskew=st in ('mohawk','bun')); break
     if k!='young':
         cls,boxes,ms,nm=sheets[k]
         for bd in ['beard','goatee']:
