@@ -1313,7 +1313,8 @@ const INVITE_BAD: Record<SideInvite['kind'], (inv: SideInvite) => string> = {
 };
 
 /** Zaproszenie na wydarzenie poza MMA: grappling, boks, seminarium. */
-type Notice = { head: string; ctx?: string; lines?: string[]; text: string; tone: Moment['tone']; cta: string };
+let INJ_SEEN = { key: '', idx: -1 };
+type Notice = { head: string; ctx?: string; lines?: string[]; text: string; tone: Moment['tone']; cta: string; inj?: { level: 1 | 2 | 3; sev: string; rows: [string, string, 'bad' | 'warn' | 'ok'][] } };
 
 /** Wynik decyzji (zapisany już w stanie gry): pokazujemy go, zanim rok pójdzie dalej. */
 function NoticeCard({ n, onClose }: { n: Notice; onClose: () => void }) {
@@ -1324,7 +1325,32 @@ function NoticeCard({ n, onClose }: { n: Notice; onClose: () => void }) {
           <span className="fi-num">{n.head}</span>
           {n.ctx && <span className="fi-ctx">{n.ctx}</span>}
         </div>
-        {n.lines && n.lines.length > 0 && (
+        {n.inj && (
+          <div className={`inj-card lv${n.inj.level}`}>
+            <div className="inj-top">
+              <span className="inj-ico" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="26" height="26"><path d="M9 3h6v6h6v6h-6v6H9v-6H3V9h6z" fill="currentColor" /></svg>
+              </span>
+              <span className="inj-sev">
+                <b>{n.inj.sev}</b>
+                <span className="inj-meter" aria-label={`Waga urazu ${n.inj.level} z 3`}>
+                  {[1, 2, 3].map((k) => (
+                    <i key={k} className={k <= n.inj!.level ? 'on' : ''} />
+                  ))}
+                </span>
+              </span>
+            </div>
+            <dl className="inj-rows">
+              {n.inj.rows.map(([k, v, t], i) => (
+                <div key={k} className={`inj-row t-${t}`} style={{ ['--i' as string]: i } as CSSProperties}>
+                  <dt>{k}</dt>
+                  <dd>{v}</dd>
+                </div>
+              ))}
+            </dl>
+          </div>
+        )}
+        {!n.inj && n.lines && n.lines.length > 0 && (
           <ol className="inv-lines">
             {n.lines.map((l, i) => (
               <li key={i} style={{ ['--i' as string]: i } as CSSProperties}>
@@ -1333,8 +1359,8 @@ function NoticeCard({ n, onClose }: { n: Notice; onClose: () => void }) {
             ))}
           </ol>
         )}
-        <div className={`post-result tone-${n.tone}`}>
-          <Icon name={n.tone === 'bad' ? 'x' : n.tone === 'neutral' ? 'megaphone' : 'check'} size={20} />
+        <div className={`post-result tone-${n.tone} ${n.inj ? 'inj-text' : ''}`}>
+          <Icon name={n.inj ? 'heart' : n.tone === 'bad' ? 'x' : n.tone === 'neutral' ? 'megaphone' : 'check'} size={20} />
           <p>{n.text}</p>
         </div>
         <button className="btn btn-primary btn-block btn-ico" autoFocus onClick={onClose}>
@@ -2071,33 +2097,36 @@ export default function Season({ game, setGame }: StepProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [revealedKey, lastKey, introOpen]);
   // kontuzja po walce: wyraźny komunikat, co to oznacza (zamiast tylko linijki w opisie walki)
-  const injSeen = useRef(last?.sim.finished ? last.idx : -1);
+  const INJ_T = ['Kontuzja', 'Poważna kontuzja', 'Uraz na rok'];
+  // pamięć poza komponentem: po poważnym urazie ekran sezonu montuje się od nowa, a komunikat i tak musi się pokazać
+  const injKey = `${g.slot}-${g.year}`;
+  if (INJ_SEEN.key !== injKey) INJ_SEEN = { key: injKey, idx: -1 };
+  const injSeen = { get current() { return INJ_SEEN.idx; }, set current(v: number) { INJ_SEEN.idx = v; } };
+  // ostatnia walka z urazem, której komunikatu gracz jeszcze nie widział (nie tylko ostatnia walka: po drodze mógł wpaść inny komunikat)
+  const injFight = [...run.fights].reverse().find((f) => f.sim.finished && f.idx > injSeen.current && f.moments.some((x) => INJ_T.includes(x.title)));
+  const injPending = !!injFight;
   useEffect(() => {
-    if (!last || !last.sim.finished || last.idx <= injSeen.current) return;
+    if (!injFight) return;
     if (revealedKey !== lastKey || introOpen || revealBusy || notice) return;
-    const m = last.moments.find((x) => x.title === 'Kontuzja' || x.title === 'Poważna kontuzja' || x.title === 'Uraz na rok');
-    injSeen.current = last.idx;
-    if (!m) return;
+    const m = injFight.moments.find((x) => INJ_T.includes(x.title))!;
+    const idx = injFight.idx;
     const name = g.injury?.name ?? '';
-    const t = setTimeout(
-      () =>
-        setNotice(
-          m.title === 'Kontuzja'
-            ? { head: 'Kontuzja', ctx: name, text: 'Możesz walczyć dalej, ale nie na sto procent: do końca roku każda szansa w walce jest o 4 pkt mniejsza. Uraz minie z końcem roku.', lines: ['Kara do każdej akcji: −4 pkt', 'Lekarz sportowy w zapleczu zmniejsza ryzyko kolejnych urazów'], tone: 'bad', cta: 'Rozumiem' }
-            : m.title === 'Poważna kontuzja'
-              ? { head: 'Poważna kontuzja', ctx: name, text: 'Lekarz skreśla cię do końca roku. Kolejne walki w tym roku przepadają.', lines: ['Ten rok: koniec walk', 'Przyszły rok: kara −5 pkt do każdej akcji', 'Z kontuzją nie przyjdą zaproszenia z zagranicy ani walki na zastępstwo'], tone: 'bad', cta: 'Do podsumowania' }
-              : { head: 'Uraz na cały rok', ctx: name, text: 'Operacja i rehabilitacja. Ten rok się kończy, a cały następny spędzasz na leczeniu, bez walk.', lines: ['Ten rok: koniec walk', 'Przyszły rok: rehabilitacja, zero walk', 'Potem powrót z karą −3 pkt przez dwa lata'], tone: 'bad', cta: 'Do podsumowania' },
-        ),
-      anim ? 700 : 0,
-    );
+    const t = setTimeout(() => {
+      injSeen.current = idx;
+      setNotice(
+        m.title === 'Kontuzja'
+          ? { head: 'Kontuzja', ctx: name, text: 'Da się walczyć, ale nie na sto procent. Lekarz sportowy w zapleczu zmniejsza ryzyko kolejnych urazów.', tone: 'bad', cta: 'Rozumiem, walczę dalej', inj: { level: 1, sev: 'Lekki uraz', rows: [['Ten rok', 'walczysz dalej, każda szansa −4 pkt', 'warn'], ['Przyszły rok', 'uraz mija z końcem roku', 'ok']] } }
+          : m.title === 'Poważna kontuzja'
+            ? { head: 'Poważna kontuzja', ctx: name, text: 'Lekarz skreśla cię do końca roku. Zaplanowane walki przepadają.', tone: 'bad', cta: 'Do podsumowania roku', inj: { level: 2, sev: 'Poważny uraz', rows: [['Ten rok', 'koniec walk', 'bad'], ['Przyszły rok', 'walczysz z karą −5 pkt', 'warn'], ['Oferty', 'bez zaproszeń z zagranicy i walk na zastępstwo', 'warn']] } }
+            : { head: 'Uraz na cały rok', ctx: name, text: 'Operacja i długa rehabilitacja. Ten rok jest stracony, następny też spędzasz poza klatką.', tone: 'bad', cta: 'Do podsumowania roku', inj: { level: 3, sev: 'Uraz wykluczający', rows: [['Ten rok', 'koniec walk', 'bad'], ['Przyszły rok', 'rehabilitacja, zero walk', 'bad'], ['Powrót', 'przez dwa lata kara −3 pkt', 'warn']] } },
+      );
+    }, anim ? 700 : 0);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [last?.idx, revealedKey, lastKey, introOpen, revealBusy]);
-
-  const injPending = !!last && last.sim.finished && last.idx > injSeen.current && last.moments.some((x) => x.title === 'Kontuzja' || x.title === 'Poważna kontuzja' || x.title === 'Uraz na rok');
+  }, [injFight?.idx, revealedKey, lastKey, introOpen, revealBusy, notice]);
   // pierwsza walka i kolejne: po wyniku chwila przerwy (albo przycisk „Następna walka”)
   useEffect(() => {
-    if (spinning || revealOpen || run.done || waiting || introOpen || run.offer || run.press || run.weigh || run.post || run.invite || notice) return;
+    if (spinning || revealOpen || run.done || waiting || introOpen || run.offer || run.press || run.weigh || run.post || run.invite || notice || injPending) return;
     if (last && !last.sim.finished) return;
     if (paused && anim) return;
     const delay = !animate ? 0 : fast ? 260 : !last ? 1600 : revealMs + NEXT_MS;
@@ -2298,13 +2327,13 @@ export default function Season({ game, setGame }: StepProps) {
         </div>
       )}
 
-      {run.press && !run.done && !revealBusy && createPortal(<PressCard g={g} o={run.press} setGame={setGame} />, document.body)}
+      {run.press && !run.done && !revealBusy && !injPending && !notice && createPortal(<PressCard g={g} o={run.press} setGame={setGame} />, document.body)}
       {revealOpen && last && <ResultReveal g={g} f={last} onClose={() => { setRevealDone(last.idx); setRevealIdx(null); }} />}
-      {run.weigh && !revealBusy && createPortal(<WeighCard g={g} o={run.weigh} setGame={setGame} />, document.body)}
-      {run.invite && !run.post && !notice && !revealBusy && createPortal(<InviteCard key={run.invite.title} g={g} inv={run.invite} onDone={done} />, document.body)}
+      {run.weigh && !revealBusy && !injPending && !notice && createPortal(<WeighCard g={g} o={run.weigh} setGame={setGame} />, document.body)}
+      {run.invite && !run.post && !notice && !revealBusy && !injPending && createPortal(<InviteCard key={run.invite.title} g={g} inv={run.invite} onDone={done} />, document.body)}
       {run.post && postShown && !notice && createPortal(<PostCard key={postKey} g={g} post={run.post} onDone={done} />, document.body)}
       {notice && createPortal(<NoticeCard n={notice} onClose={() => setNotice(null)} />, document.body)}
-      {run.offer && !run.done && !revealBusy && createPortal(<OfferCard key={run.fights.length} g={g} o={run.offer} n={run.fights.length + 1} total={run.planned} setGame={setGame} />, document.body)}
+      {run.offer && !run.done && !revealBusy && !injPending && !notice && createPortal(<OfferCard key={run.fights.length} g={g} o={run.offer} n={run.fights.length + 1} total={run.planned} setGame={setGame} />, document.body)}
       {introOpen &&
         last &&
         createPortal(
