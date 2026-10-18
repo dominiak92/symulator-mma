@@ -8,6 +8,7 @@ import { lat, money, plural } from '../../format';
 import type { StepProps } from '../Game';
 import { Emblem, clubCrest, crestFor } from '../Emblem';
 import { useState } from 'react';
+import ContractSheet from '../ContractSheet';
 import { Icon, STAT_ICON } from '../Icon';
 import { CoachTip } from '../Tutorial';
 
@@ -35,6 +36,7 @@ export default function Market({ game, setGame }: StepProps) {
   const [confirmRetire, setConfirmRetire] = useState(false);
   const topExit = retireBonus(g);
   const [clubsOpen, setClubsOpen] = useState(false);
+  const [signing, setSigning] = useState(false);
   const warnings = marketWarnings(g);
   const available = m.contracts.filter((c) => c.available);
   const watching = m.contracts.filter((c) => !c.available);
@@ -84,6 +86,14 @@ export default function Market({ game, setGame }: StepProps) {
                   </span>
                 </span>
                 {c.note && <span className="offer-note">{c.note}</span>}
+                {c.exclusive && (
+                  <span className="excl-note">
+                    <Icon name="pen" size={12} />
+                    <span>
+                      <b>Na wyłączność.</b> Gaża o 8% wyższa, ale bez walk na innych galach, także tych na odbudowę rekordu.
+                    </span>
+                  </span>
+                )}
                 {c.kind === 'freak' && (
                   <span className="freak-cost">
                     {g.tier > 0 && g.rank !== null && (
@@ -296,8 +306,19 @@ export default function Market({ game, setGame }: StepProps) {
           </div>
         ))}
 
+        {signing && picked && (
+          <ContractSheet g={g} c={picked} club={m.clubs[m.pickedClub] ?? g.club} onCancel={() => setSigning(false)} onSign={() => setGame(confirmMarket(g))} />
+        )}
         <div className="cta-bar">
-          <button className="btn btn-primary btn-block btn-ico" disabled={!picked} onClick={() => setGame(confirmMarket(g))}>
+          <button
+            className="btn btn-primary btn-block btn-ico"
+            disabled={!picked}
+            onClick={() => {
+              // nowa umowa (awans, transfer, debiut, freak) podpisuje się na kartce; przedłużenie bez ceremonii
+              if (picked && picked.kind !== 'stay') setSigning(true);
+              else setGame(confirmMarket(g));
+            }}
+          >
             <Icon name="pen" />
             Podpisuję · rok {g.season}
           </button>
