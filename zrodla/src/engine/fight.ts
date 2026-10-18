@@ -1,4 +1,5 @@
 import type { Rng } from './rng';
+import { applyPerks, type Perk } from './perks';
 import type {
   DecisionOption,
   DecisionPoint,
@@ -59,6 +60,8 @@ export interface FightCtx {
   penalty: number; // kontuzja (pkt %)
   allowDecision: boolean;
   decisionChance: number;
+  /** atuty z obozu */
+  perks?: Perk[];
 }
 
 /** Cytaty trenera w przerwach dużych walk. */
@@ -583,6 +586,7 @@ function buildDecision(rng: Rng, ctx: FightCtx, sim: FightSim): DecisionPoint | 
     sim.seen = [...seen, dp.id];
     dp.corner = dp.corner || sim.round > 0;
   }
+  if (dp && ctx.perks?.length) applyPerks(dp, ctx.perks, distFrom);
   if (dp)
     dp.status = {
       lead: sim.round === 0 ? null : cardsLead(sim),

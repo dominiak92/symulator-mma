@@ -86,6 +86,7 @@ import {
 import { advanceFight, applyDecision, chanceFrom, distFrom, newSim, rollOutcome, type FightCtx } from './fight';
 import { EVENTS, eventWeight, findEvent } from './events';
 import { buildInvite, resolveInvite, sideChance } from './side';
+import { activePerks, MAX_PERKS, PERKS, perkUnlocked } from './perks';
 import { addFans, fanGain, fmtFans, followersOf, jobDef, jobForm, socialCost, socialForm, socialIncome, ticketRep, ticketSale, ticketsAvailable } from './extras';
 
 export const SAVE_VERSION = 2;
@@ -626,7 +627,7 @@ export type BackroomId = 'physio' | 'doctor' | 'supps' | 'sparring';
 export const BACKROOM: { id: BackroomId; name: string; short: string; effect: string; icon: string; cost: number[]; minTier?: number }[] = [
   { id: 'physio', name: 'Fizjoterapeuta', short: 'masaże, rozluźnianie, taping', effect: 'Organizm wolniej się zużywa, kariera trwa dłużej.', icon: 'heart', cost: [0, 1500, 3000, 7000, 20000] },
   { id: 'doctor', name: 'Lekarz sportowy', short: 'badania i opieka przed walką', effect: 'Rzadsze kontuzje, a jeśli już, to lżejsze.', icon: 'bandage', cost: [0, 2500, 5000, 12000, 30000] },
-  { id: 'supps', name: 'Suplementacja', short: 'odżywki, witaminy, elektrolity', effect: 'Lekko lepsza forma w każdej walce.', icon: 'flame', cost: [0, 800, 1500, 4000, 9000] },
+  { id: 'supps', name: 'Suplementacja', short: 'odżywki, witaminy, elektrolity', effect: 'Lekko lepsza forma w każdej walce.', icon: 'flame', cost: [0, 2000, 4000, 8000, 16000] },
   { id: 'sparring', name: 'Elitarni sparingpartnerzy', short: 'sparingpartnerzy z czołówki, ściągani na obóz', effect: 'Wyraźnie lepsza forma w każdej walce. Drogo, ale na tym poziomie liczy się każdy procent.', icon: 'glove', cost: [0, 0, 0, 70000, 180000], minTier: 3 },
 ];
 export function backroomAvailable(s: GameState, id: BackroomId) {
@@ -1487,6 +1488,7 @@ function beginRun(s: GameState) {
       startOvr: ovr(s.stats),
       startRank: s.rank,
       startMedia: s.media,
+      startFans: followersOf(s),
       intro,
       mgrFocus,
     };
@@ -1622,6 +1624,7 @@ function fightCtx(s: GameState, opp: Fighter): FightCtx {
     // czwarta i piąta walka w roku: organizm nie nadąża
     form: s.run!.form.mod + jobForm(s) + socialForm(s) + ((s.flags.expBoost ?? 0) > 0 ? 5 : 0) - Math.max(0, s.run!.fights.length - 3) * 5 + (s.run!.planned < s.contract.fights && s.contract.kind !== 'freak' ? 3 : 0) + fightMods(s),
     penalty: s.injury?.penalty ?? 0,
+    perks: activePerks(s),
     allowDecision: true,
     decisionChance: 0.55,
   };
@@ -1819,6 +1822,7 @@ const ABROAD = [
   { city: 'Dubaj', venue: 'Arena Pustynna', gala: 'Desert Kings FC', flag: '🇦🇪' },
   { city: 'Rijad', venue: 'Hala Królewska', gala: 'Arabian Warriors', flag: '🇸🇦' },
   { city: 'Makau', venue: 'Cotai Arena', gala: 'Dragon Gate MMA', flag: '🇲🇴' },
+  { city: 'Saitama', venue: 'Super Arena', gala: 'Raizen Sylwester', flag: '🇯🇵' },
 ];
 
 function abroadWanted(rng: Rng, s: GameState): boolean {
@@ -1833,7 +1837,9 @@ function abroadWanted(rng: Rng, s: GameState): boolean {
 
 function buildAbroad(rng: Rng, s: GameState): FightOffer {
   s.run!.abroadOffered = true;
-  const a = rng.pick(ABROAD);
+  // ostatnia walka roku: zaproszenie na sylwestrową galę w Japonii
+  const last = s.run!.fights.length >= s.run!.planned - 1;
+  const a = last && rng.chance(0.5) ? ABROAD[3] : rng.pick(ABROAD.slice(0, 3));
   const opp = generateOpponent(rng, s.tier, rng.int(1, 5), s.profile.difficulty === 'hard');
   // rywal z zagranicy: nazwisko i flaga z międzynarodowej puli, poziom z twojego szczebla
   const intl = generateOpponent(rng, 4, null, false);
@@ -1892,7 +1898,7 @@ export function declineInvite(s0: GameState): GameState {
 
 export function inviteChance(s: GameState): number | null {
   const inv = s.run?.invite;
-  if (!inv || inv.kind === 'seminar') return null;
+  if (!inv || inv.kind === 'seminar' || inv.kind === 'film') return null;
   const p = sideChance(s, inv.kind, s.run!.form.mod);
   return Math.round((inv.kind === 'grappling' ? p * p * p : p) * 100);
 }
@@ -2655,8 +2661,24 @@ export function postAnswer(s0: GameState, key: string): GameState {
         break;
     }
     if (rep && text) rep.moments.push({ round: rep.round, title: post.kind === 'mic' ? 'Mikrofon' : 'Po werdykcie', text, tone });
+    if (rep) rep.postChoice = { key, ok };
   });
   return s;
+}
+
+/** Ksywka zależna od tego, jak wygrywasz (raz na karierę). */
+function fanNickFor(rng: Rng, s: GameState): string | null {
+  const proWins = s.history.filter((h) => !h.amateur && !h.freak && h.result === 'W');
+  const ko = proWins.filter((h) => h.method === 'KO/TKO').length;
+  const sub = proWins.filter((h) => h.method === 'Poddanie').length;
+  const dec = proWins.filter((h) => h.method.startsWith('Decyzja')).length;
+  if ((s.flags.shortWins ?? 0) >= 2) return 'Strażak';
+  if (ko >= 3 && ko >= sub) return rng.pick(['Młot', 'Kowadło', 'Dynamit', 'Kafar']);
+  if (sub >= 3) return rng.pick(['Anakonda', 'Pyton', 'Imadło', 'Dusiciel']);
+  if (s.flags.offTheCanvas && s.flags.comeback) return 'Feniks';
+  if (dec >= 6 && ko + sub <= 1) return rng.pick(['Profesor', 'Szachista', 'Księgowy']);
+  if ((s.flags.grapplingGold ?? 0) >= 2) return 'Kimono';
+  return null;
 }
 
 /** Po wygranej: mikrofon w klatce. Po kontrowersyjnej porażce: reakcja na werdykt. */
@@ -3001,7 +3023,26 @@ function finalizeFight(rng: Rng, s: GameState, rep: FightReport) {
   if (res === 'L' && rep.freak) s.flags.freakLoss = 1;
   if (res === 'W' && rep.method === 'KO/TKO') s.finishes.ko++;
   if (res === 'W' && rep.method === 'Poddanie') s.finishes.sub++;
-  if (res === 'L' && (rep.method === 'KO/TKO' || rep.method === 'Lekarz')) s.finishes.koLosses++;
+  if (res === 'L' && (rep.method === 'KO/TKO' || rep.method === 'Lekarz')) {
+    s.finishes.koLosses++;
+    // szczęka słabnie: każdy nokaut zostawia ślad na zawsze, a kolejne przychodzą łatwiej
+    const kl = s.finishes.koLosses;
+    const drop = rep.amateur ? 0 : kl >= 5 ? 2 : 1;
+    s.stats.chin = clamp(s.stats.chin - drop, 1, 99);
+    s.potential.chin = Math.max(s.stats.chin, s.potential.chin - drop);
+    if (!rep.amateur && (kl === 4 || kl === 7 || kl === 8))
+      rep.moments.push({
+        round: rep.round,
+        title: kl >= 8 ? 'Ostatnie ostrzeżenie' : 'Szczęka słabnie',
+        text:
+          kl >= 8
+            ? `Ósmy nokaut w karierze. Lekarz komisji mówi wprost: przy dziewiątym nie dostaniesz już licencji.`
+            : kl === 7
+              ? 'Siódmy nokaut. Na sparingach coraz łatwiej cię trafić, a każdy cios w szczękę czujesz bardziej niż kiedyś.'
+              : 'Czwarty nokaut w karierze. Neurolog ostrzega: każdy kolejny będzie przychodził łatwiej.',
+        tone: 'bad',
+      });
+  }
   if (res === 'L' && rep.method === 'Poddanie') s.finishes.subLosses++;
   if (rep.freak) s.freakFights++;
 
@@ -3238,6 +3279,18 @@ function finalizeFight(rng: Rng, s: GameState, rep: FightReport) {
   if (rep.interim && res === 'W')
     rep.moments.push({ round: rep.round, title: 'Tymczasowy mistrz', text: 'Pas tymczasowy jest twój. Teraz czeka cię walka z prawdziwym mistrzem, gdy wróci po kontuzji.', tone: 'purple' });
 
+  // ksywka od kibiców po charakterystycznych walkach
+  if (!rep.amateur && !rep.freak && res === 'W' && !s.fanNick) {
+    const nick = fanNickFor(rng, s);
+    if (nick) {
+      s.fanNick = nick;
+      const had = !!s.profile.nickname;
+      if (!had) s.profile.nickname = nick;
+      log(s, `Kibice nazywają cię „${nick}”.`);
+      rep.moments.push({ round: rep.round, title: 'Nowa ksywka', text: had ? `Na trybunach ktoś krzyczy „${nick}!” i cała hala to podchwytuje. Oficjalnie dalej jesteś „${s.profile.nickname}”, ale kibice wiedzą swoje.` : `Na trybunach ktoś krzyczy „${nick}!” i cała hala to podchwytuje. Od dziś na plakatach jesteś „${nick}”.`, tone: 'purple' });
+    }
+  }
+
   if (rep.amateur) advanceTourney(s, rep, res);
   else if (s.run!.fights.length >= s.run!.planned) s.run!.done = true;
   if (s.flags.injuryStop) {
@@ -3272,6 +3325,38 @@ function headlineFor(rep: FightReport): string {
 // ---------------------------------------------------------------------------
 
 const fmtK = (n: number) => `${n >= 0 ? '+' : '−'}${Math.abs(Math.round(n / 1000)).toLocaleString('pl-PL')} tys. zł`;
+
+/** Co działo się poza klatką w tym roku (do podsumowania). */
+function outsideRows(s: GameState, run: NonNullable<GameState['run']>): SeasonSummary['outside'] {
+  const rows: NonNullable<SeasonSummary['outside']> = [];
+  const fans = followersOf(s) - (run.startFans ?? followersOf(s));
+  if (fans > 0 && !run.tourneys) rows.push({ icon: 'phone', label: 'Obserwujący', value: `+${fmtFans(fans)} (razem ${fmtFans(followersOf(s))})` });
+  const tix = run.fights.filter((f) => f.tickets);
+  if (tix.length) {
+    const sold = tix.reduce((a, f) => a + f.tickets!.sold, 0);
+    const cut = tix.reduce((a, f) => a + f.tickets!.cut, 0);
+    rows.push({ icon: 'ticket', label: 'Bilety', value: sold ? `${sold} ${pl(sold, 'bilet', 'bilety', 'biletów')}, prowizja ${cut.toLocaleString('pl-PL')} zł` : 'nic nie sprzedałeś' });
+  }
+  const bonuses = run.fights.filter((f) => f.bonus).length;
+  if (bonuses) rows.push({ icon: 'star', label: 'Bonusy wieczoru', value: run.fights.filter((f) => f.bonus).map((f) => f.bonus!.toLowerCase()).join(', ') });
+  for (const x of run.sideLog ?? []) rows.push({ icon: x.tone === 'bad' ? 'x' : 'trophy', label: x.title, value: x.lines[x.lines.length - 1] });
+  const POST: Record<string, (ok: boolean) => string> = {
+    champ: (ok) => (ok ? 'wywołany mistrz przyjął wyzwanie' : 'mistrz wyśmiał wywołanie'),
+    up: (ok) => (ok ? 'wywołany zawodnik z czołówki przyjął walkę' : 'wywołanie bez odzewu'),
+    rival: () => 'wywołany odwieczny rywal',
+    super: (ok) => (ok ? 'superfight w planach' : 'mistrz kategorii obok odmówił'),
+    thanks: () => 'podziękowania bez show',
+    rematch: (ok) => (ok ? 'wywalczony rewanż' : 'federacja odmówiła rewanżu'),
+    class: () => 'werdykt przyjęty z klasą',
+    rant: () => 'wściekły film w internecie',
+  };
+  for (const f of run.fights) {
+    if (!f.postChoice) continue;
+    const isMic = f.moments.some((mm) => mm.title === 'Mikrofon');
+    rows.push({ icon: isMic ? 'mic' : 'scale', label: `${isMic ? 'Mikrofon' : 'Po werdykcie'} · ${f.opp.lastName}`, value: POST[f.postChoice.key]?.(f.postChoice.ok) ?? '' });
+  }
+  return rows.length ? rows : undefined;
+}
 
 export function toSummary(s0: GameState): GameState {
   const s = clone(s0);
@@ -3356,6 +3441,7 @@ export function toSummary(s0: GameState): GameState {
     grade,
     bars,
     story: lines.join(' '),
+    outside: outsideRows(s, run),
   };
   s.seasons.push(summary);
   s.lastSummary = summary;
@@ -3423,6 +3509,7 @@ export function checkEnd(s: GameState): string | null {
   if (s.age >= 40) return 'Czterdziestka na karku. Komisja lekarska nie przedłuża ci licencji.';
   if (s.quick && s.age >= 35) return 'Szybka kariera dobiega końca: 35 lat i czas zawiesić rękawice.';
   if (s.wear >= 100) return 'Lekarze nie dają ci zgody na kolejne walki. Za dużo przyjętych ciosów.';
+  if (s.finishes.koLosses >= 9 && s.proDebut) return 'Dziewiąty nokaut w karierze. Komisja lekarska cofa licencję: szczęka już nie wytrzyma.';
   if ((s.flags.lastSeason ?? 0) > 0) return 'Obiecałeś rodzinie, że to ostatni rok. Dotrzymujesz słowa.';
   if (s.age >= 27 && s.finishes.koLosses >= 5 && s.history.slice(-4).filter((h) => h.result === 'L' && h.method === 'KO/TKO').length >= 3)
     return 'Trzy nokauty w czterech walkach. Trener rzuca ręcznik, tym razem za całą karierę.';
@@ -3772,6 +3859,13 @@ export function negotiateContract(s0: GameState, idx: number, ask: ContractAsk):
 export function setJob(s0: GameState, job: JobMode | undefined): GameState {
   const s = clone(s0);
   s.job = job;
+  return s;
+}
+
+/** Atuty na rok: maksymalnie dwa, tylko odblokowane. */
+export function setPerks(s0: GameState, ids: string[]): GameState {
+  const s = clone(s0);
+  s.perks = ids.filter((id) => PERKS.some((p) => p.id === id && perkUnlocked(s, p))).slice(0, MAX_PERKS);
   return s;
 }
 

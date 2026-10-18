@@ -149,3 +149,33 @@ export function ticketSale(s: GameState, plan: TicketPlan, roll: number): { sold
 export function ticketRep(s: GameState): number {
   return s.flags.ticketRep ?? 0;
 }
+
+// ---------------------------------------------------------------------------
+// Szczęka: licznik przyjętych nokautów
+// ---------------------------------------------------------------------------
+
+export function chinState(s: GameState): { label: string; tone: 'good' | 'neutral' | 'bad'; kos: number } {
+  const kos = s.finishes.koLosses;
+  if (kos <= 2) return { label: 'twarda', tone: 'good', kos };
+  if (kos <= 4) return { label: 'naruszona', tone: 'neutral', kos };
+  if (kos <= 7) return { label: 'krucha', tone: 'bad', kos };
+  return { label: 'szklana: przy 9. nokaucie koniec licencji', tone: 'bad', kos };
+}
+
+/** Wyróżnienia kariery do ekranu końcowego i karty. */
+export function honours(s: GameState): { icon: string; emoji: string; text: string }[] {
+  const f = (k: string) => s.flags[k] ?? 0;
+  const out: { icon: string; emoji: string; text: string }[] = [];
+  if (f('doubleChamp')) out.push({ icon: 'trophy', emoji: '👑', text: 'Podwójny mistrz' });
+  if (f('interimBelts')) out.push({ icon: 'trophy', emoji: '🥈', text: f('interimBelts') > 1 ? `${f('interimBelts')}× pas tymczasowy` : 'Pas tymczasowy' });
+  if (f('grapplingGold')) out.push({ icon: 'knot', emoji: '🥋', text: f('grapplingGold') > 1 ? `${f('grapplingGold')}× złoto w grapplingu` : 'Złoto w grapplingu' });
+  if (f('boxingWins')) out.push({ icon: 'glove', emoji: '🥊', text: f('boxingWins') > 1 ? `${f('boxingWins')} wygrane w boksie` : 'Wygrana w boksie' });
+  if (f('kickWins')) out.push({ icon: 'glove', emoji: '🦵', text: f('kickWins') > 1 ? `${f('kickWins')} wygrane w kickboxingu` : 'Wygrana w kickboxingu' });
+  if (f('abroadWins')) out.push({ icon: 'pin', emoji: '🌍', text: f('abroadWins') > 1 ? `${f('abroadWins')} wygrane za granicą` : 'Wygrana za granicą' });
+  if (f('shortWins')) out.push({ icon: 'clock', emoji: '🚒', text: f('shortWins') > 1 ? `${f('shortWins')} uratowane gale` : 'Uratowana gala' });
+  if (f('bonuses') >= 3) out.push({ icon: 'star', emoji: '⭐', text: `${f('bonuses')} bonusy wieczoru` });
+  const fans = followersOf(s);
+  if (fans >= 1000) out.push({ icon: 'phone', emoji: '📱', text: `${fmtFans(fans)} obserwujących` });
+  if (f('stripped')) out.push({ icon: 'x', emoji: '⚠️', text: 'Odebrany pas' });
+  return out;
+}

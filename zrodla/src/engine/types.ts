@@ -11,7 +11,7 @@ export type Outcome = 'super' | 'success' | 'fail';
 export type TicketPlan = 'none' | 'std' | 'push';
 export type JobMode = 'full' | 'half' | 'none';
 export type SocialMode = 'off' | 'self' | 'pro';
-export type SideKind = 'grappling' | 'boxing' | 'seminar';
+export type SideKind = 'grappling' | 'boxing' | 'seminar' | 'grapple1' | 'kick' | 'film';
 
 /** Zaproszenie na wydarzenie poza MMA (dozwolone także przy wyłączności). */
 export interface SideInvite {
@@ -194,6 +194,8 @@ export interface DecisionOption {
   dist: [number, number, number];
   key: string;
   kind?: 'risk' | 'normal' | 'safe';
+  /** atut z obozu, który podbija tę opcję */
+  perk?: string;
 }
 
 export interface DecisionPoint {
@@ -287,6 +289,8 @@ export interface FightReport {
   /** przyrost obserwujących po walce */
   fans?: number;
   abroad?: string;
+  /** co zrobiłeś po walce (mikrofon, werdykt) i czy się udało */
+  postChoice?: { key: string; ok: boolean };
   /** zmęczenie po wydarzeniu poza federacją */
   tired?: boolean;
   pressMod?: number;
@@ -327,6 +331,7 @@ export interface SeasonRun {
   startOvr: number;
   startRank: number | null;
   startMedia: number;
+  startFans?: number;
   intro: string[];
   /** oferta kolejnej walki czekająca na decyzję gracza (zawodowcy) */
   offer?: FightOffer | null;
@@ -425,6 +430,8 @@ export interface SeasonSummary {
   grade: string;
   bars: { label: string; value: number; note?: string }[];
   story: string;
+  /** poza klatką: obserwujący, bilety, wydarzenia spoza MMA, mikrofon */
+  outside?: { icon: string; label: string; value: string }[];
 }
 
 export interface HistoryEntry {
@@ -501,6 +508,10 @@ export interface GameState {
   social?: SocialMode;
   /** praca obok treningów (początek kariery) */
   job?: JobMode;
+  /** ksywka nadana przez kibiców */
+  fanNick?: string;
+  /** atuty wybrane na ten rok (obóz) */
+  perks?: string[];
   /** rywal, z którym wywalczyłeś rewanż (po kontrowersji) */
   rematchOpp?: Fighter | null;
   rep: number; // 0..100
