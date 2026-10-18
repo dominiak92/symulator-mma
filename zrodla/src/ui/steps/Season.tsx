@@ -1,4 +1,5 @@
 import { Fragment, useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
+import hallBg from '../../assets/bg/menu.webp';
 import { createPortal } from 'react-dom';
 import type { CardSpot, DecisionOption, DecisionPoint, FightOffer, FightReport, GameState, Moment, NewsItem, Stats } from '../../engine/types';
 import { galaPrefix, SEASON_FORMS, STAGE_LABELS, STAT_LABELS, STYLE_LABELS } from '../../engine/data';
@@ -384,6 +385,97 @@ function ScoutBars({ me, opp, oppName }: { me: Stats; opp: Stats; oppName: strin
         );
       })}
     </div>
+  );
+}
+
+/** Czy walka zasługuje na osobną scenę wyniku (pas, superfight, zadra, złoto). */
+function bigMoment(f: FightReport | undefined): boolean {
+  if (!f || !f.sim.finished || !f.result || f.method === 'Walkower') return false;
+  if (f.amateur) return f.stage === 'f' && f.result === 'W';
+  return !!(f.title || f.superfight || f.unify || f.nemesis);
+}
+
+function methodLine(f: FightReport) {
+  switch (f.method) {
+    case 'KO/TKO':
+      return `Nokaut · runda ${f.round}${f.time ? `, ${f.time}` : ''}`;
+    case 'Lekarz':
+      return `Lekarz przerywa · runda ${f.round}`;
+    case 'Poddanie':
+      return `Poddanie · runda ${f.round}${f.time ? `, ${f.time}` : ''}`;
+    case 'Remis':
+      return 'Remis na kartach sędziów';
+    default:
+      return f.method?.startsWith('Decyzja') ? `${f.method.replace('Decyzja ', '').replace(/^./, (c) => c.toUpperCase())} decyzja sędziów` : '';
+  }
+}
+
+/** Scena wyniku: jedna, porządna chwila po walce o pas, superfighcie, rewanżu z zadrą albo finale turnieju. */
+function ResultReveal({ g, f, onClose }: { g: GameState; f: FightReport; onClose: () => void }) {
+  const won = f.result === 'W';
+  const draw = f.result === 'D';
+  const champ = won && (f.title || f.unify || !!f.superfight);
+  const gold = won && f.amateur;
+  const headline = draw
+    ? 'Remis'
+    : !won
+      ? f.title && f.defense
+        ? 'Pas odchodzi'
+        : 'Porażka'
+      : f.superfight
+        ? 'Podwójny mistrz'
+        : f.interim
+          ? 'Mistrz tymczasowy'
+          : f.title && f.defense
+            ? 'Pas zostaje'
+            : f.title || f.unify
+              ? 'Nowy mistrz'
+              : gold
+                ? 'Złoto'
+                : 'Rachunki wyrównane';
+  const winner = draw ? null : won ? `${g.profile.firstName} ${g.profile.lastName}` : `${f.opp.firstName} ${f.opp.lastName}`;
+  const goRef = useGoKeys(onClose);
+  const fx = loadSettings().animations && !reduced();
+  return createPortal(
+    <div className={`rv-scene ${won ? 'win' : draw ? 'draw' : 'loss'} ${fx ? 'fx' : ''}`} role="dialog" aria-modal="true" aria-label={headline} onClick={onClose}>
+      <div className="rv-hall" aria-hidden="true" style={{ backgroundImage: `url(${hallBg})` }} />
+      <div className="rv-light" aria-hidden="true" />
+      <div className="rv-body">
+        {fedLogo(f.amateur ? f.tourney : f.abroad ? f.gala : f.fed) && <img className="rv-logo" src={fedLogo(f.amateur ? f.tourney : f.abroad ? f.gala : f.fed)!} alt="" aria-hidden="true" />}
+        <span className="rv-ctx">{(f.amateur ? contextLine(f) : f.gala ?? f.fed).split(' · ')[0]}</span>
+        {(champ || gold) && (
+          <div className="rv-prize">
+            {champ ? <Belt size={210} tier={f.amateur ? 0 : g.tier} interim={!!f.interim} /> : <Medal kind="gold" size={96} />}
+          </div>
+        )}
+        <h2 className="rv-head">{headline}</h2>
+        {winner && (
+          <p className="rv-who">
+            Wygrywa <b>{winner}</b>
+          </p>
+        )}
+        <p className="rv-how">{methodLine(f)}</p>
+        {(f.earned > 0 || (f.fans ?? 0) > 0) && (
+          <p className="rv-foot">
+            {f.earned > 0 && (
+              <span className="rv-money">
+                <Icon name="coins" size={16} />+{money(f.earned)}
+              </span>
+            )}
+            {(f.fans ?? 0) > 0 && !f.amateur && (
+              <span>
+                <Icon name="phone" size={15} />+{fmtFans(f.fans!)} obserwujących
+              </span>
+            )}
+          </p>
+        )}
+        <button ref={goRef} className="btn btn-primary rv-go" onClick={onClose}>
+          Dalej
+        </button>
+      </div>
+      {fx && won && <Confetti count={48} />}
+    </div>,
+    document.body,
   );
 }
 
@@ -1715,17 +1807,6 @@ export default function Season({ game, setGame }: StepProps) {
     setGame(seasonNext(gameRef.current));
   };
 
-  // pierwsza walka i kolejne: po wyniku chwila przerwy (albo przycisk „Następna walka”)
-  useEffect(() => {
-    if (spinning || run.done || waiting || introOpen || run.offer || run.press || run.weigh || run.post || run.invite || notice) return;
-    if (last && !last.sim.finished) return;
-    if (paused && anim) return;
-    const delay = !animate ? 0 : fast ? 260 : !last ? 1600 : revealMs + NEXT_MS;
-    const t = setTimeout(advance, delay);
-    return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [spinning, run.done, waiting, introOpen, last?.idx, finishedNow, fast, animate, paused, !!run.offer, !!run.press, !!run.weigh, !!run.post, !!run.invite, !!notice]);
-
   // przewijanie do karty walki (cała karta na ekranie), na koniec do przycisku
   useEffect(() => {
     if (!last || introOpen) return;
@@ -1762,6 +1843,29 @@ export default function Season({ game, setGame }: StepProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lastKey, anim]);
   const counted = revealedKey === lastKey && !introOpen ? run.fights : run.fights.slice(0, -1);
+  // scena wyniku po wielkiej walce (raz na walkę; po wczytaniu gry nie wraca)
+  const revealSeen = useRef(last?.sim.finished ? last.idx : -1);
+  const [revealIdx, setRevealIdx] = useState<number | null>(null);
+  const revealOpen = !!last && revealIdx === last.idx;
+  useEffect(() => {
+    if (!last || !bigMoment(last) || last.idx <= revealSeen.current) return;
+    if (revealedKey !== lastKey || introOpen) return;
+    revealSeen.current = last.idx;
+    const tm = setTimeout(() => setRevealIdx(last.idx), anim ? 500 : 0);
+    return () => clearTimeout(tm);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [revealedKey, lastKey, introOpen]);
+  // pierwsza walka i kolejne: po wyniku chwila przerwy (albo przycisk „Następna walka”)
+  useEffect(() => {
+    if (spinning || revealOpen || run.done || waiting || introOpen || run.offer || run.press || run.weigh || run.post || run.invite || notice) return;
+    if (last && !last.sim.finished) return;
+    if (paused && anim) return;
+    const delay = !animate ? 0 : fast ? 260 : !last ? 1600 : revealMs + NEXT_MS;
+    const t = setTimeout(advance, delay);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [spinning, revealOpen, run.done, waiting, introOpen, last?.idx, finishedNow, fast, animate, paused, !!run.offer, !!run.press, !!run.weigh, !!run.post, !!run.invite, !!notice]);
+
   // decyzja po walce (mikrofon) dopiero, gdy gracz zobaczy wynik
   const [postShown, setPostShown] = useState(false);
   const postKey = run.post ? `${last?.idx}-${run.post.kind}` : '';
@@ -1770,11 +1874,11 @@ export default function Season({ game, setGame }: StepProps) {
       setPostShown(false);
       return;
     }
-    if (revealedKey !== lastKey || introOpen) return;
-    const tm = setTimeout(() => setPostShown(true), anim ? 1100 : 0);
+    if (revealedKey !== lastKey || introOpen || revealOpen || (bigMoment(last) && last!.idx > revealSeen.current)) return;
+    const tm = setTimeout(() => setPostShown(true), anim ? 900 : 0);
     return () => clearTimeout(tm);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [postKey, revealedKey, lastKey, introOpen, anim]);
+  }, [postKey, revealedKey, lastKey, introOpen, anim, revealOpen]);
   const w = counted.filter((f) => f.result === 'W').length;
   const l = counted.filter((f) => f.result === 'L').length;
   const dr = counted.filter((f) => f.result === 'D').length;
@@ -1955,6 +2059,7 @@ export default function Season({ game, setGame }: StepProps) {
       )}
 
       {run.press && !run.done && createPortal(<PressCard g={g} o={run.press} setGame={setGame} />, document.body)}
+      {revealOpen && last && <ResultReveal g={g} f={last} onClose={() => setRevealIdx(null)} />}
       {run.weigh && createPortal(<WeighCard g={g} o={run.weigh} setGame={setGame} />, document.body)}
       {run.invite && !run.post && !notice && createPortal(<InviteCard key={run.invite.title} g={g} inv={run.invite} onDone={done} />, document.body)}
       {run.post && postShown && !notice && createPortal(<PostCard key={postKey} g={g} post={run.post} onDone={done} />, document.body)}
