@@ -189,3 +189,33 @@ describe('zdarzenia', () => {
     expect(dup).toEqual([]);
   });
 });
+
+describe('decyzje w walce', () => {
+  it('plan na walkę pada najwyżej raz, a w walce zawodowej zawsze', () => {
+    for (let seed = 1; seed <= 6; seed++) {
+      const rng = createRng(seed);
+      let s = newGame({ slot: 1, mode: 'normal', seed, profile: { ...randomProfile(rng), start: 'osiedle' } });
+      for (let guard = 0; guard < 3000 && s.phase !== 'ended'; guard++) {
+        if (s.phase === 'training') s = doTraining(s, STAT_KEYS[guard % 6]);
+        else if (s.phase === 'budget') s = G2.canStartSeason(s) ? startSeason(s) : G2.takeBreakYear(s);
+        else if (s.phase === 'event') s = s.event!.picked === undefined ? chooseEvent(s, 0) : continueAfterEvent(s);
+        else if (s.phase === 'season') {
+          const run = s.run!;
+          const cur = run.fights[run.fights.length - 1];
+          if (run.press) s = G2.pressAnswer(s, 'calm');
+          else if (run.offer) s = G2.acceptOffer(s);
+          else if (cur?.sim.pending) s = decide(s, cur.sim.pending.options[guard % cur.sim.pending.options.length].key);
+          else if (run.done) {
+            for (const f of run.fights) {
+              const plans = f.moments.filter((m) => m.title === 'Plan na walkę').length;
+              expect(plans).toBeLessThanOrEqual(1);
+              if (f.sim.pro && f.method !== 'Walkower') expect(plans).toBe(1);
+            }
+            s = toSummary(s);
+          } else s = seasonSkip(s);
+        } else if (s.phase === 'summary') s = toMarket(s);
+        else if (s.phase === 'market') s = confirmMarket(s);
+      }
+    }
+  });
+});
