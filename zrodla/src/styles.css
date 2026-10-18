@@ -6605,3 +6605,5 @@ details.intro-notes[open] summary::before { content: '▸'; transform: rotate(90
 .side-note b { color: var(--text); }
 .side-note.tone-purple .res-badge, .side-note.tone-good .res-badge { color: var(--gold); }
 @media (prefers-reduced-motion: reduce) { .inv-lines li { animation: none; } }
+.br-row.locked { opacity: 0.5; cursor: default; }
+.br-row.locked .br-ico { filter: grayscale(1); }
