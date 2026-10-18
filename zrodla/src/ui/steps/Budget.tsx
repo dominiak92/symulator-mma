@@ -1,4 +1,12 @@
 import { STAT_LABELS } from '../../engine/data';
+import brPhysio from '../../assets/backroom/physio.webp';
+import brDoctor from '../../assets/backroom/doctor.webp';
+import brSupps from '../../assets/backroom/supps.webp';
+import brSparring from '../../assets/backroom/sparring.webp';
+import brClinic from '../../assets/backroom/clinic.webp';
+import brFoundation from '../../assets/backroom/foundation.webp';
+
+const BR_IMG: Record<string, string> = { physio: brPhysio, doctor: brDoctor, supps: brSupps, sparring: brSparring, clinic: brClinic };
 import { DONATIONS, donate, foundationLegacy, foundationOpen, setYearGoal, yearGoalOptions, yearGoalReward, currentYearGoal, setJob, setSocial, acceptShadyDeal, refuseShadyDeal, BACKROOM, backroomAvailable, backroomCost, backroomOpen, hasLabs, setBackroom, cheaperClub, downgradeClub, fightRange, plannedFights, setWantFights, ACADEMY_LEVELS, academyName, academyNext, investAcademy, OVERDRAFT, PITCH_SLOTS, pitchBlocked, pitchChance, pitchPay, pitchSponsor, breakPreview, budgetBalance, budgetLines, canStartSeason, expectedPurses, loanOffer, loanRefusal, startSeason, takeBreakYear, takeLoan } from '../../engine/game';
 import { useState, type CSSProperties } from 'react';
 import type { StatKey } from '../../engine/types';
@@ -189,9 +197,7 @@ export default function Budget({ game, setGame }: StepProps) {
               if (!backroomAvailable(g, b.id))
                 return (
                   <div key={b.id} className="br-row locked" aria-disabled="true">
-                    <span className="br-ico">
-                      <Icon name={b.icon} size={16} />
-                    </span>
+                    <img className="br-ico br-img" src={BR_IMG[b.id]} alt="" aria-hidden="true" />
                     <span className="br-txt">
                       <strong>{b.name}</strong>
                       <span>Dostępne od federacji europejskiej.{on ? ' Wróci, gdy znów tam awansujesz.' : ''}</span>
@@ -207,9 +213,7 @@ export default function Budget({ game, setGame }: StepProps) {
               const free = b.id === 'supps' && hasLabs(g);
               return (
                 <button key={b.id} className={`br-row${on ? ' on' : ''}`} role="switch" aria-checked={on} onClick={() => setGame(setBackroom(g, b.id, !on))}>
-                  <span className="br-ico">
-                    <Icon name={b.icon} size={16} />
-                  </span>
+                  <img className="br-ico br-img" src={BR_IMG[b.id]} alt="" aria-hidden="true" />
                   <span className="br-txt">
                     <strong>{b.name}</strong>
                     <span>{b.effect}</span>
@@ -574,9 +578,7 @@ function BigSpend({ g, setGame }: { g: StepProps['game']; setGame: StepProps['se
   return (
     <section className="pitch acad found">
       <div className="pitch-head">
-        <span className="ledger-ico plus">
-          <Icon name="heart" size={16} />
-        </span>
+        <img className="br-ico br-img" src={brFoundation} alt="" aria-hidden="true" />
         <div>
           <b>Fundacja twojego imienia</b>
           <small>

@@ -1,4 +1,12 @@
 import { STAT_LABELS, TIER_LEVEL } from '../../engine/data';
+import mgrZdzisiek from '../../assets/managers/zdzisiek.webp';
+import mgrOkulary from '../../assets/managers/okulary.webp';
+import mgrSpinacz from '../../assets/managers/spinacz.webp';
+import mgrParadygmat from '../../assets/managers/paradygmat.webp';
+import mgrDominacja from '../../assets/managers/dominacja.webp';
+import mgrSelf from '../../assets/managers/self.webp';
+
+const MGR_IMG: Record<string, string> = { zdzisiek: mgrZdzisiek, okulary: mgrOkulary, spinacz: mgrSpinacz, paradygmat: mgrParadygmat, dominacja: mgrDominacja, self: mgrSelf };
 import coachClub from '../../assets/coaches/club.webp';
 import coachBoks from '../../assets/coaches/boks.webp';
 import coachParter from '../../assets/coaches/parter.webp';
@@ -389,6 +397,8 @@ const MGR_LOOK: Record<string, { bg: string; fg: string; ini: string }> = {
 };
 
 function MgrAvatar({ id }: { id: string | null }) {
+  const src = MGR_IMG[id ?? 'self'];
+  if (src) return <img className="mgr-ava mgr-img" src={src} alt="" aria-hidden="true" />;
   const l = id ? MGR_LOOK[id] : { bg: '#27272a', fg: '#a1a1aa', ini: 'JA' };
   return (
     <span className="mgr-ava" style={{ background: l.bg, color: l.fg }} aria-hidden="true">
