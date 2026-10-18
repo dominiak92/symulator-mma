@@ -170,7 +170,7 @@ export function FighterGallery() {
       <div style={{ flexBasis: '100%' }} />
       {names.map((n, i) => (
         <div key={n} style={{ textAlign: 'center', color: '#aaa', fontSize: 11 }}>
-          <Fighter seed={`Jan${n}`} corner={i % 2 ? 'red' : 'blue'} size={110} mirror={i % 2 === 1} belt={i === 4} hurt={i === 7} />
+          <Fighter seed={`Jan${n}`} country={({ Silva: 'Brazylia', Magomedov: 'Dagestan', Petrov: 'Ukraina' } as Record<string, string>)[n]} corner={i % 2 ? 'red' : 'blue'} size={110} mirror={i % 2 === 1} belt={i === 4} hurt={i === 7} />
           <div>{n}</div>
         </div>
       ))}

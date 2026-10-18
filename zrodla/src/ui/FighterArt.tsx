@@ -8,6 +8,18 @@ import { useId, type CSSProperties } from 'react';
 import { ART, type Layer } from './fighterData';
 
 const SKINS = ['#f7d3b8', '#f1b08c', '#e6a27c', '#d48f66', '#bb7650', '#9c5f3d', '#7c4a2f', '#5c3520'];
+/** Jasne karnacje (Polska i większość Europy): od bladej po lekko opaloną. */
+const SKINS_FAIR = ['#f7d3b8', '#f5c9ad', '#f3c1a0', '#f1b893', '#eeb18c', '#f4cdb2'];
+const SKINS_OLIVE = ['#efb893', '#e6a77f', '#dc9a72', '#cf8c64'];
+const SKINS_DARK = ['#9c5f3d', '#7c4a2f', '#5c3520'];
+const FAIR = ['Polska', 'Czechy', 'Słowacja', 'Niemcy', 'Szwecja', 'Holandia', 'Irlandia', 'Anglia', 'Ukraina', 'Australia'];
+const OLIVE = ['Francja', 'Hiszpania', 'Gruzja', 'Dagestan', 'Meksyk', 'Kazachstan', 'Japonia'];
+function skinPool(country?: string): string[] {
+  if (!country || FAIR.includes(country)) return SKINS_FAIR;
+  if (OLIVE.includes(country)) return SKINS_OLIVE;
+  if (country === 'Nigeria') return SKINS_DARK;
+  return SKINS; // USA, Brazylia: pełny przekrój
+}
 const HAIRS = ['#1b1512', '#2c211b', '#3d2c22', '#5a3d27', '#7a5232', '#a77a45', '#d8b26c', '#93421f', '#3a3a3e', '#b4aea5'];
 const INKS = ['#1f2a44', '#26303f', '#2c2440'];
 const OUT = '#381608';
@@ -46,10 +58,11 @@ function seeded(seed: string) {
   };
 }
 
-export function lookFor(seed: string): FighterLook {
+export function lookFor(seed: string, country?: string): FighterLook {
   const r = seeded(seed);
   const pick = <T,>(a: readonly T[]) => a[Math.floor(r() * a.length)];
-  const skin = pick(SKINS);
+  const skin = pick(skinPool(country));
+  const fair = SKINS_FAIR.includes(skin);
   const dark = SKINS.indexOf(skin) >= 5;
   const styles: HairStyle[] = dark
     ? ['short', 'bald', 'fade', 'curly', 'buzz', 'short', 'curly', 'mohawk', 'fade', 'spiky']
@@ -64,7 +77,9 @@ export function lookFor(seed: string): FighterLook {
     if (!tattoos.includes(t) && !(t === 'cross' && tattoos.includes('chest')) && !(t === 'chest' && tattoos.includes('cross'))) tattoos.push(t);
   }
   const age = r() < 0.65 ? 0 : r() < 0.7 ? 1 : 2;
-  let hair = dark ? pick(HAIRS.slice(0, 3)) : pick(HAIRS.slice(0, 9));
+  // jasna karnacja: głównie brązy i blond, czasem rude albo czarne
+  const FAIR_HAIR = [HAIRS[2], HAIRS[3], HAIRS[3], HAIRS[4], HAIRS[4], HAIRS[5], HAIRS[6], HAIRS[1], HAIRS[7], HAIRS[8]];
+  let hair = dark ? pick(HAIRS.slice(0, 3)) : fair ? pick(FAIR_HAIR) : pick(HAIRS.slice(0, 5));
   if (age === 2 && r() < 0.35) hair = HAIRS[9];
   return {
     skin,
@@ -119,8 +134,11 @@ export function Fighter({
   style,
   weight,
   age,
+  country,
 }: {
   seed: string;
+  /** kraj pochodzenia: od niego zależy karnacja (domyślnie Polska) */
+  country?: string;
   /** wiek w latach: młody (do 21), dorosły, weteran (33+) */
   age?: number;
   weight?: string;
@@ -134,7 +152,7 @@ export function Fighter({
   style?: CSSProperties;
 }) {
   const uid = useId().replace(/[^a-zA-Z0-9]/g, '');
-  const base = lookFor(seed);
+  const base = lookFor(seed, country);
   const l = weight && WEIGHT_BUILD[weight] !== undefined ? { ...base, build: WEIGHT_BUILD[weight] } : base;
   const S = hex(l.skin);
   const Hc = hex(l.hair);
