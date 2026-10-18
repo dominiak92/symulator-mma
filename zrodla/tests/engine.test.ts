@@ -219,3 +219,45 @@ describe('decyzje w walce', () => {
     }
   });
 });
+
+describe('szybka kariera', () => {
+  it('startuje od kontraktu zawodowego, kończy się najpóźniej w wieku 35 lat i ma niższe LEGACY niż pełna', () => {
+    let quickSum = 0;
+    let fullSum = 0;
+    for (let seed = 1; seed <= 12; seed++) {
+      for (const quick of [true, false]) {
+        const rng = createRng(seed);
+        let s = newGame({ slot: 1, mode: 'normal', seed, quick, profile: { ...randomProfile(rng), start: 'osiedle' } });
+        let checkedStart = false;
+        for (let guard = 0; guard < 3000 && s.phase !== 'ended'; guard++) {
+          if (quick && !checkedStart && s.phase === 'market') {
+            expect(s.market!.contracts.every((c) => c.kind === 'promotion')).toBe(true);
+            checkedStart = true;
+          }
+          if (s.phase === 'training') s = doTraining(s, [...STAT_KEYS].sort((a, b) => s.stats[a] - s.stats[b])[0]);
+          else if (s.phase === 'budget') {
+            if (s.money + budgetBalance(s) < 0 && loanOffer(s)) s = takeLoan(s);
+            s = G2.canStartSeason(s) ? startSeason(s) : G2.takeBreakYear(s);
+          } else if (s.phase === 'event') s = s.event!.picked === undefined ? chooseEvent(s, 0) : continueAfterEvent(s);
+          else if (s.phase === 'season') {
+            const run = s.run!;
+            const cur = run.fights[run.fights.length - 1];
+            if (run.press) s = G2.pressAnswer(s, 'calm');
+            else if (run.offer) s = G2.acceptOffer(s);
+            else if (cur?.sim.pending) s = decide(s, [...cur.sim.pending.options].sort((a, b) => b.chance - a.chance)[0].key);
+            else if (run.done) s = toSummary(s);
+            else s = seasonSkip(s);
+          } else if (s.phase === 'summary') s = toMarket(s);
+          else if (s.phase === 'market') s = confirmMarket(s);
+        }
+        expect(s.phase).toBe('ended');
+        if (quick) {
+          expect(checkedStart).toBe(true);
+          expect(s.age).toBeLessThanOrEqual(35);
+          quickSum += s.ending!.legacy;
+        } else fullSum += s.ending!.legacy;
+      }
+    }
+    expect(quickSum).toBeLessThan(fullSum);
+  });
+});
