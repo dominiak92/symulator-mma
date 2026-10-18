@@ -11,19 +11,20 @@ const STARTS: StartProfile[] = ['osiedle', 'biznes', 'junior', 'wybraniec'];
 /** Korzenie zawodnika: zmieniają tylko wygląd (karnację). Walczy zawsze dla Polski. */
 const ORIGINS: [string, string][] = [
   ['Polska', 'polskie'],
-  ['Niemcy', 'niemieckie'],
-  ['Czechy', 'czeskie'],
+  ['Dagestan', 'dagestańskie'],
+  ['Czeczenia', 'czeczeńskie'],
   ['Gruzja', 'gruzińskie'],
-  ['Turcja', 'tureckie'],
-  ['Wietnam', 'wietnamskie'],
+  ['Kazachstan', 'kazachskie'],
   ['Brazylia', 'brazylijskie'],
-  ['Nigeria', 'nigeryjskie'],
+  ['Holandia', 'holenderskie'],
+  ['Irlandia', 'irlandzkie'],
 ];
 
 export default function Create({ slot, onBack, onStart }: { slot: number; onBack: () => void; onStart: (s: GameState) => void }) {
   const rng = useMemo(() => createRng((Date.now() ^ (Math.random() * 1e9)) >>> 0), []);
   const [p, setP] = useState<Profile>(() => randomProfile(rng));
   const [quick, setQuick] = useState(false);
+  const [step, setStep] = useState<0 | 1>(0);
 
   const set = (patch: Partial<Profile>) => setP((x) => ({ ...x, ...patch }));
   const reroll = () => {
@@ -73,7 +74,17 @@ export default function Create({ slot, onBack, onStart }: { slot: number; onBack
         </div>
       </div>
 
-      <section className="cr-card">
+      <div className="cr-steps" role="tablist" aria-label="Kroki">
+        {['Zawodnik', 'Kariera'].map((t, i) => (
+          <button key={t} role="tab" aria-selected={step === i} className={`cr-step ${step === i ? 'on' : ''} ${step > i ? 'done' : ''}`} onClick={() => (i === 0 || valid) && setStep(i as 0 | 1)}>
+            <i>{step > i ? '✓' : i + 1}</i>
+            {t}
+          </button>
+        ))}
+      </div>
+
+      {step === 0 && (
+      <section className="cr-card cr-pane">
         <div className="field-grid">
           <label className="cr-field">
             <span>Imię</span>
@@ -123,8 +134,11 @@ export default function Create({ slot, onBack, onStart }: { slot: number; onBack
           </label>
         </div>
       </section>
+      )}
 
-      <section className="cr-card">
+      {step === 1 && (
+      <>
+      <section className="cr-card cr-pane">
         <div className="cr-label">
           <Icon name="glove" size={15} />
           Styl walki
@@ -215,19 +229,28 @@ export default function Create({ slot, onBack, onStart }: { slot: number; onBack
           {DIFFICULTY[p.difficulty].desc}
         </p>
       </section>
+      </>
+      )}
 
       <p className="faint small" style={{ marginTop: 14 }}>
         Ile masz talentu? Przekonasz się na pierwszych sparingach. Wszystkie postacie, nazwiska, kluby, gale, federacje i sponsorzy w grze są fikcyjne. Podobieństwo do prawdziwych osób i firm jest przypadkowe. Prawdziwa jest tylko marka Ground Game.
       </p>
 
       <div className="create-cta">
-        <button className="btn btn-ghost" onClick={onBack}>
-          Wróć
+        <button className="btn btn-ghost" onClick={() => (step === 1 ? setStep(0) : onBack())}>
+          {step === 1 ? 'Wstecz' : 'Wróć'}
         </button>
-        <button className="btn btn-primary btn-ico" disabled={!valid} onClick={start}>
-          <Icon name="dumbbell" />
-          Zaczynam karierę
-        </button>
+        {step === 0 ? (
+          <button className="btn btn-primary btn-ico" disabled={!valid} onClick={() => { setStep(1); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>
+            Dalej: styl i kariera
+            <Icon name="play" size={14} />
+          </button>
+        ) : (
+          <button className="btn btn-primary btn-ico" disabled={!valid} onClick={start}>
+            <Icon name="dumbbell" />
+            Zaczynam karierę
+          </button>
+        )}
       </div>
     </main>
   );

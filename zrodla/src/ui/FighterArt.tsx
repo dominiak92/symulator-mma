@@ -19,7 +19,7 @@ const SKINS_FAIR = ['#f7d3b8', '#f5c9ad', '#f3c1a0', '#f1b893', '#eeb18c', '#f4c
 const SKINS_OLIVE = ['#efb893', '#e6a77f', '#dc9a72', '#cf8c64'];
 const SKINS_DARK = ['#9c5f3d', '#7c4a2f', '#5c3520'];
 const FAIR = ['Polska', 'Czechy', 'Słowacja', 'Niemcy', 'Szwecja', 'Holandia', 'Irlandia', 'Anglia', 'Ukraina', 'Australia'];
-const OLIVE = ['Wietnam', 'Turcja', 'Francja', 'Hiszpania', 'Gruzja', 'Dagestan', 'Meksyk', 'Kazachstan', 'Japonia'];
+const OLIVE = ['Czeczenia', 'Wietnam', 'Turcja', 'Francja', 'Hiszpania', 'Gruzja', 'Dagestan', 'Meksyk', 'Kazachstan', 'Japonia'];
 function skinPool(country?: string): string[] {
   if (!country || FAIR.includes(country)) return SKINS_FAIR;
   if (OLIVE.includes(country)) return SKINS_OLIVE;
