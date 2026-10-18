@@ -61,6 +61,8 @@ import {
   TIER_PURSE,
   VOIVODESHIPS,
   livingCost,
+  EXCLUSIVE_BONUS,
+  isExclusiveFed,
 } from './data';
 import {
   CLUB_MULT,
@@ -1652,6 +1654,15 @@ function tuneupWanted(rng: Rng, s: GameState, _idx: number): boolean {
   const run = s.run!;
   if (s.tier < 2 || s.contract.kind === 'freak' || run.tuneupOffered || run.autoAccept) return false;
   if (s.rank === 0) return false;
+  // kontrakt na wyłączność: walki na obcych galach odpadają
+  if (isExclusiveFed(s.contract.fed)) {
+    if (s.streak <= -3 && !run.exclNote) {
+      run.exclNote = true;
+      run.notes = run.notes ?? [];
+      run.notes.push(`${s.contract.fed.split(' – ')[0]} trzyma cię na wyłączność. Walki na odbudowę na innych galach nie wchodzą w grę, musisz odbić się u siebie.`);
+    }
+    return false;
+  }
   // trzy porażki z rzędu: menedżer albo promotor zawsze coś podsuwa (najwyżej raz w roku)
   if (s.streak <= -3 && s.flags.lastTuneup !== s.season) {
     s.flags.lastTuneup = s.season;
@@ -2789,11 +2800,15 @@ function contractFor(rng: Rng, s: GameState, tier: number, kind: Contract['kind'
   const mediaF = 1 + s.media / 120;
   const hard = s.profile.difficulty === 'hard' ? 0.85 : 1;
   const stigma = kind !== 'freak' && (s.flags.freakStigma ?? 0) > 0 ? 0.8 : 1;
-  const purse = Math.round(((lo + (hi - lo) * Math.max(0, rk) ** 1.6) * mediaF * hard * stigma) / 500) * 500;
+  const fed = tier === s.tier && kind === 'stay' ? s.fed : fedFor(rng, tier, s.profile.region);
+  // wyłączność: gala płaci trochę więcej, ale nie puszcza na inne gale
+  const excl = kind !== 'freak' && isExclusiveFed(fed);
+  const purse = Math.round(((lo + (hi - lo) * Math.max(0, rk) ** 1.6) * mediaF * hard * stigma * (excl ? EXCLUSIVE_BONUS : 1)) / 500) * 500;
   return {
     id: uid(rng, 'k'),
     tier,
-    fed: tier === s.tier && kind === 'stay' ? s.fed : fedFor(rng, tier, s.profile.region),
+    fed,
+    exclusive: excl || undefined,
     kind,
     seasons: tier >= 2 ? rng.int(1, 2) : 1,
     fights: TIER_FIGHTS[tier],

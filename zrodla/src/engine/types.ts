@@ -67,6 +67,8 @@ export interface Contract {
   note: string;
   available: boolean; // false = "obserwują cię", nie stać cię
   reason?: string;
+  /** kontrakt na wyłączność: wyższa gaża, bez walk na innych galach */
+  exclusive?: boolean;
 }
 
 export interface Sponsor {
@@ -299,6 +301,7 @@ export interface SeasonRun {
   mgrFocus?: boolean;
   /** krótkie notki z roku (odrzucone oferty itp.) */
   notes?: string[];
+  exclNote?: boolean;
   /** gracz zobaczył już losowanie formy (po przeładowaniu nie powtarzamy) */
   formSeen?: boolean;
   /** czy w tym roku była już propozycja walki na odbudowę */

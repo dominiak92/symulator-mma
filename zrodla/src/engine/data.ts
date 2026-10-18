@@ -211,6 +211,13 @@ export const TIER_FEDS: string[][] = [
   ['UFL – Ultimate Fighting League', 'Balettor MMA', 'TWO FC – Two Fighting Championship', 'PLF – Professional League of Fighters'],
 ];
 
+/** Federacje, które trzymają zawodników na wyłączność: płacą trochę więcej, ale nie pozwalają walczyć na innych galach. */
+export const EXCLUSIVE_FEDS = ['XSW – Ekstremalne Starcia Wojowników', 'Cage Worriers', 'UFL – Ultimate Fighting League', 'TWO FC – Two Fighting Championship'];
+export const EXCLUSIVE_BONUS = 1.08;
+export function isExclusiveFed(fed: string) {
+  return EXCLUSIVE_FEDS.some((f) => fed.startsWith(f));
+}
+
 /** Krótki opis federacji przy ofercie kontraktu (parodie). */
 export const FED_NOTES: Record<string, string> = {
   'Oktagram MMA': 'Czesko-słowacka federacja: hale pełne, piwo tanie, a kibice śpiewają przez całą walkę.',
