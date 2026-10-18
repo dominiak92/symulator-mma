@@ -86,4 +86,17 @@ export function weekEndsIn(d = new Date()) {
   return { days, hours };
 }
 
+/** Cele, które w szybkiej karierze zaliczyłby automat (amatorka, wiek debiutu): tam się nie liczą. */
+const QUICK_EXCLUDED = new Set(['d_gold', 'd_debut20', 'w_local']);
+
+/** Czy cel jest zaliczony w tej karierze (z wyłączeniami dla szybkiej kariery). */
+export function goalMet(g: Goal, s: GameState): boolean {
+  if (s.quick && QUICK_EXCLUDED.has(g.id)) return false;
+  return g.check(s);
+}
+
+export function goalBlockedInQuick(id: string) {
+  return QUICK_EXCLUDED.has(id);
+}
+
 export { dayKey, weekKey };

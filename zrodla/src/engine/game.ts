@@ -6,6 +6,7 @@ import type {
   Club,
   Contract,
   Effects,
+  EventChoice,
   Fighter,
   FightReport,
   GameState,
@@ -1649,8 +1650,13 @@ function rivalHook(p: Peer, title: boolean, defense: boolean, trilogy: boolean):
 /** Czy menedżer (albo znajomy promotor) podsunie walkę na odbudowę rekordu. */
 function tuneupWanted(rng: Rng, s: GameState, _idx: number): boolean {
   const run = s.run!;
-  if (s.quick || s.tier < 2 || s.contract.kind === 'freak' || run.tuneupOffered || run.autoAccept) return false;
+  if (s.tier < 2 || s.contract.kind === 'freak' || run.tuneupOffered || run.autoAccept) return false;
   if (s.rank === 0) return false;
+  // trzy porażki z rzędu: menedżer albo promotor zawsze coś podsuwa (najwyżej raz w roku)
+  if (s.streak <= -3 && s.flags.lastTuneup !== s.season) {
+    s.flags.lastTuneup = s.season;
+    return true;
+  }
   // nie częściej niż co dwa lata
   if (s.flags.lastTuneup && s.season - s.flags.lastTuneup < 2) return false;
   // tylko prawdziwy dołek: seria porażek albo porażka na dnie rankingu / poza nim
@@ -2807,6 +2813,8 @@ export function debutCheck(s: GameState): { ok: boolean; reason?: string } {
   const a = s.amRecord;
   const medals = medalCount(s);
   if (s.age < 18) return { ok: false, reason: `skończone 18 lat (masz ${s.age})` };
+  // szybka kariera: zawodowstwo zawsze od 18 lat
+  if (s.quick) return { ok: true };
   // po latach w amatorce gala regionalna weźmie każdego, kto ma za sobą walki
   if (s.age >= AMATEUR_MAX_AGE) return { ok: true };
   if ((a.w >= 5 && medals >= 1) || (a.w >= 4 && ovr(s.stats) >= TIER_LEVEL[1] - 2) || a.w >= 10) return { ok: true };
@@ -3116,6 +3124,33 @@ export function confirmMarket(s0: GameState): GameState {
 // Szybka kariera
 // ---------------------------------------------------------------------------
 
+/** Automat w szybkiej karierze wybiera odpowiedzi bez długów wobec przyszłości:
+ * żadnych obietnic, kredytów, ryzyka kontuzji ani hazardu. */
+function safeChoice(choices: EventChoice[]): number {
+  const score = (c: EventChoice) => {
+    const all = [c.effects, c.success, c.fail].filter(Boolean) as Effects[];
+    let v = 0;
+    for (const e of all) {
+      if (e.promise) v -= 1000;
+      if (e.loan) v -= 1000;
+      if (e.sponsor) v -= 200; // umowy sponsorskie z klauzulami niech wybiera gracz
+      if (e.flag) v -= 50;
+      if (e.injury) v -= 300;
+      if (e.money && e.money < 0) v += e.money / 500;
+      if (e.wear) v -= e.wear * 3;
+      if (e.rep) v += e.rep;
+      if (e.form) v += e.form;
+    }
+    if (c.chance !== undefined || c.test) v -= 20;
+    return v;
+  };
+  let best = 0;
+  choices.forEach((c, i) => {
+    if (score(c) > score(choices[best])) best = i;
+  });
+  return best;
+}
+
 /** Amatorka w szybkiej karierze rozgrywa się sama (rozsądny plan), aż pojawi się kontrakt zawodowy. */
 export function quickAmateur(s0: GameState): GameState {
   let s = s0;
@@ -3131,7 +3166,7 @@ export function quickAmateur(s0: GameState): GameState {
         s = canStartSeason(s) ? startSeason(s) : takeBreakYear(s);
         break;
       case 'event':
-        s = s.event!.picked === undefined ? chooseEvent(s, 0) : continueAfterEvent(s);
+        s = s.event!.picked === undefined ? chooseEvent(s, safeChoice(s.event!.choices)) : continueAfterEvent(s);
         break;
       case 'season': {
         const run = s.run!;
@@ -3156,6 +3191,14 @@ export function quickAmateur(s0: GameState): GameState {
   }
   s = clone(s);
   s.flags.quickAm = 1;
+  // nic z automatycznej amatorki nie może wiązać rąk graczowi
+  s.promises = [];
+  s.brokenPromises = 0;
+  // czysty start zawodowy: bez kontuzji i długów z amatorki, której gracz nie prowadził
+  s.injury = null;
+  s.loans = [];
+  if (s.money < 1000) s.money = 1000;
+  s.wear = Math.min(s.wear, 10);
   // w szybkiej karierze po amatorce zostają tylko kontrakty zawodowe
   if (s.market) {
     const pro = s.market.contracts.filter((c) => c.available && c.kind === 'promotion');
@@ -3226,7 +3269,8 @@ function proStreak(s: GameState): number {
 
 /** Premia LEGACY za dobrowolne odejście: jako mistrz, na serii albo w zdrowiu. */
 export function retireBonus(s: GameState): { title: string; pts: number; lines: string[] } | null {
-  if (!s.proDebut) return null;
+  // na szczycie odchodzi się pod koniec kariery i z poważnej federacji, a nie po trzech wygranych w wieku 20 lat
+  if (!s.proDebut || s.age < 30 || s.tier < 2) return null;
   const lines: string[] = [];
   let pts = 0;
   const champ = s.rank === 0 && s.tier >= 1 && s.contract.kind !== 'freak';
@@ -3271,6 +3315,8 @@ const BELT_PTS = [40, 120, 320, 700, 1600];
 export function legacyScore(s: GameState): number {
   let pts = 0;
   for (const h of s.history) {
+    // szybka kariera: amatorkę rozegrał automat, więc nie daje punktów
+    if (s.quick && h.amateur) continue;
     if (h.result === 'W') {
       let p = h.freak ? 10 : h.amateur ? 2 : TIER_WIN_PTS[h.tier];
       if (h.method === 'KO/TKO' || h.method === 'Poddanie') p *= 1.3;
@@ -3284,11 +3330,12 @@ export function legacyScore(s: GameState): number {
   const beltCount: Record<number, number> = {};
   for (const b of s.belts) {
     const t = Math.max(0, BELT_NAMES.findIndex((n) => b.name.startsWith(n)));
+    if (s.quick && t === 0) continue;
     const k = beltCount[t] ?? 0;
     beltCount[t] = k + 1;
     pts += BELT_PTS[t] * (k === 0 ? 1 : t === 0 ? 0.2 : t <= 2 ? 0.25 : 0.6);
   }
-  pts += s.medals.gold * 12 + s.medals.silver * 6 + s.medals.bronze * 4;
+  if (!s.quick) pts += s.medals.gold * 12 + s.medals.silver * 6 + s.medals.bronze * 4;
   // wyjście poza Polskę jest warte więcej niż kolejne pasy w kraju
   pts += [0, 40, 120, 400, 850][s.peakTier] ?? 0;
   pts += Math.min(400, s.totalEarned / 25000);

@@ -54,6 +54,11 @@ export const ACHIEVEMENTS: Achievement[] = [
   { id: 'top_exit', title: 'Na własnych warunkach', desc: 'Zakończ karierę jako panujący mistrz albo na serii zwycięstw.', check: (s) => !!s.ending?.top },
 ];
 
+/** Osiągnięcia czysto amatorskie: w szybkiej karierze amatorkę gra automat, więc się nie liczą. */
+const AMATEUR_ONLY = new Set(['medal', 'belt0']);
+
 export function newlyUnlocked(s: GameState, have: Set<string>): Achievement[] {
-  return ACHIEVEMENTS.filter((a) => !have.has(a.id) && a.check(s));
+  // szybka kariera: nic się nie odblokowuje, zanim gracz sam nie stoczy walki zawodowej
+  if (s.quick && !s.proDebut) return [];
+  return ACHIEVEMENTS.filter((a) => !have.has(a.id) && !(s.quick && AMATEUR_ONLY.has(a.id)) && a.check(s));
 }
