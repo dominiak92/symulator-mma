@@ -6418,3 +6418,38 @@ details.intro-notes[open] summary::before { content: '▸'; transform: rotate(90
 /* długie werdykty łamią się między słowami, nie w środku */
 .verdict-big { overflow-wrap: normal; word-break: normal; hyphens: none; font-size: clamp(1.6rem, 7.6vw, 2.6rem); line-height: 1.02; }
 .sum-head { min-width: 0; }
+.excl-note { display: flex; gap: 6px; align-items: flex-start; font-size: 0.82rem; line-height: 1.35; color: var(--cyan); background: var(--cyan-soft); border-radius: var(--r-md); padding: 6px 8px; margin-top: 6px; text-align: left; }
+.excl-note svg { flex: none; margin-top: 2px; }
+
+/* ---------- Kontrakt do podpisu (kartka) ---------- */
+/* kartka celowo zawsze jasna: to papier, niezależnie od motywu gry */
+.contract-veil { position: fixed; inset: 0; z-index: 80; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: max(12px, env(safe-area-inset-top, 0px)) max(14px, env(safe-area-inset-right, 0px)) max(12px, env(safe-area-inset-bottom, 0px)) max(14px, env(safe-area-inset-left, 0px)); background: rgba(5, 5, 8, 0.78); backdrop-filter: blur(4px); animation: veilIn 0.2s ease both; }
+@keyframes veilIn { from { opacity: 0; } }
+.contract-paper { position: relative; width: 100%; max-width: 440px; max-height: calc(100dvh - 120px); overflow-y: auto; padding: 22px 20px 16px; border-radius: 4px; color: #23201a; background:
+    repeating-linear-gradient(0deg, transparent 0 27px, rgba(80, 70, 50, 0.07) 27px 28px),
+    linear-gradient(180deg, #fbf7ec, #f2ead6);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(0, 0, 0, 0.08); font-family: Georgia, 'Times New Roman', serif; transform: rotate(-0.6deg); animation: paperIn 0.35s cubic-bezier(0.2, 1.2, 0.4, 1) both; }
+@keyframes paperIn { from { transform: translateY(40px) rotate(-3deg); opacity: 0; } }
+.cp-head { text-align: center; border-bottom: 2px double rgba(35, 32, 26, 0.35); padding-bottom: 10px; }
+.cp-kicker { font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase; color: #6b6150; }
+.contract-paper h2 { margin: 4px 0 6px; font-family: Georgia, 'Times New Roman', serif; font-size: 1.5rem; font-weight: 700; letter-spacing: 0.02em; color: #23201a; }
+.cp-parties { margin: 0; font-size: 0.88rem; line-height: 1.45; }
+.cp-terms { list-style: none; margin: 12px 0 8px; padding: 0; counter-reset: par; display: grid; gap: 4px; }
+.cp-terms li { counter-increment: par; display: flex; justify-content: space-between; gap: 10px; align-items: baseline; padding: 4px 0; border-bottom: 1px dotted rgba(35, 32, 26, 0.3); font-size: 0.9rem; }
+.cp-terms li span::before { content: '§ ' counter(par) '. '; color: #8a7d63; }
+.cp-terms li b { font-family: var(--display); font-weight: 600; font-size: 1rem; text-align: right; }
+.cp-terms li.cp-excl b { color: #8b1d2c; }
+.cp-fine { margin: 6px 0 10px; font-size: 0.7rem; line-height: 1.4; color: #6b6150; font-style: italic; }
+.cp-sign { display: grid; grid-template-columns: 1fr 1.6fr; gap: 14px; align-items: end; }
+.cp-sign small { display: flex; justify-content: space-between; align-items: center; gap: 6px; border-top: 1px solid #23201a; padding-top: 3px; font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase; color: #6b6150; }
+.cp-sign-org { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.cp-stamp { display: grid; place-items: center; width: 74px; height: 74px; border: 3px solid rgba(139, 29, 44, 0.75); border-radius: 50%; color: rgba(139, 29, 44, 0.85); font-family: var(--display); font-size: 0.72rem; font-weight: 700; text-align: center; line-height: 1.05; padding: 6px; text-transform: uppercase; transform: rotate(-14deg); box-shadow: inset 0 0 0 3px rgba(251, 247, 236, 1), inset 0 0 0 4px rgba(139, 29, 44, 0.5); }
+.cp-sign-me { position: relative; display: flex; flex-direction: column; }
+.cp-canvas { width: 100%; height: 96px; touch-action: none; cursor: crosshair; background: rgba(255, 255, 255, 0.45); border-radius: 4px 4px 0 0; border: 1px dashed rgba(35, 32, 26, 0.35); border-bottom: none; }
+.cp-hint { position: absolute; left: 0; right: 0; top: 36px; text-align: center; font-size: 0.85rem; font-style: italic; color: #9a8f78; pointer-events: none; }
+.cp-initials { background: none; border: 0; padding: 0; font: inherit; font-size: 0.66rem; text-transform: none; letter-spacing: 0; color: #1b2a6b; text-decoration: underline; cursor: pointer; }
+.cp-approved { position: absolute; right: 18px; top: 42%; padding: 4px 14px; border: 4px solid rgba(26, 120, 70, 0.85); border-radius: 8px; color: rgba(26, 120, 70, 0.9); font-family: var(--display); font-size: 1.6rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; transform: rotate(-12deg); animation: stampIn 0.35s cubic-bezier(0.2, 1.6, 0.4, 1) both; pointer-events: none; }
+@keyframes stampIn { from { transform: rotate(-12deg) scale(2.2); opacity: 0; } }
+.contract-actions { display: flex; gap: 10px; width: 100%; max-width: 440px; justify-content: space-between; }
+.contract-actions .btn-primary { flex: 1; justify-content: center; }
+@media (prefers-reduced-motion: reduce) { .contract-paper, .cp-approved, .contract-veil { animation: none; } }
