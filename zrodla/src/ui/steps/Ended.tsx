@@ -1,3 +1,4 @@
+import { careerMarks } from '../titles';
 import { useEffect, useState } from 'react';
 import { honours } from '../../engine/extras';
 import type { GameState, HistoryEntry } from '../../engine/types';
@@ -82,7 +83,7 @@ export default function Ended({ game, onNewCareer, onMenu }: { game: GameState; 
           {clubLogo(g.club?.name) && <img className="sum-crest" src={clubLogo(g.club?.name)!} alt="" aria-hidden="true" />}
           {g.belts.length > 0 && <Confetti />}
           <div className="sum-art">
-            <Fighter weight={divisionKey(g)} age={g.age} country={g.profile.origin} seed={`${g.profile.firstName}${g.profile.lastName}`} corner="blue" shorts={clubCrest(g.club).bg} size={112} belt={g.belts.length > 0 ? g.tier : false} />
+            <Fighter weight={divisionKey(g)} age={g.age} country={g.profile.origin} marks={careerMarks(g)} seed={`${g.profile.firstName}${g.profile.lastName}`} corner="blue" shorts={clubCrest(g.club).bg} size={112} belt={g.belts.length > 0 ? g.tier : false} />
           </div>
           <div className="sum-head">
             <div className="kicker">Koniec {g.quick ? 'szybkiej ' : ''}kariery · {lat(g.age)}</div>

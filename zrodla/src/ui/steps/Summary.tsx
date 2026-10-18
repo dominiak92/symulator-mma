@@ -1,3 +1,4 @@
+import { careerMarks, champTitle } from '../titles';
 import { toMarket, divisionKey } from '../../engine/game';
 import { fmtFans, followersOf } from '../../engine/extras';
 import { moneyShort, signed } from '../../format';
@@ -28,7 +29,7 @@ export default function Summary({ game, setGame, onPeers }: StepProps & { onPeer
         {clubLogo(g.club?.name) && <img className="sum-crest" src={clubLogo(g.club?.name)!} alt="" aria-hidden="true" />}
         {party && <Confetti />}
         <div className="sum-art">
-          <Fighter weight={divisionKey(g)} age={g.age} country={g.profile.origin} seed={`${g.profile.firstName}${g.profile.lastName}`} corner="blue" shorts={clubCrest(g.club).bg} size={112} belt={s.champion && !amateur ? s.tier : false} hurt={gradeTone === 'bad'} />
+          <Fighter weight={divisionKey(g)} age={g.age} country={g.profile.origin} marks={careerMarks(g)} seed={`${g.profile.firstName}${g.profile.lastName}`} corner="blue" shorts={clubCrest(g.club).bg} size={112} belt={s.champion && !amateur ? s.tier : false} hurt={gradeTone === 'bad'} />
           {(s.beltWon || medals.length > 0) && (
             <div className="sum-trophies">
               {s.beltWon && !amateur ? <Belt size={96} tier={s.tier} /> : medals.map((m, i) => <Medal key={i} kind={m} size={34} />)}
@@ -40,6 +41,7 @@ export default function Summary({ game, setGame, onPeers }: StepProps & { onPeer
             {!amateur && fedLogo(s.fed) && <img className="sum-fed" src={fedLogo(s.fed)!} alt="" aria-hidden="true" />}
             Rok {s.season} kariery · {s.year}
           </div>
+          {champTitle(g) && <em className="champ-tag" style={{ justifySelf: 'start' }}>{champTitle(g)}</em>}
           <div className={`grade ${gradeTone}`}>{s.beltWon ? (amateur ? 'Mistrz Polski amatorów!' : 'Rok z pasem!') : s.grade}</div>
           <div className="sum-rec">
             {s.w}-{s.l}

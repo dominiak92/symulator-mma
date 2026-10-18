@@ -15,6 +15,8 @@ import { GG } from '../brand';
 import { Belt, Confetti, Fighter, Medal } from '../Art';
 import { FedEmblem, clubCrest } from '../Emblem';
 import { clubLogo, fedLogo, rivalClub } from '../logos';
+import { careerMarks, champTitle } from '../titles';
+import { Flag } from '../Flag';
 import { Icon, STAT_ICON } from '../Icon';
 import { CoachTip } from '../Tutorial';
 import { chanceTone, chanceWord } from '../Chance';
@@ -492,6 +494,34 @@ function LiveCard({ g, f, start, animate, setGame }: { g: GameState; f: FightRep
   const t = (r: number) => (animate ? (r - start - 1) * ROUND_MS + 200 : 0);
   const stampAt = animate ? (Math.max(played, start) - start) * ROUND_MS + 250 : 0;
   const decisionAt = animate ? (f.sim.round - start) * ROUND_MS + 200 : 0;
+  // paski zdrowia i kondycji: przeskakują razem z rundami
+  const [barRound, setBarRound] = useState(animate ? start : played);
+  useEffect(() => {
+    if (!animate) {
+      setBarRound(played);
+      return;
+    }
+    const ts: ReturnType<typeof setTimeout>[] = [];
+    for (let r = start + 1; r <= played; r++) ts.push(setTimeout(() => setBarRound(r), t(r) + ROUND_MS * 0.45));
+    return () => ts.forEach(clearTimeout);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [played, start, animate]);
+  const snap = (() => {
+    const tr = f.sim.track;
+    let v = [100, 100, 100, 100];
+    if (tr) for (let r = Math.min(barRound, tr.length - 1); r >= 1; r--) if (tr[r]) { v = [...tr[r]]; break; }
+    if (done && barRound >= played && f.method && /KO|Poddanie/.test(f.method)) {
+      if (f.result === 'W') v[2] = 0;
+      if (f.result === 'L') v[0] = 0;
+    }
+    return v;
+  })();
+  const bars = (hp: number, st: number) => (
+    <span className="hpbars" aria-label={`zdrowie ${hp}%, kondycja ${st}%`}>
+      <i className={`hp ${hp < 30 ? 'low' : hp < 60 ? 'mid' : ''}`} style={{ ['--v' as string]: `${hp}%` } as CSSProperties} />
+      <i className="st" style={{ ['--v' as string]: `${st}%` } as CSSProperties} />
+    </span>
+  );
   const finish = f.method === 'KO/TKO' || f.method === 'Lekarz' || f.method === 'Poddanie';
   const won = f.result === 'W';
   const myShorts = clubCrest(g.club).bg;
@@ -595,13 +625,15 @@ function LiveCard({ g, f, start, animate, setGame }: { g: GameState; f: FightRep
         <div className={`vh-side me ${done && f.result === 'L' && finish ? 'ko' : ''} ${done && won ? 'win' : ''}`} style={d(stampAt)}>
           <div className="vh-art">
             {clubLogo(g.club?.name) && <img className="lv-crest" src={clubLogo(g.club?.name)!} alt="" aria-hidden="true" />}
-            <Fighter weight={divisionKey(g)} age={g.age} country={g.profile.origin} seed={`${g.profile.firstName}${g.profile.lastName}`} corner="blue" shorts={myShorts} size={80} belt={g.rank === 0 && !f.amateur ? g.tier : false} hurt={done && f.result === 'L' && finish} />
+            <Fighter weight={divisionKey(g)} age={g.age} country={g.profile.origin} marks={careerMarks(g)} seed={`${g.profile.firstName}${g.profile.lastName}`} corner="blue" shorts={myShorts} size={80} belt={g.rank === 0 && !f.amateur ? g.tier : false} hurt={done && f.result === 'L' && finish} />
           </div>
           <div className="vh-plate">
+            {champTitle(g) && <em className="champ-tag">{champTitle(g)}</em>}
             <small>{g.profile.firstName}</small>
             <b>{g.profile.lastName}</b>
             <span>{recStr(shownRecord(g, hold))}</span>
           </div>
+          {bars(snap[0], snap[1])}
         </div>
         <div className="vh-mid live-mid">
           <span className="vh-vs">VS</span>
@@ -636,6 +668,7 @@ function LiveCard({ g, f, start, animate, setGame }: { g: GameState; f: FightRep
               {!f.amateur && !f.opp.freak && rankLabel(f.opp.rank) ? ` · ${rankLabel(f.opp.rank)}` : ''}
             </span>
           </div>
+          {bars(snap[2], snap[3])}
         </div>
       </div>
 
@@ -763,7 +796,7 @@ function FightIntro({ g, f, n, total, onGo, paused }: { g: GameState; f: FightRe
         )}
         <div className="fi-vs">
           <div className="fi-side me">
-            <Fighter weight={divisionKey(g)} age={g.age} country={g.profile.origin} seed={`${g.profile.firstName}${g.profile.lastName}`} corner="blue" shorts={clubCrest(g.club).bg} size={96} belt={g.rank === 0 && !f.amateur ? g.tier : false} />
+            <Fighter weight={divisionKey(g)} age={g.age} country={g.profile.origin} marks={careerMarks(g)} seed={`${g.profile.firstName}${g.profile.lastName}`} corner="blue" shorts={clubCrest(g.club).bg} size={96} belt={g.rank === 0 && !f.amateur ? g.tier : false} />
             <b>{g.profile.lastName}</b>
             <small>{recStr(shownRecord(g, hold))}</small>
           </div>
@@ -831,9 +864,10 @@ function VsHero({ g, opp, label, size = 84, belt }: { g: GameState; opp: FightRe
     <div className="vs-hero">
       <div className="vh-side me">
         <div className="vh-art">
-          <Fighter weight={divisionKey(g)} age={g.age} country={g.profile.origin} seed={`${g.profile.firstName}${g.profile.lastName}`} corner="blue" shorts={clubCrest(g.club).bg} size={size} belt={belt} />
+          <Fighter weight={divisionKey(g)} age={g.age} country={g.profile.origin} marks={careerMarks(g)} seed={`${g.profile.firstName}${g.profile.lastName}`} corner="blue" shorts={clubCrest(g.club).bg} size={size} belt={belt} />
         </div>
         <div className="vh-plate">
+          {champTitle(g) && <em className="champ-tag">{champTitle(g)}</em>}
           <small>{g.profile.firstName}</small>
           <b>{g.profile.lastName}</b>
           <span>{recStr(shownRecord(g, hold))}</span>
@@ -861,7 +895,7 @@ function VsHero({ g, opp, label, size = 84, belt }: { g: GameState; opp: FightRe
 
 /** Scena z plakatu: duzi zawodnicy twarzą w twarz, herby klubów za plecami, logo gali w tle,
  *  pas między nimi przy walce o tytuł, a pod spodem zestawienie jak w telewizji. */
-function PosterHero({ g, opp, label, title, interim, fed, medal }: { g: GameState; opp: FightReport['opp']; label?: string; title?: boolean; interim?: boolean; fed?: string; medal?: boolean }) {
+function PosterHero({ g, opp, label, title, interim, fed, medal, abroad }: { g: GameState; opp: FightReport['opp']; label?: string; title?: boolean; interim?: boolean; fed?: string; medal?: boolean; abroad?: boolean }) {
   const hold = useHudHold();
   const myClub = g.club?.name;
   const oppClub = opp.freak ? null : rivalClub(`${opp.firstName}${opp.lastName}`, opp.country, myClub);
@@ -869,6 +903,13 @@ function PosterHero({ g, opp, label, title, interim, fed, medal }: { g: GameStat
   const oppCrest = clubLogo(oppClub);
   const wm = fedLogo(fed);
   const champ = !!title && g.rank === 0;
+  // poprzednie spotkania z tym rywalem (bez bieżącej walki)
+  const oppName = `${opp.firstName} ${opp.lastName}`;
+  const met = g.history.filter((h) => h.opponent === oppName);
+  const h2h = { w: met.filter((h) => h.result === 'W').length, l: met.filter((h) => h.result === 'L').length };
+  const isPeer = g.peers.some((p) => `${p.firstName} ${p.lastName}` === oppName);
+  const isNemesis = !!g.nemesis && g.nemesis.name === oppName;
+  const story = isNemesis ? 'zadra' : met.length ? `rewanż · walka nr ${met.length + 1}` : isPeer ? 'chłopak z twojego rocznika' : '';
   return (
     <div className="ph-wrap">
       <div className={`ph ${title ? 'ph-title' : ''}`}>
@@ -878,13 +919,14 @@ function PosterHero({ g, opp, label, title, interim, fed, medal }: { g: GameStat
         <i className="ph-floor" aria-hidden="true" />
         <div className="ph-side me">
           {myCrest ? <img className="ph-crest" src={myCrest} alt="" aria-hidden="true" /> : <span className="ph-crest ph-flag">🇵🇱</span>}
-          <Fighter weight={divisionKey(g)} age={g.age} country={g.profile.origin} seed={`${g.profile.firstName}${g.profile.lastName}`} corner="blue" shorts={clubCrest(g.club).bg} size={150} belt={g.rank === 0 && !title && g.tier > 0 ? g.tier : false} />
+          <Fighter weight={divisionKey(g)} age={g.age} country={g.profile.origin} marks={careerMarks(g)} seed={`${g.profile.firstName}${g.profile.lastName}`} corner="blue" shorts={clubCrest(g.club).bg} size={150} belt={g.rank === 0 && !title && g.tier > 0 ? g.tier : false} />
         </div>
         <div className="ph-side opp">
           {oppCrest ? <img className="ph-crest" src={oppCrest} alt="" aria-hidden="true" /> : !opp.freak && <span className="ph-crest ph-flag">{opp.flag}</span>}
           <Fighter weight={opp.freak ? undefined : divisionKey(g)} age={opp.age} country={opp.country} seed={`${opp.firstName}${opp.lastName}`} corner="red" size={150} mirror />
         </div>
         {label && <span className="ph-label">{label}</span>}
+        {story && <span className={`ph-story ${isNemesis ? 'hot' : ''}`}>{story}</span>}
         <span className="ph-vs">VS</span>
         {title && (
           <div className="ph-belt">
@@ -898,12 +940,16 @@ function PosterHero({ g, opp, label, title, interim, fed, medal }: { g: GameStat
         )}
         <div className="ph-plates">
           <div className={`vh-plate ph-plate me ${champ ? 'champ' : ''}`}>
+            {abroad && <Flag country="Polska" className="pl-flag" />}
+            {champTitle(g) && <em className="champ-tag">{champTitle(g)}</em>}
             <small>{g.profile.firstName}</small>
             <b>{g.profile.lastName}</b>
           </div>
           <div className="vh-plate ph-plate opp">
+            {!opp.freak && opp.country && (opp.country !== "Polska" || abroad) && <Flag country={opp.country} className="pl-flag" />}
             <small>
-              {opp.flag} {opp.nickname ? `„${opp.nickname}”` : opp.firstName}
+              {!opp.freak && opp.country && (opp.country !== "Polska" || abroad) ? '' : `${opp.flag} `}
+              {opp.nickname ? `„${opp.nickname}”` : opp.firstName}
             </small>
             <b>{opp.lastName}</b>
           </div>
@@ -915,6 +961,13 @@ function PosterHero({ g, opp, label, title, interim, fed, medal }: { g: GameStat
           <dt>Rekord</dt>
           <dd>{opp.freak ? '—' : recStr(opp.record)}</dd>
         </div>
+        {met.length > 0 && (
+          <div className="tot-h2h">
+            <dd>{h2h.w}</dd>
+            <dt>Bilans</dt>
+            <dd>{h2h.l}</dd>
+          </div>
+        )}
         <div>
           <dd>{g.age} lat</dd>
           <dt>Wiek</dt>
@@ -931,6 +984,59 @@ function PosterHero({ g, opp, label, title, interim, fed, medal }: { g: GameStat
           <dd>{oppClub ?? (opp.freak ? 'influencer' : opp.country)}</dd>
         </div>
       </dl>
+    </div>
+  );
+}
+
+const WALK_MS = 5600;
+/** Wejście do klatki: hala gaśnie, spiker zapowiada obu zawodników, na koniec face-off. */
+function WalkOut({ g, f, onDone }: { g: GameState; f: FightReport; onDone: () => void }) {
+  useEffect(() => {
+    const t = setTimeout(onDone, WALK_MS);
+    sfxCrowd();
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const o = f.opp;
+  const head = f.superfight ? 'Superfight' : f.nemesis ? 'Rewanż z zadrą' : f.interim ? 'Walka o pas tymczasowy' : f.unify ? 'Unifikacja pasów' : f.defense ? 'Obrona pasa' : 'Walka o pas';
+  const wm = fedLogo(f.abroad && f.gala ? f.gala : f.fed);
+  const title = champTitle(g);
+  return (
+    <div className="wo" role="dialog" aria-modal="true" aria-label={`${head}: wejście zawodników`} onClick={onDone}>
+      <div className="wo-hall" style={{ backgroundImage: `url(${hallBg})` }} />
+      <i className="wo-beam" />
+      <i className="wo-smoke" />
+      {wm && <img className="wo-logo" src={wm} alt="" aria-hidden="true" />}
+      <div className="wo-head">{head}</div>
+      <div className="wo-intro wo-blue">
+        <span className="wo-corner">W niebieskim narożniku</span>
+        <Fighter weight={divisionKey(g)} age={g.age} country={g.profile.origin} marks={careerMarks(g)} seed={`${g.profile.firstName}${g.profile.lastName}`} corner="blue" shorts={clubCrest(g.club).bg} size={210} belt={g.rank === 0 && g.tier > 0 ? g.tier : false} />
+        <div className="wo-name">
+          {title && <em className="champ-tag">{title}</em>}
+          <small>{g.profile.firstName}{g.profile.nickname ? ` „${g.profile.nickname}”` : ''}</small>
+          <b>{g.profile.lastName}</b>
+          <span>{recStr(g.record)} · {g.profile.hometown}</span>
+        </div>
+      </div>
+      <div className="wo-intro wo-red">
+        <span className="wo-corner">W czerwonym narożniku</span>
+        <Fighter weight={o.freak ? undefined : divisionKey(g)} age={o.age} country={o.country} seed={`${o.firstName}${o.lastName}`} corner="red" size={210} mirror />
+        <div className="wo-name">
+          <small>{o.firstName}{o.nickname ? ` „${o.nickname}”` : ''}</small>
+          <b>{o.lastName}</b>
+          <span>{o.freak ? o.freak : recStr(o.record)} · {o.country}</span>
+        </div>
+      </div>
+      <div className="wo-face">
+        <div className="wo-f me">
+          <Fighter weight={divisionKey(g)} age={g.age} country={g.profile.origin} marks={careerMarks(g)} seed={`${g.profile.firstName}${g.profile.lastName}`} corner="blue" shorts={clubCrest(g.club).bg} size={190} />
+        </div>
+        <span className="wo-vs">VS</span>
+        <div className="wo-f opp">
+          <Fighter weight={o.freak ? undefined : divisionKey(g)} age={o.age} country={o.country} seed={`${o.firstName}${o.lastName}`} corner="red" size={190} mirror />
+        </div>
+      </div>
+      <span className="wo-skip">dotknij, żeby pominąć</span>
     </div>
   );
 }
@@ -995,7 +1101,7 @@ function GalaPoster({ g, f, n, total, onGo, paused }: { g: GameState; f: FightRe
             </span>
           )}
         </div>
-        <PosterHero g={g} opp={f.opp} label={spotLabel} title={f.title || f.unify || !!f.interim} interim={!!f.interim} fed={f.abroad && f.gala ? f.gala : f.fed} />
+        <PosterHero g={g} opp={f.opp} label={spotLabel} title={f.title || f.unify || !!f.interim} interim={!!f.interim} fed={f.abroad && f.gala ? f.gala : f.fed} abroad={!!f.abroad} />
         {p && (
           <div className="pst-card-wrap">
             <div className="pst-card-title">Karta walk</div>
@@ -1292,9 +1398,12 @@ function InviteCard({ g, inv, onDone }: { g: GameState; inv: SideInvite; onDone:
             <Icon name="check" />
             {inv.kind === 'seminar' ? 'Jadę' : inv.kind === 'film' ? 'Biorę rolę' : 'Startuję'}
           </button>
-          <button className="btn btn-ghost btn-block btn-ico" onClick={() => onDone(declineInvite(g), null)}>
+          <button className="btn btn-ghost btn-block btn-ico btn-decline" onClick={() => onDone(declineInvite(g), null)}>
             <Icon name="x" size={15} />
-            Odpuszczam, skupiam się na MMA
+            <span className="ofr-opt">
+              <b>Odpuszczam</b>
+              <small>skupiam się na MMA</small>
+            </span>
           </button>
         </div>
       </div>
@@ -1858,12 +1967,16 @@ export default function Season({ game, setGame }: StepProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [last?.idx]);
   const introOpen = !!last && ((introIdx !== null && introIdx === last.idx) || needIntro);
+  // wejście do klatki przed wielką walką (pas, superfight, zadra): raz na walkę, tylko z animacjami
+  const bigFight = !!last && !last.amateur && !!(last.title || last.superfight || last.unify || last.nemesis);
+  const [walkDone, setWalkDone] = useState(() => (last ? last.idx : -1));
+  const walkOpen = introOpen && bigFight && anim && !!last && walkDone !== last.idx && introKind === 'gala';
 
   useEffect(() => {
-    if (introIdx === null || paused || !animate) return;
+    if (introIdx === null || paused || !animate || walkOpen) return;
     const t = setTimeout(() => setIntroIdx(null), introKind === 'fight' ? INTRO_MS : POSTER_MS);
     return () => clearTimeout(t);
-  }, [introIdx, paused, introKind, animate]);
+  }, [introIdx, paused, introKind, animate, walkOpen]);
 
   // od której rundy animować bieżącą walkę (po decyzji: od miejsca przerwania)
   const prev = useRef<{ idx: number; round: number; fin: boolean } | null>(null);
@@ -1957,6 +2070,31 @@ export default function Season({ game, setGame }: StepProps) {
     return () => clearTimeout(tm);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [revealedKey, lastKey, introOpen]);
+  // kontuzja po walce: wyraźny komunikat, co to oznacza (zamiast tylko linijki w opisie walki)
+  const injSeen = useRef(last?.sim.finished ? last.idx : -1);
+  useEffect(() => {
+    if (!last || !last.sim.finished || last.idx <= injSeen.current) return;
+    if (revealedKey !== lastKey || introOpen || revealBusy || notice) return;
+    const m = last.moments.find((x) => x.title === 'Kontuzja' || x.title === 'Poważna kontuzja' || x.title === 'Uraz na rok');
+    injSeen.current = last.idx;
+    if (!m) return;
+    const name = g.injury?.name ?? '';
+    const t = setTimeout(
+      () =>
+        setNotice(
+          m.title === 'Kontuzja'
+            ? { head: 'Kontuzja', ctx: name, text: 'Możesz walczyć dalej, ale nie na sto procent: do końca roku każda szansa w walce jest o 4 pkt mniejsza. Uraz minie z końcem roku.', lines: ['Kara do każdej akcji: −4 pkt', 'Lekarz sportowy w zapleczu zmniejsza ryzyko kolejnych urazów'], tone: 'bad', cta: 'Rozumiem' }
+            : m.title === 'Poważna kontuzja'
+              ? { head: 'Poważna kontuzja', ctx: name, text: 'Lekarz skreśla cię do końca roku. Kolejne walki w tym roku przepadają.', lines: ['Ten rok: koniec walk', 'Przyszły rok: kara −5 pkt do każdej akcji', 'Z kontuzją nie przyjdą zaproszenia z zagranicy ani walki na zastępstwo'], tone: 'bad', cta: 'Do podsumowania' }
+              : { head: 'Uraz na cały rok', ctx: name, text: 'Operacja i rehabilitacja. Ten rok się kończy, a cały następny spędzasz na leczeniu, bez walk.', lines: ['Ten rok: koniec walk', 'Przyszły rok: rehabilitacja, zero walk', 'Potem powrót z karą −3 pkt przez dwa lata'], tone: 'bad', cta: 'Do podsumowania' },
+        ),
+      anim ? 700 : 0,
+    );
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [last?.idx, revealedKey, lastKey, introOpen, revealBusy]);
+
+  const injPending = !!last && last.sim.finished && last.idx > injSeen.current && last.moments.some((x) => x.title === 'Kontuzja' || x.title === 'Poważna kontuzja' || x.title === 'Uraz na rok');
   // pierwsza walka i kolejne: po wyniku chwila przerwy (albo przycisk „Następna walka”)
   useEffect(() => {
     if (spinning || revealOpen || run.done || waiting || introOpen || run.offer || run.press || run.weigh || run.post || run.invite || notice) return;
@@ -2151,7 +2289,7 @@ export default function Season({ game, setGame }: StepProps) {
         </div>
       )}
 
-      {run.done && !run.post && !notice && !revealBusy && (
+      {run.done && !run.post && !notice && !revealBusy && !injPending && (
         <div className="cta-bar float" style={d(anim ? revealMs : 0)}>
           <button className="btn btn-primary btn-block btn-ico" onClick={() => setGame(toSummary(g))}>
             <Icon name="chart" />
@@ -2170,7 +2308,9 @@ export default function Season({ game, setGame }: StepProps) {
       {introOpen &&
         last &&
         createPortal(
-          introKind === 'gala' ? (
+          walkOpen ? (
+            <WalkOut g={g} f={last} onDone={() => setWalkDone(last.idx)} />
+          ) : introKind === 'gala' ? (
             <GalaPoster g={g} f={last} n={run.fights.length} total={run.planned} paused={paused || !animate} onGo={() => setIntroIdx(null)} />
           ) : introKind === 'tourney' ? (
             <TourneyPoster g={g} f={last} paused={paused || !animate} onGo={() => setIntroIdx(null)} />
