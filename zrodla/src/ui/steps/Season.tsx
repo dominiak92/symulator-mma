@@ -985,7 +985,6 @@ function GalaPoster({ g, f, n, total, onGo, paused }: { g: GameState; f: FightRe
         <div className="pst-head">
           <div className="pst-brand">
             <FedEmblem name={f.abroad && f.gala ? f.gala : f.fed} size={44} />
-            <small>{galaPrefix(f.fed)} przedstawia</small>
           </div>
           <h2>{f.tuneup || f.abroad ? f.gala?.split(' · ')[0] : f.gala}</h2>
           {th.tagline && <span className="pst-tagline">{th.tagline}</span>}
