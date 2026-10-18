@@ -78,7 +78,7 @@ const weakest = (s: GameState) => [...STAT_KEYS].sort((a, b) => s.stats[a] - s.s
 function play(seed: number, p: Policy) {
   const rng = createRng(seed);
   const profile = { ...randomProfile(rng), start: 'osiedle' as const };
-  let s = newGame({ slot: 1, mode: 'normal', seed, profile });
+  let s = newGame({ slot: 1, mode: 'normal', seed, profile, quick: !!(p as { quick?: boolean }).quick });
   let guard = 0;
   let breaks = 0;
   let loans = 0;
@@ -250,6 +250,9 @@ const POLICIES_ALL: Policy[] = [
   { name: 'zwykłe opcje w walce', fightPick: 'normal' },
   { name: 'walka pod sytuację', fightPick: 'smart' },
   { name: 'walka: losowo', fightPick: 'random' },
+  { name: 'SZYBKA: rozsądnie', quick: true } as Policy,
+  { name: 'SZYBKA: przeklikanie', quick: true, fightPick: 'random', events: 'first', contract: 'stay' } as Policy,
+  { name: 'SZYBKA: losowo w walce', quick: true, fightPick: 'random' } as Policy,
   { name: 'tylko zapasy', train: () => 'wrest' },
   { name: 'tylko parter', train: () => 'bjj' },
   { name: 'tylko kondycja', train: () => 'cardio' },
