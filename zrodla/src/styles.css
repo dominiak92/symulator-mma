@@ -7216,3 +7216,11 @@ p, .offer-note, .frow-ctx, .pst-text { text-wrap: pretty; }
 .sk-id b em { font-style: normal; color: var(--gold); }
 .sk-id span { font-size: 0.82rem; color: var(--muted); }
 .sk-id .sk-ovr { color: var(--cyan); font-weight: 800; }
+/* wydarzenie: nagłówek na tle hali */
+.ev-head {
+  position: relative; margin: -16px -14px 4px; padding: 54px 14px 12px; background-size: cover; background-position: center 30%;
+  border-bottom: 1px solid var(--line); isolation: isolate; border-radius: var(--r-lg) var(--r-lg) 0 0; overflow: hidden;
+}
+.ev-head::before { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(180deg, rgba(7, 11, 20, 0.35), var(--panel) 92%); }
+.ev-head h2 { font-size: 1.7rem; text-shadow: 0 2px 12px rgba(0, 0, 0, 0.6); }
+@media (min-width: 641px) { .ev-head { margin: -22px -22px 6px; padding: 70px 22px 14px; } }
