@@ -26,6 +26,11 @@ function checkState(s: GameState, where: string) {
   if (s.rank !== null && (s.rank < 0 || !Number.isInteger(s.rank))) note(`${where}: ranking ${s.rank}`);
   if (s.media < 0 || s.media > 100 || s.rep < 0 || s.rep > 100) note(`${where}: media/rep poza zakresem ${s.media}/${s.rep}`);
   if (s.wear < 0 || s.wear > 100) note(`${where}: zużycie ${s.wear}`);
+  if (s.followers !== undefined && (!Number.isFinite(s.followers) || s.followers < 0)) note(`${where}: obserwujący ${s.followers}`);
+  if (s.run && s.run.planned > 6) note(`${where}: za dużo walk w roku (${s.run.planned})`);
+  if (s.run && G.isExclusiveContract(s) && s.run.fights.some((f) => f.abroad)) note(`${where}: gala za granicą mimo wyłączności`);
+  if ((s.flags.interim ?? 0) > 0 && s.rank === 0) note(`${where}: pas tymczasowy u pełnego mistrza`);
+  if (s.run && [s.run.offer, s.run.press, s.run.weigh, s.run.post, s.run.invite].filter(Boolean).length > 1) note(`${where}: dwie decyzje naraz`);
   if (s.tier === 0 && s.proDebut && s.contract.kind !== 'freak') note(`${where}: zawodowiec w amatorce`);
   // zapis i wczytanie nie gubi danych
   const back = JSON.parse(JSON.stringify(s));
@@ -81,7 +86,13 @@ for (let i = 0; i < N; i++) {
         case 'season': {
           const run = s.run!;
           const cur = run.fights[run.fights.length - 1];
-          if (run.weigh) {
+          if (run.invite) {
+            checkText('zaproszenie', run.invite.text);
+            checkText('zaproszenie', run.invite.title);
+            s = rng.chance(0.6) ? G.acceptInvite(s) : G.declineInvite(s);
+            for (const x of s.run?.sideLog ?? []) { checkText('wydarzenie poza MMA', x.text); for (const l of x.lines) checkText('wydarzenie poza MMA', l); }
+          }
+          else if (run.weigh) {
             s = G.weighIn(s, rng.pick(['cut', 'pay'] as const));
           } else if (run.post) {
             checkText('mikrofon', run.post.text);

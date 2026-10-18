@@ -49,11 +49,12 @@ function step(s: GameState): GameState {
     case 'season': {
       const run = s.run!;
       const cur = run.fights[run.fights.length - 1];
+      if (run.invite) return G.declineInvite(s);
       if (run.weigh) return G.weighIn(s, 'pay');
       if (run.post) return G.postAnswer(s, run.post.options[run.post.options.length - 1].key);
       if (run.press) return G.pressAnswer(s, 'calm');
       if (run.offer) {
-        if (run.offer.short || run.offer.superfight) return G.declineOffer(s);
+        if (run.offer.short || run.offer.superfight || run.offer.abroad) return G.declineOffer(s);
         return G.acceptOffer(s, 'std', 'std');
       }
       if (cur?.sim.pending) return G.decide(s, [...cur.sim.pending.options].sort((a, b) => b.chance - a.chance)[0].key);
@@ -107,6 +108,20 @@ function pointAt(s: GameState): Point | null {
       };
     return null;
   }
+  if (s.phase === 'market' && s.market!.contracts.some((c) => c.star && c.available)) {
+    const m = s.market!;
+    const si = m.contracts.findIndex((c) => c.star && c.available);
+    const stay = m.contracts.findIndex((c) => c.kind === 'stay' && c.available);
+    if (stay >= 0)
+      return {
+        type: 'star',
+        ctx: `${tierName(s.tier)} rank ${s.rank ?? '—'}`,
+        opts: [
+          { key: 'gwiazda', apply: (x) => G.confirmMarket(G.pickContract(x, si)) },
+          { key: 'zostaję', apply: (x) => G.confirmMarket(G.pickContract(x, stay)) },
+        ],
+      };
+  }
   if (s.phase === 'market' && s.market!.contracts.some((c) => c.available && c.kind === 'promotion' && c.purse > 0) && !s.market!.negotiated) {
     const m = s.market!;
     const ci = m.contracts.findIndex((c) => c.available && c.kind === 'promotion');
@@ -121,6 +136,15 @@ function pointAt(s: GameState): Point | null {
   }
   if (s.phase !== 'season' || !s.run) return null;
   const run = s.run;
+  if (run.invite)
+    return {
+      type: `invite:${run.invite.kind}`,
+      ctx: `${tierName(s.tier)} szansa ${G.inviteChance(s) ?? 100}%`,
+      opts: [
+        { key: 'startuję', apply: (x) => G.acceptInvite(x) },
+        { key: 'odpuszczam', apply: (x) => G.declineInvite(x) },
+      ],
+    };
   if (run.weigh)
     return { type: 'weigh', ctx: `${tierName(s.tier)} cut ${G.cutChance(s)}%`, opts: (['cut', 'pay'] as const).map((k) => ({ key: k, apply: (x) => G.weighIn(x, k) })) };
   if (run.post)
@@ -141,6 +165,8 @@ function pointAt(s: GameState): Point | null {
         { key: 'odmawiam', apply: (x) => G.declineOffer(x) },
       ],
     };
+  if (o.abroad)
+    return { type: 'abroad', ctx: tierName(s.tier), opts: [{ key: 'lecę', apply: (x) => G.acceptOffer(x) }, { key: 'odmawiam', apply: (x) => G.declineOffer(x) }] };
   if (o.superfight)
     return { type: 'super', ctx: tierName(s.tier), opts: [{ key: 'biorę', apply: (x) => G.acceptOffer(x) }, { key: 'odmawiam', apply: (x) => G.declineOffer(x) }] };
   if (o.tuneup) return null;

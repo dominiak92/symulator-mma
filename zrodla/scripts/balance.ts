@@ -171,7 +171,8 @@ function play(seed: number, p: Policy) {
       case 'season': {
         const run = s.run!;
         const cur = run.fights[run.fights.length - 1];
-        if (run.weigh) s = G.weighIn(s, p.weigh ?? 'pay');
+        if (run.invite) s = G.acceptInvite(s);
+        else if (run.weigh) s = G.weighIn(s, p.weigh ?? 'pay');
         else if (run.post) s = G.postAnswer(s, (p.mic && run.post.options.find((x) => x.key === p.mic)?.key) || run.post.options[run.post.options.length - 1].key);
         else if (run.press) s = pressAnswer(s, p.press ?? 'calm');
         else if (run.offer) {

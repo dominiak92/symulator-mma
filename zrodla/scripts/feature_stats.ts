@@ -20,7 +20,8 @@ for (let i = 0; i < N; i++) {
       case 'event': s = s.event!.picked !== undefined ? G.continueAfterEvent(s) : G.chooseEvent(s, 0); break;
       case 'season': {
         const run = s.run!; const cur = run.fights[run.fights.length - 1];
-        if (run.weigh) { inc('ważenie'); s = G.weighIn(s, rng.chance(0.5) ? 'cut' : 'pay'); }
+        if (run.invite) s = G.acceptInvite(s);
+        else if (run.weigh) { inc('ważenie'); s = G.weighIn(s, rng.chance(0.5) ? 'cut' : 'pay'); }
         else if (run.post) { inc(run.post.kind === 'mic' ? 'mikrofon' : 'kontrowersja'); const o = run.post.options; s = G.postAnswer(s, o[0].key); }
         else if (run.press) s = G.pressAnswer(s, 'calm');
         else if (run.offer) {

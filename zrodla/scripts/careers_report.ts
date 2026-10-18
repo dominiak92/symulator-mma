@@ -20,7 +20,8 @@ function play(seed: number, start: string, difficulty: 'normal' | 'hard') {
       case 'event': s = s.event!.picked !== undefined ? G.continueAfterEvent(s) : G.chooseEvent(s, 0); break;
       case 'season': {
         const run = s.run!; const cur = run.fights[run.fights.length - 1];
-        if (run.weigh) s = G.weighIn(s, 'pay');
+        if (run.invite) s = G.acceptInvite(s);
+        else if (run.weigh) s = G.weighIn(s, 'pay');
         else if (run.post) s = G.postAnswer(s, run.post.options[0].key);
         else if (run.press) s = G.pressAnswer(s, 'calm');
         else if (run.offer) s = G.acceptOffer(s);
