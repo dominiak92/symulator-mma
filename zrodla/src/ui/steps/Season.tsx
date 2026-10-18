@@ -579,7 +579,7 @@ function LiveCard({ g, f, start, animate, setGame }: { g: GameState; f: FightRep
 
       {(medal || belt) && (
         <div className="trophy" style={d(stampAt + 350)}>
-          {belt ? <Belt size={150} tier={f.amateur ? 0 : g.tier} /> : <Medal kind={medal as 'gold' | 'silver' | 'bronze'} size={58} />}
+          {belt ? <Belt size={150} tier={f.amateur ? 0 : g.tier} interim={!!f.interim} /> : <Medal kind={medal as 'gold' | 'silver' | 'bronze'} size={58} />}
           <span>{belt ? (f.defense ? 'Pas zostaje u ciebie' : 'Nowy mistrz!') : medal === 'gold' ? 'Złoto!' : medal === 'silver' ? 'Srebro' : 'Brąz'}</span>
           {animate && (belt || medal === 'gold') && <Confetti />}
         </div>

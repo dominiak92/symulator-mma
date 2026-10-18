@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { StatArt } from '../Art';
 import { predictability } from '../../engine/fight';
 import type { StatKey } from '../../engine/types';
 import { STAT_KEYS, STAT_LABELS, STAT_TRAINING_DESC } from '../../engine/data';
@@ -120,9 +121,7 @@ export default function Training({ game, setGame }: StepProps) {
             <button key={k} className="choice train-opt" role="radio" aria-checked={on} onClick={() => setPick(k)}>
               <span className="opt-top">
                 <span className="opt-label">
-                  <span className="stat-ico">
-                    <Icon name={STAT_ICON[k]} size={17} />
-                  </span>
+                  <StatArt stat={k} size={40} />
                   {STAT_LABELS[k]}
                   {k === g.club.specialty && (
                     <span className="tag blue">
