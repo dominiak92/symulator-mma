@@ -50,7 +50,7 @@ export const ACHIEVEMENTS: Achievement[] = [
   { id: 'retire_champ', title: 'Odchodzi niepokonany', desc: 'Zakończ karierę jako panujący mistrz.', check: (s) => s.phase === 'ended' && s.rank === 0 && s.tier >= 2 },
   { id: 'wasted', title: 'Zmarnowany talent', desc: 'Jako Wybraniec nie wyjdź poza polską federację.', secret: true, check: (s) => s.phase === 'ended' && s.profile.start === 'wybraniec' && s.peakTier <= 2 },
   { id: 'daily', title: 'Codzienna dawka', desc: 'Ukończ Karierę dnia.', check: (s) => s.mode === 'daily' && s.phase === 'ended' },
-  { id: 'legacy3000', title: 'Legenda', desc: 'Zdobądź 3000 punktów LEGACY w jednej karierze.', check: (s) => (s.ending?.legacy ?? 0) >= 3000 },
+  { id: 'legacy3000', title: 'Legenda', desc: 'Zdobądź 4500 punktów LEGACY w jednej karierze.', check: (s) => (s.ending?.legacy ?? 0) >= 4500 },
   { id: 'top_exit', title: 'Na własnych warunkach', desc: 'Zakończ karierę jako panujący mistrz albo na serii zwycięstw.', check: (s) => !!s.ending?.top },
 ];
 

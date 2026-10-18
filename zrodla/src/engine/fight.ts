@@ -254,6 +254,8 @@ function simulateRound(rng: Rng, ctx: FightCtx, sim: FightSim, rep: FightReport)
   const predMe = predictability(ctx.me);
   const predOpp = predictability(opp.stats);
   const readBonus = (atkWho: Who, stat: 'stand' | 'wrest' | 'bjj') => {
+    // nagrania rywali analizuje się dopiero na zawodowstwie
+    if (!sim.pro) return 0;
     const pr = atkWho === 'me' ? predMe : predOpp;
     return pr.stat === stat ? pr.spike * READ_K : 0;
   };
@@ -603,7 +605,7 @@ function buildDecisionRaw(rng: Rng, ctx: FightCtx, sim: FightSim): DecisionPoint
   const next = sim.round + 1;
   const base = ctx.form - ctx.penalty;
   const pm = predictability(ctx.me);
-  const rd = (k: 'stand' | 'wrest' | 'bjj') => (pm.stat === k ? pm.spike * READ_K : 0);
+  const rd = (k: 'stand' | 'wrest' | 'bjj') => (sim.pro && pm.stat === k ? pm.spike * READ_K : 0);
   const safe = (key: string, label: string, desc: string, win: string, lose: string, stat: StatKey = 'iq') =>
     option(key, 'safe', label, desc, stat, me[stat], op[stat], base, win, lose);
 

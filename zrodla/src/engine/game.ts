@@ -2638,7 +2638,7 @@ export function toSummary(s0: GameState): GameState {
   if (finishes >= 2) lines.push(`${finishes} ${pl(finishes, 'walkę', 'walki', 'walk')} skończyłeś przed czasem.`);
   else if (fights.length >= 2 && fights.every((f) => f.method?.startsWith('Decyzja'))) lines.push('Wszystkie walki do ostatniego gongu, sędziowie mieli co robić.');
   const peerFight = fights.find((f) => f.peer);
-  if (peerFight) lines.push(`Pojedynek z kolegą z rocznika (${peerFight.opp.firstName} ${peerFight.opp.lastName}): ${peerFight.result === 'W' ? 'wygrany' : peerFight.result === 'L' ? 'przegrany' : 'remis'}.`);
+  if (peerFight) lines.push(`${peerFight.opp.id === s.rivalId ? 'Starcie z odwiecznym rywalem' : 'Pojedynek z kolegą z rocznika'} (${peerFight.opp.firstName} ${peerFight.opp.lastName}): ${peerFight.result === 'W' ? 'wygrany' : peerFight.result === 'L' ? 'przegrany' : 'remis'}.`);
   const goodForm = GOOD_FORMS.includes(run.form.label);
   const badForm = BAD_FORMS.includes(run.form.label);
   if (goodForm && winPct >= 0.6) lines.push('Forma była i wszystko wychodziło.');
