@@ -7,7 +7,7 @@ import { COACHES, coachCostAt, coachOf, coachOpen } from '../../engine/coaches';
 import type { CoachId, Contract } from '../../engine/types';
 import { lat, money, plural } from '../../format';
 import type { StepProps } from '../Game';
-import { Emblem, FedEmblem, clubCrest } from '../Emblem';
+import { ClubEmblem, FedEmblem } from '../Emblem';
 import { useState } from 'react';
 import ContractSheet from '../ContractSheet';
 import { Icon, STAT_ICON } from '../Icon';
@@ -233,7 +233,7 @@ export default function Market({ game, setGame }: StepProps) {
               >
                 <span className="offer-top">
                   <span className="fed-row">
-                    <Emblem spec={clubCrest(c)} size={34} title={c.name} />
+                    <ClubEmblem club={c} size={40} />
                     <span className="fed">
                       {c.name}
                       <small className="club-sub">
@@ -291,7 +291,7 @@ export default function Market({ game, setGame }: StepProps) {
                 .filter((c) => !clubAvailability(g, c).ok)
                 .map((c) => (
                   <div key={c.id} className="locked-club">
-                    <Emblem spec={clubCrest(c)} size={26} title={c.name} />
+                    <ClubEmblem club={c} size={30} />
                     <span>
                       <b>{c.name}</b>
                       <small>{clubAvailability(g, c).reason}</small>

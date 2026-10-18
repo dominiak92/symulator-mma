@@ -4,7 +4,7 @@ import { useState, type CSSProperties } from 'react';
 import type { StatKey } from '../../engine/types';
 import { money, plural } from '../../format';
 import type { StepProps } from '../Game';
-import { Emblem, SponsorLogo, clubCrest } from '../Emblem';
+import { ClubEmblem, SponsorLogo } from '../Emblem';
 import { Icon, STAT_ICON } from '../Icon';
 import { CoachTip } from '../Tutorial';
 import { sfxCash } from '../sound';
@@ -100,7 +100,7 @@ export default function Budget({ game, setGame }: StepProps) {
             <div className="ledger-label">
               {l.logo ? (
                 l.logo.kind === 'club' ? (
-                  <Emblem spec={clubCrest(g.club)} size={30} title={l.logo.name} />
+                  <ClubEmblem club={g.club} size={32} />
                 ) : (
                   <SponsorLogo name={l.logo.name} size={30} />
                 )
