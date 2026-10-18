@@ -32,6 +32,38 @@ export default function ContractSheet({
   onNegotiate?: (ask: ContractAsk) => void;
 }) {
   const [nego, setNego] = useState(false);
+  // strzałka „przewiń do podpisu”, gdy kartka nie mieści się na ekranie
+  const paperRef = useRef<HTMLDivElement>(null);
+  const [moreBelow, setMoreBelow] = useState(false);
+  useEffect(() => {
+    const el = paperRef.current;
+    if (!el) return;
+    let dismissed = false;
+    const check = () => setMoreBelow(!dismissed && el.scrollHeight - el.clientHeight - el.scrollTop > 24);
+    check();
+    const onScroll = () => {
+      // po pierwszym przewinięciu strzałka znika na dobre
+      if (el.scrollTop > 12) {
+        dismissed = true;
+        setMoreBelow(false);
+      }
+    };
+    el.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', check);
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(check) : null;
+    ro?.observe(el);
+    return () => {
+      el.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', check);
+      ro?.disconnect();
+    };
+  }, []);
+  const [nudge, setNudge] = useState(0);
+  const toSign = () => {
+    const el = paperRef.current;
+    el?.querySelector('.cp-sign')?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    setMoreBelow(false);
+  };
   const [asking, setAsking] = useState<ContractAsk | null>(null);
   const prevNego = useRef(c.nego);
   useEffect(() => {
@@ -134,7 +166,7 @@ export default function ContractSheet({
 
   return createPortal(
     <div className="contract-veil" role="dialog" aria-modal="true" aria-label={`Kontrakt: ${c.fed}`}>
-      <div className={`contract-paper ${signed ? 'signed' : ''}`}>
+      <div ref={paperRef} className={`contract-paper ${signed ? 'signed' : ''}`}>
         <div className="cp-head">
           <span className="cp-kicker">Umowa o walki zawodowe nr {g.season}/{g.year}</span>
           <h2>Kontrakt zawodniczy</h2>
@@ -199,7 +231,11 @@ export default function ContractSheet({
               onPointerLeave={up}
               aria-label="Pole na podpis: podpisz się palcem albo myszką"
             />
-            {ink === 0 && <span className="cp-hint">podpisz się tutaj palcem</span>}
+            {ink === 0 && (
+              <span key={nudge} className={`cp-hint ${nudge ? 'nudge' : ''}`}>
+                podpisz się tutaj palcem
+              </span>
+            )}
             <small>
               Zawodnik
               {ink === 0 && (
@@ -211,12 +247,25 @@ export default function ContractSheet({
           </div>
         </div>
         {signed && <span className="cp-approved">Podpisane</span>}
+        {moreBelow && !signed && (
+          <button type="button" className="cp-more" onClick={toSign} aria-label="Przewiń do podpisu">
+            <span>Przewiń do podpisu</span>
+            <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+              <path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+        )}
       </div>
       {onNegotiate && !negotiated && !signed && c.purse > 0 && (
         <div className={`contract-nego ${nego ? 'open' : ''}`}>
           {nego ? (
             <>
-              <small className="cn-title">O co walczysz? Masz jedną próbę.</small>
+              <div className="cn-head">
+                <small className="cn-title">O co walczysz? Masz jedną próbę.</small>
+                <button type="button" className="link-btn cn-cancel" disabled={!!asking} onClick={() => setNego(false)}>
+                  Jednak nie
+                </button>
+              </div>
               <div className="cn-opts">
                 {CONTRACT_ASKS.map((a) => (
                   <button
@@ -241,7 +290,7 @@ export default function ContractSheet({
                   </button>
                 ))}
               </div>
-              <small className="cn-risk">Przy żądaniu wyższej gaży federacja może się obrazić i dać gorszą wersję.</small>
+              <small className="cn-risk">Po odmowie federacja może się obrazić i obniżyć gażę o 6% (najczęściej przy żądaniu wyższej gaży, najrzadziej przy premii).</small>
             </>
           ) : (
             <button className="btn btn-ghost btn-small btn-ico cn-open" onClick={() => setNego(true)}>
@@ -255,7 +304,19 @@ export default function ContractSheet({
         <button className="btn btn-ghost btn-small" onClick={ink > 0 ? clear : onCancel} disabled={signed}>
           {ink > 0 ? 'Wyczyść podpis' : 'Jeszcze się zastanowię'}
         </button>
-        <button className="btn btn-primary btn-ico" onClick={sign} disabled={ink < MIN_INK || signed}>
+        <button
+          className={`btn btn-primary btn-ico ${ink < MIN_INK ? 'is-waiting' : ''}`}
+          onClick={() => {
+            // bez podpisu przycisk pokazuje, gdzie się podpisać
+            if (ink < MIN_INK) {
+              toSign();
+              setNudge((n) => n + 1);
+              return;
+            }
+            sign();
+          }}
+          disabled={signed}
+        >
           <Icon name="pen" />
           {ink < MIN_INK ? 'Najpierw podpis' : 'Zatwierdzam'}
         </button>
