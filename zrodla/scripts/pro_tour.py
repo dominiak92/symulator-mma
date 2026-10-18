@@ -68,7 +68,7 @@ with sync_playwright() as p:
                 opts = pg.locator('.mgr-section .club-offer')
                 if opts.count() > 1: opts.nth(1).click(); pg.wait_for_timeout(200)
             pg.locator('.offer').first.click()
-            pg.get_by_role('button', name='Podpisuję').click(); pg.wait_for_timeout(600); season += 1; continue
+            pg.get_by_role('button', name='Podpisuję').click(); pg.wait_for_timeout(600); (pg.locator('.cp-initials').click(), pg.get_by_role('button', name='Zatwierdzam').click(), pg.wait_for_timeout(900)) if pg.locator('.contract-veil').count() else None; season += 1; continue
         if pg.locator('.icon-pill.next').count():
             pg.locator('.icon-pill.next').click(); pg.wait_for_timeout(500); continue
         pg.wait_for_timeout(600)

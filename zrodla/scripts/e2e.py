@@ -157,6 +157,10 @@ with sync_playwright() as p:
         elif page.locator(".offer").count() and page.get_by_role("button", name="Podpisuję").count():
             shot(page, f"11-market-s{season+1}")
             page.get_by_role("button", name="Podpisuję").click()
+            page.wait_for_timeout(300)
+            if page.locator(".contract-veil").count():
+                shot(page, "11b-kontrakt")
+                page.locator(".cp-initials").click(); page.get_by_role("button", name="Zatwierdzam").click(); page.wait_for_timeout(900)
             season += 1
         elif page.locator(".fight-list").count():
             pass  # sezon się rozgrywa
