@@ -143,6 +143,13 @@ function play(seed: number, p: Policy) {
           loans++;
         }
         if (!canStartSeason(s) && cheaperClub(s)) s = downgradeClub(s);
+        if (process.env.GOALS) {
+          const opts = G.yearGoalOptions(s);
+          if (opts.length) {
+            const g = opts[(s.season * 7 + (s.createdAt % 97)) % opts.length];
+            s = G.setYearGoal(s, g.id);
+          }
+        }
         if (canStartSeason(s)) s = startSeason(s);
         else {
           breaks++;
@@ -204,7 +211,16 @@ function play(seed: number, p: Policy) {
             else o = [...opts].filter((x) => x.kind !== 'safe').sort((a, b) => b.chance - a.chance)[0] ?? o;
           }
           s = decide(s, o.key);
-        } else if (run.done) s = toSummary(s);
+        } else if (run.done) {
+          const gid = s.yearGoal?.season === s.season ? s.yearGoal.id : null;
+          s = toSummary(s);
+          if (gid && process.env.GOALS) {
+            const row = s.lastSummary?.outside?.find((r) => r.label.startsWith('Cel roku'));
+            const st = (GOAL_STATS[gid] ??= { n: 0, ok: 0 });
+            st.n++;
+            if (row && row.icon === 'check') st.ok++;
+          }
+        }
         else s = seasonSkip(s);
         break;
       }
@@ -333,6 +349,7 @@ const POLICIES_ALL: Policy[] = [
 const POLICIES = ONLY ? POLICIES_ALL.filter((p) => ONLY.split(',').some((o) => p.name.includes(o))) : POLICIES_ALL;
 
 const N = Number(process.argv[2] ?? 150);
+const GOAL_STATS: Record<string, { n: number; ok: number }> = {};
 const avg = (xs: number[]) => xs.reduce((a, b) => a + b, 0) / Math.max(1, xs.length);
 const fmt = (n: number) => (Math.abs(n) >= 1e6 ? (n / 1e6).toFixed(2) + ' mln' : Math.abs(n) >= 1e3 ? (n / 1e3).toFixed(0) + ' tys.' : n.toFixed(0));
 console.log(`${N} karier na strategię\n`);
@@ -353,3 +370,5 @@ for (const p of POLICIES) {
     fmt(avg(r.map((x) => x.moneyAt[30] ?? 0))).padStart(10),
   );
 }
+
+if (process.env.GOALS) for (const [k, v] of Object.entries(GOAL_STATS)) console.log(`cel ${k}: ${v.n} lat, zaliczone ${((v.ok / v.n) * 100).toFixed(0)}%`);

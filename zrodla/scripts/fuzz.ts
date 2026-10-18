@@ -45,7 +45,7 @@ function checkState(s: GameState, where: string) {
 }
 
 for (let i = 0; i < N; i++) {
-  const seed = 70000 + i;
+  const seed = Number(process.env.SEED0 ?? 70000) + i;
   const rng = createRng(seed * 13);
   const start = rng.pick(Object.keys(START_PROFILES) as (keyof typeof START_PROFILES)[]);
   let s = G.newGame({ slot: 1, mode: 'normal', seed, profile: { ...G.randomProfile(rng), start, difficulty: rng.chance(0.3) ? 'hard' : 'normal' } });

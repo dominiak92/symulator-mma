@@ -162,7 +162,7 @@ with sync_playwright() as p:
             page.wait_for_timeout(300)
             if page.locator(".contract-veil").count():
                 shot(page, "11b-kontrakt")
-                page.locator(".cp-initials").click(); page.get_by_role("button", name="Zatwierdzam").click(); page.wait_for_timeout(900)
+                page.locator(".contract-actions .btn-primary").click(); page.wait_for_timeout(1600)
             season += 1
         elif page.locator(".fight-list").count():
             pass  # sezon się rozgrywa

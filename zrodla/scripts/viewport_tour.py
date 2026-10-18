@@ -132,9 +132,9 @@ with sync_playwright() as p:
             pg.get_by_role("button", name="Dalej: kontrakty").click()
         elif pg.locator(".offer").count() and pg.get_by_role("button", name="Podpisuję").count():
             if once(f"m{season}"): snap(pg, f"s{season}-8-rynek", problems)
-            pg.get_by_role("button", name="Podpisuję").click(); pg.wait_for_timeout(300)
+            if not pg.locator(".contract-veil").count(): pg.get_by_role("button", name="Podpisuję ·").click(); pg.wait_for_timeout(300)
             if pg.locator(".contract-veil").count():
-                snap(pg, f"s{season}-8b-kontrakt", problems); pg.locator(".cp-initials").click(); pg.get_by_role("button", name="Zatwierdzam").click(); pg.wait_for_timeout(900)
+                snap(pg, f"s{season}-8b-kontrakt", problems); pg.locator(".contract-actions .btn-primary").click(); pg.wait_for_timeout(1600)
             season += 1
         elif "karta kariery" in main or pg.locator(".verdict-big").count():
             snap(pg, "99-koniec", problems); break
