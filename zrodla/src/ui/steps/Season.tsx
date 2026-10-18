@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from
 import { createPortal } from 'react-dom';
 import type { CardSpot, DecisionOption, DecisionPoint, FightOffer, FightReport, GameState, Moment, Stats } from '../../engine/types';
 import { galaPrefix, SEASON_FORMS, STAGE_LABELS, STAT_LABELS, STYLE_LABELS } from '../../engine/data';
-import { cutChance, postAnswer, weighIn, divisionKey, effectiveStats, weightMissChance, PRESS_OPTIONS, pressAnswer, prepCost, acceptAllOffers, acceptOffer, declineBlocked, declineOffer, decide, negotiateChance, negotiateOffer, recStr, seasonNext, seasonSkip, toSummary } from '../../engine/game';
+import { acceptInvite, declineInvite, inviteChance, cutChance, postAnswer, weighIn, divisionKey, effectiveStats, weightMissChance, PRESS_OPTIONS, pressAnswer, prepCost, acceptAllOffers, acceptOffer, declineBlocked, declineOffer, decide, negotiateChance, negotiateOffer, recStr, seasonNext, seasonSkip, toSummary } from '../../engine/game';
 import { activeManager, currentManager } from '../../engine/managers';
 import { sfxCash, sfxClick, sfxCrowd, sfxGong, sfxLoss, sfxThud } from '../sound';
 import { OUTCOME_LABEL } from '../../engine/fight';
@@ -18,7 +18,7 @@ import { CoachTip } from '../Tutorial';
 import { chanceWord } from '../Chance';
 import { setHudHold, shownRecord, useHudHold } from '../hudHold';
 import { TICKET_CUT, TICKET_PRICE, TICKET_OPTIONS, fmtFans, ticketForecast, ticketsAvailable } from '../../engine/extras';
-import type { PostFight, TicketPlan } from '../../engine/types';
+import type { PostFight, SideInvite, TicketPlan } from '../../engine/types';
 
 const reduced = () => typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 
@@ -747,25 +747,53 @@ function VsHero({ g, opp, label, size = 84, belt }: { g: GameState; opp: FightRe
   );
 }
 
+/** Styl plakatu: każda federacja ma swoją identyfikację (parodie), a gale specjalne własny wygląd. */
+type PosterTheme = { key: string; ribbon: string; tagline: string; day: string };
+const FED_THEMES: [string, Omit<PosterTheme, 'key'> & { key: string }][] = [
+  ['Babel', { key: 'babel', ribbon: 'Fight Night', tagline: 'Wieczór, o którym gada całe miasto', day: 'sobota, 19:00' }],
+  ['Armada', { key: 'armada', ribbon: 'Armada przedstawia', tagline: 'Pełne burty, pełna hala', day: 'sobota, 19:30' }],
+  ['Thunderbolt', { key: 'thunder', ribbon: 'Grzmot nad halą', tagline: 'Szybko, głośno, do końca', day: 'piątek, 20:00' }],
+  ['XSW', { key: 'xsw', ribbon: 'Transmisja na żywo · PPV', tagline: 'Ekstremalne starcia wojowników', day: 'sobota, 20:00' }],
+  ['FAN', { key: 'fan', ribbon: 'Na żywo w telewizji', tagline: 'Absolutna noc walk', day: 'sobota, 20:00' }],
+  ['Cage Worriers', { key: 'cw', ribbon: 'Live from Europe', tagline: 'Where champions are forged', day: 'sobota, 21:00' }],
+  ['Hexagon', { key: 'hex', ribbon: 'Six sides of war', tagline: 'Sześć ścian, jeden zwycięzca', day: 'sobota, 21:00' }],
+  ['Brava', { key: 'brava', ribbon: 'Brava Combat', tagline: 'Od pustyni po plaże Brazylii', day: 'piątek, 22:00' }],
+  ['Oktagram', { key: 'okta', ribbon: 'Vyprodáno · wyprzedane', tagline: 'Pełna hala i trybuny, które śpiewają', day: 'sobota, 19:00' }],
+  ['UFL', { key: 'ufl', ribbon: 'PPV · na żywo na całym świecie', tagline: 'Najwięksi z największych', day: 'sobota, 4:00 czasu polskiego' }],
+  ['Balettor', { key: 'bal', ribbon: 'Live from the casino', tagline: 'Wszystko na jedną kartę', day: 'piątek, 3:00 czasu polskiego' }],
+  ['TWO FC', { key: 'two', ribbon: 'Asian Fight Week', tagline: 'Honor, dyscyplina, nokaut', day: 'piątek, 13:00 czasu polskiego' }],
+  ['PLF', { key: 'plf', ribbon: 'Sezon ligowy · play-off', tagline: 'Wygrywasz turniej, bierzesz milion', day: 'czwartek, 2:00 czasu polskiego' }],
+];
+function posterTheme(f: FightReport): PosterTheme {
+  if (f.freak) return { key: 'freak', ribbon: 'Hype · show · chaos', tagline: 'Wszyscy oglądają, nikt się nie przyzna', day: 'sobota, 20:00' };
+  if (f.tuneup) return { key: 'cheap', ribbon: 'Wstęp 20 zł · bar czynny', tagline: 'Wielki powrót do formy', day: 'niedziela, 17:00' };
+  if (f.abroad) return { key: 'desert', ribbon: `Live from ${f.abroad}`, tagline: 'Pustynia, złoto i noc walk', day: 'piątek, 21:00 czasu lokalnego' };
+  const hit = FED_THEMES.find(([k]) => f.fed.startsWith(k) || galaPrefix(f.fed).startsWith(k));
+  return hit ? { ...hit[1] } : { key: 'default', ribbon: 'Gala MMA', tagline: '', day: 'sobota, 20:00' };
+}
+
 /** Plakat gali zawodowej: nazwa, miasto, hala i cała karta walk. */
 function GalaPoster({ g, f, n, total, onGo, paused }: { g: GameState; f: FightReport; n: number; total: number; onGo: () => void; paused: boolean }) {
   const goRef = useGoKeys(onGo);
   const p = f.poster;
   const mineIdx = p ? p.bouts.findIndex((b) => b.tag && b.a === g.profile.lastName && b.b === f.opp.lastName) : -1;
-  const spotLabel = f.title ? (f.defense ? 'obrona pasa' : 'walka o pas') : SPOT[f.spot ?? 'wstępna'];
+  const spotLabel = f.superfight ? 'superfight' : f.interim ? 'pas tymczasowy' : f.unify ? 'unifikacja' : f.title ? (f.defense ? 'obrona pasa' : 'walka o pas') : SPOT[f.spot ?? 'wstępna'];
+  const th = posterTheme(f);
   return (
     <div className="fight-intro poster-modal" role="dialog" aria-modal="true" aria-label={`Gala ${f.gala}`}>
-      <div className={`poster ${f.title ? 'title-bout' : ''} ${f.freak ? 'freak' : ''}`}>
+      <div className={`poster th-${th.key} ${f.title || f.superfight ? 'title-bout' : ''} ${f.freak ? 'freak' : ''}`}>
+        <span className="pst-ribbon">{th.ribbon}</span>
         <div className="pst-head">
           <div className="pst-brand">
             <Emblem spec={crestFor(f.fed)} size={30} title={f.fed} />
             <small>{galaPrefix(f.fed)} przedstawia</small>
           </div>
-          <h2>{f.gala}</h2>
+          <h2>{f.tuneup || f.abroad ? f.gala?.split(' · ')[0] : f.gala}</h2>
+          {th.tagline && <span className="pst-tagline">{th.tagline}</span>}
           {p && (
             <span className="pst-place">
               <Icon name="pin" size={13} />
-              {p.city} · {p.venue} · sobota, 20:00
+              {p.city} · {p.venue} · {th.day}
             </span>
           )}
         </div>
@@ -952,30 +980,115 @@ function WeighCard({ g, o, setGame }: { g: GameState; o: FightOffer; setGame: (s
   );
 }
 
-/** Po walce: mikrofon w klatce albo reakcja na kontrowersyjny werdykt. */
-function PostCard({ g, post, setGame }: { g: GameState; post: PostFight; setGame: (s: GameState) => void }) {
-  const last = g.run!.fights[g.run!.fights.length - 1];
-  // po wyborze najpierw pokazujemy, jak to się skończyło, dopiero potem gra idzie dalej
-  const [res, setRes] = useState<{ s: GameState; m: Moment } | null>(null);
-  if (res)
-    return (
-      <div className={`fight-intro offer-modal post-modal ${post.kind}`} role="dialog" aria-modal="true" aria-label={post.title}>
-        <div className="fi-card">
-          <div className="fi-top">
-            <span className="fi-num">{post.kind === 'mic' ? 'Mikrofon' : 'Po werdykcie'}</span>
-            <span className="fi-ctx">{last?.gala}</span>
+const INVITE_ICON: Record<SideInvite['kind'], string> = { grappling: 'knot', boxing: 'glove', seminar: 'users' };
+const INVITE_HEAD: Record<SideInvite['kind'], string> = { grappling: 'Turniej grapplingowy', boxing: 'Walka bokserska', seminar: 'Seminarium' };
+
+/** Zaproszenie na wydarzenie poza MMA: grappling, boks, seminarium. */
+type Notice = { head: string; ctx?: string; lines?: string[]; text: string; tone: Moment['tone']; cta: string };
+
+/** Wynik decyzji (zapisany już w stanie gry): pokazujemy go, zanim rok pójdzie dalej. */
+function NoticeCard({ n, onClose }: { n: Notice; onClose: () => void }) {
+  return (
+    <div className="fight-intro offer-modal invite-modal notice-modal" role="dialog" aria-modal="true" aria-label={n.head}>
+      <div className="fi-card">
+        <div className="fi-top">
+          <span className="fi-num">{n.head}</span>
+          {n.ctx && <span className="fi-ctx">{n.ctx}</span>}
+        </div>
+        {n.lines && n.lines.length > 0 && (
+          <ol className="inv-lines">
+            {n.lines.map((l, i) => (
+              <li key={i} style={{ ['--i' as string]: i } as CSSProperties}>
+                {l}
+              </li>
+            ))}
+          </ol>
+        )}
+        <div className={`post-result tone-${n.tone}`}>
+          <Icon name={n.tone === 'bad' ? 'x' : n.tone === 'neutral' ? 'megaphone' : 'check'} size={20} />
+          <p>{n.text}</p>
+        </div>
+        <button className="btn btn-primary btn-block btn-ico" autoFocus onClick={onClose}>
+          <Icon name="play" />
+          {n.cta}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function InviteCard({ g, inv, onDone }: { g: GameState; inv: SideInvite; onDone: (s: GameState, n: Notice | null) => void }) {
+  const ch = inviteChance(g);
+  const excl = g.contract.exclusive;
+  return (
+    <div className="fight-intro offer-modal invite-modal" role="dialog" aria-modal="true" aria-label={inv.title}>
+      <div className="fi-card">
+        <div className="fi-top">
+          <span className="fi-num">Zaproszenie</span>
+          <span className="fi-ctx">poza federacją · {inv.place}</span>
+        </div>
+        <div className="post-head">
+          <span className={`post-ico inv-${inv.kind}`}>
+            <Icon name={INVITE_ICON[inv.kind]} size={26} />
+          </span>
+          <div>
+            <b>{inv.title}</b>
+            <p>{inv.text}</p>
           </div>
-          <div className={`post-result tone-${res.m.tone}`}>
-            <Icon name={res.m.tone === 'bad' ? 'x' : res.m.tone === 'neutral' ? 'megaphone' : 'check'} size={20} />
-            <p>{res.m.text}</p>
-          </div>
-          <button className="btn btn-primary btn-block btn-ico" autoFocus onClick={() => setGame(res.s)}>
-            <Icon name="play" />
-            Dalej
+        </div>
+        <div className="tuneup-fx">
+          <span className="good">
+            <Icon name="check" size={13} />
+            {inv.kind === 'grappling'
+              ? `złoto: parter +2, zapasy +1 i ${money(inv.prize)}; srebro: parter +1`
+              : inv.kind === 'boxing'
+                ? `wygrana: stójka +1, ${money(inv.prize)}, media +2`
+                : `${money(inv.prize)}, reputacja +1, media +1, bez ryzyka`}
+          </span>
+          <span className="bad">
+            <Icon name="x" size={13} />
+            {inv.kind === 'grappling'
+              ? `wpisowe ${money(inv.fee)}, małe ryzyko urazu, w najbliższej walce forma −2`
+              : inv.kind === 'boxing'
+                ? 'porażka: połowa gaży, zużycie organizmu, w najbliższej walce forma −2'
+                : 'weekend bez treningu: w najbliższej walce forma −2'}
+          </span>
+        </div>
+        {ch !== null && (
+          <p className="inv-chance">
+            {inv.kind === 'grappling' ? 'Szansa na złoto' : 'Szansa na wygraną'}: <ChanceTag p={ch} />
+          </p>
+        )}
+        {excl && <p className="faint small inv-excl">To nie jest walka MMA, więc kontrakt na wyłączność na to pozwala.</p>}
+        <div className="ofr-actions">
+          <button
+            className="btn btn-primary btn-block btn-ico"
+            autoFocus
+            onClick={() => {
+              sfxClick();
+              const ns = acceptInvite(g);
+              const r = ns.run?.sideLog?.[ns.run.sideLog.length - 1];
+              if (r && (r.tone === 'good' || r.tone === 'purple')) sfxCrowd(r.tone === 'purple');
+              // wynik od razu trafia do zapisu (bez losowania od nowa po przeładowaniu)
+              onDone(ns, r ? { head: INVITE_HEAD[inv.kind], ctx: inv.title, lines: r.lines, text: r.text, tone: r.tone, cta: 'Wracam do sezonu' } : null);
+            }}
+          >
+            <Icon name="check" />
+            {inv.kind === 'seminar' ? 'Jadę' : 'Startuję'}
+          </button>
+          <button className="btn btn-ghost btn-block btn-ico" onClick={() => onDone(declineInvite(g), null)}>
+            <Icon name="x" size={15} />
+            Odpuszczam, skupiam się na MMA
           </button>
         </div>
       </div>
-    );
+    </div>
+  );
+}
+
+/** Po walce: mikrofon w klatce albo reakcja na kontrowersyjny werdykt. */
+function PostCard({ g, post, onDone }: { g: GameState; post: PostFight; onDone: (s: GameState, n: Notice | null) => void }) {
+  const last = g.run!.fights[g.run!.fights.length - 1];
   return (
     <div className={`fight-intro offer-modal post-modal ${post.kind}`} role="dialog" aria-modal="true" aria-label={post.title}>
       <div className="fi-card">
@@ -1003,10 +1116,9 @@ function PostCard({ g, post, setGame }: { g: GameState; post: PostFight; setGame
                 const ns = postAnswer(g, o.key);
                 const f = ns.run?.fights[ns.run.fights.length - 1];
                 const m = f?.moments[f.moments.length - 1];
-                if (m && (m.title === 'Mikrofon' || m.title === 'Po werdykcie')) {
-                  if (m.tone === 'purple' || m.tone === 'good') sfxCrowd(false);
-                  setRes({ s: ns, m });
-                } else setGame(ns);
+                const ok = m && (m.title === 'Mikrofon' || m.title === 'Po werdykcie');
+                if (ok && (m.tone === 'purple' || m.tone === 'good')) sfxCrowd(false);
+                onDone(ns, ok ? { head: post.kind === 'mic' ? 'Mikrofon' : 'Po werdykcie', ctx: last?.gala, text: m.text, tone: m.tone, cta: 'Dalej' } : null);
               }}
             >
               <span className="opt-top">
@@ -1097,7 +1209,7 @@ function OfferCard({ g, o, n, total, setGame }: { g: GameState; o: FightOffer; n
   const [prep, setPrep] = useState<'std' | 'rival' | 'hard'>('std');
   const [tix, setTix] = useState<TicketPlan>('std');
   const showTix = ticketsAvailable(g, o);
-  const special = !!(o.tuneup || o.short || o.superfight);
+  const special = !!(o.tuneup || o.short || o.superfight || o.abroad);
   // telefon do organizatora: chwila napięcia, potem widoczny efekt
   const [asking, setAsking] = useState<'neg' | 'decline' | null>(null);
   const [fx, setFx] = useState<OfferFx>(null);
@@ -1144,7 +1256,9 @@ function OfferCard({ g, o, n, total, setGame }: { g: GameState; o: FightOffer; n
   const neg = negotiateChance(g);
   const notes = g.run?.notes ?? [];
   const lastNote = notes[notes.length - 1];
-  const head = o.tuneup
+  const head = o.abroad
+    ? `Gala za granicą · ${o.abroad}`
+    : o.tuneup
     ? 'Walka na odbudowę'
     : o.short
       ? 'Zastępstwo · gala za 6 dni'
@@ -1267,6 +1381,18 @@ function OfferCard({ g, o, n, total, setGame }: { g: GameState; o: FightOffer; n
             </>
           )}
         </div>
+        {o.abroad && (
+          <div className="tuneup-fx">
+            <span className="good">
+              <Icon name="check" size={13} />
+              dwie i pół stawki, wygrana: media +4 i reputacja +2
+            </span>
+            <span className="bad">
+              <Icon name="x" size={13} />
+              ranking stoi w miejscu, mocny rywal, dodatkowa walka w roku męczy organizm
+            </span>
+          </div>
+        )}
         {o.short && (
           <div className="tuneup-fx">
             <span className="good">
@@ -1379,12 +1505,12 @@ function OfferCard({ g, o, n, total, setGame }: { g: GameState; o: FightOffer; n
         <div className="ofr-actions">
           <button ref={goRef} className="btn btn-primary btn-block btn-ico" disabled={!!asking} onClick={() => setGame(acceptOffer(g, prep, tix))}>
             <Icon name="glove" />
-            {o.tuneup || o.short ? 'Biorę tę walkę' : o.superfight ? 'Biorę superfight' : 'Przyjmuję walkę'}
+            {o.tuneup || o.short ? 'Biorę tę walkę' : o.abroad ? 'Lecę'  : o.superfight ? 'Biorę superfight' : 'Przyjmuję walkę'}
           </button>
           {special ? (
             <button className="btn btn-ghost btn-block btn-ico" disabled={!!asking} onClick={() => call('decline', declineOffer)}>
               <Icon name="x" size={15} />
-              {asking === 'decline' ? 'Odmawiasz…' : o.short ? 'Nie, czekam na swoją walkę' : o.superfight ? 'Zostaję w swojej kategorii' : 'Wolę walkę w federacji'}
+              {asking === 'decline' ? 'Odmawiasz…' : o.abroad ? 'Zostaję w swojej federacji' : o.short ? 'Nie, czekam na swoją walkę' : o.superfight ? 'Zostaję w swojej kategorii' : 'Wolę walkę w federacji'}
             </button>
           ) : (
           <div className="ofr-row">
@@ -1413,7 +1539,7 @@ function OfferCard({ g, o, n, total, setGame }: { g: GameState; o: FightOffer; n
               Przyjmuj też kolejne oferty w tym roku
             </button>
           )}
-          <p className="faint small ofr-help">{o.short ? 'Odmowa nic nie kosztuje: to walka ponad plan, twoja zaplanowana walka nadal czeka.' : o.superfight ? 'Odmowa nic nie kosztuje, pas zostaje u ciebie.' : o.tuneup ? 'Odmowa nic nie kosztuje: federacja da ci zwykłego rywala.' : blocked ?? 'Po odmowie przyjdzie inna oferta albo nic. Grymaszenie psuje opinię u promotorów.'}</p>
+          <p className="faint small ofr-help">{o.abroad ? 'Odmowa nic nie kosztuje: to walka ponad plan roku.' : o.short ? 'Odmowa nic nie kosztuje: to walka ponad plan, twoja zaplanowana walka nadal czeka.' : o.superfight ? 'Odmowa nic nie kosztuje, pas zostaje u ciebie.' : o.tuneup ? 'Odmowa nic nie kosztuje: federacja da ci zwykłego rywala.' : blocked ?? 'Po odmowie przyjdzie inna oferta albo nic. Grymaszenie psuje opinię u promotorów.'}</p>
         </div>
       </div>
     </div>
@@ -1508,6 +1634,12 @@ export default function Season({ game, setGame }: StepProps) {
   const nextReady = finishedNow && !run.done && !introOpen;
 
 
+  // wynik decyzji (mikrofon, zaproszenie) pokazany po zapisaniu stanu
+  const [notice, setNotice] = useState<Notice | null>(null);
+  const done = (ns: GameState, n: Notice | null) => {
+    setGame(ns);
+    if (n) setNotice(n);
+  };
   const advance = () => {
     setPaused(false);
     setGame(seasonNext(gameRef.current));
@@ -1515,14 +1647,14 @@ export default function Season({ game, setGame }: StepProps) {
 
   // pierwsza walka i kolejne: po wyniku chwila przerwy (albo przycisk „Następna walka”)
   useEffect(() => {
-    if (spinning || run.done || waiting || introOpen || run.offer || run.press || run.weigh || run.post) return;
+    if (spinning || run.done || waiting || introOpen || run.offer || run.press || run.weigh || run.post || run.invite || notice) return;
     if (last && !last.sim.finished) return;
     if (paused && anim) return;
     const delay = !animate ? 0 : fast ? 260 : !last ? 1600 : revealMs + NEXT_MS;
     const t = setTimeout(advance, delay);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [spinning, run.done, waiting, introOpen, last?.idx, finishedNow, fast, animate, paused, !!run.offer, !!run.press, !!run.weigh, !!run.post]);
+  }, [spinning, run.done, waiting, introOpen, last?.idx, finishedNow, fast, animate, paused, !!run.offer, !!run.press, !!run.weigh, !!run.post, !!run.invite, !!notice]);
 
   // przewijanie do karty walki (cała karta na ekranie), na koniec do przycisku
   useEffect(() => {
@@ -1677,6 +1809,16 @@ export default function Season({ game, setGame }: StepProps) {
             {last.amateur && last.stage ? STAGE_LABELS[last.stage] : `Walka ${run.fights.length}`} · {last.opp.firstName} {last.opp.lastName}
           </div>
         )}
+        {(run.sideLog ?? []).map((x, i) => (
+          <div className={`upcoming side-note tone-${x.tone}`} key={`s${i}`}>
+            <span className="res-badge sm X">
+              <Icon name={x.tone === 'bad' ? 'x' : 'trophy'} size={14} />
+            </span>
+            <span>
+              <b>{x.title}</b> · {x.lines[x.lines.length - 1]}
+            </span>
+          </div>
+        ))}
         {(run.notes ?? []).map((t, i) => (
           <div className="upcoming season-note" key={`n${i}`}>
             <span className="res-badge sm X">
@@ -1695,7 +1837,7 @@ export default function Season({ game, setGame }: StepProps) {
         ))}
       </div>
 
-      {!run.done && !waiting && !introOpen && !run.offer && !run.press && !run.weigh && !run.post && (
+      {!run.done && !waiting && !introOpen && !run.offer && !run.press && !run.weigh && !run.post && !run.invite && !notice && (
         <div className="play-ctrl" role="group" aria-label="Tempo roku">
                     {!last && paused && anim && !spinning && (
             <button className="icon-pill next" onClick={advance}>
@@ -1729,7 +1871,7 @@ export default function Season({ game, setGame }: StepProps) {
         </div>
       )}
 
-      {run.done && !run.post && (
+      {run.done && !run.post && !notice && (
         <div className="cta-bar float" style={d(anim ? revealMs : 0)}>
           <button className="btn btn-primary btn-block btn-ico" onClick={() => setGame(toSummary(g))}>
             <Icon name="chart" />
@@ -1740,7 +1882,9 @@ export default function Season({ game, setGame }: StepProps) {
 
       {run.press && !run.done && createPortal(<PressCard g={g} o={run.press} setGame={setGame} />, document.body)}
       {run.weigh && createPortal(<WeighCard g={g} o={run.weigh} setGame={setGame} />, document.body)}
-      {run.post && postShown && createPortal(<PostCard key={postKey} g={g} post={run.post} setGame={setGame} />, document.body)}
+      {run.invite && !run.post && !notice && createPortal(<InviteCard key={run.invite.title} g={g} inv={run.invite} onDone={done} />, document.body)}
+      {run.post && postShown && !notice && createPortal(<PostCard key={postKey} g={g} post={run.post} onDone={done} />, document.body)}
+      {notice && createPortal(<NoticeCard n={notice} onClose={() => setNotice(null)} />, document.body)}
       {run.offer && !run.done && createPortal(<OfferCard key={run.fights.length} g={g} o={run.offer} n={run.fights.length + 1} total={run.planned} setGame={setGame} />, document.body)}
       {introOpen &&
         last &&

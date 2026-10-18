@@ -70,7 +70,7 @@ export default function Market({ game, setGame }: StepProps) {
         <div role="radiogroup" aria-label="Kontrakt" style={{ marginTop: 14 }}>
           {available.map((c) => {
             const idx = m.contracts.indexOf(c);
-            const k = KIND[c.kind];
+            const k = c.star ? { label: 'gwiazda niższej ligi', tone: 'gold', icon: 'star' } : KIND[c.kind];
             const debut = g.tier === 0 && c.tier === 1;
             const r = rivalsLabel(me, c.tier);
             return (
