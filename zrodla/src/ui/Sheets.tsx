@@ -6,6 +6,20 @@ import { ovr } from '../engine/fighter';
 import { lat, money, plural } from '../format';
 import { CareerPanel, SheetHead } from './Game';
 import { Icon } from './Icon';
+import { Fighter } from './FighterArt';
+import { NAMES_EU, NAMES_WORLD } from '../engine/data';
+
+const FLAG_COUNTRY: Record<string, string> = Object.fromEntries([...NAMES_EU, ...NAMES_WORLD].map((p) => [p.flag, p.country]));
+/** Twarz zawodnika z historii: to samo ziarno co na plakacie (imię+nazwisko bez spacji). */
+function Face({ name, flag, age, size = 36 }: { name: string; flag?: string; age?: number; size?: number }) {
+  const sp = name.indexOf(' ');
+  const seed = sp > 0 ? name.slice(0, sp) + name.slice(sp + 1) : name;
+  return (
+    <span className="frow-av" aria-hidden="true" style={{ width: size, height: size }}>
+      <Fighter head seed={seed} age={age} country={flag ? FLAG_COUNTRY[flag] : undefined} size={size} />
+    </span>
+  );
+}
 
 export function methodParts(h: { method: string; round: number; time?: string; detail: string }): [string, string] {
   const m = METHOD_SHORT[h.method] ?? h.method;
@@ -70,6 +84,7 @@ function HistoryRow({ h }: { h: HistoryEntry }) {
   return (
     <div className="hist-row">
       <span className={`res-badge ${h.result}`}>{h.result === 'W' ? 'W' : h.result === 'L' ? 'P' : 'R'}</span>
+      {!h.freak && <Face name={h.opponent} flag={h.oppFlag} age={h.age} />}
       <div className="hist-main">
         <div className="hist-opp">
           {h.oppFlag} {h.opponent}
@@ -142,7 +157,8 @@ export function PeersTable({ g }: { g: GameState }) {
     <div className="peer-list">
       {peers.map((p) => (
         <div key={p.id} className={`peer-row ${p.retired ? 'retired' : ''} ${p.id === g.rivalId ? 'rival' : ''}`}>
-          <div>
+          <Face name={`${p.firstName} ${p.lastName}`} age={g.age} />
+          <div style={{ flex: 1, minWidth: 0 }}>
             <b>
               {p.firstName} {p.lastName}
             </b>

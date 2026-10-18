@@ -1,3 +1,5 @@
+import { clubLogo } from './logos';
+import { Fighter } from './FighterArt';
 import TextSize from './TextSize';
 import { chinState, fmtFans, followersOf } from '../engine/extras';
 import { coachOf, coachOpen } from '../engine/coaches';
@@ -7,7 +9,7 @@ import type { GameState, Phase } from '../engine/types';
 import { predictability } from '../engine/fight';
 import { goalBlockedInQuick, goalMet, todaysGoals, weekEndsIn } from '../engine/goals';
 import { STAT_KEYS, STAT_LABELS, STAT_DESC, START_PROFILES, STYLE_LABELS, TIER_NAMES, DIFFICULTY, WEIGHTS, amateurDivision } from '../engine/data';
-import { debutCheck, displayName, rankStr, rankingTable, recStr, tourneyResultText } from '../engine/game';
+import { debutCheck, displayName, divisionKey, rankStr, rankingTable, recStr, tourneyResultText } from '../engine/game';
 import { ovr } from '../engine/fighter';
 import { money, moneyShort } from '../format';
 import Training from './steps/Training';
@@ -24,7 +26,7 @@ import { Medal } from './Art';
 import { Tutorial } from './Tutorial';
 import { sfxClick, unlockAudio } from './sound';
 import { loadGoals, loadSettings, saveSettings } from '../storage';
-import { ClubEmblem, FedEmblem, SponsorLogo } from './Emblem';
+import { ClubEmblem, FedEmblem, SponsorLogo, clubCrest } from './Emblem';
 
 const PHASES: Phase[] = ['training', 'budget', 'event', 'season', 'summary', 'market'];
 const PHASE_LABEL: Record<Phase, string> = {
@@ -345,6 +347,15 @@ export default function Game({
             {sheet === 'skills' && (
               <>
                 <SheetHead title="Zawodnik" onClose={() => setSheet(null)} />
+                <div className="sk-hero">
+                  {clubLogo(g.club?.name) && <img className="sk-wm" src={clubLogo(g.club?.name)!} alt="" aria-hidden="true" />}
+                  <Fighter weight={divisionKey(g)} age={g.age} country={g.profile.origin} seed={`${g.profile.firstName}${g.profile.lastName}`} corner="blue" shorts={clubCrest(g.club).bg} size={104} belt={g.rank === 0 && g.tier > 0 ? g.tier : false} />
+                  <div className="sk-id">
+                    <b>{g.profile.firstName} {g.profile.nickname ? <em>„{g.profile.nickname}”</em> : null} {g.profile.lastName}</b>
+                    <span>{g.age} lat · {g.profile.hometown}</span>
+                    <span className="sk-ovr">OVR {ovr(g.stats)}</span>
+                  </div>
+                </div>
                 <SkillsPanel g={g} plain />
                 <ClubPanel g={g} plain />
               </>
