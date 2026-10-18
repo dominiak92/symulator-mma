@@ -13,7 +13,7 @@ import { AchievementsScreen, MuseumScreen, SettingsScreen } from './ui/Meta';
 import { EmblemGallery } from './ui/Emblem';
 import { newGame, randomProfile, recStr } from './engine/game';
 import { createRng, dailySeed } from './engine/rng';
-import { newlyUnlocked } from './engine/achievements';
+import { achIcon, newlyUnlocked } from './engine/achievements';
 import { START_PROFILES } from './engine/data';
 
 type Screen =
@@ -30,12 +30,14 @@ interface Toast {
   kind: string;
   title: string;
   desc: string;
+  icon?: string;
+  tone?: string;
 }
 
 function recordMeta(s: GameState): Toast[] {
   const have = loadAchievements();
   const fresh = newlyUnlocked(s, new Set(Object.keys(have)));
-  const out: Toast[] = fresh.map((a) => ({ kind: 'Nowe osiągnięcie', title: a.title, desc: a.desc }));
+  const out: Toast[] = fresh.map((a) => ({ kind: 'Nowe osiągnięcie', title: a.title, desc: a.desc, ...achIcon(a.id) }));
   if (fresh.length) {
     for (const a of fresh) have[a.id] = Date.now();
     saveAchievements(have);
@@ -200,8 +202,12 @@ export default function App() {
       <div className="toasts" aria-live="polite">
         {toasts.length > 1 ? (
           <button key={toasts[0].id} className="toast reveal multi" onClick={() => setToasts([])} aria-label="Nowe osiągnięcia. Dotknij, żeby zamknąć.">
-            <span className="toast-ico">
-              <Icon name="trophy" size={18} />
+            <span className="toast-ico-stack" aria-hidden="true">
+              {toasts.slice(0, 3).map((t) => (
+                <span key={t.id} className={`toast-ico ${t.a.tone ? `tone-${t.a.tone}` : ''}`}>
+                  <Icon name={t.a.icon ?? 'trophy'} size={16} />
+                </span>
+              ))}
             </span>
             <small>
               {toasts.length} {toasts.length >= 5 ? 'nowych osiągnięć' : 'nowe osiągnięcia'}
@@ -217,8 +223,8 @@ export default function App() {
         ) : (
           toasts.slice(0, 1).map((t) => (
             <button key={t.id} className="toast reveal" onClick={() => setToasts([])} aria-label={`${t.a.kind}: ${t.a.title}. Dotknij, żeby zamknąć.`}>
-              <span className="toast-ico">
-                <Icon name="trophy" size={18} />
+              <span className={`toast-ico ${t.a.tone ? `tone-${t.a.tone}` : ''}`}>
+                <Icon name={t.a.icon ?? 'trophy'} size={18} />
               </span>
               <small>{t.a.kind}</small>
               <strong>{t.a.title}</strong>
