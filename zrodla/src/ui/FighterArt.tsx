@@ -6,6 +6,12 @@
  */
 import { useId, type CSSProperties } from 'react';
 import { ART, type Layer } from './fighterData';
+import beltAm from '../assets/belts/amator.webp';
+import beltReg from '../assets/belts/regional.webp';
+import beltPl from '../assets/belts/polska.webp';
+import beltEu from '../assets/belts/europa.webp';
+import beltWorld from '../assets/belts/world.webp';
+const BELTS = [beltAm, beltReg, beltPl, beltEu, beltWorld];
 
 const SKINS = ['#f7d3b8', '#f1b08c', '#e6a27c', '#d48f66', '#bb7650', '#9c5f3d', '#7c4a2f', '#5c3520'];
 /** Jasne karnacje (Polska i większość Europy): od bladej po lekko opaloną. */
@@ -135,7 +141,10 @@ export function Fighter({
   weight,
   age,
   country,
+  head,
 }: {
+  /** tylko głowa (awatar w listach) */
+  head?: boolean;
   seed: string;
   /** kraj pochodzenia: od niego zależy karnacja (domyślnie Polska) */
   country?: string;
@@ -146,7 +155,8 @@ export function Fighter({
   shorts?: string;
   size?: number;
   mirror?: boolean;
-  belt?: boolean;
+  /** pas mistrzowski na biodrach: true albo szczebel 0–4 (grafika pasa) */
+  belt?: boolean | number;
   hurt?: boolean;
   className?: string;
   style?: CSSProperties;
@@ -194,7 +204,7 @@ export function Fighter({
   const beardLayers = l.beard === 'none' || band === 'young' ? null : A.beard[l.beard];
 
   return (
-    <svg className={`fighter-art ${className ?? ''}`} style={style} width={size} height={size * 1.2} viewBox="62 10 900 1080" aria-hidden="true">
+    <svg className={`fighter-art ${head ? 'fighter-head' : ''} ${className ?? ''}`} style={style} width={size} height={head ? size : size * 1.2} viewBox={head ? `${mirror ? 1024 - 690 : 334} 40 356 356` : '62 10 900 1080'} aria-hidden="true">
       <defs>
         <clipPath id={`sil${uid}`}>
           <path d={A.body[0][1]} />
@@ -258,16 +268,9 @@ export function Fighter({
           </g>
           </g>
 
-          {/* pas mistrzowski */}
-          {belt && (
-            <g>
-              <path d="M304 966 Q512 1004 720 966 L724 1044 Q512 1084 300 1044 Z" fill="#17171b" stroke={OUT} strokeWidth="9" strokeLinejoin="round" />
-              <path d="M392 948 L632 948 L656 1020 L512 1100 L368 1020 Z" fill="#f2b400" stroke="#6f4f00" strokeWidth="9" strokeLinejoin="round" />
-              <path d="M424 972 L600 972 L618 1022 L512 1076 L406 1022 Z" fill="#ffd54a" />
-              <path d="M436 982 L512 982 L478 1018 Z" fill="#fff6c9" opacity=".7" />
-              <circle cx="512" cy="1020" r="30" fill="#e11d48" stroke="#6f4f00" strokeWidth="7" />
-              <circle cx="502" cy="1010" r="9" fill="#fff" opacity=".7" />
-            </g>
+          {/* pas mistrzowski (grafika z gry) */}
+          {belt !== undefined && belt !== false && (
+            <image href={BELTS[typeof belt === 'number' ? Math.max(0, Math.min(4, belt)) : 2]} x="232" y="868" width="560" height="280" preserveAspectRatio="xMidYMid meet" />
           )}
 
           {/* głowa: fryzura, zarost, ślady walk */}

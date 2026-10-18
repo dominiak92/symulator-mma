@@ -125,6 +125,26 @@ const CLUBS: Record<string, string> = {
   'Kill Klif FC': C_killklif,
 };
 
+const CLUBS_PL = ['Dziki Zachód Szczecin', 'Meduza Łódź', 'Lubelskie Lwy', 'Sparta Fight Club', 'Hutnik Bytom', 'Akademia Kimura Kraków', 'Miasto Kickboxing', 'Remiza Team', 'Garaż u Zbyszka', 'LZS Kłos Fight', 'Berzerker Brothers', 'Arachnion Olsztyn', 'WZA Fight Team', 'Kill Klif FC', 'Team Alfa Samiec', 'Czerwony Wąż'];
+const CLUBS_BY_COUNTRY: Record<string, string[]> = {
+  Brazylia: ['Gracje Barra Rio', 'Barracuda Top Team'],
+  Irlandia: ['Straight Blarney Gym'],
+  Szwecja: ['All-Gwiazdy Sztokholm'],
+  Dagestan: ['Orły Machaczkała'],
+  USA: ['Jackman-Wonk', 'American Top Dog', 'Altitude Fight Lab', 'Barracuda Top Team'],
+  Anglia: ['Straight Blarney Gym', 'Phuket Top Camp'],
+  Australia: ['Phuket Top Camp'],
+};
+/** Klub rywala na plakat: stały dla danego zawodnika, inny niż klub gracza. */
+export function rivalClub(seed: string, country: string | undefined, myClub?: string): string | null {
+  let h = 2166136261;
+  for (let i = 0; i < seed.length; i++) h = Math.imul(h ^ seed.charCodeAt(i), 16777619);
+  h = h >>> 0;
+  const pool = !country || country === 'Polska' ? CLUBS_PL.filter((c) => c !== myClub) : CLUBS_BY_COUNTRY[country];
+  if (!pool || !pool.length) return null;
+  return pool[h % pool.length];
+}
+
 /** Herb klubu (grafika), gdy jest. */
 export function clubLogo(name: string | undefined | null): string | null {
   return name ? CLUBS[name] ?? null : null;
