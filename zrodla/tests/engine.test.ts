@@ -232,6 +232,11 @@ describe('szybka kariera', () => {
         for (let guard = 0; guard < 3000 && s.phase !== 'ended'; guard++) {
           if (quick && !checkedStart && s.phase === 'market') {
             expect(s.market!.contracts.every((c) => c.kind === 'promotion')).toBe(true);
+            // czysty start: automat nie zostawia obietnic, długów, kontuzji ani osiągnięć z amatorki
+            expect(s.age).toBe(18);
+            expect(s.promises.length).toBe(0);
+            expect(s.loans.length).toBe(0);
+            expect(s.injury).toBeNull();
             checkedStart = true;
           }
           if (s.phase === 'training') s = doTraining(s, [...STAT_KEYS].sort((a, b) => s.stats[a] - s.stats[b])[0]);
