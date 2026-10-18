@@ -52,9 +52,10 @@ export default function Menu({
           <span className="red">Zawodnika MMA</span>
         </h1>
         <div className="menu-faceoff" aria-hidden="true">
-          <Fighter seed="GroundGameHero" corner="blue" size={110} />
+          <i className="mf-beam" />
+          <Fighter seed="GroundGameHero" age={19} corner="blue" size={134} />
           <span className="vs-word">VS</span>
-          <Fighter seed="RywalZRocznika7" corner="red" size={110} mirror />
+          <Fighter seed="RywalZRocznika7" age={34} corner="red" size={134} mirror belt={4} />
         </div>
         <p>Od turniejów amatorskich w wieku 16 lat do pasa mistrza świata. Reszta zależy od ciebie.</p>
       </header>

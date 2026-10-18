@@ -5,6 +5,9 @@ import { recStr } from '../engine/game';
 import { ovr } from '../engine/fighter';
 import { lat } from '../format';
 import { Icon } from './Icon';
+import { Fighter } from './FighterArt';
+import { clubLogo } from './logos';
+import { divisionKey } from '../engine/game';
 
 export default function Slots({
   onOpen,
@@ -31,10 +34,14 @@ export default function Slots({
       </p>
       <div className="choice-list" style={{ marginTop: 18 }}>
         {slots.map(({ n, s }) => (
-          <div key={n} className="panel" style={{ margin: 0 }}>
+          <div key={n} className={`panel slot-card ${s ? 'filled' : 'empty'}`} style={{ margin: 0 }}>
+            {s && clubLogo(s.club?.name) && <img className="slot-wm" src={clubLogo(s.club?.name)!} alt="" aria-hidden="true" />}
             {s ? (
               <div className="row wrap">
-                <div style={{ flex: 1, minWidth: 200 }}>
+                <span className="slot-av" aria-hidden="true">
+                  <Fighter head seed={`${s.profile.firstName}${s.profile.lastName}`} age={s.age} weight={divisionKey(s)} size={58} />
+                </span>
+                <div style={{ flex: 1, minWidth: 160 }}>
                   <h3>
                     {s.profile.firstName} {s.profile.lastName}
                   </h3>
