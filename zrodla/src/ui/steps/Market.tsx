@@ -21,6 +21,7 @@ import type { CoachId, Contract } from '../../engine/types';
 import { lat, money, plural } from '../../format';
 import type { StepProps } from '../Game';
 import { ClubEmblem, FedEmblem } from '../Emblem';
+import { clubLogo, fedLogo } from '../logos';
 import { useState } from 'react';
 import ContractSheet from '../ContractSheet';
 import { Icon, STAT_ICON } from '../Icon';
@@ -88,10 +89,11 @@ export default function Market({ game, setGame }: StepProps) {
             const debut = g.tier === 0 && c.tier === 1;
             const r = rivalsLabel(me, c.tier);
             return (
-              <button key={c.id} className="offer" role="radio" aria-checked={m.pickedContract === idx} onClick={() => setGame(pickContract(g, idx))}>
+              <button key={c.id} className="offer has-wm" role="radio" aria-checked={m.pickedContract === idx} onClick={() => setGame(pickContract(g, idx))}>
+                {fedLogo(c.fed) && !(c.kind === 'stay' && c.tier === 0) && <img className="card-wm" src={fedLogo(c.fed)!} alt="" aria-hidden="true" />}
                 <span className="offer-top">
                   <span className="fed-row">
-                    {!(c.kind === 'stay' && c.tier === 0) && <FedEmblem name={c.fed} size={38} />}
+                    {!(c.kind === 'stay' && c.tier === 0) && <FedEmblem name={c.fed} size={52} />}
                     <span className="fed">{c.kind === 'stay' && c.tier === 0 ? 'Amatorka' : c.fed}</span>
                   </span>
                   <span className={`tag ${debut ? 'gold' : k.tone}`}>
@@ -236,7 +238,7 @@ export default function Market({ game, setGame }: StepProps) {
             return (
               <button
                 key={c.id}
-                className="offer club-offer"
+                className="offer club-offer has-wm"
                 role="radio"
                 aria-checked={m.pickedClub === idx}
                 onClick={() => {
@@ -244,9 +246,10 @@ export default function Market({ game, setGame }: StepProps) {
                   setClubsOpen(false);
                 }}
               >
+                {clubLogo(c.name) && <img className="card-wm" src={clubLogo(c.name)!} alt="" aria-hidden="true" />}
                 <span className="offer-top">
                   <span className="fed-row">
-                    <ClubEmblem club={c} size={40} />
+                    <ClubEmblem club={c} size={64} />
                     <span className="fed">
                       {c.name}
                       <small className="club-sub">

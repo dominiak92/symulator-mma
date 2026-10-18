@@ -78,7 +78,7 @@ export default function Ended({ game, onNewCareer, onMenu }: { game: GameState; 
         <div className={`sum-hero ${g.belts.length ? 'gold' : ''}`}>
           {g.belts.length > 0 && <Confetti />}
           <div className="sum-art">
-            <Fighter weight={divisionKey(g)} age={g.age} seed={`${g.profile.firstName}${g.profile.lastName}`} corner="blue" shorts={clubCrest(g.club).bg} size={96} belt={g.belts.length > 0} />
+            <Fighter weight={divisionKey(g)} age={g.age} seed={`${g.profile.firstName}${g.profile.lastName}`} corner="blue" shorts={clubCrest(g.club).bg} size={96} belt={g.belts.length > 0 ? g.tier : false} />
           </div>
           <div className="sum-head">
             <div className="kicker">Koniec {g.quick ? 'szybkiej ' : ''}kariery · {lat(g.age)}</div>

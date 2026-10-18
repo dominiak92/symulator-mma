@@ -14,7 +14,7 @@ import type { StepProps } from '../Game';
 import { GG } from '../brand';
 import { Belt, Confetti, Fighter, Medal } from '../Art';
 import { FedEmblem, clubCrest } from '../Emblem';
-import { fedLogo } from '../logos';
+import { clubLogo, fedLogo, rivalClub } from '../logos';
 import { Icon, STAT_ICON } from '../Icon';
 import { CoachTip } from '../Tutorial';
 import { chanceWord } from '../Chance';
@@ -327,6 +327,9 @@ function FightRow({ f, open, onToggle }: { f: FightReport; open: boolean; onTogg
     <article className={`frow ${open ? 'open' : ''} ${f.title ? 'title-bout' : ''}`}>
       <button className="frow-btn" onClick={onToggle} aria-expanded={open}>
         <span className={`res-badge sm ${res}`}>{res === 'W' ? 'W' : res === 'L' ? 'P' : res === 'D' ? 'R' : '–'}</span>
+        <span className="frow-av" aria-hidden="true">
+          <Fighter head seed={`${f.opp.firstName}${f.opp.lastName}`} age={f.opp.age} country={f.opp.country} size={38} hurt={res === 'W' && !!f.method && !/Decyzja|Remis|Walkower/.test(f.method)} />
+        </span>
         <span className="frow-main">
           <span className="frow-opp">{oppName(f)}</span>
           <span className="frow-ctx">{contextLine(f)}</span>
@@ -586,9 +589,13 @@ function LiveCard({ g, f, start, animate, setGame }: { g: GameState; f: FightRep
       </div>
 
       <div className="vs-hero live-vs">
+        {fedLogo(f.amateur ? f.tourney : f.abroad && f.gala ? f.gala : f.fed) && (
+          <img className="lv-wm" src={fedLogo(f.amateur ? f.tourney : f.abroad && f.gala ? f.gala : f.fed)!} alt="" aria-hidden="true" />
+        )}
         <div className={`vh-side me ${done && f.result === 'L' && finish ? 'ko' : ''} ${done && won ? 'win' : ''}`} style={d(stampAt)}>
           <div className="vh-art">
-            <Fighter weight={divisionKey(g)} age={g.age} seed={`${g.profile.firstName}${g.profile.lastName}`} corner="blue" shorts={myShorts} size={80} belt={g.rank === 0 && !f.amateur} hurt={done && f.result === 'L' && finish} />
+            {clubLogo(g.club?.name) && <img className="lv-crest" src={clubLogo(g.club?.name)!} alt="" aria-hidden="true" />}
+            <Fighter weight={divisionKey(g)} age={g.age} seed={`${g.profile.firstName}${g.profile.lastName}`} corner="blue" shorts={myShorts} size={80} belt={g.rank === 0 && !f.amateur ? g.tier : false} hurt={done && f.result === 'L' && finish} />
           </div>
           <div className="vh-plate">
             <small>{g.profile.firstName}</small>
@@ -613,6 +620,10 @@ function LiveCard({ g, f, start, animate, setGame }: { g: GameState; f: FightRep
         </div>
         <div className={`vh-side opp ${done && won && finish ? 'ko' : ''} ${done && f.result === 'L' ? 'win' : ''}`} style={d(stampAt)}>
           <div className="vh-art">
+            {(() => {
+              const oc = f.opp.freak ? null : clubLogo(rivalClub(`${f.opp.firstName}${f.opp.lastName}`, f.opp.country, g.club?.name));
+              return oc ? <img className="lv-crest" src={oc} alt="" aria-hidden="true" /> : null;
+            })()}
             <Fighter weight={f.opp.freak ? undefined : divisionKey(g)} age={f.opp.age} country={f.opp.country} seed={`${f.opp.firstName}${f.opp.lastName}`} corner="red" size={80} mirror hurt={done && won && finish} />
           </div>
           <div className="vh-plate">
@@ -752,7 +763,7 @@ function FightIntro({ g, f, n, total, onGo, paused }: { g: GameState; f: FightRe
         )}
         <div className="fi-vs">
           <div className="fi-side me">
-            <Fighter weight={divisionKey(g)} age={g.age} seed={`${g.profile.firstName}${g.profile.lastName}`} corner="blue" shorts={clubCrest(g.club).bg} size={96} belt={g.rank === 0 && !f.amateur} />
+            <Fighter weight={divisionKey(g)} age={g.age} seed={`${g.profile.firstName}${g.profile.lastName}`} corner="blue" shorts={clubCrest(g.club).bg} size={96} belt={g.rank === 0 && !f.amateur ? g.tier : false} />
             <b>{g.profile.lastName}</b>
             <small>{recStr(shownRecord(g, hold))}</small>
           </div>
@@ -848,6 +859,82 @@ function VsHero({ g, opp, label, size = 84, belt }: { g: GameState; opp: FightRe
   );
 }
 
+/** Scena z plakatu: duzi zawodnicy twarzą w twarz, herby klubów za plecami, logo gali w tle,
+ *  pas między nimi przy walce o tytuł, a pod spodem zestawienie jak w telewizji. */
+function PosterHero({ g, opp, label, title, interim, fed, medal }: { g: GameState; opp: FightReport['opp']; label?: string; title?: boolean; interim?: boolean; fed?: string; medal?: boolean }) {
+  const hold = useHudHold();
+  const myClub = g.club?.name;
+  const oppClub = opp.freak ? null : rivalClub(`${opp.firstName}${opp.lastName}`, opp.country, myClub);
+  const myCrest = clubLogo(myClub);
+  const oppCrest = clubLogo(oppClub);
+  const wm = fedLogo(fed);
+  const champ = !!title && g.rank === 0;
+  return (
+    <div className="ph-wrap">
+      <div className={`ph ${title ? 'ph-title' : ''}`}>
+        {wm && <img className="ph-wm" src={wm} alt="" aria-hidden="true" />}
+        <i className="ph-beam l" aria-hidden="true" />
+        <i className="ph-beam r" aria-hidden="true" />
+        <i className="ph-floor" aria-hidden="true" />
+        <div className="ph-side me">
+          {myCrest ? <img className="ph-crest" src={myCrest} alt="" aria-hidden="true" /> : <span className="ph-crest ph-flag">🇵🇱</span>}
+          <Fighter weight={divisionKey(g)} age={g.age} seed={`${g.profile.firstName}${g.profile.lastName}`} corner="blue" shorts={clubCrest(g.club).bg} size={150} belt={g.rank === 0 && !title && g.tier > 0 ? g.tier : false} />
+        </div>
+        <div className="ph-side opp">
+          {oppCrest ? <img className="ph-crest" src={oppCrest} alt="" aria-hidden="true" /> : !opp.freak && <span className="ph-crest ph-flag">{opp.flag}</span>}
+          <Fighter weight={opp.freak ? undefined : divisionKey(g)} age={opp.age} country={opp.country} seed={`${opp.firstName}${opp.lastName}`} corner="red" size={150} mirror />
+        </div>
+        {label && <span className="ph-label">{label}</span>}
+        <span className="ph-vs">VS</span>
+        {title && (
+          <div className="ph-belt">
+            <Belt size={120} tier={g.tier} interim={interim} />
+          </div>
+        )}
+        {medal && (
+          <div className="ph-belt ph-medal">
+            <Medal kind="gold" size={54} />
+          </div>
+        )}
+        <div className="ph-plates">
+          <div className={`vh-plate ph-plate me ${champ ? 'champ' : ''}`}>
+            <small>{g.profile.firstName}</small>
+            <b>{g.profile.lastName}</b>
+          </div>
+          <div className="vh-plate ph-plate opp">
+            <small>
+              {opp.flag} {opp.nickname ? `„${opp.nickname}”` : opp.firstName}
+            </small>
+            <b>{opp.lastName}</b>
+          </div>
+        </div>
+      </div>
+      <dl className="tot" aria-label="Zestawienie zawodników">
+        <div>
+          <dd>{recStr(shownRecord(g, hold))}</dd>
+          <dt>Rekord</dt>
+          <dd>{opp.freak ? '—' : recStr(opp.record)}</dd>
+        </div>
+        <div>
+          <dd>{g.age} lat</dd>
+          <dt>Wiek</dt>
+          <dd>{opp.age} lat</dd>
+        </div>
+        <div>
+          <dd>{STYLE_LABELS[g.profile.style]}</dd>
+          <dt>Styl</dt>
+          <dd>{opp.freak ? opp.freak : STYLE_LABELS[opp.style]}</dd>
+        </div>
+        <div>
+          <dd>{myClub ?? '—'}</dd>
+          <dt>Klub</dt>
+          <dd>{oppClub ?? (opp.freak ? 'influencer' : opp.country)}</dd>
+        </div>
+      </dl>
+    </div>
+  );
+}
+
 /** Styl plakatu: każda federacja ma swoją identyfikację (parodie), a gale specjalne własny wygląd. */
 type PosterTheme = { key: string; ribbon: string; tagline: string; day: string };
 const FED_THEMES: [string, Omit<PosterTheme, 'key'> & { key: string }][] = [
@@ -909,7 +996,7 @@ function GalaPoster({ g, f, n, total, onGo, paused }: { g: GameState; f: FightRe
             </span>
           )}
         </div>
-        <VsHero g={g} opp={f.opp} label={spotLabel} belt={g.rank === 0} size={78} />
+        <PosterHero g={g} opp={f.opp} label={spotLabel} title={f.title || f.unify || !!f.interim} interim={!!f.interim} fed={f.abroad && f.gala ? f.gala : f.fed} />
         {p && (
           <div className="pst-card-wrap">
             <div className="pst-card-title">Karta walk</div>
@@ -986,7 +1073,7 @@ function TourneyPoster({ g, f, onGo, paused }: { g: GameState; f: FightReport; o
           </span>
         </div>
         <p className="pst-text">Ośmiu zawodników w drabince. Trzy wygrane walki dzielą cię od złota{t?.championship ? ' i tytułu mistrza Polski' : ''}.</p>
-        <VsHero g={g} opp={f.opp} label={f.stage ? STAGE_LABELS[f.stage].toLowerCase() : ''} size={78} />
+        <PosterHero g={g} opp={f.opp} label={f.stage ? STAGE_LABELS[f.stage].toLowerCase() : ''} fed={t?.name} medal={f.stage === 'f'} />
         <button ref={goRef} className="btn btn-primary btn-block btn-ico fi-go" onClick={onGo}>
           <Icon name="glove" />
           Walcz!
