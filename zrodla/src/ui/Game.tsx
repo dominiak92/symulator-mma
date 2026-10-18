@@ -470,7 +470,7 @@ function SkillsPanel({ g, plain }: { g: GameState; plain?: boolean }) {
         {coachOpen(g) && (
           <>
             <span>Trener</span>
-            <b>{coachOf(g).name.replace(/ „.*”/, '')} · {coachOf(g).role}</b>
+            <b>{coachOf(g).id === 'club' ? 'klubowy' : coachOf(g).name.replace(/ „.*”/, '')}</b>
           </>
         )}
         {g.nemesis && (

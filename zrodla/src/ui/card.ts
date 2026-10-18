@@ -12,9 +12,9 @@ import { GG } from './brand';
 export const LOGO_URL = GG.stacked;
 
 const C: Record<string, string> = {
-  bg: '#0f0f10',
-  deep: '#18181b',
-  line: '#2d2d32',
+  bg: '#070b14',
+  deep: '#0d1424',
+  line: '#1f2c45',
   text: '#f4f4f5',
   muted: '#a1a1aa',
   cyan: '#01aeee',
@@ -36,7 +36,7 @@ export interface CardTheme {
 }
 
 export const CARD_THEMES: CardTheme[] = [
-  { id: 'gg', name: 'Ground Game', unlock: null, unlockText: 'zawsze dostępny', bg: '#0f0f10', accent: '#01aeee', stripe: '#01aeee', stripe2: '#1f00fe' },
+  { id: 'gg', name: 'Ground Game', unlock: null, unlockText: 'zawsze dostępny', bg: '#070b14', accent: '#01aeee', stripe: '#01aeee', stripe2: '#1f00fe' },
   { id: 'blue', name: 'Niebieski narożnik', unlock: 'first_win', unlockText: 'wygraj pierwszą walkę', bg: '#0b0b1a', accent: '#8b7dff', stripe: '#1f00fe', stripe2: '#01aeee' },
   { id: 'red', name: 'Czerwony narożnik', unlock: 'first_ko', unlockText: 'wygraj przez nokaut', bg: '#140b0e', accent: '#fb7190', stripe: '#e11d48', stripe2: '#f4f4f5' },
   { id: 'mono', name: 'Klasyczna czerń', unlock: 'fights50', unlockText: 'stocz 50 walk', bg: '#000000', accent: '#f4f4f5', stripe: '#f4f4f5', stripe2: '#6b6b74' },

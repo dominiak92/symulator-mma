@@ -1,4 +1,5 @@
 /** Samouczek dla nowego gracza (slajdy) i podpowiedzi trenera w trakcie gry. */
+import coachFace from '../assets/coaches/club.webp';
 import { useEffect, useState, type ReactNode } from 'react';
 import { loadSettings, saveSettings } from '../storage';
 import { StatArt, Belt, Fighter } from './Art';
@@ -181,9 +182,7 @@ export function CoachTip({ id, children }: { id: string; children: ReactNode }) 
   };
   return (
     <aside className="coach" role="note">
-      <div className="coach-av" aria-hidden="true">
-        <Icon name="megaphone" size={16} />
-      </div>
+      <img className="coach-av" src={coachFace} alt="" aria-hidden="true" />
       <div className="coach-body">
         <div className="coach-text">{children}</div>
         <button className="coach-off" onClick={off}>
