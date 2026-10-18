@@ -1,3 +1,6 @@
+import beltAmator from '../assets/belts/amator.webp';
+import beltRegional from '../assets/belts/regional.webp';
+import beltWorld from '../assets/belts/world.webp';
 /** Ilustracje SVG rysowane w kodzie: zawodnik, pas, medal, konfetti. */
 import { useEffect, useId, useState, type CSSProperties } from 'react';
 
@@ -288,7 +291,11 @@ export function Fighter({
 }
 
 /** Pas mistrzowski. */
-export function Belt({ size = 120, className }: { size?: number; className?: string }) {
+const BELT_IMG: Record<number, string> = { 0: beltAmator, 1: beltRegional, 4: beltWorld };
+
+export function Belt({ size = 120, className, tier }: { size?: number; className?: string; tier?: number }) {
+  const img = tier !== undefined ? BELT_IMG[tier] : undefined;
+  if (img) return <img className={`belt-art belt-img ${className ?? ''}`} src={img} alt="" aria-hidden="true" style={{ width: size * 1.15, height: 'auto' }} />;
   return (
     <svg className={`belt-art ${className ?? ''}`} width={size} height={size * 0.5} viewBox="0 0 120 60" aria-hidden="true">
       <path d="M2 22 Q60 30 118 22 L118 40 Q60 48 2 40 Z" fill="#141416" stroke="#3a3a40" strokeWidth="1.5" />

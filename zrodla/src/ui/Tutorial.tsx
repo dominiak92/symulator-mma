@@ -80,7 +80,7 @@ const SLIDES: Slide[] = [
     text: 'Na koniec dostajesz kartę kariery z punktami LEGACY. Możesz ją pobrać i wysłać znajomym. Potem spróbuj pobić swój rekord.',
     art: (
       <div className="tut-belt">
-        <Belt size={170} />
+        <Belt size={170} tier={4} />
       </div>
     ),
   },

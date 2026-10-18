@@ -10,6 +10,7 @@ import L_brava from '../assets/logos/brava.webp';
 import L_okta from '../assets/logos/okta.webp';
 import L_ufl from '../assets/logos/ufl.webp';
 import L_bal from '../assets/logos/bal.webp';
+import L_raizen from '../assets/logos/raizen.webp';
 import L_two from '../assets/logos/two.webp';
 import L_plf from '../assets/logos/plf.webp';
 import L_flame from '../assets/logos/flame.webp';
@@ -42,6 +43,7 @@ const LOGOS: [string, string][] = [
   ['UFL', L_ufl],
   ['Balettor', L_bal],
   ['TWO FC', L_two],
+  ['Raizen', L_raizen],
   ['PLF', L_plf],
   ['Flame', L_flame],
   ['Primo', L_primo],
