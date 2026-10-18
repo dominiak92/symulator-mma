@@ -3356,12 +3356,12 @@ export interface YearGoal {
 
 const proFights = (fights: FightReport[]) => fights.filter((f) => f.result && !f.amateur && !f.freak);
 export const YEAR_GOALS: YearGoal[] = [
-  { id: 'wins', label: 'Trzy wygrane', desc: 'Wygraj co najmniej trzy walki w tym roku.', pay: 0.8, need: 3, progress: (_s, f) => proFights(f).filter((x) => x.result === 'W').length },
-  { id: 'finish', label: 'Dwa skończenia', desc: 'Skończ dwóch rywali przed czasem.', pay: 1.2, extra: 'media +3', need: 2, progress: (_s, f) => proFights(f).filter((x) => x.result === 'W' && (x.method === 'KO/TKO' || x.method === 'Poddanie')).length },
-  { id: 'clean', label: 'Rok bez porażki', desc: 'Co najmniej dwie walki i ani jednej przegranej.', pay: 1.3, extra: 'reputacja +3', need: 2, progress: (_s, f) => (proFights(f).some((x) => x.result === 'L') ? 0 : proFights(f).length) },
-  { id: 'top5', label: 'Pokonaj czołówkę', desc: 'Wygraj z kimś z top 5 rankingu.', pay: 1.0, extra: 'media +2', need: 1, progress: (_s, f) => proFights(f).filter((x) => x.result === 'W' && x.opp.rank !== null && x.opp.rank <= 5).length },
-  { id: 'bonus', label: 'Bonus wieczoru', desc: 'Zgarnij bonus za walkę, nokaut albo poddanie wieczoru.', pay: 0.8, extra: 'obserwujący', need: 1, progress: (_s, f) => proFights(f).filter((x) => x.bonus).length },
-  { id: 'climb', label: 'Skok w rankingu', desc: 'Skończ rok co najmniej trzy miejsca wyżej niż zacząłeś (albo wejdź do rankingu).', pay: 0.9, need: 3, progress: (s) => {
+  { id: 'wins', label: 'Trzy wygrane', desc: 'Wygraj co najmniej trzy walki w tym roku.', pay: 1.2, need: 3, progress: (_s, f) => proFights(f).filter((x) => x.result === 'W').length },
+  { id: 'finish', label: 'Dwa skończenia', desc: 'Skończ dwóch rywali przed czasem.', pay: 1.8, extra: 'media +3', need: 2, progress: (_s, f) => proFights(f).filter((x) => x.result === 'W' && (x.method === 'KO/TKO' || x.method === 'Poddanie')).length },
+  { id: 'clean', label: 'Rok bez porażki', desc: 'Co najmniej dwie walki i ani jednej przegranej.', pay: 1.5, extra: 'reputacja +3', need: 2, progress: (_s, f) => (proFights(f).some((x) => x.result === 'L') ? 0 : proFights(f).length) },
+  { id: 'top5', label: 'Pokonaj czołówkę', desc: 'Wygraj z kimś z top 5 rankingu.', pay: 0.7, extra: 'media +2', need: 1, progress: (_s, f) => proFights(f).filter((x) => x.result === 'W' && x.opp.rank !== null && x.opp.rank <= 5).length },
+  { id: 'bonus', label: 'Bonus wieczoru', desc: 'Zgarnij bonus za walkę, nokaut albo poddanie wieczoru.', pay: 1.4, extra: 'obserwujący', need: 1, progress: (_s, f) => proFights(f).filter((x) => x.bonus).length },
+  { id: 'climb', label: 'Skok w rankingu', desc: 'Skończ rok co najmniej trzy miejsca wyżej niż zacząłeś (albo wejdź do rankingu).', pay: 0.7, need: 3, progress: (s) => {
       const st = s.run?.startRank ?? null;
       if (s.rank === null) return 0;
       if (st === null) return 3;
