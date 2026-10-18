@@ -87,6 +87,7 @@ import { advanceFight, applyDecision, chanceFrom, distFrom, newSim, rollOutcome,
 import { EVENTS, eventWeight, findEvent } from './events';
 import { buildInvite, resolveInvite, sideChance } from './side';
 import { activePerks, MAX_PERKS, PERKS, perkUnlocked } from './perks';
+import { ensureRoster, rosterAfterFight, rosterFighter, rosterFor, rosterOpp, rosterSync, rosterYear } from './roster';
 import { addFans, fanGain, fmtFans, followersOf, jobDef, jobForm, socialCost, socialForm, socialIncome, ticketRep, ticketSale, ticketsAvailable } from './extras';
 
 export const SAVE_VERSION = 2;
@@ -168,6 +169,7 @@ export function changeDivision(s0: GameState, key: WeightKey): GameState {
     s.rank = null;
     s.titleDefenses = 0;
   }
+  s.roster = undefined;
   log(s, `Zmiana kategorii: ${WEIGHTS[key].label.toLowerCase()}.`);
   return s;
 }
@@ -623,12 +625,13 @@ export function investAcademy(s0: GameState): GameState {
 // ---------------------------------------------------------------------------
 // Zaplecze: fizjoterapeuta, lekarz, suplementy (opcjonalne, od debiutu zawodowego)
 // ---------------------------------------------------------------------------
-export type BackroomId = 'physio' | 'doctor' | 'supps' | 'sparring';
+export type BackroomId = 'physio' | 'doctor' | 'supps' | 'sparring' | 'clinic';
 export const BACKROOM: { id: BackroomId; name: string; short: string; effect: string; icon: string; cost: number[]; minTier?: number }[] = [
   { id: 'physio', name: 'Fizjoterapeuta', short: 'masaże, rozluźnianie, taping', effect: 'Organizm wolniej się zużywa, kariera trwa dłużej.', icon: 'heart', cost: [0, 1500, 3000, 7000, 20000] },
   { id: 'doctor', name: 'Lekarz sportowy', short: 'badania i opieka przed walką', effect: 'Rzadsze kontuzje, a jeśli już, to lżejsze.', icon: 'bandage', cost: [0, 2500, 5000, 12000, 30000] },
   { id: 'supps', name: 'Suplementacja', short: 'odżywki, witaminy, elektrolity', effect: 'Lekko lepsza forma w każdej walce.', icon: 'flame', cost: [0, 2000, 4000, 8000, 16000] },
   { id: 'sparring', name: 'Elitarni sparingpartnerzy', short: 'sparingpartnerzy z czołówki, ściągani na obóz', effect: 'Wyraźnie lepsza forma w każdej walce. Drogo, ale na tym poziomie liczy się każdy procent.', icon: 'glove', cost: [0, 0, 0, 70000, 180000], minTier: 3 },
+  { id: 'clinic', name: 'Klinika regeneracyjna', short: 'kriokomora, osocze, prywatny ortopeda', effect: 'Co roku organizm regeneruje się wyraźnie bardziej (zużycie −4), kariera trwa dłużej. Dla tych, których stać.', icon: 'heart', cost: [0, 0, 0, 150000, 350000], minTier: 3 },
 ];
 export function backroomAvailable(s: GameState, id: BackroomId) {
   return s.tier >= (BACKROOM.find((b) => b.id === id)!.minTier ?? 1);
@@ -781,6 +784,7 @@ export function takeBreakYear(s0: GameState): GameState {
     }
     if (s.tier > 0) s.rank = null;
     s.flags.interim = 0;
+    rosterSync(s);
     const job =
       s.age < 19
         ? 'Rok przerwy od turniejów. Weekendy na zmywaku i przy rozładunku, w tygodniu szkoła.'
@@ -863,6 +867,7 @@ export function rehabYear(s0: GameState): GameState {
     const wasChamp = s.tier > 0 && s.rank === 0 && s.contract.kind !== 'freak';
     if (s.tier > 0) s.rank = wasChamp ? 2 : null;
     s.flags.interim = 0;
+    rosterSync(s);
     if (wasChamp) {
       s.titleDefenses = 0;
       s.flags.stripped = (s.flags.stripped ?? 0) + 1;
@@ -1053,6 +1058,7 @@ export function goExpedition(s0: GameState, id: Expedition['id']): GameState {
     s.eventQueue = [];
     log(s, e.log);
   });
+  rosterSync(s);
   s.phase = 'summary';
   return s;
 }
@@ -1220,6 +1226,7 @@ export function startSeason(s0: GameState): GameState {
   if (!canStartSeason(s0)) return s0;
   const s = clone(s0);
   withRng(s, (rng) => {
+    ensureRoster(rng, s);
     s.money += budgetBalance(s);
     // prowadzone social media podbijają rozpoznawalność
     if (followersOf(s) >= 2000 && (s.social === 'self' || s.social === 'pro')) s.media = clamp(s.media + 2, 0, 100);
@@ -1364,6 +1371,7 @@ export function applyEffects(s: GameState, e: Effects, rng: Rng) {
   if (e.flag === 'banned') {
     s.rank = null;
     s.flags.cut = 1;
+    rosterSync(s);
     log(s, 'Afera. Federacja rozwiązuje z tobą kontrakt.');
   }
 }
@@ -1550,14 +1558,14 @@ function pickOpponent(rng: Rng, s: GameState, idx: number): { opp: Fighter; titl
     }
     const top = (s.flags.superLoss ?? 0) > 0;
     s.flags.superLoss = 0;
-    const opp = generateOpponent(rng, tier, top ? 1 : rng.int(1, 3), hard);
+    const opp = rosterOpp(rng, s, top ? 1 : rng.int(1, 3), metThisSeason);
     return { opp, title: true, defense: true, peer: null };
   }
   // walka o pas
   const last = idx === run.planned - 1;
   if (s.rank !== null && (s.rank === 1 || (s.rank === 2 && last) || (s.rank <= 3 && last && rng.chance(0.4)))) {
     if (rivalPeer && rivalPeer.rank === 0) return { opp: asRival(rivalPeer, 0), title: true, defense: false, peer: rivalPeer };
-    const opp = generateOpponent(rng, tier, 0, hard);
+    const opp = rosterOpp(rng, s, 0, metThisSeason);
     return { opp, title: true, defense: false, peer: null };
   }
   // odwieczny rywal wraca częściej niż inni z rocznika
@@ -1573,12 +1581,12 @@ function pickOpponent(rng: Rng, s: GameState, idx: number): { opp: Fighter; titl
   const mg = activeManager(s);
   const q = mg?.quality ?? 0;
   if (mg?.titleShot && s.rank !== null && s.rank <= 3 && last) {
-    const opp = generateOpponent(rng, tier, 0, hard);
+    const opp = rosterOpp(rng, s, 0, metThisSeason);
     return { opp, title: true, defense: false, peer: null };
   }
   if ((s.flags.grudge ?? 0) > 0) {
     s.flags.grudge = 0;
-    const opp = generateOpponent(rng, tier, clamp(mine - rng.int(2, 4), 1, size), hard);
+    const opp = rosterOpp(rng, s, clamp(mine - rng.int(2, 4), 1, size), metThisSeason);
     opp.nickname = opp.nickname || 'Pyskaty';
     return { opp, title: false, defense: false, peer: null, grudge: true };
   }
@@ -1587,11 +1595,11 @@ function pickOpponent(rng: Rng, s: GameState, idx: number): { opp: Fighter; titl
   if ((s.flags.callUp ?? 0) > 0) {
     s.flags.callUp = 0;
     r = clamp(mine - rng.int(3, 5), 1, size);
-    return { opp: generateOpponent(rng, tier, r, hard), title: false, defense: false, peer: null };
+    return { opp: rosterOpp(rng, s, r, metThisSeason), title: false, defense: false, peer: null };
   }
   if (r > size) r = null;
   if (s.rank === null && rng.chance(0.5 - q * 0.1)) r = null;
-  return { opp: generateOpponent(rng, tier, r, hard), title: false, defense: false, peer: null };
+  return { opp: r === null ? generateOpponent(rng, tier, r, hard) : rosterOpp(rng, s, r, metThisSeason), title: false, defense: false, peer: null };
 }
 
 /** Premie i kary bieżącej walki: kategoria wagowa, ważenie, obóz pod rywala. */
@@ -1684,7 +1692,7 @@ function buildOffer(rng: Rng, s: GameState, idx: number): FightOffer {
   let interim = false;
   if (title && !defense && s.rank !== 0 && opp.rank === 0 && !peer && s.tier >= 2 && !s.flags.interim && rng.chance(0.3)) {
     interim = true;
-    opp = generateOpponent(rng, s.tier, rng.int(1, 3), s.profile.difficulty === 'hard');
+    opp = rosterOpp(rng, s, rng.int(1, 3), new Set(s.run!.fights.map((f) => f.opp.id)));
   }
   avoidMyName(rng, s, opp);
   const freak = s.contract.kind === 'freak';
@@ -1723,7 +1731,6 @@ function fedShort(s: GameState) {
 function specialOffer(rng: Rng, s: GameState): FightOffer | null {
   if (s.contract.kind === 'freak' || isAmateurRun(s)) return null;
   const tier = s.tier;
-  const hard = s.profile.difficulty === 'hard';
   const mk = (opp: Fighter, extra: Partial<FightOffer>): FightOffer => {
     avoidMyName(rng, s, opp);
     const title = !!extra.title;
@@ -1733,7 +1740,7 @@ function specialOffer(rng: Rng, s: GameState): FightOffer | null {
   };
   // unifikacja: tymczasowy mistrz kontra wracający mistrz
   if ((s.flags.interim ?? 0) > 0 && s.rank !== 0) {
-    const opp = generateOpponent(rng, tier, 0, hard);
+    const opp = rosterOpp(rng, s, 0, new Set());
     return mk(opp, { title: true, unify: true, hook: `Mistrz wrócił po kontuzji. Twój pas tymczasowy kontra jego pas: walka unifikacyjna, zwycięzca zostaje jedynym mistrzem.` });
   }
   // rewanż wywalczony po kontrowersyjnym werdykcie
@@ -1764,7 +1771,7 @@ function specialOffer(rng: Rng, s: GameState): FightOffer | null {
       s.flags.callUp = 1;
       return null;
     }
-    const opp = generateOpponent(rng, tier, 0, hard);
+    const opp = rosterOpp(rng, s, 0, new Set());
     return mk(opp, { title: true, hook: `Twoje wezwanie po ostatniej walce obiegło internet. Mistrz odpowiedział: „Chcesz? To masz”. Federacja daje ci walkę o pas.` });
   }
   return null;
@@ -1917,7 +1924,7 @@ function buildShortNotice(rng: Rng, s: GameState): FightOffer {
   const size = RANK_SIZE[s.tier];
   const mine = s.rank ?? size + 2;
   const r = clamp(mine - rng.int(3, 5), 1, size);
-  const opp = generateOpponent(rng, s.tier, s.rank === null && rng.chance(0.4) ? rng.int(Math.max(1, size - 3), size) : r, s.profile.difficulty === 'hard');
+  const opp = rosterOpp(rng, s, s.rank === null && rng.chance(0.4) ? rng.int(Math.max(1, size - 3), size) : r, new Set(s.run!.fights.map((f) => f.opp.id)));
   avoidMyName(rng, s, opp);
   const spot: CardSpot = s.tier <= 1 ? 'główna' : rng.chance(0.5) ? 'główna' : 'wieczoru';
   const base = purseFor(s, opp, false, spot);
@@ -3132,8 +3139,14 @@ function finalizeFight(rng: Rng, s: GameState, rep: FightReport) {
 
   // ranking
   rep.rankBefore = s.rank;
+  // stały bywalec federacji: przypomnienie bilansu
+  const rf = !rep.amateur && !rep.freak && !opp.peer ? rosterFighter(s, opp.id) : undefined;
+  if (rf && rf.h2h.w + rf.h2h.l + rf.h2h.d > 0)
+    rep.moments.unshift({ round: 0, title: 'Znowu on', text: `${opp.firstName} ${opp.lastName}. Spotykacie się nie pierwszy raz, wasz bilans przed walką: ${rf.h2h.w}-${rf.h2h.l}${rf.h2h.d ? `-${rf.h2h.d}` : ''}.`, tone: 'neutral' });
   updateRank(s, rep);
   rep.rankAfter = s.rank;
+  if (rf) rosterAfterFight(s, opp.id, res, rep.title && !rep.interim && !rep.superfight, rep.defense, rep.rankBefore);
+  else rosterSync(s);
   if (s.rank !== null) {
     if (s.tier > s.peakTier || (s.tier === s.peakTier && (s.peakRank === null || s.rank < s.peakRank))) {
       s.peakTier = s.tier;
@@ -3326,9 +3339,84 @@ function headlineFor(rep: FightReport): string {
 
 const fmtK = (n: number) => `${n >= 0 ? '+' : '−'}${Math.abs(Math.round(n / 1000)).toLocaleString('pl-PL')} tys. zł`;
 
+// ---------------------------------------------------------------------------
+// Cel roku od federacji: wybierasz jeden z trzech, nagroda po roku
+// ---------------------------------------------------------------------------
+
+export interface YearGoal {
+  id: string;
+  label: string;
+  desc: string;
+  /** mnożnik gaży jako nagroda */
+  pay: number;
+  extra?: string;
+  need: number;
+  progress: (s: GameState, fights: FightReport[]) => number;
+}
+
+const proFights = (fights: FightReport[]) => fights.filter((f) => f.result && !f.amateur && !f.freak);
+export const YEAR_GOALS: YearGoal[] = [
+  { id: 'wins', label: 'Trzy wygrane', desc: 'Wygraj co najmniej trzy walki w tym roku.', pay: 0.8, need: 3, progress: (_s, f) => proFights(f).filter((x) => x.result === 'W').length },
+  { id: 'finish', label: 'Dwa skończenia', desc: 'Skończ dwóch rywali przed czasem.', pay: 1.2, extra: 'media +3', need: 2, progress: (_s, f) => proFights(f).filter((x) => x.result === 'W' && (x.method === 'KO/TKO' || x.method === 'Poddanie')).length },
+  { id: 'clean', label: 'Rok bez porażki', desc: 'Co najmniej dwie walki i ani jednej przegranej.', pay: 1.3, extra: 'reputacja +3', need: 2, progress: (_s, f) => (proFights(f).some((x) => x.result === 'L') ? 0 : proFights(f).length) },
+  { id: 'top5', label: 'Pokonaj czołówkę', desc: 'Wygraj z kimś z top 5 rankingu.', pay: 1.0, extra: 'media +2', need: 1, progress: (_s, f) => proFights(f).filter((x) => x.result === 'W' && x.opp.rank !== null && x.opp.rank <= 5).length },
+  { id: 'bonus', label: 'Bonus wieczoru', desc: 'Zgarnij bonus za walkę, nokaut albo poddanie wieczoru.', pay: 0.8, extra: 'obserwujący', need: 1, progress: (_s, f) => proFights(f).filter((x) => x.bonus).length },
+  { id: 'climb', label: 'Skok w rankingu', desc: 'Skończ rok co najmniej trzy miejsca wyżej niż zacząłeś (albo wejdź do rankingu).', pay: 0.9, need: 3, progress: (s) => {
+      const st = s.run?.startRank ?? null;
+      if (s.rank === null) return 0;
+      if (st === null) return 3;
+      return Math.max(0, st - s.rank);
+    } },
+];
+
+/** Trzy cele do wyboru na ten rok (stałe dla danego roku). */
+export function yearGoalOptions(s: GameState): YearGoal[] {
+  if (!s.proDebut || s.tier < 1 || s.contract.kind === 'freak') return [];
+  const rng = createRng((s.createdAt ^ (s.season * 2654435761)) >>> 0);
+  const pool = YEAR_GOALS.filter((g) => !(g.id === 'top5' && (s.rank === null || s.rank > 9)) && !(g.id === 'wins' && plannedFights(s) < 3) && !(g.id === 'climb' && s.rank !== null && s.rank <= 3));
+  const out: YearGoal[] = [];
+  while (out.length < 3 && pool.length) out.push(pool.splice(rng.int(0, pool.length - 1), 1)[0]);
+  return out;
+}
+
+export function yearGoalReward(s: GameState, g: YearGoal): number {
+  return Math.round((s.contract.purse * g.pay) / 500) * 500;
+}
+
+export function setYearGoal(s0: GameState, id: string | null): GameState {
+  const s = clone(s0);
+  s.yearGoal = id ? { season: s.season, id } : null;
+  return s;
+}
+
+export function currentYearGoal(s: GameState): YearGoal | null {
+  if (!s.yearGoal || s.yearGoal.season !== s.season) return null;
+  return YEAR_GOALS.find((g) => g.id === s.yearGoal!.id) ?? null;
+}
+
+/** Rozliczenie celu roku (w podsumowaniu). */
+function settleYearGoal(s: GameState, run: NonNullable<GameState['run']>): { label: string; ok: boolean; reward: number } | null {
+  const g = currentYearGoal(s);
+  if (!g || run.tourneys) return null;
+  const ok = Math.min(g.need, g.progress(s, run.fights)) >= g.need;
+  const reward = ok ? yearGoalReward(s, g) : 0;
+  if (ok) {
+    s.money += reward;
+    s.totalEarned += reward;
+    if (g.id === 'finish') s.media = clamp(s.media + 3, 0, 100);
+    if (g.id === 'clean') s.rep = clamp(s.rep + 3, 0, 100);
+    if (g.id === 'top5') s.media = clamp(s.media + 2, 0, 100);
+    if (g.id === 'bonus') addFans(s, [0, 300, 1500, 8000, 40000][s.tier] ?? 500);
+    s.flags.yearGoals = (s.flags.yearGoals ?? 0) + 1;
+  }
+  return { label: g.label, ok, reward };
+}
+
 /** Co działo się poza klatką w tym roku (do podsumowania). */
 function outsideRows(s: GameState, run: NonNullable<GameState['run']>): SeasonSummary['outside'] {
   const rows: NonNullable<SeasonSummary['outside']> = [];
+  const yg = settleYearGoal(s, run);
+  if (yg) rows.push({ icon: yg.ok ? 'check' : 'x', label: `Cel roku: ${yg.label}`, value: yg.ok ? `zaliczony, premia ${yg.reward.toLocaleString('pl-PL')} zł` : 'nie udało się' });
   const fans = followersOf(s) - (run.startFans ?? followersOf(s));
   if (fans > 0 && !run.tourneys) rows.push({ icon: 'phone', label: 'Obserwujący', value: `+${fmtFans(fans)} (razem ${fmtFans(followersOf(s))})` });
   const tix = run.fights.filter((f) => f.tickets);
@@ -3451,11 +3539,14 @@ export function toSummary(s0: GameState): GameState {
     if (s.flags.expBoost) delete s.flags.expBoost;
     const note = syncRival(rng, s);
     if (note) summary.story = `${summary.story} ${note}`.trim();
+    const rn = rosterYear(rng, s);
+    if (rn) summary.story = `${summary.story} ${rn}`.trim();
   });
 
   // cięcie z federacji
   if (s.tier >= 2 && s.rank === null && l >= Math.ceil(total * 0.6) && s.contract.kind !== 'freak') s.flags.cut = 1;
   if (s.tier === 1 && s.rank === null && l >= total && total >= 2) s.flags.cut = 1;
+  rosterSync(s);
   return s;
 }
 
@@ -3483,7 +3574,7 @@ function ageOneYear(rng: Rng, s: GameState) {
   }
   if (s.age <= 32 && rng.chance(0.35)) s.stats.iq = clamp(s.stats.iq + 1, 1, 99);
   // regeneracja zużycia
-  s.wear = clamp(s.wear - (s.age < 28 ? 3 : 1), 0, 100);
+  s.wear = clamp(s.wear - (s.age < 28 ? 3 : 1) - (hasBackroom(s, 'clinic') ? 4 : 0), 0, 100);
   // kontuzje
   if (s.injury) {
     s.injury.seasons -= 1;
@@ -3766,6 +3857,7 @@ export function toMarket(s0: GameState): GameState {
       return;
     }
     buildMarket(rng, s);
+    rosterSync(s);
     s.phase = 'market';
   });
   return s;
@@ -3859,6 +3951,25 @@ export function negotiateContract(s0: GameState, idx: number, ask: ContractAsk):
 export function setJob(s0: GameState, job: JobMode | undefined): GameState {
   const s = clone(s0);
   s.job = job;
+  return s;
+}
+
+// Fundacja: duże pieniądze zamieniasz na dobre imię (reputacja i LEGACY), raz na rok
+export const DONATIONS = [100000, 300000, 1000000];
+export function foundationOpen(s: GameState) {
+  return s.tier >= 3 || s.money >= 250000;
+}
+export function foundationLegacy(s: GameState) {
+  return Math.min(450, Math.round((s.flags.donated ?? 0) / 5000));
+}
+export function donate(s0: GameState, amount: number): GameState {
+  if (!foundationOpen(s0) || s0.money < amount || s0.flags.donatedYear === s0.season) return s0;
+  const s = clone(s0);
+  s.money -= amount;
+  s.flags.donated = (s.flags.donated ?? 0) + amount;
+  s.flags.donatedYear = s.season;
+  s.rep = clamp(s.rep + (amount >= 1000000 ? 5 : amount >= 300000 ? 3 : 2), 0, 100);
+  log(s, `Fundacja: przekazujesz ${amount.toLocaleString('pl-PL')} zł na sale treningowe dla dzieci.`);
   return s;
 }
 
@@ -3958,6 +4069,7 @@ export function confirmMarket(s0: GameState): GameState {
   s.market = null;
   s.run = null;
   s.phase = 'training';
+  withRng(s, (rng) => ensureRoster(rng, s));
   return s;
 }
 
@@ -4193,6 +4305,8 @@ export function legacyScore(s: GameState): number {
   // reputacja: jak cię zapamiętają poza zasięgami
   pts += (s.rep - 30) * 2;
   pts -= s.brokenPromises * 20;
+  // fundacja: dobre imię zostaje po karierze
+  pts += foundationLegacy(s);
   // akademia zostaje po karierze: wychowankowie, nazwisko na drzwiach
   pts += [0, 60, 160, 320, 550][s.academy ?? 0];
   // wygrane z odwiecznym rywalem pamięta się dłużej
@@ -4288,17 +4402,33 @@ export interface RankRow {
   flag: string;
   me?: boolean;
   peer?: boolean;
+  /** bilans gracza z tym zawodnikiem (stały skład federacji) */
+  met?: string;
 }
 
 export function rankingTable(s: GameState): RankRow[] {
   const tier = s.tier;
   if (tier === 0) return [];
   const size = RANK_SIZE[tier];
-  const rng = createRng((s.createdAt ^ (s.season * 7919) ^ (tier * 104729)) >>> 0);
   const rows: RankRow[] = [];
-  for (let r = 0; r <= size; r++) {
-    const o = generateOpponent(rng, tier, r, false);
-    rows.push({ rank: r, name: `${o.firstName} ${o.lastName}`, record: recStr(o.record), flag: o.flag });
+  const ro = rosterFor(s);
+  if (ro) {
+    // stały skład federacji; gracz wchodzi na swoje miejsce, reszta przesuwa się w dół
+    const list = [...ro.list].sort((a, b) => a.rank - b.rank).map((f) => ({ rank: f.rank, name: `${f.firstName} ${f.lastName}`, record: recStr(f.record), flag: f.flag, met: f.h2h.w + f.h2h.l + f.h2h.d > 0 ? `${f.h2h.w}-${f.h2h.l}` : undefined } as RankRow));
+    const mine = s.rank;
+    const seq: (RankRow | null)[] = [...list];
+    if (mine !== null && mine <= size) seq.splice(mine, 0, null);
+    for (let r = 0; r <= size; r++) {
+      const x = seq[r];
+      if (x) rows.push({ ...x, rank: r });
+      else rows.push({ rank: r, name: `${s.profile.firstName} ${s.profile.lastName}`, record: recStr(s.record), flag: '🇵🇱', me: true });
+    }
+  } else {
+    const rng = createRng((s.createdAt ^ (s.season * 7919) ^ (tier * 104729)) >>> 0);
+    for (let r = 0; r <= size; r++) {
+      const o = generateOpponent(rng, tier, r, false);
+      rows.push({ rank: r, name: `${o.firstName} ${o.lastName}`, record: recStr(o.record), flag: o.flag });
+    }
   }
   for (const p of s.peers) {
     if (p.retired || p.tier !== tier || p.rank === null || p.rank > size) continue;

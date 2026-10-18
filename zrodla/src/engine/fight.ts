@@ -344,8 +344,17 @@ function simulateRound(rng: Rng, ctx: FightCtx, sim: FightSim, rep: FightReport)
             round: r,
             title: fin ? 'Nokaut!' : 'Rywal leży!',
             text: fin
-              ? `Trafiasz go ${d.form} i ${n} pada jak długi. Sędzia od razu przerywa.`
-              : `Trafiasz go ${d.form}. ${n} ląduje na macie, ale zdąży się pozbierać, zanim do niego dopadniesz.`,
+              ? rng.pick([
+                  `Trafiasz go ${d.form} i ${n} pada jak długi. Sędzia od razu przerywa.`,
+                  `${d.nom.charAt(0).toUpperCase() + d.nom.slice(1)} ląduje idealnie. ${n} jeszcze stoi, ale oczy ma już puste. Sędzia wchodzi między was.`,
+                  `Widzisz, że ${n} opuszcza ręce, i trafiasz go ${d.form}. Hala wstaje, zanim ciało dotknie maty.`,
+                  `Jedno trafienie ${d.form} i po wszystkim. ${n} szuka siatki, żeby się podeprzeć, ale sędzia już macha rękami.`,
+                ])
+              : rng.pick([
+                  `Trafiasz go ${d.form}. ${n} ląduje na macie, ale zdąży się pozbierać, zanim do niego dopadniesz.`,
+                  `${n} siada na macie po trafieniu ${d.form}. Wstaje na liczenie, ale nogi mu się trzęsą.`,
+                  `Trafiasz ${d.form} i ${n} przyklęka. Podnosi się, ale widać, że runda należy do ciebie.`,
+                ]),
             stat: 'stand',
             chance: pf,
             outcome: fin ? 'super' : 'success',
@@ -357,8 +366,16 @@ function simulateRound(rng: Rng, ctx: FightCtx, sim: FightSim, rep: FightReport)
             round: r,
             title: fin ? 'Zgasło światło' : 'Podnosisz się po nokdaunie',
             text: fin
-              ? `${n} trafia cię ${d.form}. Budzisz się na stołku w narożniku i pytasz, która runda.`
-              : `${n} trafia cię ${d.form} i lądujesz na macie. Szczęka wytrzymała, zbierasz się.`,
+              ? rng.pick([
+                  `${n} trafia cię ${d.form}. Budzisz się na stołku w narożniku i pytasz, która runda.`,
+                  `Nie widziałeś tego ciosu. ${n} trafia ${d.form}, a następne, co pamiętasz, to lekarz świecący ci latarką w oczy.`,
+                  `${n} łapie cię ${d.form} w momencie, gdy wchodziłeś z kombinacją. Sędzia przerywa, zanim zdążysz zaprotestować.`,
+                ])
+              : rng.pick([
+                  `${n} trafia cię ${d.form} i lądujesz na macie. Szczęka wytrzymała, zbierasz się.`,
+                  `Trafienie ${d.form} i nagle patrzysz w światła hali. Wstajesz na sześć, trener krzyczy, żebyś trzymał gardę.`,
+                  `${n} rzuca cię na matę ${d.form}. Przez sekundę nie wiesz, gdzie jesteś, ale wstajesz.`,
+                ]),
             stat: 'chin',
             chance: 100 - pf,
             outcome: fin ? 'fail' : 'success',
@@ -392,8 +409,8 @@ function simulateRound(rng: Rng, ctx: FightCtx, sim: FightSim, rep: FightReport)
         if (rng.chance(pf / 100)) {
           const detail = 'duszenie zza pleców';
           addMoment(rep, who === 'me'
-            ? { round: r, title: 'Plecy i duszenie', text: `Obalasz, bierzesz plecy, haki w środku. ${shortName(opp)} klepie po kilku sekundach.`, stat: 'bjj', chance: pf, outcome: 'super', effect: 'koniec walki', tone: 'purple' }
-            : { round: r, title: 'Oddałeś plecy', text: `${shortName(opp)} obala cię i wskakuje na plecy. Duszenie zza pleców, klepiesz.`, stat: 'bjj', chance: 100 - pf, outcome: 'fail', effect: 'koniec walki', tone: 'bad' });
+            ? { round: r, title: 'Plecy i duszenie', text: rng.pick([`Obalasz, bierzesz plecy, haki w środku. ${shortName(opp)} klepie po kilku sekundach.`, `${shortName(opp)} odwraca się, żeby wstać, i to jego błąd. Plecy, ramię pod brodę, klepnięcie.`, `Z dosiadu przechodzisz na plecy jak na treningu. ${shortName(opp)} walczy z dłońmi, ale duszenie już siedzi.`]), stat: 'bjj', chance: pf, outcome: 'super', effect: 'koniec walki', tone: 'purple' }
+            : { round: r, title: 'Oddałeś plecy', text: rng.pick([`${shortName(opp)} obala cię i wskakuje na plecy. Duszenie zza pleców, klepiesz.`, `Próbujesz wstać przy siatce, a ${shortName(opp)} tylko na to czekał. Ramię pod brodę i po walce.`, `${shortName(opp)} siedzi ci na plecach jak plecak. Bronisz się dłońmi, ale w końcu musisz klepnąć.`]), stat: 'bjj', chance: 100 - pf, outcome: 'fail', effect: 'koniec walki', tone: 'bad' });
           finishFight(rep, sim, who, 'Poddanie', detail);
           break;
         }

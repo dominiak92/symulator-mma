@@ -54,6 +54,21 @@ export interface Fighter {
   freak?: string;
 }
 
+/** Zawodnik ze stałego składu federacji (ranking z nazwiskami). */
+export interface RosterFighter extends Fighter {
+  rank: number;
+  /** bilans gracza z tym zawodnikiem */
+  h2h: Record3;
+  /** od którego roku kariery gracza jest mistrzem */
+  champSince?: number;
+}
+
+export interface Roster {
+  fed: string;
+  tier: number;
+  list: RosterFighter[];
+}
+
 export interface Peer extends Fighter {
   tier: number;
   talent: number; // 0..1
@@ -508,6 +523,10 @@ export interface GameState {
   social?: SocialMode;
   /** praca obok treningów (początek kariery) */
   job?: JobMode;
+  /** cel roku od federacji (wybrany w budżecie) */
+  yearGoal?: { season: number; id: string } | null;
+  /** stały skład federacji: mistrz i ranking */
+  roster?: Roster | null;
   /** ksywka nadana przez kibiców */
   fanNick?: string;
   /** atuty wybrane na ten rok (obóz) */
@@ -520,7 +539,7 @@ export interface GameState {
   injury: Injury | null;
   sponsors: Sponsor[];
   /** zaplecze opłacane co roku (od debiutu zawodowego): fizjo, lekarz, suplementy */
-  backroom?: { physio?: boolean; doctor?: boolean; supps?: boolean; sparring?: boolean };
+  backroom?: { physio?: boolean; doctor?: boolean; supps?: boolean; sparring?: boolean; clinic?: boolean };
   /** wynik ostatniego szukania sponsora na własną rękę */
   pitch?: { season: number; ok: boolean; text: string; name?: string; slot: string } | null;
   /** dziwny sponsor podsunięty przez menedżera (oferta na ten rok) */
