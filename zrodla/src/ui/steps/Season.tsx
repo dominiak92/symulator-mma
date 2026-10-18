@@ -409,6 +409,12 @@ function LiveCard({ g, f, start, animate, setGame }: { g: GameState; f: FightRep
               {f.defense ? 'obrona pasa' : 'o pas'}
             </span>
           )}
+          {f.sim.plan && !done && (
+            <span className="tag blue" title="Plan na tę walkę">
+              <Icon name={f.sim.plan === 'stand' ? 'glove' : f.sim.plan === 'wrest' ? 'takedown' : 'knot'} size={12} />
+              plan: {f.sim.plan === 'stand' ? 'stójka' : f.sim.plan === 'wrest' ? 'zapasy' : 'parter'}
+            </span>
+          )}
           {f.sim.big && !f.title && (
             <span className="tag bad">
               <Icon name="bolt" size={12} />
@@ -962,6 +968,19 @@ function OfferCard({ g, o, n, total, setGame }: { g: GameState; o: FightOffer; n
             </span>
           )}
           {!opp.freak && opp.rank === null && !o.tuneup && <span className="tag">poza rankingiem</span>}
+          {!opp.freak && (() => {
+            const ks = ['stand', 'wrest', 'bjj'] as const;
+            const weak = ks.reduce((a, b) => (opp.stats[b] < opp.stats[a] ? b : a), 'stand' as (typeof ks)[number]);
+            const strong = ks.reduce((a, b) => (opp.stats[b] > opp.stats[a] ? b : a), 'stand' as (typeof ks)[number]);
+            if (opp.stats[strong] - opp.stats[weak] < 5) return null;
+            const nm = { stand: 'stójka', wrest: 'zapasy', bjj: 'parter' };
+            return (
+              <span className="tag good" title="Z nagrań rywala">
+                <Icon name="target" size={12} />
+                słabszy: {nm[weak]}
+              </span>
+            );
+          })()}
           {o.tuneup && (
             <>
               <span className="tag">

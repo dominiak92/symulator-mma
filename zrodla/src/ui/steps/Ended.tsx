@@ -239,7 +239,7 @@ export default function Ended({ game, onNewCareer, onMenu }: { game: GameState; 
       <section className="step">
         <h3>Najważniejsze chwile</h3>
         <ul className="timeline" style={{ marginTop: 10 }}>
-          {g.timeline.map((t, i) => (
+          {g.timeline.filter((t) => !/^(Zmiana klubu|Obóz:|Rywal \S+: (awans|spadek))/.test(t.text)).map((t, i) => (
             <li key={i}>
               <span>{lat(t.age)}</span>
               <div>{t.text}</div>
