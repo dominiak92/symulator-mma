@@ -1,4 +1,5 @@
 import { Icon, IconGallery } from './ui/Icon';
+import hallBg from './assets/bg/menu.webp';
 import { FighterGallery } from './ui/Art';
 import { Tutorial, tutorialSeen } from './ui/Tutorial';
 import { useCallback, useEffect, useState } from 'react';
@@ -146,6 +147,7 @@ export default function App() {
   if (typeof location !== 'undefined' && location.hash === '#zawodnicy') return <FighterGallery />;
   return (
     <>
+      <div className="hall-bg" aria-hidden="true" style={{ backgroundImage: `url(${hallBg})` }} />
       <div className="cage-top" aria-hidden="true" />
       <div className="app">
         {screen.name === 'menu' && (

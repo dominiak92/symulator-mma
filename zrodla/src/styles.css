@@ -1,13 +1,14 @@
 :root {
   /* Ground Game — paleta ze sklepu groundgame.com */
-  --bg: #0f0f10;
-  --bg-deep: #08080a;
-  --panel: #18181b;
-  --panel-2: #222226;
-  --line: #2d2d32;
-  --text: #f4f4f5;
-  --muted: #a1a1aa;
-  --faint: #8b8b95;
+  /* „nocna hala”: granat z tła menu i kafelków ikon zamiast szarości */
+  --bg: #070b14;
+  --bg-deep: #04070d;
+  --panel: #0d1424;
+  --panel-2: #142036;
+  --line: #1f2c45;
+  --text: #f2f5fa;
+  --muted: #a3adc2;
+  --faint: #8591a8;
 
   --cyan: #01aeee; /* kolor z logo, Twój narożnik */
   --cyan-soft: rgba(1, 174, 238, 0.14);
@@ -26,9 +27,9 @@
   --body: 'Archivo Variable', 'Archivo', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --cond: 'Archivo Variable', 'Archivo', system-ui, sans-serif;
 
-  --r-lg: 12px;
-  --r-md: 8px;
-  --r-sm: 5px;
+  --r-lg: 14px;
+  --r-md: 10px;
+  --r-sm: 6px;
   color-scheme: dark;
 }
 
@@ -452,7 +453,7 @@ select.input {
   position: sticky;
   top: 0;
   z-index: 20;
-  background: rgba(15, 15, 16, 0.96);
+  background: rgba(7, 11, 20, 0.96);
   backdrop-filter: blur(8px);
   border-bottom: 2px solid var(--cyan);
   margin: 0 -16px;
@@ -916,7 +917,7 @@ select.input {
   margin: 18px -14px -16px;
   padding: 12px 14px calc(12px + env(safe-area-inset-bottom));
   z-index: 5;
-  background: linear-gradient(rgba(24, 24, 27, 0), var(--panel) 30%);
+  background: linear-gradient(rgba(13, 20, 36, 0), var(--panel) 30%);
   border-radius: 0 0 var(--r-lg) var(--r-lg);
 }
 
@@ -1746,14 +1747,12 @@ select.input {
 }
 
 .kicker {
-  font-family: var(--cond);
-  font-stretch: 112%;
-  font-weight: 700;
-  font-size: 0.8rem;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
+  font-family: var(--body);
+  font-weight: 600;
+  font-size: 0.86rem;
+  letter-spacing: 0;
   color: var(--cyan);
-  margin-bottom: 4px;
+  margin-bottom: 2px;
 }
 
 .sheet-head {
@@ -2571,7 +2570,7 @@ h3,
   position: sticky;
   bottom: 0;
   padding: 12px 0 calc(12px + env(safe-area-inset-bottom));
-  background: linear-gradient(rgba(15, 15, 16, 0), var(--bg) 30%);
+  background: linear-gradient(rgba(7, 11, 20, 0), var(--bg) 30%);
 }
 
 .ach .ach-icon img {
@@ -3334,7 +3333,7 @@ details.intro-notes p {
   .cta-bar {
     position: sticky;
     bottom: 0;
-    background: linear-gradient(rgba(24, 24, 27, 0), var(--panel) 35%);
+    background: linear-gradient(rgba(13, 20, 36, 0), var(--panel) 35%);
   }
   .cta-bar .btn {
     border-radius: 999px;
@@ -4454,22 +4453,22 @@ h3.pt-ico .ico {
 .coach {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
-  gap: 10px;
+  gap: 12px;
   margin: 10px 0 12px;
-  padding: 10px 12px;
-  border-radius: 12px;
-  border: 1px solid rgba(1, 174, 238, 0.45);
-  background: linear-gradient(135deg, rgba(1, 174, 238, 0.12), rgba(31, 0, 254, 0.08)), var(--bg-deep);
+  padding: 10px 12px 10px 10px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--cyan);
+  background: var(--panel-2);
   animation: stepIn 0.35s ease-out both;
 }
 .coach-av {
-  display: grid;
-  place-items: center;
-  width: 34px;
-  height: 34px;
+  display: block;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
-  background: var(--cyan);
-  color: #021720;
+  object-fit: cover;
+  background: var(--panel);
 }
 .coach-body small {
   display: block;
@@ -4587,8 +4586,8 @@ h3.pt-ico .ico {
   padding: 9px 8px 9px 10px;
 }
 .coach-av {
-  width: 30px;
-  height: 30px;
+  width: 40px;
+  height: 40px;
 }
 .coach-text {
   margin-top: 0;
@@ -4769,7 +4768,7 @@ button.hs:active,
   margin: 14px auto 0;
   padding: 5px;
   border-radius: 999px;
-  background: rgba(8, 8, 10, 0.9);
+  background: rgba(4, 7, 13, 0.9);
   border: 1px solid var(--line);
   backdrop-filter: blur(6px);
   box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.9);
@@ -6167,7 +6166,7 @@ button.hs:active,
   box-shadow: 0 30px 80px -20px rgba(0, 0, 0, 0.9);
   animation: fiIn 0.45s cubic-bezier(0.2, 1.3, 0.4, 1) both; transition: border-color 0.3s, box-shadow 0.3s;
 }
-.fm-kicker { display: inline-flex; align-items: center; gap: 6px; font-size: 0.76rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--cyan); }
+.fm-kicker { display: inline-flex; align-items: center; gap: 6px; font-size: 0.86rem; font-weight: 700; color: var(--cyan); }
 .fm-reel { width: 100%; padding: 14px 8px; border-radius: 14px; background: rgba(255, 255, 255, 0.04); border: 1px solid var(--line); overflow: hidden; }
 .fm-reel .form-window { height: auto; display: block; }
 .fm-reel .form-val { font-family: var(--display); font-size: 2.2rem !important; line-height: 1.1; white-space: nowrap; }
@@ -6695,7 +6694,7 @@ details.intro-notes[open] summary::before { content: '▸'; transform: rotate(90
 
 /* Wiadomości z federacji */
 .news-box { margin: -2px 0 2px; padding: 8px 12px 9px; border-radius: 12px; border: 1px dashed var(--line); background: linear-gradient(90deg, rgba(1, 174, 238, 0.06), transparent 70%); display: grid; gap: 4px; }
-.news-kicker { display: inline-flex; align-items: center; gap: 5px; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--cyan); }
+.news-kicker { display: inline-flex; align-items: center; gap: 5px; font-size: 0.84rem; font-weight: 700; color: var(--cyan); }
 .news-item { margin: 0; display: grid; grid-template-columns: 16px minmax(0, 1fr); gap: 7px; align-items: start; font-size: 0.86rem; line-height: 1.35; color: var(--muted); }
 .news-item .ico { margin-top: 2px; color: var(--faint); }
 .news-item.k-nemesis { color: #fda4b8; }
@@ -6715,7 +6714,7 @@ details.intro-notes[open] summary::before { content: '▸'; transform: rotate(90
 .cn-fight { display: grid; gap: 3px; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--panel-2); min-width: 0; }
 .cn-fight.best { border-color: rgba(245, 183, 0, 0.45); background: linear-gradient(120deg, rgba(245, 183, 0, 0.1), transparent 70%), var(--panel-2); }
 .cn-fight.worst { border-color: rgba(225, 29, 72, 0.4); background: linear-gradient(120deg, rgba(225, 29, 72, 0.1), transparent 70%), var(--panel-2); }
-.cn-kicker { display: inline-flex; align-items: center; gap: 5px; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--gold); }
+.cn-kicker { display: inline-flex; align-items: center; gap: 5px; font-size: 0.84rem; font-weight: 700; color: var(--gold); }
 .cn-fight.worst .cn-kicker { color: #fb7190; }
 .cn-fight b { font-size: 1rem; }
 .cn-fight small { color: var(--muted); font-size: 0.82rem; }
@@ -6734,7 +6733,12 @@ details.intro-notes[open] summary::before { content: '▸'; transform: rotate(90
 .menu > :not(.menu-bg):not(.menu-deco) { position: relative; z-index: 1; }
 .menu > .menu-bg { position: fixed; inset: 0; z-index: 0; pointer-events: none; background-size: cover; background-position: 70% 40%; opacity: 0.9; }
 .menu > .menu-deco { display: none !important; }
-.menu > .menu-bg::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(8, 9, 12, 0.9) 0%, rgba(8, 9, 12, 0.45) 55%, rgba(8, 9, 12, 0.1) 100%), linear-gradient(180deg, rgba(8, 9, 12, 0) 40%, rgba(8, 9, 12, 0.8)); }
+.menu > .menu-bg::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(4, 7, 13, 0.9) 0%, rgba(4, 7, 13, 0.45) 55%, rgba(4, 7, 13, 0.1) 100%), linear-gradient(180deg, rgba(4, 7, 13, 0) 40%, rgba(4, 7, 13, 0.8)); }
 @media (max-width: 700px) { .menu > .menu-bg { background-position: 75% 30%; opacity: 0.7; } }
 .br-img { padding: 0; background: none; object-fit: contain; width: 40px; height: 40px; }
 .mgr-img { padding: 0; background: none; object-fit: cover; border-radius: 50%; width: 44px; height: 44px; box-shadow: none; }
+
+/* Hala w tle całej gry: przygaszona, żeby nie przeszkadzała w czytaniu */
+.hall-bg { position: fixed; inset: 0; z-index: 0; pointer-events: none; background-size: cover; background-position: 70% 35%; opacity: 0.22; filter: saturate(0.9); }
+.hall-bg::after { content: ''; position: absolute; inset: 0; background: radial-gradient(120% 90% at 70% 30%, transparent 0%, rgba(4, 7, 13, 0.75) 70%), linear-gradient(180deg, rgba(4, 7, 13, 0.2), rgba(4, 7, 13, 0.85)); }
+@media (max-width: 700px) { .hall-bg { opacity: 0.16; } }
