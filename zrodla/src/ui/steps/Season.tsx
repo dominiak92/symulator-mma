@@ -17,7 +17,7 @@ import { FedEmblem, clubCrest } from '../Emblem';
 import { clubLogo, fedLogo, rivalClub } from '../logos';
 import { Icon, STAT_ICON } from '../Icon';
 import { CoachTip } from '../Tutorial';
-import { chanceWord } from '../Chance';
+import { chanceTone, chanceWord } from '../Chance';
 import { setHudHold, shownRecord, useHudHold } from '../hudHold';
 import { TICKET_CUT, TICKET_PRICE, TICKET_OPTIONS, fmtFans, ticketForecast, ticketsAvailable } from '../../engine/extras';
 import type { PostFight, SideInvite, TicketPlan } from '../../engine/types';
@@ -1758,12 +1758,22 @@ function OfferCard({ g, o, n, total, setGame }: { g: GameState; o: FightOffer; n
               ) : o.negotiated ? (
                 'Po negocjacjach'
               ) : (
-                `Chcę więcej · ${chanceWord(neg)}`
+                <span className="ofr-opt">
+                  <b>Negocjuj gażę</b>
+                  <small className={`tone-${chanceTone(neg)}`}>{chanceWord(neg)}</small>
+                </span>
               )}
             </button>
-            <button className="btn btn-ghost btn-small btn-ico" disabled={!!blocked || !!asking} title={blocked ?? undefined} onClick={() => call('decline', declineOffer)}>
+            <button className="btn btn-ghost btn-small btn-ico ofr-no" disabled={!!blocked || !!asking} title={blocked ?? undefined} onClick={() => call('decline', declineOffer)}>
               <Icon name="x" size={15} />
-              {asking === 'decline' ? 'Odrzucasz…' : 'Odrzucam'}
+              {asking === 'decline' ? (
+                'Odrzucasz…'
+              ) : (
+                <span className="ofr-opt">
+                  <b>Odrzucam</b>
+                  <small>{blocked ? 'nie teraz' : 'czekasz dalej'}</small>
+                </span>
+              )}
             </button>
           </div>
           )}
