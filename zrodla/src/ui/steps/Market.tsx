@@ -1,9 +1,10 @@
 import { STAT_LABELS, TIER_LEVEL } from '../../engine/data';
 import { ovr } from '../../engine/fighter';
-import { negotiateContract, recStr, changeDivision, clubAvailability, clubLimits, confirmMarket, divisionKey, divisionOptions, marketWarnings, pickClub, pickContract, retire, retireBonus, setManager, weightMissChance } from '../../engine/game';
+import { negotiateContract, recStr, changeDivision, clubAvailability, clubLimits, confirmMarket, divisionKey, divisionOptions, marketWarnings, pickClub, pickContract, retire, retireBonus, setCoach, setManager, weightMissChance } from '../../engine/game';
 import { WEIGHTS } from '../../engine/data';
 import { MANAGERS, currentManager, managerBlocked } from '../../engine/managers';
-import type { Contract } from '../../engine/types';
+import { COACHES, coachCostAt, coachOf, coachOpen } from '../../engine/coaches';
+import type { CoachId, Contract } from '../../engine/types';
 import { lat, money, plural } from '../../format';
 import type { StepProps } from '../Game';
 import { Emblem, FedEmblem, clubCrest } from '../Emblem';
@@ -206,6 +207,7 @@ export default function Market({ game, setGame }: StepProps) {
 
       {g.tier >= 1 && <DivisionPick game={g} setGame={setGame} />}
       {g.tier >= 1 && <ManagerPick game={g} setGame={setGame} />}
+      {coachOpen(g) && <CoachPick game={g} setGame={setGame} />}
 
       <section className="step">
         <h3 className="pt-ico" style={{ marginBottom: 10 }}>
@@ -389,6 +391,74 @@ function MgrAvatar({ id }: { id: string | null }) {
     </span>
   );
 }
+
+function CoachPick({ game: g, setGame }: StepProps) {
+  const cur = coachOf(g);
+  const [open, setOpen] = useState(false);
+  const m = g.market;
+  const tier = m ? m.contracts[m.pickedContract]?.tier ?? g.tier : g.tier;
+  return (
+    <section className="step mgr-section coach-section">
+      <h3 className="pt-ico" style={{ marginBottom: 4 }}>
+        <Icon name="users" size={18} />
+        Trener główny
+      </h3>
+      {!open ? (
+        <div className="mgr-compact">
+          <span className={`coach-av c-${cur.id}`} aria-hidden="true">
+            <Icon name={COACH_ICON[cur.id]} size={18} />
+          </span>
+          <div className="mgr-c-txt">
+            <b>{cur.name}</b>
+            <small>
+              {cur.role}
+              {coachCostAt(tier, cur.id) ? ` · ${money(coachCostAt(tier, cur.id))}/rok` : ''}
+            </small>
+          </div>
+          <button className="btn btn-small btn-ghost" onClick={() => setOpen(true)}>
+            Zmień
+          </button>
+        </div>
+      ) : (
+        <div role="radiogroup" aria-label="Trener główny" className="club-pick">
+          {COACHES.map((c) => (
+            <button
+              key={c.id}
+              className="offer club-offer"
+              role="radio"
+              aria-checked={cur.id === c.id}
+              onClick={() => {
+                setGame(setCoach(g, c.id));
+                setOpen(false);
+              }}
+            >
+              <span className="offer-top">
+                <span className="fed-row">
+                  <span className={`coach-av c-${c.id}`} aria-hidden="true">
+                    <Icon name={COACH_ICON[c.id]} size={18} />
+                  </span>
+                  <span className="fed">
+                    {c.name}
+                    <small className="club-sub">
+                      <span>{c.role}</span>
+                      <span>
+                        <Icon name="coins" size={12} />
+                        {coachCostAt(tier, c.id) ? `${money(coachCostAt(tier, c.id))}/rok` : 'w cenie klubu'}
+                      </span>
+                    </small>
+                  </span>
+                </span>
+              </span>
+              <span className="offer-note">{c.desc}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
+const COACH_ICON: Record<CoachId, string> = { club: 'home', boks: 'glove', parter: 'knot', naroznik: 'target', kontakty: 'pin' };
 
 function ManagerPick({ game: g, setGame }: StepProps) {
   const cur = currentManager(g);

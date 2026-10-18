@@ -1,6 +1,6 @@
-import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
+import { Fragment, useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
 import { createPortal } from 'react-dom';
-import type { CardSpot, DecisionOption, DecisionPoint, FightOffer, FightReport, GameState, Moment, Stats } from '../../engine/types';
+import type { CardSpot, DecisionOption, DecisionPoint, FightOffer, FightReport, GameState, Moment, NewsItem, Stats } from '../../engine/types';
 import { galaPrefix, SEASON_FORMS, STAGE_LABELS, STAT_LABELS, STYLE_LABELS } from '../../engine/data';
 import { currentYearGoal, acceptInvite, declineInvite, inviteChance, cutChance, postAnswer, weighIn, divisionKey, effectiveStats, weightMissChance, PRESS_OPTIONS, pressAnswer, prepCost, acceptAllOffers, acceptOffer, declineBlocked, declineOffer, decide, negotiateChance, negotiateOffer, recStr, seasonNext, seasonSkip, toSummary } from '../../engine/game';
 import { activeManager, currentManager } from '../../engine/managers';
@@ -13,6 +13,7 @@ import type { StepProps } from '../Game';
 import { GG } from '../brand';
 import { Belt, Confetti, Fighter, Medal } from '../Art';
 import { FedEmblem, clubCrest } from '../Emblem';
+import { fedLogo } from '../logos';
 import { Icon, STAT_ICON } from '../Icon';
 import { CoachTip } from '../Tutorial';
 import { chanceWord } from '../Chance';
@@ -410,7 +411,9 @@ function LiveCard({ g, f, start, animate, setGame }: { g: GameState; f: FightRep
           ? `wchodzisz do rankingu: #${f.rankAfter}`
           : f.rankAfter === null
             ? 'wypadasz z rankingu'
-            : `ranking #${f.rankBefore} → #${f.rankAfter}`
+            : f.rankBefore === 0
+              ? `tracisz pas · #${f.rankAfter}`
+              : `ranking #${f.rankBefore} → #${f.rankAfter}`
       : null;
 
   const sheetMode = typeof window !== 'undefined' && window.innerWidth < 900;
@@ -867,6 +870,11 @@ function TourneyPoster({ g, f, onGo, paused }: { g: GameState; f: FightReport; o
       <div className={`poster amateur th-${tk} ${t?.championship ? 'title-bout' : ''}`}>
         <span className="pst-ribbon">{ribbon}</span>
         <div className="pst-head">
+          {fedLogo(t?.name) && (
+            <div className="pst-brand">
+              <img className="fed-logo" src={fedLogo(t?.name)!} alt={t?.name ?? ''} width={68} height={68} />
+            </div>
+          )}
           <small>{t?.championship ? 'Turniej o tytuł' : 'Turniej amatorski'}</small>
           <h2>{t?.name ?? 'Turniej'}</h2>
           <span className="pst-place">
@@ -1311,7 +1319,9 @@ function OfferCard({ g, o, n, total, setGame }: { g: GameState; o: FightOffer; n
                   : 'Walka o pas'
               : o.rematch
                 ? 'Rewanż'
-                : `Oferta walki ${n} z ${Math.max(n, total)}`;
+                : o.nemesis
+                  ? 'Rewanż z zadrą'
+                  : `Oferta walki ${n} z ${Math.max(n, total)}`;
   const spot = o.spot ? SPOT[o.spot] : '';
   return (
     <div className="fight-intro offer-modal" role="dialog" aria-modal="true" aria-label={head}>
@@ -1370,6 +1380,12 @@ function OfferCard({ g, o, n, total, setGame }: { g: GameState; o: FightOffer; n
             <span className="tag red">
               <Icon name="flame" size={12} />
               odwieczny rywal
+            </span>
+          )}
+          {o.nemesis && (
+            <span className="tag red">
+              <Icon name="flame" size={12} />
+              zadra · gaża +30%
             </span>
           )}
           {opp.peer && !o.rival && (
@@ -1849,13 +1865,16 @@ export default function Season({ game, setGame }: StepProps) {
       )}
 
       <div className="fight-list">
-        {fightsShown.map((f, i) =>
-          i === run.fights.length - 1 ? (
-            <LiveCard key={f.idx} g={g} f={f} start={start} animate={anim} setGame={setGame} />
-          ) : (
-            <FightRow key={f.idx} f={f} open={openIdx.has(i)} onToggle={() => toggle(i)} />
-          ),
-        )}
+        {fightsShown.map((f, i) => (
+          <Fragment key={f.idx}>
+            {i === run.fights.length - 1 ? (
+              <LiveCard g={g} f={f} start={start} animate={anim} setGame={setGame} />
+            ) : (
+              <FightRow f={f} open={openIdx.has(i)} onToggle={() => toggle(i)} />
+            )}
+            {f.result && <NewsBox items={(run.news ?? []).filter((n) => n.after === i + 1)} />}
+          </Fragment>
+        ))}
         {introOpen && last && (
           <div className="upcoming next-up">
             <span className="res-badge sm X">
@@ -1958,6 +1977,27 @@ export default function Season({ game, setGame }: StepProps) {
 }
 
 /** Cel roku: postęp widoczny w trakcie sezonu. */
+const NEWS_ICON: Record<NewsItem['kind'], string> = { result: 'glove', title: 'trophy', injury: 'bandage', callout: 'megaphone', nemesis: 'flame', debut: 'star' };
+
+/** Z federacji: co się dzieje w składzie między twoimi walkami. */
+function NewsBox({ items }: { items: NewsItem[] }) {
+  if (!items.length) return null;
+  return (
+    <div className="news-box" role="note" aria-label="Wiadomości z federacji">
+      <span className="news-kicker">
+        <Icon name="megaphone" size={12} />
+        Z federacji
+      </span>
+      {items.map((n, i) => (
+        <p key={i} className={`news-item k-${n.kind}`}>
+          <Icon name={NEWS_ICON[n.kind]} size={14} />
+          <span>{n.text}</span>
+        </p>
+      ))}
+    </div>
+  );
+}
+
 function GoalPill({ g }: { g: GameState }) {
   const goal = currentYearGoal(g);
   if (!goal || !g.run || g.run.tourneys) return null;

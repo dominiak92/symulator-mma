@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { honours } from '../../engine/extras';
-import type { GameState } from '../../engine/types';
+import type { GameState, HistoryEntry } from '../../engine/types';
 import { displayName, mainRecord, medalCount, recStr, divisionKey } from '../../engine/game';
 import { START_PROFILES } from '../../engine/data';
 import { CARD_THEMES, drawCard } from '../card';
@@ -10,7 +10,7 @@ import CareerChart from '../CareerChart';
 import { lat, money } from '../../format';
 import { SHOP_URL } from '../Logo';
 import { GG } from '../brand';
-import { ACHIEVEMENTS } from '../../engine/achievements';
+import { ACHIEVEMENTS, achIcon } from '../../engine/achievements';
 import { Confetti, Fighter } from '../Art';
 import { clubCrest } from '../Emblem';
 import { Icon } from '../Icon';
@@ -162,6 +162,8 @@ export default function Ended({ game, onNewCareer, onMenu }: { game: GameState; 
         </section>
       )}
 
+      <CareerNumbers g={g} />
+
       <section className="step">
         <div className="end-grid">
           <div>
@@ -240,8 +242,9 @@ export default function Ended({ game, onNewCareer, onMenu }: { game: GameState; 
             <h3>Osiągnięcia tej kariery</h3>
             <div className="chips">
               {got.map((a) => (
-                <span key={a.id} className="tag blue" title={a.desc}>
-                  ★ {a.title}
+                <span key={a.id} className={`tag ach-chip tone-${achIcon(a.id).tone}`} title={a.desc}>
+                  <Icon name={achIcon(a.id).icon} size={13} />
+                  {a.title}
                 </span>
               ))}
             </div>
@@ -292,5 +295,95 @@ export default function Ended({ game, onNewCareer, onMenu }: { game: GameState; 
         Wszystkie postacie, nazwiska, kluby, gale, federacje i sponsorzy w grze są fikcyjne. Podobieństwo do prawdziwych osób i firm jest przypadkowe. Prawdziwa jest tylko marka Ground Game.
       </p>
     </>
+  );
+}
+
+/** Kariera w liczbach: najlepsza i najgorsza walka, rekordy i podział zwycięstw. */
+function CareerNumbers({ g }: { g: GameState }) {
+  const pro = g.history.filter((h) => !h.amateur);
+  const pool = pro.length >= 3 ? pro : g.history;
+  if (pool.length < 2) return null;
+  const rankPts = (h: HistoryEntry) => (h.oppRank === null ? 0 : h.oppRank === 0 ? 14 : Math.max(0, 12 - h.oppRank));
+  const fin = (h: HistoryEntry) => h.method === 'KO/TKO' || h.method === 'Poddanie';
+  const best = pool
+    .filter((h) => h.result === 'W')
+    .map((h) => ({ h, sc: (h.title ? 40 : 0) + h.tier * 12 + rankPts(h) + (fin(h) ? 6 : 0) + (fin(h) && h.round === 1 ? 3 : 0) + (h.freak ? -15 : 0) }))
+    .sort((a, b) => b.sc - a.sc)[0]?.h;
+  const worst = pool
+    .filter((h) => h.result === 'L')
+    .map((h) => ({ h, sc: (h.oppRank === null ? 14 : 12 - Math.min(12, h.oppRank)) + (h.method === 'KO/TKO' ? 8 : fin(h) ? 5 : 0) + h.tier * 3 + (h.freak ? 10 : 0) + (h.title ? -6 : 0) }))
+    .sort((a, b) => b.sc - a.sc)[0]?.h;
+  const wins = pool.filter((h) => h.result === 'W');
+  const ko = wins.filter((h) => h.method === 'KO/TKO').length;
+  const sub = wins.filter((h) => h.method === 'Poddanie').length;
+  const dec = wins.length - ko - sub;
+  const bySeason = new Map<number, number>();
+  for (const h of g.history) bySeason.set(h.season, (bySeason.get(h.season) ?? 0) + (h.earned ?? 0));
+  const bestYear = [...bySeason.entries()].sort((a, b) => b[1] - a[1])[0];
+  const by = bestYear ? g.seasons.find((s) => s.season === bestYear[0]) : undefined;
+  const fastest = wins.filter((h) => fin(h) && h.time).sort((a, b) => a.round - b.round || (a.time ?? '').localeCompare(b.time ?? ''))[0];
+  const card = (h: HistoryEntry, kind: 'best' | 'worst') => (
+    <div className={`cn-fight ${kind}`}>
+      <span className="cn-kicker">
+        <Icon name={kind === 'best' ? 'trophy' : 'x'} size={13} />
+        {kind === 'best' ? 'Najlepsza walka' : 'Najgorsza wpadka'}
+      </span>
+      <b>
+        {kind === 'best' ? 'Wygrana z ' : 'Porażka z '}
+        {h.oppFlag} {h.opponent}
+      </b>
+      <small>
+        {h.method}
+        {!h.method.startsWith('Decyzja') && h.round ? `, ${h.round}. runda` : ''}
+        {h.title ? ' · walka o pas' : ''}
+        {h.oppRank !== null ? ` · rywal ${h.oppRank === 0 ? 'mistrz' : `nr ${h.oppRank}`}` : ''}
+      </small>
+      <small className="cn-when">
+        {h.gala ?? h.fed} · rok {h.season} · {lat(h.age)}
+      </small>
+    </div>
+  );
+  return (
+    <section className="step career-numbers">
+      <h3>Kariera w liczbach</h3>
+      <div className="cn-fights">
+        {best && card(best, 'best')}
+        {worst && card(worst, 'worst')}
+      </div>
+      <div className="cn-grid">
+        <div>
+          <small>Wygrane przez KO</small>
+          <b>{ko}</b>
+        </div>
+        <div>
+          <small>Przez poddanie</small>
+          <b>{sub}</b>
+        </div>
+        <div>
+          <small>Na punkty</small>
+          <b>{dec}</b>
+        </div>
+        <div>
+          <small>Najdłuższa seria</small>
+          <b>{g.flags.bestStreak ?? 0}</b>
+        </div>
+        {bestYear && bestYear[1] > 0 && (
+          <div>
+            <small>Najlepszy rok w kasie</small>
+            <b>{money(bestYear[1])}</b>
+            {by && <em>rok {by.season} · {lat(by.age)}</em>}
+          </div>
+        )}
+        {fastest && (
+          <div>
+            <small>Najszybsze skończenie</small>
+            <b>
+              {fastest.round}. runda, {fastest.time}
+            </b>
+            <em>{fastest.opponent}</em>
+          </div>
+        )}
+      </div>
+    </section>
   );
 }
