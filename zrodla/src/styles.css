@@ -6726,3 +6726,6 @@ details.intro-notes[open] summary::before { content: '▸'; transform: rotate(90
 .cn-grid b { font-family: var(--display); font-size: 1.25rem; }
 .cn-grid em { font-style: normal; font-size: 0.76rem; color: var(--muted); }
 .belt-img { display: block; max-width: 100%; filter: drop-shadow(0 6px 16px rgba(0, 0, 0, 0.55)); }
+.stat-art { display: inline-block; flex: none; border-radius: 10px; object-fit: contain; }
+.train-opt[aria-checked='true'] .stat-art { outline: 2px solid var(--cyan); outline-offset: 1px; }
+.medal-img { display: inline-block; filter: drop-shadow(0 3px 8px rgba(0, 0, 0, 0.45)); }
