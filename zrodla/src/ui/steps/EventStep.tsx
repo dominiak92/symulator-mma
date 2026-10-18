@@ -1,3 +1,4 @@
+import hallBg from '../../assets/bg/menu.webp';
 import { useEffect } from 'react';
 import { choiceChance, chooseEvent, continueAfterEvent, effectChips, type Chip } from '../../engine/game';
 import { STAT_LABELS } from '../../engine/data';
@@ -62,11 +63,13 @@ export default function EventStep({ game, setGame }: StepProps) {
   return (
     <section className="step">
       {ev.brand && GG[ev.brand as keyof typeof GG] && <img className="event-brand" src={GG[ev.brand as keyof typeof GG]} alt={ev.title} />}
-      <div className="kicker pt-ico">
-        <Icon name="calendar" size={14} />
-        {ev.id === 'sparing_kontrolny' ? 'Start kariery' : 'Przed startem'}
+      <div className="ev-head" style={{ backgroundImage: `url(${hallBg})` }}>
+        <div className="kicker pt-ico">
+          <Icon name="calendar" size={14} />
+          {ev.id === 'sparing_kontrolny' ? 'Start kariery' : 'Przed startem'}
+        </div>
+        <h2>{ev.title}</h2>
       </div>
-      <h2>{ev.title}</h2>
       <p className="lead" style={{ marginTop: 10, whiteSpace: 'pre-line' }}>
         {ev.text}
       </p>
