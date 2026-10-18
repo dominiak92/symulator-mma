@@ -57,6 +57,32 @@ export default function Menu({
         <p>Od turniejów amatorskich w wieku 16 lat do pasa mistrza świata. Reszta zależy od ciebie.</p>
       </header>
 
+      {(() => {
+        const bestOf = (q: boolean) => museum.filter((e) => e.ranked && (e.mode === 'quick') === q).reduce((a, e) => Math.max(a, e.legacy), 0);
+        const full = bestOf(false);
+        const quick = bestOf(true);
+        if (!full && !quick) return null;
+        return (
+          <div className="legacy-best" aria-label="Twoje rekordy LEGACY">
+            <span className="lb-title">
+              <Icon name="trophy" size={14} />
+              Twój rekord LEGACY
+            </span>
+            {full > 0 && (
+              <span className="lb-item">
+                <small>pełna kariera</small>
+                <b>{full.toLocaleString('pl-PL')}</b>
+              </span>
+            )}
+            {quick > 0 && (
+              <span className="lb-item">
+                <small>szybka kariera</small>
+                <b>{quick.toLocaleString('pl-PL')}</b>
+              </span>
+            )}
+          </div>
+        );
+      })()}
       <div className="menu-grid">
         <button className="menu-tile primary" onClick={onPlay}>
           <span className="tile-ico">

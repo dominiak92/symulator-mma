@@ -198,6 +198,7 @@ export default function Game({
                 <strong className="short">{shortName(g)}</strong>
                 <span>
                   Rok {g.season} · {careerLine(g)}
+                  {g.quick ? ' · szybka' : ''}
                 </span>
               </span>
             </button>

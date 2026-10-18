@@ -12,6 +12,7 @@ const STARTS: StartProfile[] = ['osiedle', 'biznes', 'junior', 'wybraniec'];
 export default function Create({ slot, onBack, onStart }: { slot: number; onBack: () => void; onStart: (s: GameState) => void }) {
   const rng = useMemo(() => createRng((Date.now() ^ (Math.random() * 1e9)) >>> 0), []);
   const [p, setP] = useState<Profile>(() => randomProfile(rng));
+  const [quick, setQuick] = useState(false);
 
   const set = (patch: Partial<Profile>) => setP((x) => ({ ...x, ...patch }));
   const reroll = () => {
@@ -29,6 +30,7 @@ export default function Create({ slot, onBack, onStart }: { slot: number; onBack
         slot,
         mode: 'normal',
         seed,
+        quick,
         profile: { ...p, firstName: p.firstName.trim(), lastName: p.lastName.trim(), nickname: p.nickname.trim() },
       }),
     );
@@ -182,6 +184,29 @@ export default function Create({ slot, onBack, onStart }: { slot: number; onBack
               </button>
             );
           })}
+        </div>
+      </section>
+
+      <section className="form-section">
+        <div className="label pt-ico">
+          <Icon name="clock" size={16} />
+          Rodzaj kariery
+        </div>
+        <div className="choice-grid" role="radiogroup" aria-label="Rodzaj kariery">
+          <button className="choice" role="radio" aria-checked={!quick} onClick={() => setQuick(false)}>
+            <span className="title">
+              Pełna kariera
+              <span className="tag">ok. 45–60 min</span>
+            </span>
+            <span className="desc">Od turniejów amatorskich w wieku 16 lat. Każda walka i każda decyzja w twoich rękach.</span>
+          </button>
+          <button className="choice" role="radio" aria-checked={quick} onClick={() => setQuick(true)}>
+            <span className="title">
+              Szybka kariera
+              <span className="tag gold">ok. 15 min</span>
+            </span>
+            <span className="desc">Startujesz od zawodowstwa, mniejsze walki rozgrywa narożnik, ty decydujesz w walkach o pas i z rywalem. Koniec najpóźniej w wieku 35 lat. Osobny ranking LEGACY.</span>
+          </button>
         </div>
       </section>
 

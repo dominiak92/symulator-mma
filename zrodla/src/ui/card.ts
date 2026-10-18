@@ -245,7 +245,7 @@ export async function drawCard(g: GameState, withLogo = true, theme: CardTheme =
   ctx.stroke();
   ctx.fillStyle = C.muted;
   ctx.font = cond(26);
-  ctx.fillText('LEGACY', L, fy + 52);
+  ctx.fillText(g.quick ? 'LEGACY · SZYBKA KARIERA' : 'LEGACY', L, fy + 52);
   ctx.fillStyle = C.text;
   ctx.font = display(64);
   ctx.fillText(String(g.ending?.legacy ?? 0), L, fy + 118);

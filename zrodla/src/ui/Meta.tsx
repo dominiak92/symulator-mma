@@ -58,11 +58,26 @@ export function AchievementsScreen({ onBack }: { onBack: () => void }) {
 }
 
 export function MuseumScreen({ onBack }: { onBack: () => void }) {
-  const list = loadMuseum();
+  const all = loadMuseum();
+  const hasQuick = all.some((e) => e.mode === 'quick');
+  const [tab, setTab] = useState<'full' | 'quick'>('full');
+  // pełne i szybkie kariery mają osobne rankingi, żeby skrót nie dawał przewagi w LEGACY
+  const list = all.filter((e) => (tab === 'quick' ? e.mode === 'quick' : e.mode !== 'quick'));
+  const tabs = hasQuick ? (
+    <div className="cc-tabs" role="tablist" aria-label="Rodzaj kariery" style={{ marginBottom: 12 }}>
+      <button role="tab" aria-selected={tab === 'full'} className={tab === 'full' ? 'on' : ''} onClick={() => setTab('full')}>
+        Pełne kariery
+      </button>
+      <button role="tab" aria-selected={tab === 'quick'} className={tab === 'quick' ? 'on' : ''} onClick={() => setTab('quick')}>
+        Szybkie kariery
+      </button>
+    </div>
+  ) : null;
   if (!list.length)
     return (
       <Shell title="Muzeum kariery" onBack={onBack}>
-        <p className="muted">Tu trafi każda zakończona kariera. Zagraj pierwszą do końca, a pojawi się na liście.</p>
+        {tabs}
+        <p className="muted">Tu trafi każda zakończona {tab === 'quick' ? 'szybka ' : ''}kariera. Zagraj pierwszą do końca, a pojawi się na liście.</p>
       </Shell>
     );
   const best = (fn: (e: (typeof list)[0]) => number) => list.reduce((a, b) => (fn(b) > fn(a) ? b : a));
@@ -74,6 +89,7 @@ export function MuseumScreen({ onBack }: { onBack: () => void }) {
   ];
   return (
     <Shell title="Muzeum kariery" sub="Rekordy i wszystkie zakończone kariery na tym urządzeniu." onBack={onBack}>
+      {tabs}
       <div className="stats-strip">
         {records.map((r) => (
           <div key={r.label}>
