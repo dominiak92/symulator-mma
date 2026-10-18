@@ -11,6 +11,17 @@ export type Outcome = 'super' | 'success' | 'fail';
 export type TicketPlan = 'none' | 'std' | 'push';
 export type JobMode = 'full' | 'half' | 'none';
 export type SocialMode = 'off' | 'self' | 'pro';
+export type SideKind = 'grappling' | 'boxing' | 'seminar';
+
+/** Zaproszenie na wydarzenie poza MMA (dozwolone także przy wyłączności). */
+export interface SideInvite {
+  kind: SideKind;
+  title: string;
+  place: string;
+  fee: number;
+  prize: number;
+  text: string;
+}
 
 /** decyzja po walce: wywołanie przez mikrofon albo reakcja na kontrowersyjny werdykt */
 export interface PostFight {
@@ -82,6 +93,8 @@ export interface Contract {
   exclusive?: boolean;
   /** bonus za podpis (jednorazowo, wynegocjowany) */
   signing?: number;
+  /** gwiazda niższej ligi: zejście szczebel niżej za lepszą kasę */
+  star?: boolean;
   /** wynik negocjacji na kartce */
   nego?: { ask: 'purse' | 'bonus' | 'signing'; ok: boolean; text: string };
 }
@@ -273,6 +286,9 @@ export interface FightReport {
   tickets?: { sold: number; cut: number; plan: TicketPlan };
   /** przyrost obserwujących po walce */
   fans?: number;
+  abroad?: string;
+  /** zmęczenie po wydarzeniu poza federacją */
+  tired?: boolean;
   pressMod?: number;
   /** plakat gali: miasto, hala i inne walki w karcie */
   poster?: { city: string; venue: string; bouts: { a: string; ar: string; b: string; br: string; tag: string }[] };
@@ -337,6 +353,12 @@ export interface SeasonRun {
   weigh?: FightOffer | null;
   /** decyzja po walce (mikrofon, kontrowersja) */
   post?: PostFight | null;
+  /** zaproszenie na wydarzenie poza federacją */
+  invite?: SideInvite | null;
+  inviteOffered?: boolean;
+  abroadOffered?: boolean;
+  /** wyniki wydarzeń poza federacją w tym roku */
+  sideLog?: { title: string; text: string; tone: 'good' | 'bad' | 'neutral' | 'purple'; lines: string[] }[];
 }
 
 export interface FightOffer {
@@ -374,6 +396,8 @@ export interface FightOffer {
   tickets?: TicketPlan;
   /** wynik ważenia, gdy waga nie wyszła */
   weigh?: 'paid' | 'cut_ok' | 'cut_fail';
+  /** jednorazowa gala MMA za granicą (Dubaj itp.), poza rankingiem */
+  abroad?: string;
   /** walka na odbudowę rekordu: słaby rywal z ujemnym bilansem na dziwnej gali */
   tuneup?: boolean;
   /** podpowiedź menedżera przy ofercie */

@@ -57,6 +57,9 @@ export const ACHIEVEMENTS: Achievement[] = [
   { id: 'tickets', title: 'Sam sprzedam halę', desc: 'Sprzedaj w karierze 500 biletów.', check: (s) => f(s, 'ticketsSold') >= 500 },
   { id: 'mic', title: 'Daj mi mikrofon', desc: 'Wywołaj mistrza i dostań walkę o pas.', check: (s) => f(s, 'micTitle') >= 1 },
   { id: 'fans100k', title: 'Influencer', desc: 'Zbierz 100 tysięcy obserwujących.', check: (s) => (s.followers ?? 0) >= 100000 },
+  { id: 'grappling_gold', title: 'Złoto bez ciosów', desc: 'Wygraj turniej grapplingowy.', check: (s) => f(s, 'grapplingGold') >= 1 },
+  { id: 'boxing_win', title: 'Bokser z klatki', desc: 'Wygraj walkę na gali bokserskiej.', check: (s) => f(s, 'boxingWins') >= 1 },
+  { id: 'abroad_win', title: 'Szejk zadowolony', desc: 'Wygraj walkę na gali za granicą.', check: (s) => f(s, 'abroadWins') >= 1 },
   { id: 'top_exit', title: 'Na własnych warunkach', desc: 'Zakończ karierę jako panujący mistrz albo na serii zwycięstw.', check: (s) => !!s.ending?.top },
 ];
 

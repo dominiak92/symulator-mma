@@ -25,6 +25,9 @@ export function defaultJob(s: GameState): JobMode {
 }
 
 export function jobMode(s: GameState): JobMode | null {
+  // w trakcie roku obowiązuje tryb ustalony na starcie roku
+  const jy = s.flags.jobYear ?? 0;
+  if (s.phase === 'season' && jy && Math.floor(jy / 10) === s.season) return (['full', 'half', 'none'] as const)[(jy % 10) - 1] ?? null;
   if (!jobAvailable(s)) return null;
   return s.job ?? defaultJob(s);
 }
