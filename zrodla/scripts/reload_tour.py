@@ -32,14 +32,16 @@ with sync_playwright() as p:
                 if k.count(): k.first.click(); pg.wait_for_timeout(500)
             if pg.locator('body').inner_text().strip()[:5] == '' : print('pusty ekran po przeładowaniu', step)
         main = pg.locator('.main').inner_text() if pg.locator('.main').count() else ''
+        if pg.locator('.rv-scene .btn').count():
+            shot(pg, 'scena-wyniku'); pg.locator('.rv-scene .btn').first.click(); pg.wait_for_timeout(300); continue
         if pg.locator('.post-modal .btn-primary, .weigh-modal .choice, .post-modal .choice, .invite-modal .btn-primary').count():
             shot(pg, 'po-walce'); pg.locator('.post-modal .btn-primary, .weigh-modal .choice, .post-modal .choice, .invite-modal .btn-primary').first.click(); pg.wait_for_timeout(300); continue
         if pg.locator('.press-modal').count():
             shot(pg, 'konferencja'); pg.locator('.press-opt').nth(1).click(); pg.wait_for_timeout(300); continue
         if pg.locator('.offer-modal').count():
             shot(pg, 'oferta-odbudowa' if pg.locator('.fi-card.tuneup').count() else 'oferta')
-            if step % 3 == 0 and pg.get_by_role('button', name='Chcę więcej').count() and pg.get_by_role('button', name='Chcę więcej').is_enabled():
-                pg.get_by_role('button', name='Chcę więcej').click(); pg.wait_for_timeout(1500); shot(pg, 'oferta-po-negocjacji'); continue
+            if step % 3 == 0 and pg.get_by_role('button', name='Negocjuj gażę').count() and pg.get_by_role('button', name='Negocjuj gażę').is_enabled():
+                pg.get_by_role('button', name='Negocjuj gażę').click(); pg.wait_for_timeout(1500); shot(pg, 'oferta-po-negocjacji'); continue
             pg.locator('.ofr-actions .btn-primary').click(); pg.wait_for_timeout(300); continue
         if pg.locator('.poster-modal').count():
             pg.wait_for_timeout(400); shot(pg, 'plakat'); pg.locator('.fi-go').click(); pg.wait_for_timeout(300); continue

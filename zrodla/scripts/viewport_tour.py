@@ -89,9 +89,13 @@ with sync_playwright() as p:
         pg.locator(".btn-primary").first.click(); pg.wait_for_timeout(250)
     snap(pg, "03-nowa", problems)
     pg.locator(".create-cta .btn-primary").click(); pg.wait_for_timeout(300)
+    snap(pg, "03b-nowa-kariera", problems)
+    pg.locator(".create-cta .btn-primary").click(); pg.wait_for_timeout(300)
     season = 0
     for step in range(400):
         if season >= SEASONS: break
+        if pg.locator(".rv-scene .btn").count():
+            pg.locator(".rv-scene .btn").first.click(); pg.wait_for_timeout(300)
         coach = pg.locator(".coach")
         main = pg.inner_text("body").lower()
         if pg.locator(".train-opt").count():
