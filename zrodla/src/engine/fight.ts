@@ -548,7 +548,7 @@ function option(
   lose: string,
 ): DecisionOption {
   KIND_OF[key] = kind;
-  const chance = chanceFrom(atk, def, mod + (kind === 'safe' ? 10 : 0));
+  const chance = chanceFrom(atk, def, mod + (kind === 'safe' ? 5 : 0));
   return { key, kind, label, desc, stat, chance, dist: distFrom(chance), win, lose };
 }
 
@@ -853,7 +853,7 @@ export function applyDecision(rng: Rng, ctx: FightCtx, sim: FightSim, rep: Fight
   let tone: Moment['tone'] = out === 'super' ? 'purple' : out === 'success' ? 'good' : 'bad';
 
   // ryzyko może skończyć walkę także przy zwykłym sukcesie (rywal jest już obity albo zmęczony)
-  const finishTry = kind === 'risk' && out === 'success' && rng.chance(0.22 + Math.min(0.3, sim.opp.dmg / 140));
+  const finishTry = kind === 'risk' && out === 'success' && rng.chance(0.28 + Math.min(0.35, sim.opp.dmg / 120));
   if ((out === 'super' || finishTry) && kind === 'risk') {
     sim.round = Math.max(sim.round, dp.round);
     let method: 'KO/TKO' | 'Poddanie' = 'KO/TKO';
@@ -884,7 +884,7 @@ export function applyDecision(rng: Rng, ctx: FightCtx, sim: FightSim, rep: Fight
       effect = 'duża przewaga w tej rundzie';
     } else {
       sim.momentum -= 12;
-      sim.me.dmg += rng.int(12, 20);
+      sim.me.dmg += rng.int(10, 16);
       sim.me.stam = clamp(sim.me.stam - 12, 0, 100);
       text = say(POOL.riskFail);
       effect = 'obrywasz i tracisz rundę';
@@ -943,7 +943,13 @@ export function applyDecision(rng: Rng, ctx: FightCtx, sim: FightSim, rep: Fight
     }
   } else {
     // bezpieczny wybór to też odpoczynek: wracają siły, mniej obrywasz
-    if (out !== 'fail') {
+    // odpoczynek ma sens, gdy jesteś obity albo zmęczony; świeży tylko oddaje rywalowi inicjatywę
+    const needRest = sim.me.dmg >= 20 || sim.me.stam < 60;
+    if (out !== 'fail' && !needRest) {
+      sim.momentum += 2;
+      text = say(POOL.safeOk);
+      effect = 'spokojna runda, ale bez przewagi';
+    } else if (out !== 'fail') {
       sim.momentum += 3;
       sim.me.stam = clamp(sim.me.stam + 18, 0, 100);
       sim.me.dmg = Math.max(0, sim.me.dmg - 8);
@@ -977,7 +983,7 @@ export function advanceFight(rng: Rng, ctx: FightCtx, sim: FightSim, rep: FightR
   while (!sim.finished && !sim.pending) {
     const bigTurn = !!sim.big && ctx.allowDecision && (sim.asked ?? -1) !== sim.round;
     const planTurn = !!sim.pro && ctx.allowDecision && sim.round === 0 && !sim.plan && (sim.asked ?? -1) !== 0;
-    if (bigTurn || planTurn || (ctx.allowDecision && !sim.decisionUsed && rng.chance(sim.round === 0 ? ctx.decisionChance * 0.45 : ctx.decisionChance * 0.4))) {
+    if (bigTurn || planTurn || (ctx.allowDecision && !sim.decisionUsed && (sim.asked ?? -1) !== sim.round && !(sim.pro && sim.round === 0) && rng.chance(sim.round === 0 ? ctx.decisionChance * 0.45 : ctx.decisionChance * 0.4))) {
       if (sim.round < sim.maxRounds) {
         const dp = buildDecision(rng, ctx, sim);
         if (dp) {
