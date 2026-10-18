@@ -51,6 +51,8 @@ for (let i = 0; i < N; i++) {
           else s = G.doTraining(s, rng.pick(STAT_KEYS), rng.chance(0.5) ? rng.pick(G.CAMPS).id : null);
           break;
         case 'budget':
+          if (rng.chance(0.3)) s = G.setJob(s, rng.pick(['full', 'half', 'none'] as const));
+          if (rng.chance(0.3)) s = G.setSocial(s, rng.pick(['off', 'self', 'pro'] as const));
           if (rng.chance(0.3) && !G.pitchBlocked(s)) s = G.pitchSponsor(s, rng.pick(['spodenki', 'plecy', 'social'] as const));
           if (s.pitch) checkText('sponsor', s.pitch.text);
           for (const l of G.budgetLines(s)) { checkText('budżet', l.label); checkText('budżet', l.sub); if (!Number.isFinite(l.amount)) note('budżet: NaN'); }
@@ -79,7 +81,13 @@ for (let i = 0; i < N; i++) {
         case 'season': {
           const run = s.run!;
           const cur = run.fights[run.fights.length - 1];
-          if (run.press) {
+          if (run.weigh) {
+            s = G.weighIn(s, rng.pick(['cut', 'pay'] as const));
+          } else if (run.post) {
+            checkText('mikrofon', run.post.text);
+            for (const o of run.post.options) { checkText('mikrofon', o.label); checkText('mikrofon', o.desc); }
+            s = G.postAnswer(s, rng.pick(run.post.options).key);
+          } else if (run.press) {
             checkText('konferencja', run.press.pressQuote);
             s = G.pressAnswer(s, rng.pick(['calm', 'provoke', 'insult'] as const));
           } else if (run.offer) {
@@ -87,7 +95,7 @@ for (let i = 0; i < N; i++) {
             checkText('podpowiedź menedżera', run.offer.tip);
             checkText('rywal', run.offer.opp.lastName);
             const r = rng.next();
-            s = r < 0.15 && !G.declineBlocked(s) ? G.declineOffer(s) : r < 0.3 && !run.offer.negotiated ? G.negotiateOffer(s) : r < 0.4 ? G.acceptAllOffers(s, rng.pick(['std', 'rival', 'hard'] as const)) : G.acceptOffer(s, rng.pick(['std', 'rival', 'hard'] as const));
+            s = r < 0.15 && !G.declineBlocked(s) ? G.declineOffer(s) : r < 0.3 && !run.offer.negotiated ? G.negotiateOffer(s) : r < 0.4 ? G.acceptAllOffers(s, rng.pick(['std', 'rival', 'hard'] as const)) : G.acceptOffer(s, rng.pick(['std', 'rival', 'hard'] as const), rng.pick(['none', 'std', 'push'] as const));
             for (const n of s.run?.notes ?? []) checkText('notka', n);
           } else if (cur?.sim.pending) {
             checkText('decyzja', cur.sim.pending.text);
@@ -109,7 +117,12 @@ for (let i = 0; i < N; i++) {
           for (const c of m.contracts) { checkText('oferta', c.note); checkText('oferta', c.reason); checkText('oferta', c.fed); }
           const av = m.contracts.map((c, j) => (c.available ? j : -1)).filter((j) => j >= 0);
           if (!av.length) note('rynek: brak dostępnych ofert');
-          s = G.pickContract(s, rng.pick(av.length ? av : [0]));
+          const pick = rng.pick(av.length ? av : [0]);
+          s = G.pickContract(s, pick);
+          if (rng.chance(0.4)) {
+            s = G.negotiateContract(s, pick, rng.pick(['purse', 'bonus', 'signing'] as const));
+            checkText('negocjacje', s.market!.contracts[pick].nego?.text);
+          }
           const cl = m.clubs.map((c, j) => (G.clubAvailability(s, c).ok ? j : -1)).filter((j) => j >= 0);
           s = G.pickClub(s, rng.pick(cl.length ? cl : [0]));
           if (rng.chance(0.15)) s = G.changeDivision(s, rng.pick(G.divisionOptions(s)));

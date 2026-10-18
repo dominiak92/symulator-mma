@@ -23,6 +23,8 @@ with sync_playwright() as p:
     for step in range(600):
         if season >= SEASONS: break
         main = pg.locator('.main').inner_text() if pg.locator('.main').count() else ''
+        if pg.locator('.post-modal .btn-primary, .weigh-modal .choice, .post-modal .choice').count():
+            shot(pg, 'po-walce'); pg.locator('.post-modal .btn-primary, .weigh-modal .choice, .post-modal .choice').first.click(); pg.wait_for_timeout(300); continue
         if pg.locator('.press-modal').count():
             shot(pg, 'konferencja'); pg.locator('.press-opt').nth(1).click(); pg.wait_for_timeout(300); continue
         if pg.locator('.offer-modal').count():

@@ -132,6 +132,8 @@ with sync_playwright() as p:
             if first_time(f"ev{season}"):
                 shot(page, f"06-event-s{season+1}")
             page.locator(".step .choice").first.click()
+        elif page.locator(".post-modal .btn-primary, .weigh-modal .choice, .post-modal .choice").count():
+            page.locator(".post-modal .btn-primary, .weigh-modal .choice, .post-modal .choice").first.click(); page.wait_for_timeout(300)
         elif page.locator(".press-modal").count():
             page.locator(".press-opt").first.click(); page.wait_for_timeout(200)
         elif page.locator(".offer-modal").count():

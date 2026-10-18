@@ -71,6 +71,13 @@ type Policy = {
   tuneup?: 'always' | 'never';
   backroom?: ('physio' | 'doctor' | 'supps')[];
   shady?: boolean;
+  weigh?: 'cut' | 'pay';
+  mic?: 'champ' | 'up' | 'thanks' | 'rival';
+  job?: 'full' | 'half' | 'none';
+  social?: 'off' | 'self' | 'pro';
+  tickets?: 'none' | 'std' | 'push';
+  short?: 'always' | 'never';
+  nego?: 'purse' | 'bonus' | 'signing';
 };
 
 const weakest = (s: GameState) => [...STAT_KEYS].sort((a, b) => s.stats[a] - s.stats[b])[0];
@@ -108,6 +115,13 @@ function play(seed: number, p: Policy) {
       case 'budget': {
         if (p.backroom && G.backroomOpen(s)) for (const b of p.backroom) if (!s.backroom?.[b]) s = G.setBackroom(s, b, true);
         if (p.shady && s.shadyDeal?.status === 'open') s = G.acceptShadyDeal(s);
+        if (p.job) {
+          // rozsądnie: rzuca pracę tylko, gdy go stać
+          const prev = s.job;
+          s = G.setJob(s, p.job);
+          if (s.money + G.budgetBalance(s) < 15000) s = G.setJob(s, prev);
+        }
+        if (p.social) s = G.setSocial(s, p.social === 'pro' && (s.tier < 2 || s.money + G.budgetBalance(s) < 40000) ? 'self' : p.social);
         if (p.pitch && !pitchBlocked(s)) {
           const best = [...PITCH_SLOTS].sort((a, b) => pitchChance(s, b.id) * pitchPay(s, b.id) - pitchChance(s, a.id) * pitchPay(s, a.id))[0];
           s = pitchSponsor(s, best.id);
@@ -157,14 +171,17 @@ function play(seed: number, p: Policy) {
       case 'season': {
         const run = s.run!;
         const cur = run.fights[run.fights.length - 1];
-        if (run.press) s = pressAnswer(s, p.press ?? 'calm');
+        if (run.weigh) s = G.weighIn(s, p.weigh ?? 'pay');
+        else if (run.post) s = G.postAnswer(s, (p.mic && run.post.options.find((x) => x.key === p.mic)?.key) || run.post.options[run.post.options.length - 1].key);
+        else if (run.press) s = pressAnswer(s, p.press ?? 'calm');
         else if (run.offer) {
           const o = run.offer;
           // walkę na odbudowę rozsądny gracz bierze tylko, gdy wypadł z rankingu (albo gdy strategia każe)
-          if (o.tuneup && (p.tuneup === 'never' || (p.tuneup !== 'always' && s.rank !== null))) s = declineOffer(s);
+          if (o.short && p.short !== 'always') s = declineOffer(s);
+          else if (o.tuneup && (p.tuneup === 'never' || (p.tuneup !== 'always' && s.rank !== null))) s = declineOffer(s);
           else if (p.offers === 'negotiate' && !o.negotiated) s = negotiateOffer(s);
           else if (p.offers === 'picky' && !declineBlocked(s) && o.purse < s.contract.purse * 0.95 && (run.declines ?? 0) < 2) s = declineOffer(s);
-          else s = acceptOffer(s, p.prep ?? 'std');
+          else s = acceptOffer(s, p.prep ?? 'std', p.tickets ?? 'std');
         } else if (cur?.sim.pending) {
           const opts = [...cur.sim.pending.options];
           const st = cur.sim.pending.status;
@@ -195,6 +212,7 @@ function play(seed: number, p: Policy) {
         if (ci < 0) ci = m.contracts.findIndex((c) => c.available && c.kind !== 'freak');
         if (ci < 0) ci = m.contracts.findIndex((c) => c.available);
         s = pickContract(s, ci);
+        if (p.nego && s.market!.contracts[ci]?.kind !== 'stay') s = G.negotiateContract(s, ci, p.nego);
         let bi = 0;
         let bq = p.club === 'cheap' ? 1e9 : -1;
         m.clubs.forEach((c, i) => {
@@ -287,6 +305,21 @@ const POLICIES_ALL: Policy[] = [
   { name: 'wyjazd: Floryda', exp: 'floryda' },
   { name: 'wyjazd: Trondheim', exp: 'trondheim' },
   { name: 'akademia', academy: true },
+  { name: 'waga: sauna', division: -1, weigh: 'cut' },
+  { name: 'waga: kara', division: -1, weigh: 'pay' },
+  { name: 'mikrofon: mistrz', mic: 'champ' },
+  { name: 'mikrofon: czołówka', mic: 'up' },
+  { name: 'etat: pełny', job: 'full' },
+  { name: 'etat: pół', job: 'half' },
+  { name: 'etat: bez', job: 'none' },
+  { name: 'social: sam', social: 'self' },
+  { name: 'social: manager', social: 'pro' },
+  { name: 'bilety: odpuszcza', tickets: 'none' },
+  { name: 'bilety: kampania', tickets: 'push' },
+  { name: 'zastępstwa: zawsze', short: 'always' },
+  { name: 'kontrakt: gaża', nego: 'purse' },
+  { name: 'kontrakt: premia', nego: 'bonus' },
+  { name: 'kontrakt: bonus za podpis', nego: 'signing' },
   { name: 'obozy+akademia', camps: true, academy: true },
 ];
 const POLICIES = ONLY ? POLICIES_ALL.filter((p) => ONLY.split(',').some((o) => p.name.includes(o))) : POLICIES_ALL;
