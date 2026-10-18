@@ -27,7 +27,7 @@ export default function Summary({ game, setGame, onPeers }: StepProps & { onPeer
           <Fighter weight={divisionKey(g)} seed={`${g.profile.firstName}${g.profile.lastName}`} corner="blue" shorts={clubCrest(g.club).bg} size={92} belt={s.champion && !amateur} hurt={gradeTone === 'bad'} />
           {(s.beltWon || medals.length > 0) && (
             <div className="sum-trophies">
-              {s.beltWon && !amateur ? <Belt size={96} /> : medals.map((m, i) => <Medal key={i} kind={m} size={34} />)}
+              {s.beltWon && !amateur ? <Belt size={96} tier={s.tier} /> : medals.map((m, i) => <Medal key={i} kind={m} size={34} />)}
             </div>
           )}
         </div>
