@@ -1756,7 +1756,10 @@ function OfferCard({ g, o, n, total, setGame }: { g: GameState; o: FightOffer; n
                   <i>.</i>
                 </span>
               ) : o.negotiated ? (
-                'Po negocjacjach'
+                <span className="ofr-opt">
+                  <b>Negocjuj gażę</b>
+                  <small>już rozmawiałeś</small>
+                </span>
               ) : (
                 <span className="ofr-opt">
                   <b>Negocjuj gażę</b>
@@ -1943,6 +1946,9 @@ export default function Season({ game, setGame }: StepProps) {
   const revealSeen = useRef(last?.sim.finished ? last.idx : -1);
   const [revealIdx, setRevealIdx] = useState<number | null>(null);
   const revealOpen = !!last && revealIdx === last.idx;
+  // scena wyniku jeszcze przed nami: kolejne okna (oferta, konferencja, ważenie) czekają
+  const [revealDone, setRevealDone] = useState(() => (last?.sim.finished ? last.idx : -1));
+  const revealBusy = revealOpen || (!!last && bigMoment(last) && last.idx > revealDone);
   useEffect(() => {
     if (!last || !bigMoment(last) || last.idx <= revealSeen.current) return;
     if (revealedKey !== lastKey || introOpen) return;
@@ -2145,7 +2151,7 @@ export default function Season({ game, setGame }: StepProps) {
         </div>
       )}
 
-      {run.done && !run.post && !notice && (
+      {run.done && !run.post && !notice && !revealBusy && (
         <div className="cta-bar float" style={d(anim ? revealMs : 0)}>
           <button className="btn btn-primary btn-block btn-ico" onClick={() => setGame(toSummary(g))}>
             <Icon name="chart" />
@@ -2154,13 +2160,13 @@ export default function Season({ game, setGame }: StepProps) {
         </div>
       )}
 
-      {run.press && !run.done && createPortal(<PressCard g={g} o={run.press} setGame={setGame} />, document.body)}
-      {revealOpen && last && <ResultReveal g={g} f={last} onClose={() => setRevealIdx(null)} />}
-      {run.weigh && createPortal(<WeighCard g={g} o={run.weigh} setGame={setGame} />, document.body)}
-      {run.invite && !run.post && !notice && createPortal(<InviteCard key={run.invite.title} g={g} inv={run.invite} onDone={done} />, document.body)}
+      {run.press && !run.done && !revealBusy && createPortal(<PressCard g={g} o={run.press} setGame={setGame} />, document.body)}
+      {revealOpen && last && <ResultReveal g={g} f={last} onClose={() => { setRevealDone(last.idx); setRevealIdx(null); }} />}
+      {run.weigh && !revealBusy && createPortal(<WeighCard g={g} o={run.weigh} setGame={setGame} />, document.body)}
+      {run.invite && !run.post && !notice && !revealBusy && createPortal(<InviteCard key={run.invite.title} g={g} inv={run.invite} onDone={done} />, document.body)}
       {run.post && postShown && !notice && createPortal(<PostCard key={postKey} g={g} post={run.post} onDone={done} />, document.body)}
       {notice && createPortal(<NoticeCard n={notice} onClose={() => setNotice(null)} />, document.body)}
-      {run.offer && !run.done && createPortal(<OfferCard key={run.fights.length} g={g} o={run.offer} n={run.fights.length + 1} total={run.planned} setGame={setGame} />, document.body)}
+      {run.offer && !run.done && !revealBusy && createPortal(<OfferCard key={run.fights.length} g={g} o={run.offer} n={run.fights.length + 1} total={run.planned} setGame={setGame} />, document.body)}
       {introOpen &&
         last &&
         createPortal(
