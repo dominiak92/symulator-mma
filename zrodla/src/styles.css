@@ -7130,3 +7130,62 @@ p, .offer-note, .frow-ctx, .pst-text { text-wrap: pretty; }
 /* kafelki podsumowania: etykiety bez ucinania */
 .tiles .tile small { text-transform: none; letter-spacing: 0; font-size: 0.76rem; white-space: nowrap; }
 @media (max-width: 420px) { .tiles .tile small .ico { display: none; } }
+
+/* =====================================================================
+   System przycisków: jeden kształt, głębia jak w grze, spójne stany
+   ===================================================================== */
+.btn {
+  border-radius: 12px;
+  transition: transform 0.08s ease, filter 0.15s, box-shadow 0.15s, border-color 0.15s, background-color 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.btn:not(.btn-primary):not(.btn-gold):not(.btn-ghost) {
+  border: 1px solid var(--line);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0) 60%), var(--panel-2);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+.btn-primary {
+  background: linear-gradient(180deg, #4a33ff 0%, #2410ff 48%, #1a00d6 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.28),
+    0 10px 24px -12px rgba(31, 0, 254, 0.9);
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.25);
+}
+.btn-primary:hover:not(:disabled) { background: linear-gradient(180deg, #5a45ff 0%, #3420ff 48%, #2208e6 100%); }
+.btn-primary:active:not(:disabled) {
+  transform: translateY(1px);
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.35), 0 4px 10px -8px rgba(31, 0, 254, 0.8);
+}
+.btn-gold {
+  background: linear-gradient(180deg, #ffd760, #f5b700 55%, #d99a00);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45), inset 0 -2px 0 rgba(0, 0, 0, 0.18), 0 10px 22px -12px rgba(245, 183, 0, 0.8);
+}
+.btn-ghost {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.01));
+  border: 1px solid var(--line);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+.btn-ghost:hover:not(:disabled), .btn:not(.btn-primary):not(.btn-gold):not(.btn-ghost):hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--cyan) 55%, var(--line));
+}
+.btn:disabled { box-shadow: none; filter: saturate(0.4); }
+@media (max-width: 640px) {
+  .cta-bar .btn { border-radius: 14px; }
+  .cta-bar .btn-primary {
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.3),
+      inset 0 -2px 0 rgba(0, 0, 0, 0.28),
+      0 12px 30px -10px rgba(31, 0, 254, 0.85);
+  }
+}
+/* zakładki (obóz/wyjazdy, budżet): ten sam przełącznik co w tworzeniu postaci */
+.train-tabs, .bud-tabs { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 4px; padding: 3px; border-radius: 12px; background: var(--bg-deep); border: 1px solid var(--line); }
+.train-tabs button, .bud-tabs button {
+  appearance: none; border: 0; background: transparent; color: var(--muted); font: inherit; font-weight: 700; font-size: 0.86rem;
+  padding: 9px 6px; border-radius: 9px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  position: relative; min-height: 40px; transition: background 0.15s, color 0.15s;
+}
+.train-tabs button.on, .bud-tabs button.on { background: var(--cyan-soft); color: var(--text); box-shadow: inset 0 0 0 1.5px var(--cyan); }
+.train-tabs button:focus-visible, .bud-tabs button:focus-visible { outline: 2px solid var(--cyan); outline-offset: 1px; }
