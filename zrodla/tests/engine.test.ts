@@ -40,7 +40,8 @@ function play(seed: number, start: StartProfile = 'osiedle', pickFirst = true): 
         break;
       case 'season': {
         const cur = s.run!.fights[s.run!.fights.length - 1];
-        if (s.run!.weigh) s = G2.weighIn(s, guard % 2 ? 'cut' : 'pay');
+        if (s.run!.invite) s = G2.acceptInvite(s);
+        else if (s.run!.weigh) s = G2.weighIn(s, guard % 2 ? 'cut' : 'pay');
         else if (s.run!.post) s = G2.postAnswer(s, s.run!.post.options[guard % s.run!.post.options.length].key);
         else if (s.run!.press) s = G2.pressAnswer(s, (['calm', 'provoke', 'insult'] as const)[guard % 3]);
         else if (s.run!.offer) s = G2.acceptOffer(s, (['std', 'rival', 'hard'] as const)[guard % 3]);
@@ -204,7 +205,8 @@ describe('decyzje w walce', () => {
         else if (s.phase === 'season') {
           const run = s.run!;
           const cur = run.fights[run.fights.length - 1];
-          if (run.weigh) s = G2.weighIn(s, 'pay');
+          if (run.invite) s = G2.acceptInvite(s);
+          else if (run.weigh) s = G2.weighIn(s, 'pay');
           else if (run.post) s = G2.postAnswer(s, run.post.options[0].key);
           else if (run.press) s = G2.pressAnswer(s, 'calm');
           else if (run.offer) s = G2.acceptOffer(s);
@@ -251,7 +253,8 @@ describe('szybka kariera', () => {
           else if (s.phase === 'season') {
             const run = s.run!;
             const cur = run.fights[run.fights.length - 1];
-            if (run.weigh) s = G2.weighIn(s, 'pay');
+            if (run.invite) s = G2.acceptInvite(s);
+            else if (run.weigh) s = G2.weighIn(s, 'pay');
             else if (run.post) s = G2.postAnswer(s, run.post.options[0].key);
             else if (run.press) s = G2.pressAnswer(s, 'calm');
             else if (run.offer) s = G2.acceptOffer(s);
@@ -293,7 +296,8 @@ describe('v45: życie zawodnika', () => {
       else if (s.phase === 'season') {
         const run = s.run!;
         const cur = run.fights[run.fights.length - 1];
-        if (run.weigh) s = G2.weighIn(s, 'pay');
+        if (run.invite) s = G2.acceptInvite(s);
+        else if (run.weigh) s = G2.weighIn(s, 'pay');
         else if (run.post) s = G2.postAnswer(s, run.post.options[run.post.options.length - 1].key);
         else if (run.press) s = G2.pressAnswer(s, 'calm');
         else if (run.offer) s = G2.acceptOffer(s);
@@ -361,5 +365,71 @@ describe('v45: życie zawodnika', () => {
     expect(n.run!.post).toBeFalsy();
     const f = n.run!.fights[n.run!.fights.length - 1];
     expect(f.moments[f.moments.length - 1].title).toBe('Mikrofon');
+  });
+});
+
+describe('v47: wydarzenia poza federacją', () => {
+  it('zaproszenie blokuje rok do decyzji, a start zapisuje wynik', () => {
+    let checked = 0;
+    for (let seed = 1; seed <= 20 && checked < 3; seed++) {
+      const rng = createRng(seed);
+      let s = newGame({ slot: 1, mode: 'normal', seed, profile: { ...randomProfile(rng), start: 'osiedle' } });
+      for (let guard = 0; guard < 4000 && s.phase !== 'ended'; guard++) {
+        if (s.phase === 'season' && s.run?.invite) {
+          expect(G2.seasonNext(s)).toEqual(s);
+          const a = G2.acceptInvite(s);
+          expect(a.run!.invite).toBeFalsy();
+          expect(a.run!.sideLog?.length).toBeGreaterThan(0);
+          checked++;
+          break;
+        }
+        if (s.phase === 'training') s = doTraining(s, [...STAT_KEYS].sort((a, b) => s.stats[a] - s.stats[b])[0]);
+        else if (s.phase === 'budget') {
+          if (s.money + budgetBalance(s) < 0 && loanOffer(s)) s = takeLoan(s);
+          s = G2.canStartSeason(s) ? startSeason(s) : G2.takeBreakYear(s);
+        } else if (s.phase === 'event') s = s.event!.picked === undefined ? chooseEvent(s, 0) : continueAfterEvent(s);
+        else if (s.phase === 'season') {
+          const run = s.run!;
+          const cur = run.fights[run.fights.length - 1];
+          if (run.weigh) s = G2.weighIn(s, 'pay');
+          else if (run.post) s = G2.postAnswer(s, run.post.options[0].key);
+          else if (run.press) s = G2.pressAnswer(s, 'calm');
+          else if (run.offer) s = G2.acceptOffer(s);
+          else if (cur?.sim.pending) s = decide(s, cur.sim.pending.options[0].key);
+          else if (run.done) s = toSummary(s);
+          else s = seasonSkip(s);
+        } else if (s.phase === 'summary') s = toMarket(s);
+        else if (s.phase === 'market') s = confirmMarket(s);
+      }
+    }
+    expect(checked).toBeGreaterThan(0);
+  });
+
+  it('kontrakt na wyłączność blokuje gale za granicą, ale nie zaproszenia spoza MMA', () => {
+    for (let seed = 1; seed <= 40; seed++) {
+      const rng = createRng(seed);
+      let s = newGame({ slot: 1, mode: 'normal', seed, profile: { ...randomProfile(rng), start: 'osiedle' } });
+      for (let guard = 0; guard < 4000 && s.phase !== 'ended'; guard++) {
+        if (s.phase === 'season' && s.run?.offer?.abroad) expect(G2.isExclusiveContract(s)).toBe(false);
+        if (s.phase === 'training') s = doTraining(s, [...STAT_KEYS].sort((a, b) => s.stats[a] - s.stats[b])[0]);
+        else if (s.phase === 'budget') {
+          if (s.money + budgetBalance(s) < 0 && loanOffer(s)) s = takeLoan(s);
+          s = G2.canStartSeason(s) ? startSeason(s) : G2.takeBreakYear(s);
+        } else if (s.phase === 'event') s = s.event!.picked === undefined ? chooseEvent(s, 0) : continueAfterEvent(s);
+        else if (s.phase === 'season') {
+          const run = s.run!;
+          const cur = run.fights[run.fights.length - 1];
+          if (run.invite) s = G2.declineInvite(s);
+          else if (run.weigh) s = G2.weighIn(s, 'pay');
+          else if (run.post) s = G2.postAnswer(s, run.post.options[0].key);
+          else if (run.press) s = G2.pressAnswer(s, 'calm');
+          else if (run.offer) s = G2.acceptOffer(s);
+          else if (cur?.sim.pending) s = decide(s, cur.sim.pending.options[0].key);
+          else if (run.done) s = toSummary(s);
+          else s = seasonSkip(s);
+        } else if (s.phase === 'summary') s = toMarket(s);
+        else if (s.phase === 'market') s = confirmMarket(s);
+      }
+    }
   });
 });
