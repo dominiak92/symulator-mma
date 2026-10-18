@@ -6,6 +6,8 @@ import CareerChart from '../CareerChart';
 import { PeersTable } from '../Sheets';
 import { Belt, Confetti, CountUp, Fighter, Medal } from '../Art';
 import { clubCrest } from '../Emblem';
+import { clubLogo, fedLogo } from '../logos';
+import hallBg from '../../assets/bg/menu.webp';
 import { Icon } from '../Icon';
 import { CoachTip } from '../Tutorial';
 
@@ -22,9 +24,11 @@ export default function Summary({ game, setGame, onPeers }: StepProps & { onPeer
   return (
     <section className="step summary-step">
       <div className={`sum-hero ${gradeTone}`}>
+        <img className="sum-bg" src={hallBg} alt="" aria-hidden="true" />
+        {clubLogo(g.club?.name) && <img className="sum-crest" src={clubLogo(g.club?.name)!} alt="" aria-hidden="true" />}
         {party && <Confetti />}
         <div className="sum-art">
-          <Fighter weight={divisionKey(g)} age={g.age} seed={`${g.profile.firstName}${g.profile.lastName}`} corner="blue" shorts={clubCrest(g.club).bg} size={92} belt={s.champion && !amateur ? s.tier : false} hurt={gradeTone === 'bad'} />
+          <Fighter weight={divisionKey(g)} age={g.age} seed={`${g.profile.firstName}${g.profile.lastName}`} corner="blue" shorts={clubCrest(g.club).bg} size={112} belt={s.champion && !amateur ? s.tier : false} hurt={gradeTone === 'bad'} />
           {(s.beltWon || medals.length > 0) && (
             <div className="sum-trophies">
               {s.beltWon && !amateur ? <Belt size={96} tier={s.tier} /> : medals.map((m, i) => <Medal key={i} kind={m} size={34} />)}
@@ -32,7 +36,8 @@ export default function Summary({ game, setGame, onPeers }: StepProps & { onPeer
           )}
         </div>
         <div className="sum-head">
-          <div className="kicker">
+          <div className="kicker sum-kicker">
+            {!amateur && fedLogo(s.fed) && <img className="sum-fed" src={fedLogo(s.fed)!} alt="" aria-hidden="true" />}
             Rok {s.season} kariery · {s.year}
           </div>
           <div className={`grade ${gradeTone}`}>{s.beltWon ? (amateur ? 'Mistrz Polski amatorów!' : 'Rok z pasem!') : s.grade}</div>

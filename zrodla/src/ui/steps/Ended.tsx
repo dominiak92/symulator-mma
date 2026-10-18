@@ -13,6 +13,8 @@ import { GG } from '../brand';
 import { ACHIEVEMENTS, achIcon } from '../../engine/achievements';
 import { Confetti, Fighter } from '../Art';
 import { clubCrest } from '../Emblem';
+import { clubLogo } from '../logos';
+import hallBg from '../../assets/bg/menu.webp';
 import { Icon } from '../Icon';
 
 export default function Ended({ game, onNewCareer, onMenu }: { game: GameState; onNewCareer: () => void; onMenu: () => void }) {
@@ -76,9 +78,11 @@ export default function Ended({ game, onNewCareer, onMenu }: { game: GameState; 
     <>
       <section className="step summary-step">
         <div className={`sum-hero ${g.belts.length ? 'gold' : ''}`}>
+          <img className="sum-bg" src={hallBg} alt="" aria-hidden="true" />
+          {clubLogo(g.club?.name) && <img className="sum-crest" src={clubLogo(g.club?.name)!} alt="" aria-hidden="true" />}
           {g.belts.length > 0 && <Confetti />}
           <div className="sum-art">
-            <Fighter weight={divisionKey(g)} age={g.age} seed={`${g.profile.firstName}${g.profile.lastName}`} corner="blue" shorts={clubCrest(g.club).bg} size={96} belt={g.belts.length > 0 ? g.tier : false} />
+            <Fighter weight={divisionKey(g)} age={g.age} seed={`${g.profile.firstName}${g.profile.lastName}`} corner="blue" shorts={clubCrest(g.club).bg} size={112} belt={g.belts.length > 0 ? g.tier : false} />
           </div>
           <div className="sum-head">
             <div className="kicker">Koniec {g.quick ? 'szybkiej ' : ''}kariery · {lat(g.age)}</div>
