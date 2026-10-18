@@ -365,7 +365,7 @@ function ScoutBars({ me, opp, oppName }: { me: Stats; opp: Stats; oppName: strin
             <span className="sl">
               <Icon name={STAT_ICON[k]} size={13} />
               {label}
-              <b>{tone === 'adv' ? 'lepszy' : tone === 'dis' ? 'gorszy' : 'równo'}</b>
+              <b>{tone === 'adv' ? 'przewaga' : tone === 'dis' ? 'on lepszy' : 'równo'}</b>
             </span>
             <span className="sbar op">
               <i style={{ width: `${Math.min(100, b)}%` }} />
@@ -1021,17 +1021,27 @@ function OfferCard({ g, o, n, total, setGame }: { g: GameState; o: FightOffer; n
           )}
           {!opp.freak && opp.rank === null && !o.tuneup && <span className="tag">poza rankingiem</span>}
           {!opp.freak && (() => {
+            // to samo porównanie co w planie na walkę: ty kontra rywal
+            const me = effectiveStats(g);
             const ks = ['stand', 'wrest', 'bjj'] as const;
-            const weak = ks.reduce((a, b) => (opp.stats[b] < opp.stats[a] ? b : a), 'stand' as (typeof ks)[number]);
-            const strong = ks.reduce((a, b) => (opp.stats[b] > opp.stats[a] ? b : a), 'stand' as (typeof ks)[number]);
-            if (opp.stats[strong] - opp.stats[weak] < 5) return null;
             const nm = { stand: 'stójka', wrest: 'zapasy', bjj: 'parter' };
-            return (
-              <span className="tag good" title="Z nagrań rywala">
-                <Icon name="target" size={12} />
-                słabszy: {nm[weak]}
-              </span>
-            );
+            const best = ks.reduce((a, b) => (me[b] - opp.stats[b] > me[a] - opp.stats[a] ? b : a), 'stand' as (typeof ks)[number]);
+            const d = me[best] - opp.stats[best];
+            if (d >= 4)
+              return (
+                <span className="tag good" title="Twoja największa przewaga nad rywalem">
+                  <Icon name="target" size={12} />
+                  twoja przewaga: {nm[best]}
+                </span>
+              );
+            if (d <= -4)
+              return (
+                <span className="tag bad" title="Rywal jest lepszy w każdej płaszczyźnie">
+                  <Icon name="target" size={12} />
+                  rywal lepszy wszędzie
+                </span>
+              );
+            return null;
           })()}
           {o.tuneup && (
             <>
