@@ -7189,3 +7189,16 @@ p, .offer-note, .frow-ctx, .pst-text { text-wrap: pretty; }
 }
 .train-tabs button.on, .bud-tabs button.on { background: var(--cyan-soft); color: var(--text); box-shadow: inset 0 0 0 1.5px var(--cyan); }
 .train-tabs button:focus-visible, .bud-tabs button:focus-visible { outline: 2px solid var(--cyan); outline-offset: 1px; }
+/* kroki tworzenia postaci */
+.cr-steps { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 10px; }
+.cr-step {
+  appearance: none; display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 10px; cursor: pointer;
+  border: 1px solid var(--line); background: var(--panel); color: var(--muted); font: inherit; font-weight: 700; font-size: 0.88rem;
+}
+.cr-step i { font-style: normal; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-size: 0.75rem; background: var(--bg-deep); border: 1px solid var(--line); }
+.cr-step.on { color: var(--text); border-color: var(--cyan); background: var(--cyan-soft); }
+.cr-step.on i { background: var(--cyan); color: #04121c; border-color: var(--cyan); }
+.cr-step.done i { background: var(--good); color: #04120a; border-color: var(--good); }
+.cr-pane { animation: crIn 0.3s cubic-bezier(0.2, 0.9, 0.3, 1) both; }
+@keyframes crIn { from { opacity: 0; transform: translateX(16px); } }
+@media (prefers-reduced-motion: reduce) { .cr-pane { animation: none; } }
