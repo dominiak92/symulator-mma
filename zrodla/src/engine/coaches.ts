@@ -15,7 +15,7 @@ export interface Coach {
 }
 
 export const COACHES: Coach[] = [
-  { id: 'club', name: 'Trener klubowy', role: 'w cenie klubu', desc: 'Prowadzi całą grupę. Bez fajerwerków, za to za darmo.', growth: {} },
+  { id: 'club', name: 'Trener klubowy', role: 'prowadzi całą grupę', desc: 'Bez fajerwerków, za to za darmo. Na treningu ma pod opieką dwudziestu chłopaków naraz.', growth: {} },
   { id: 'boks', name: 'Zbigniew „Lewy” Maciąg', role: 'trener boksu', desc: 'Były olimpijczyk. Tarcze, worki i sparingi z bokserami: stójka i szczęka rosną szybciej.', growth: { stand: 1.2, chin: 1.1 } },
   { id: 'parter', name: 'Paulo „Gringo” Souza', role: 'trener BJJ i zapasów', desc: 'Czarny pas z Rio, od lat w Polsce. Zapasy i parter rosną szybciej.', growth: { wrest: 1.2, bjj: 1.3 } },
   { id: 'naroznik', name: 'Ryszard „Profesor” Bielak', role: 'taktyk w narożniku', desc: 'Między rundami mówi trzy zdania i każde trafia. +3% do każdej decyzji od 2. rundy, taktyka rośnie szybciej.', growth: { iq: 1.3 }, corner: { from: 2, bonus: 3 } },
