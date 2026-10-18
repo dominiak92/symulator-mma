@@ -1,4 +1,9 @@
 import { STAT_LABELS, TIER_LEVEL } from '../../engine/data';
+import coachClub from '../../assets/coaches/club.webp';
+import coachBoks from '../../assets/coaches/boks.webp';
+import coachParter from '../../assets/coaches/parter.webp';
+import coachNaroznik from '../../assets/coaches/naroznik.webp';
+import coachKontakty from '../../assets/coaches/kontakty.webp';
 import { ovr } from '../../engine/fighter';
 import { negotiateContract, recStr, changeDivision, clubAvailability, clubLimits, confirmMarket, divisionKey, divisionOptions, marketWarnings, pickClub, pickContract, retire, retireBonus, setCoach, setManager, weightMissChance } from '../../engine/game';
 import { WEIGHTS } from '../../engine/data';
@@ -405,9 +410,7 @@ function CoachPick({ game: g, setGame }: StepProps) {
       </h3>
       {!open ? (
         <div className="mgr-compact">
-          <span className={`coach-av c-${cur.id}`} aria-hidden="true">
-            <Icon name={COACH_ICON[cur.id]} size={18} />
-          </span>
+          <img className={`coach-av c-${cur.id}`} src={COACH_IMG[cur.id]} alt="" aria-hidden="true" />
           <div className="mgr-c-txt">
             <b>{cur.name}</b>
             <small>
@@ -434,9 +437,7 @@ function CoachPick({ game: g, setGame }: StepProps) {
             >
               <span className="offer-top">
                 <span className="fed-row">
-                  <span className={`coach-av c-${c.id}`} aria-hidden="true">
-                    <Icon name={COACH_ICON[c.id]} size={18} />
-                  </span>
+                  <img className={`coach-av c-${c.id}`} src={COACH_IMG[c.id]} alt="" aria-hidden="true" />
                   <span className="fed">
                     {c.name}
                     <small className="club-sub">
@@ -458,7 +459,7 @@ function CoachPick({ game: g, setGame }: StepProps) {
   );
 }
 
-const COACH_ICON: Record<CoachId, string> = { club: 'home', boks: 'glove', parter: 'knot', naroznik: 'target', kontakty: 'pin' };
+const COACH_IMG: Record<CoachId, string> = { club: coachClub, boks: coachBoks, parter: coachParter, naroznik: coachNaroznik, kontakty: coachKontakty };
 
 function ManagerPick({ game: g, setGame }: StepProps) {
   const cur = currentManager(g);
