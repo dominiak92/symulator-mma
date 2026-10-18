@@ -1,5 +1,5 @@
 import { STAT_LABELS } from '../../engine/data';
-import { setJob, setSocial, acceptShadyDeal, refuseShadyDeal, BACKROOM, backroomAvailable, backroomCost, backroomOpen, hasLabs, setBackroom, cheaperClub, downgradeClub, fightRange, plannedFights, setWantFights, ACADEMY_LEVELS, academyName, academyNext, investAcademy, OVERDRAFT, PITCH_SLOTS, pitchBlocked, pitchChance, pitchPay, pitchSponsor, breakPreview, budgetBalance, budgetLines, canStartSeason, expectedPurses, loanOffer, loanRefusal, startSeason, takeBreakYear, takeLoan } from '../../engine/game';
+import { DONATIONS, donate, foundationLegacy, foundationOpen, setYearGoal, yearGoalOptions, yearGoalReward, currentYearGoal, setJob, setSocial, acceptShadyDeal, refuseShadyDeal, BACKROOM, backroomAvailable, backroomCost, backroomOpen, hasLabs, setBackroom, cheaperClub, downgradeClub, fightRange, plannedFights, setWantFights, ACADEMY_LEVELS, academyName, academyNext, investAcademy, OVERDRAFT, PITCH_SLOTS, pitchBlocked, pitchChance, pitchPay, pitchSponsor, breakPreview, budgetBalance, budgetLines, canStartSeason, expectedPurses, loanOffer, loanRefusal, startSeason, takeBreakYear, takeLoan } from '../../engine/game';
 import { useState, type CSSProperties } from 'react';
 import type { StatKey } from '../../engine/types';
 import { money, plural } from '../../format';
@@ -30,6 +30,19 @@ export default function Budget({ game, setGame }: StepProps) {
   const showAcad = acad > 0 || g.tier >= 2;
   const pitchDone = !!g.pitch && g.pitch.season === g.season;
   const blocked = pitchBlocked(g);
+  // zakładki: rachunek, życie, zaplecze, sponsorzy (pokazujemy tylko te, w których jest coś do zrobienia)
+  const showLife = !!jobMode(g) || !!g.proDebut;
+  const showBack = backroomOpen(g) || showAcad || g.tier >= 3;
+  const shadyOpen = !!g.shadyDeal && g.shadyDeal.season === g.season && g.shadyDeal.status === 'open';
+  const showSpons = g.age >= 18 || !!g.proDebut || shadyOpen;
+  type Tab = 'bill' | 'life' | 'back' | 'spons';
+  const tabs: { id: Tab; label: string; icon: string; dot?: boolean }[] = [
+    { id: 'bill', label: 'Rachunek', icon: 'receipt', dot: after < 0 },
+    ...(showLife ? [{ id: 'life' as Tab, label: 'Życie', icon: 'home' }] : []),
+    ...(showBack ? [{ id: 'back' as Tab, label: 'Zaplecze', icon: 'users' }] : []),
+    ...(showSpons ? [{ id: 'spons' as Tab, label: 'Sponsorzy', icon: 'briefcase', dot: shadyOpen || (!pitchDone && !blocked) }] : []),
+  ];
+  const [tab, setTab] = useState<Tab>('bill');
   const purses = expectedPurses(g);
   const range = fightRange(g);
   const want = plannedFights(g);
@@ -65,6 +78,21 @@ export default function Budget({ game, setGame }: StepProps) {
           {money(g.money)}
         </span>
       </div>
+
+      {tabs.length > 1 && (
+        <div className="bud-tabs" role="tablist" aria-label="Budżet">
+          {tabs.map((x) => (
+            <button key={x.id} role="tab" aria-selected={tab === x.id} className={tab === x.id ? 'on' : ''} onClick={() => setTab(x.id)}>
+              <Icon name={x.icon} size={14} />
+              {x.label}
+              {x.dot && <i className="bud-dot" aria-label="wymaga uwagi" />}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {tab === 'bill' && (
+        <>
 
       <div className="ledger">
         {lines.map((l, i) => (
@@ -141,9 +169,13 @@ export default function Budget({ game, setGame }: StepProps) {
         </p>
       )}
 
-      <LifePicks g={g} setGame={setGame} />
+      <YearGoalPick g={g} setGame={setGame} />
+        </>
+      )}
 
-      {backroomOpen(g) && (
+      {tab === 'life' && <LifePicks g={g} setGame={setGame} />}
+
+      {tab === 'back' && backroomOpen(g) && (
         <section className="backroom">
           <div className="br-head">
             <Icon name="users" size={15} />
@@ -195,7 +227,7 @@ export default function Budget({ game, setGame }: StepProps) {
         </section>
       )}
 
-      {after < 0 && (
+      {after < 0 && tab === 'bill' && (
         <div className="money-trouble">
           <div className="mt-head">
             <Icon name="card" size={18} />
@@ -265,7 +297,7 @@ export default function Budget({ game, setGame }: StepProps) {
         </div>
       )}
 
-      {g.shadyDeal && g.shadyDeal.season === g.season && g.shadyDeal.status !== 'refused' && (
+      {tab === 'spons' && g.shadyDeal && g.shadyDeal.season === g.season && g.shadyDeal.status !== 'refused' && (
         <section className={`shady ${g.shadyDeal.status}`}>
           <div className="shady-head">
             <span className="mgr-tip-ico">
@@ -322,6 +354,7 @@ export default function Budget({ game, setGame }: StepProps) {
         </section>
       )}
 
+      {tab === 'spons' && (
       <section className="pitch">
         <div className="pitch-head">
           <span className="ledger-ico plus">
@@ -371,8 +404,11 @@ export default function Budget({ game, setGame }: StepProps) {
           </button>
         )}
       </section>
+      )}
 
-      {showAcad && (
+      {tab === 'back' && <BigSpend g={g} setGame={setGame} />}
+
+      {tab === 'back' && showAcad && (
         <section className="pitch acad">
           <div className="pitch-head">
             <span className="ledger-ico plus">
@@ -471,6 +507,7 @@ function LifePicks({ g, setGame }: { g: StepProps['game']; setGame: StepProps['s
           </small>
         </section>
       )}
+      {g.proDebut && (
       <section className="life-pick">
         <div className="br-head">
           <Icon name="phone" size={15} />
@@ -493,6 +530,72 @@ function LifePicks({ g, setGame }: { g: StepProps['game']; setGame: StepProps['s
           {sm !== 'off' && inc > 0 ? ` Współprace: ok. ${money(inc)} w tym roku.` : sm !== 'off' ? ' Marki zaczną płacić od 2 tys. obserwujących.' : ''} Obserwujący pomagają sprzedawać bilety i szukać sponsorów.
         </small>
       </section>
+      )}
     </>
+  );
+}
+
+/** Cel roku od federacji: jeden z trzech, premia po roku. */
+function YearGoalPick({ g, setGame }: { g: StepProps['game']; setGame: StepProps['setGame'] }) {
+  const opts = yearGoalOptions(g);
+  if (!opts.length) return null;
+  const cur = currentYearGoal(g);
+  return (
+    <section className="goal-pick">
+      <div className="br-head">
+        <Icon name="target" size={15} />
+        <b>Cel na ten rok</b>
+        <span className="faint small">od federacji, premia po roku</span>
+      </div>
+      <CoachTip id="yeargoal">Federacja płaci premię za wykonany cel roku. Trudniejszy cel daje więcej, ale jeśli się nie uda, nie dostajesz nic. Postęp widać w trakcie roku.</CoachTip>
+      <div className="goal-list" role="radiogroup" aria-label="Cel na ten rok">
+        {opts.map((o) => {
+          const on = cur?.id === o.id;
+          return (
+            <button key={o.id} role="radio" aria-checked={on} className={`goal-opt ${on ? 'on' : ''}`} onClick={() => setGame(setYearGoal(g, on ? null : o.id))}>
+              <span className="goal-top">
+                <b>{o.label}</b>
+                <span className="goal-pay">+{money(yearGoalReward(g, o))}{o.extra ? ` · ${o.extra}` : ''}</span>
+              </span>
+              <span className="desc">{o.desc}</span>
+            </button>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+/** Duże wydatki pod koniec kariery: fundacja (reputacja i LEGACY). */
+function BigSpend({ g, setGame }: { g: StepProps['game']; setGame: StepProps['setGame'] }) {
+  if (!foundationOpen(g)) return null;
+  const done = g.flags.donatedYear === g.season;
+  const total = g.flags.donated ?? 0;
+  return (
+    <section className="pitch acad found">
+      <div className="pitch-head">
+        <span className="ledger-ico plus">
+          <Icon name="heart" size={16} />
+        </span>
+        <div>
+          <b>Fundacja twojego imienia</b>
+          <small>
+            Sale treningowe dla dzieci z małych miast. Raz na rok wpłata zamienia pieniądze na reputację i punkty LEGACY.
+            {total > 0 ? ` Do tej pory: ${money(total)}, +${foundationLegacy(g)} LEGACY.` : ''}
+          </small>
+        </div>
+      </div>
+      {done ? (
+        <p className="muted small" style={{ margin: 0 }}>W tym roku już wpłaciłeś. Kolejna wpłata za rok.</p>
+      ) : (
+        <div className="found-row">
+          {DONATIONS.map((a) => (
+            <button key={a} className="btn btn-ghost btn-small" disabled={g.money < a} onClick={() => setGame(donate(g, a))}>
+              {money(a)}
+            </button>
+          ))}
+        </div>
+      )}
+    </section>
   );
 }

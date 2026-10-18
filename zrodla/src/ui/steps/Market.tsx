@@ -6,7 +6,7 @@ import { MANAGERS, currentManager, managerBlocked } from '../../engine/managers'
 import type { Contract } from '../../engine/types';
 import { lat, money, plural } from '../../format';
 import type { StepProps } from '../Game';
-import { Emblem, clubCrest, crestFor } from '../Emblem';
+import { Emblem, FedEmblem, clubCrest } from '../Emblem';
 import { useState } from 'react';
 import ContractSheet from '../ContractSheet';
 import { Icon, STAT_ICON } from '../Icon';
@@ -77,7 +77,7 @@ export default function Market({ game, setGame }: StepProps) {
               <button key={c.id} className="offer" role="radio" aria-checked={m.pickedContract === idx} onClick={() => setGame(pickContract(g, idx))}>
                 <span className="offer-top">
                   <span className="fed-row">
-                    {!(c.kind === 'stay' && c.tier === 0) && <Emblem spec={crestFor(c.fed)} size={34} title={c.fed} />}
+                    {!(c.kind === 'stay' && c.tier === 0) && <FedEmblem name={c.fed} size={38} />}
                     <span className="fed">{c.kind === 'stay' && c.tier === 0 ? 'Amatorka' : c.fed}</span>
                   </span>
                   <span className={`tag ${debut ? 'gold' : k.tone}`}>
@@ -189,7 +189,7 @@ export default function Market({ game, setGame }: StepProps) {
             <div className="acc-body locked-clubs">
               {watching.map((c) => (
                 <div key={c.id} className="locked-club">
-                  <Emblem spec={crestFor(c.fed)} size={26} title={c.fed} />
+                  <FedEmblem name={c.fed} size={28} />
                   <span>
                     <b>{c.fed}</b>
                     <small>

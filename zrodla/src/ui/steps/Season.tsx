@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from
 import { createPortal } from 'react-dom';
 import type { CardSpot, DecisionOption, DecisionPoint, FightOffer, FightReport, GameState, Moment, Stats } from '../../engine/types';
 import { galaPrefix, SEASON_FORMS, STAGE_LABELS, STAT_LABELS, STYLE_LABELS } from '../../engine/data';
-import { acceptInvite, declineInvite, inviteChance, cutChance, postAnswer, weighIn, divisionKey, effectiveStats, weightMissChance, PRESS_OPTIONS, pressAnswer, prepCost, acceptAllOffers, acceptOffer, declineBlocked, declineOffer, decide, negotiateChance, negotiateOffer, recStr, seasonNext, seasonSkip, toSummary } from '../../engine/game';
+import { currentYearGoal, acceptInvite, declineInvite, inviteChance, cutChance, postAnswer, weighIn, divisionKey, effectiveStats, weightMissChance, PRESS_OPTIONS, pressAnswer, prepCost, acceptAllOffers, acceptOffer, declineBlocked, declineOffer, decide, negotiateChance, negotiateOffer, recStr, seasonNext, seasonSkip, toSummary } from '../../engine/game';
 import { activeManager, currentManager } from '../../engine/managers';
 import { sfxCash, sfxClick, sfxCrowd, sfxGong, sfxLoss, sfxThud } from '../sound';
 import { OUTCOME_LABEL } from '../../engine/fight';
@@ -12,7 +12,7 @@ import { ChanceTag } from '../Chance';
 import type { StepProps } from '../Game';
 import { GG } from '../brand';
 import { Belt, Confetti, Fighter, Medal } from '../Art';
-import { Emblem, clubCrest, crestFor } from '../Emblem';
+import { FedEmblem, clubCrest } from '../Emblem';
 import { Icon, STAT_ICON } from '../Icon';
 import { CoachTip } from '../Tutorial';
 import { chanceWord } from '../Chance';
@@ -802,7 +802,7 @@ function GalaPoster({ g, f, n, total, onGo, paused }: { g: GameState; f: FightRe
         <span className="pst-ribbon">{th.ribbon}</span>
         <div className="pst-head">
           <div className="pst-brand">
-            <Emblem spec={crestFor(f.fed)} size={30} title={f.fed} />
+            <FedEmblem name={f.abroad && f.gala ? f.gala : f.fed} size={44} />
             <small>{galaPrefix(f.fed)} przedstawia</small>
           </div>
           <h2>{f.tuneup || f.abroad ? f.gala?.split(' · ')[0] : f.gala}</h2>
@@ -1828,6 +1828,7 @@ export default function Season({ game, setGame }: StepProps) {
           {lastRes === 'L' && <i>▼</i>}
         </div>
       </div>
+      <GoalPill g={g} />
       <FormReel g={g} spinning={spinning} onDone={() => {
           setSpinning(false);
           setPaused(true);
@@ -1953,5 +1954,20 @@ export default function Season({ game, setGame }: StepProps) {
           document.body,
         )}
     </section>
+  );
+}
+
+/** Cel roku: postęp widoczny w trakcie sezonu. */
+function GoalPill({ g }: { g: GameState }) {
+  const goal = currentYearGoal(g);
+  if (!goal || !g.run || g.run.tourneys) return null;
+  const cur = Math.min(goal.need, goal.progress(g, g.run.fights));
+  const done = cur >= goal.need;
+  return (
+    <div className={`goal-pill ${done ? 'done' : ''}`}>
+      <Icon name={done ? 'check' : 'target'} size={13} />
+      <span>Cel roku: {goal.label}</span>
+      <b>{goal.id === 'clean' && cur === 0 && g.run.fights.some((f) => f.result === 'L') ? 'nie wyszło' : `${cur}/${goal.need}`}</b>
+    </div>
   );
 }
