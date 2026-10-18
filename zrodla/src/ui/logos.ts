@@ -30,6 +30,34 @@ import L_t_halusky from '../assets/logos/t-halusky.webp';
 import L_t_granica from '../assets/logos/t-granica.webp';
 import L_t_klatka from '../assets/logos/t-klatka.webp';
 
+import C_gracje from '../assets/clubs/gracje.webp';
+import C_blarney from '../assets/clubs/blarney.webp';
+import C_allgw from '../assets/clubs/allgw.webp';
+import C_barracuda from '../assets/clubs/barracuda.webp';
+import C_waz from '../assets/clubs/waz.webp';
+import C_phuket from '../assets/clubs/phuket.webp';
+import C_alfa from '../assets/clubs/alfa.webp';
+import C_orly from '../assets/clubs/orly.webp';
+import C_jackman from '../assets/clubs/jackman.webp';
+import C_dziki from '../assets/clubs/dziki.webp';
+import C_meduza from '../assets/clubs/meduza.webp';
+import C_lwy from '../assets/clubs/lwy.webp';
+import C_sparta from '../assets/clubs/sparta.webp';
+import C_hutnik from '../assets/clubs/hutnik.webp';
+import C_kimura from '../assets/clubs/kimura.webp';
+import C_miasto from '../assets/clubs/miasto.webp';
+import C_atd from '../assets/clubs/atd.webp';
+import C_altitude from '../assets/clubs/altitude.webp';
+import C_remiza from '../assets/clubs/remiza.webp';
+import C_garaz from '../assets/clubs/garaz.webp';
+import C_klos from '../assets/clubs/klos.webp';
+import C_berzerker from '../assets/clubs/berzerker.webp';
+import C_arachnion from '../assets/clubs/arachnion.webp';
+import C_wza from '../assets/clubs/wza.webp';
+import C_killklif from '../assets/clubs/killklif.webp';
+import S_kebab from '../assets/sponsors/kebab.webp';
+import S_myjnia from '../assets/sponsors/myjnia.webp';
+
 const LOGOS: [string, string][] = [
   ['Babel', L_babel],
   ['Armada', L_armada],
@@ -67,4 +95,47 @@ export function fedLogo(name: string | undefined | null): string | null {
   if (!name) return null;
   const hit = LOGOS.find(([k]) => name.startsWith(k));
   return hit ? hit[1] : null;
+}
+
+const CLUBS: Record<string, string> = {
+  'Gracje Barra Rio': C_gracje,
+  'Straight Blarney Gym': C_blarney,
+  'All-Gwiazdy Sztokholm': C_allgw,
+  'Barracuda Top Team': C_barracuda,
+  'Czerwony Wąż': C_waz,
+  'Phuket Top Camp': C_phuket,
+  'Team Alfa Samiec': C_alfa,
+  'Orły Machaczkała': C_orly,
+  'Jackman-Wonk': C_jackman,
+  'Dziki Zachód Szczecin': C_dziki,
+  'Meduza Łódź': C_meduza,
+  'Lubelskie Lwy': C_lwy,
+  'Sparta Fight Club': C_sparta,
+  'Hutnik Bytom': C_hutnik,
+  'Akademia Kimura Kraków': C_kimura,
+  'Miasto Kickboxing': C_miasto,
+  'American Top Dog': C_atd,
+  'Altitude Fight Lab': C_altitude,
+  'Remiza Team': C_remiza,
+  'Garaż u Zbyszka': C_garaz,
+  'LZS Kłos Fight': C_klos,
+  'Berzerker Brothers': C_berzerker,
+  'Arachnion Olsztyn': C_arachnion,
+  'WZA Fight Team': C_wza,
+  'Kill Klif FC': C_killklif,
+};
+
+/** Herb klubu (grafika), gdy jest. */
+export function clubLogo(name: string | undefined | null): string | null {
+  return name ? CLUBS[name] ?? null : null;
+}
+
+const SPONSORS: [RegExp, string][] = [
+  [/^Kebab u Ahmeda/i, S_kebab],
+  [/^Myjnia Bąbelek/i, S_myjnia],
+];
+
+/** Logo sponsora (grafika), gdy jest. */
+export function sponsorLogo(name: string): string | null {
+  return SPONSORS.find(([re]) => re.test(name))?.[1] ?? null;
 }

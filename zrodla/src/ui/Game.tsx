@@ -24,7 +24,7 @@ import { Medal } from './Art';
 import { Tutorial } from './Tutorial';
 import { sfxClick, unlockAudio } from './sound';
 import { loadGoals, loadSettings, saveSettings } from '../storage';
-import { Emblem, FedEmblem, SponsorLogo, clubCrest } from './Emblem';
+import { ClubEmblem, FedEmblem, SponsorLogo } from './Emblem';
 
 const PHASES: Phase[] = ['training', 'budget', 'event', 'season', 'summary', 'market'];
 const PHASE_LABEL: Record<Phase, string> = {
@@ -519,7 +519,7 @@ function ClubPanel({ g, plain }: { g: GameState; plain?: boolean }) {
         <span className="tag">poziom {g.club.quality} z 5</span>
       </div>
       <div className="club-row">
-        <Emblem spec={clubCrest(g.club)} size={46} title={g.club.name} />
+        <ClubEmblem club={g.club} size={50} />
         <div>
           <h3 className="panel-h">{g.club.name}</h3>
           <p className="muted small">

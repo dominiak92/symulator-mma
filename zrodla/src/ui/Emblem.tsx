@@ -3,7 +3,7 @@ import type { CrestSpec, CrestShape } from '../engine/data';
 import { CLUB_TEMPLATES } from '../engine/data';
 import type { Club } from '../engine/types';
 import { GG } from './brand';
-import { fedLogo } from './logos';
+import { clubLogo, fedLogo, sponsorLogo } from './logos';
 
 // Ikony w polu 24×24. Wypełnione kształty albo linie (stroke).
 const ICONS: Record<string, { d: string; stroke?: boolean }[]> = {
@@ -197,6 +197,8 @@ export function Emblem({ spec, size = 40, title }: { spec: CrestSpec; size?: num
 export function SponsorLogo({ name, size = 28 }: { name: string; size?: number }) {
   if (/ground game labs/i.test(name)) return <img className="sponsor-gg" src={GG.labs} alt="Ground Game Labs" style={{ height: size, width: 'auto' }} />;
   if (/ground game/i.test(name)) return <img className="sponsor-gg" src={GG.banda} alt="Ground Game Banda" style={{ height: size, width: 'auto' }} />;
+  const src = sponsorLogo(name);
+  if (src) return <img className="fed-logo" src={src} alt={name} title={name} width={size} height={size} style={{ width: size, height: size }} />;
   return <Emblem spec={crestFor(name, 'badge')} size={size} title={name} />;
 }
 
@@ -224,4 +226,11 @@ export function FedEmblem({ name, size = 32 }: { name: string; size?: number }) 
   const src = fedLogo(name);
   if (src) return <img className="fed-logo" src={src} alt={name} title={name} width={size} height={size} style={{ width: size, height: size }} />;
   return <Emblem spec={crestFor(name)} size={size} title={name} />;
+}
+
+/** Herb klubu: grafika, gdy jest, a w innym razie wygenerowana odznaka. */
+export function ClubEmblem({ club, size = 34 }: { club: Pick<Club, 'id' | 'name'>; size?: number }) {
+  const src = clubLogo(club.name);
+  if (src) return <img className="fed-logo club-logo" src={src} alt={club.name} title={club.name} width={size} height={size} style={{ width: size, height: size }} />;
+  return <Emblem spec={clubCrest(club)} size={size} title={club.name} />;
 }
