@@ -25,7 +25,7 @@ const SLIDES: Slide[] = [
   },
   {
     title: 'Trenuj z głową',
-    text: 'Masz sześć umiejętności. Przed każdym rokiem wybierasz jedną, która urośnie najbardziej. OVR to twoja ogólna siła, czyli średnia wszystkich.',
+    text: 'Masz sześć umiejętności. Przed każdym rokiem wybierasz jedną, która urośnie najbardziej. Jedna broń bez reszty to błąd: zawodowi rywale oglądają nagrania i szykują się na nią.',
     art: (
       <div className="tut-stats">
         {STAT_KEYS.map((k) => (
@@ -39,7 +39,7 @@ const SLIDES: Slide[] = [
   },
   {
     title: 'Walczysz i decydujesz',
-    text: 'Walki toczą się same, a ty oglądasz je na żywo. W ważnym momencie trener pyta o plan. Pewny wybór daje mało, ryzyko może skończyć walkę albo ciebie. Patrz na karty i siły.',
+    text: 'Przed każdą walką zawodową wybierasz plan, a scouting podpowiada, gdzie rywal jest słaby. W trakcie trener czasem pyta o zmianę, a w walkach o pas decydujesz w każdej przerwie.',
     art: (
       <div className="tut-choice">
         <div className="tut-opt">

@@ -641,7 +641,7 @@ function WearBar({ wear }: { wear: number }) {
 /** Ostrzeżenie: zawodnik jednowymiarowy jest przewidywalny dla rywali. */
 function PredictNote({ g }: { g: GameState }) {
   const pr = predictability(g.stats);
-  if (pr.spike < 3) return null;
+  if (pr.spike < 3 || g.tier < 1) return null;
   const what = { stand: 'stójkę', wrest: 'zapasy', bjj: 'parter' }[pr.stat];
   return (
     <p className={`predict-note ${pr.spike >= 10 ? 'hot' : ''}`}>
