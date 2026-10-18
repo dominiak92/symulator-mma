@@ -511,6 +511,8 @@ export interface Profile {
   style: Style;
   start: StartProfile;
   difficulty: Difficulty;
+  /** korzenie (tylko wygląd: karnacja), domyślnie Polska */
+  origin?: string;
 }
 
 export interface Ending {
