@@ -3,7 +3,7 @@ import { shownRecord, useHudHold } from './hudHold';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { GameState, Phase } from '../engine/types';
 import { predictability } from '../engine/fight';
-import { todaysGoals, weekEndsIn } from '../engine/goals';
+import { goalBlockedInQuick, goalMet, todaysGoals, weekEndsIn } from '../engine/goals';
 import { STAT_KEYS, STAT_LABELS, STAT_DESC, START_PROFILES, STYLE_LABELS, TIER_NAMES, DIFFICULTY, WEIGHTS, amateurDivision } from '../engine/data';
 import { debutCheck, displayName, rankStr, rankingTable, recStr, tourneyResultText } from '../engine/game';
 import { ovr } from '../engine/fighter';
@@ -686,8 +686,8 @@ function GoalsSheet({ g, onClose }: { g: GameState; onClose: () => void }) {
         Zaliczają się, gdy skończysz karierę. Seria dni: {gs.streak}.
       </p>
       <ul className="goal-list">
-        {t.daily.map((x) => row(x.id, x.title, x.desc, x.check, gs.dailyDone.includes(x.id)))}
-        {row(t.weekly.id, t.weekly.title, t.weekly.desc, t.weekly.check, gs.weeklyDone, true)}
+        {t.daily.map((x) => row(x.id, x.title, g.quick && goalBlockedInQuick(x.id) ? `${x.desc} Nie liczy się w szybkiej karierze.` : x.desc, (st) => goalMet(x, st), gs.dailyDone.includes(x.id)))}
+        {row(t.weekly.id, t.weekly.title, g.quick && goalBlockedInQuick(t.weekly.id) ? `${t.weekly.desc} Nie liczy się w szybkiej karierze.` : t.weekly.desc, (st) => goalMet(t.weekly, st), gs.weeklyDone, true)}
       </ul>
     </>
   );
