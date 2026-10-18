@@ -46,6 +46,7 @@ import {
   toSummary,
 } from '../src/engine/game';
 import { createRng } from '../src/engine/rng';
+import { PERKS, perkUnlocked } from '../src/engine/perks';
 import { MANAGERS, managerBlocked } from '../src/engine/managers';
 import { ovr } from '../src/engine/fighter';
 import type { GameState, StatKey } from '../src/engine/types';
@@ -78,6 +79,7 @@ type Policy = {
   tickets?: 'none' | 'std' | 'push';
   short?: 'always' | 'never';
   nego?: 'purse' | 'bonus' | 'signing';
+  perks?: boolean;
 };
 
 const weakest = (s: GameState) => [...STAT_KEYS].sort((a, b) => s.stats[a] - s.stats[b])[0];
@@ -108,6 +110,10 @@ function play(seed: number, p: Policy) {
         if (p.camps && !campBlocked(s) && s.money - campCost(s) + budgetBalance(s) > 20000) {
           const sorted = [...CAMPS].sort((a, b) => s.stats[a.main] - s.stats[b.main]);
           camp = sorted[0].id;
+        }
+        if (p.perks) {
+          const un = PERKS.filter((x) => perkUnlocked(s, x)).sort((a, b) => s.stats[b.req.stat] - s.stats[a.req.stat]);
+          s = G.setPerks(s, un.slice(0, 2).map((x) => x.id));
         }
         s = doTraining(s, k, camp);
         break;
@@ -321,6 +327,7 @@ const POLICIES_ALL: Policy[] = [
   { name: 'kontrakt: gaża', nego: 'purse' },
   { name: 'kontrakt: premia', nego: 'bonus' },
   { name: 'kontrakt: bonus za podpis', nego: 'signing' },
+  { name: 'atuty', perks: true },
   { name: 'obozy+akademia', camps: true, academy: true },
 ];
 const POLICIES = ONLY ? POLICIES_ALL.filter((p) => ONLY.split(',').some((o) => p.name.includes(o))) : POLICIES_ALL;
