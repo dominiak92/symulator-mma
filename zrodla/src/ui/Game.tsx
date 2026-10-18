@@ -1,4 +1,5 @@
 import TextSize from './TextSize';
+import { fmtFans, followersOf } from '../engine/extras';
 import { shownRecord, useHudHold } from './hudHold';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { GameState, Phase } from '../engine/types';
@@ -433,6 +434,8 @@ function SkillsPanel({ g, plain }: { g: GameState; plain?: boolean }) {
         <b>
           {g.media} / {g.rep}
         </b>
+        <span>Obserwujący</span>
+        <b>{fmtFans(followersOf(g))}</b>
         <span>Start</span>
         <b>{START_PROFILES[g.profile.start].label}</b>
         <span>Skąd</span>

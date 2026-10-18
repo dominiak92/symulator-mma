@@ -39,7 +39,7 @@ const SLIDES: Slide[] = [
   },
   {
     title: 'Walczysz i decydujesz',
-    text: 'Przed każdą walką zawodową wybierasz plan, a scouting podpowiada, gdzie rywal jest słaby. W trakcie trener czasem pyta o zmianę, a w walkach o pas decydujesz w każdej przerwie.',
+    text: 'Przed każdą walką zawodową wybierasz plan, a scouting podpowiada, gdzie rywal jest słaby. W walkach o pas decydujesz w każdej przerwie, a po wygranej możesz chwycić mikrofon i kogoś wywołać.',
     art: (
       <div className="tut-choice">
         <div className="tut-opt">
@@ -57,7 +57,7 @@ const SLIDES: Slide[] = [
   },
   {
     title: 'Kasa, gale i kluby',
-    text: 'Klub, starty i życie kosztują, a gaże przyjdą dopiero na zawodowstwie. Po każdym roku wybierasz galę i klub. Debiut zawodowy jest możliwy od 18 lat.',
+    text: 'Klub, starty i życie kosztują, a gaże przyjdą dopiero na zawodowstwie. Na początku dorabiasz na etacie i sprzedajesz bilety na regionalne gale. Po każdym roku wybierasz galę, a kontrakt możesz negocjować przed podpisem.',
     art: (
       <div className="tut-icons">
         <span>

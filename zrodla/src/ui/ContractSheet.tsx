@@ -3,7 +3,9 @@ import { createPortal } from 'react-dom';
 import type { Club, Contract, GameState } from '../engine/types';
 import { money, plural } from '../format';
 import { Icon } from './Icon';
-import { sfxClick } from './sound';
+import { sfxCash, sfxClick } from './sound';
+import { CONTRACT_ASKS, contractNegoChance, signingAmount, type ContractAsk } from '../engine/game';
+import { ChanceTag } from './Chance';
 
 /** Ile „atramentu” trzeba zostawić, żeby podpis się liczył (w pikselach długości linii). */
 const MIN_INK = 120;
@@ -18,13 +20,24 @@ export default function ContractSheet({
   club,
   onSign,
   onCancel,
+  negotiated,
+  onNegotiate,
 }: {
   g: GameState;
   c: Contract;
   club: Club;
   onSign: () => void;
   onCancel: () => void;
+  negotiated?: boolean;
+  onNegotiate?: (ask: ContractAsk) => void;
 }) {
+  const [nego, setNego] = useState(false);
+  const [asking, setAsking] = useState<ContractAsk | null>(null);
+  const prevNego = useRef(c.nego);
+  useEffect(() => {
+    if (c.nego && !prevNego.current && c.nego.ok) sfxCash();
+    prevNego.current = c.nego;
+  }, [c.nego]);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const drawing = useRef(false);
   const last = useRef<{ x: number; y: number } | null>(null);
@@ -139,14 +152,20 @@ export default function ContractSheet({
             <span>Liczba walk w roku</span>
             <b>{c.fights ? `${c.fights} ${plural(c.fights, 'walka', 'walki', 'walk')}` : 'turnieje'}</b>
           </li>
-          <li>
+          <li className={c.nego?.ask === 'purse' ? (c.nego.ok ? 'amended' : 'worse') : ''}>
             <span>Gaża za walkę</span>
             <b>{c.purse ? money(c.purse) : 'brak'}</b>
           </li>
           {c.winBonus > 0 && (
-            <li>
+            <li className={c.nego?.ask === 'bonus' && c.nego.ok ? 'amended' : ''}>
               <span>Premia za zwycięstwo</span>
               <b>+{money(c.winBonus)}</b>
+            </li>
+          )}
+          {!!c.signing && (
+            <li className="amended">
+              <span>Bonus za podpis</span>
+              <b>+{money(c.signing)}</b>
             </li>
           )}
           <li>
@@ -160,6 +179,7 @@ export default function ContractSheet({
             </li>
           )}
         </ol>
+        {c.nego && <p className={`cp-note ${c.nego.ok ? 'ok' : 'ko'}`}>{c.nego.text}</p>}
         <p className="cp-fine">
           Postanowienia końcowe: Zawodnik zobowiązuje się stawić na ważeniu w limicie, nie obrażać matki Organizatora na konferencjach i nie publikować relacji z siłowni o 3 w nocy. Organizator zobowiązuje się wypłacić gażę w terminie, a w razie spóźnienia nie tłumaczyć się „księgową na urlopie”.
         </p>
@@ -192,6 +212,45 @@ export default function ContractSheet({
         </div>
         {signed && <span className="cp-approved">Podpisane</span>}
       </div>
+      {onNegotiate && !negotiated && !signed && c.purse > 0 && (
+        <div className={`contract-nego ${nego ? 'open' : ''}`}>
+          {nego ? (
+            <>
+              <small className="cn-title">O co walczysz? Masz jedną próbę.</small>
+              <div className="cn-opts">
+                {CONTRACT_ASKS.map((a) => (
+                  <button
+                    key={a.id}
+                    className="choice cn-opt"
+                    disabled={!!asking}
+                    onClick={() => {
+                      sfxClick();
+                      setAsking(a.id);
+                      window.setTimeout(() => {
+                        setAsking(null);
+                        setNego(false);
+                        onNegotiate(a.id);
+                      }, 900);
+                    }}
+                  >
+                    <span className="opt-top">
+                      <span className="title">{asking === a.id ? 'Dzwonisz…' : a.label}</span>
+                      <ChanceTag p={contractNegoChance(g, c, a.id)} />
+                    </span>
+                    <span className="desc">{a.id === 'signing' ? `ok. ${money(signingAmount(c))} od ręki` : a.desc}</span>
+                  </button>
+                ))}
+              </div>
+              <small className="cn-risk">Przy żądaniu wyższej gaży federacja może się obrazić i dać gorszą wersję.</small>
+            </>
+          ) : (
+            <button className="btn btn-ghost btn-small btn-ico cn-open" onClick={() => setNego(true)}>
+              <Icon name="coins" size={15} />
+              Negocjuj warunki
+            </button>
+          )}
+        </div>
+      )}
       <div className="contract-actions">
         <button className="btn btn-ghost btn-small" onClick={ink > 0 ? clear : onCancel} disabled={signed}>
           {ink > 0 ? 'Wyczyść podpis' : 'Jeszcze się zastanowię'}
