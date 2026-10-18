@@ -61,6 +61,7 @@ export const ACHIEVEMENTS: Achievement[] = [
   { id: 'boxing_win', title: 'Bokser z klatki', desc: 'Wygraj walkę na gali bokserskiej.', check: (s) => f(s, 'boxingWins') >= 1 },
   { id: 'abroad_win', title: 'Szejk zadowolony', desc: 'Wygraj walkę na gali za granicą.', check: (s) => f(s, 'abroadWins') >= 1 },
   { id: 'top_exit', title: 'Na własnych warunkach', desc: 'Zakończ karierę jako panujący mistrz albo na serii zwycięstw.', check: (s) => !!s.ending?.top },
+  { id: 'nemesis', title: 'Rachunki wyrównane', desc: 'Pokonaj zadrę z federacji i wyrównaj bilans.', check: (s) => f(s, 'nemesisSettled') >= 1 },
 ];
 
 /** Osiągnięcia czysto amatorskie: w szybkiej karierze amatorkę gra automat, więc się nie liczą. */
@@ -70,4 +71,25 @@ export function newlyUnlocked(s: GameState, have: Set<string>): Achievement[] {
   // szybka kariera: nic się nie odblokowuje, zanim gracz sam nie stoczy walki zawodowej
   if (s.quick && !s.proDebut) return [];
   return ACHIEVEMENTS.filter((a) => !have.has(a.id) && !(s.quick && AMATEUR_ONLY.has(a.id)) && a.check(s));
+}
+
+export type AchTone = 'gold' | 'red' | 'blue' | 'green' | 'purple';
+const ICONS: Record<string, [string, AchTone]> = {
+  first_win: ['glove', 'green'], first_ko: ['bolt', 'red'], first_sub: ['knot', 'purple'], ko_r1: ['clock', 'red'],
+  off_canvas: ['rotate', 'red'], comeback: ['heart', 'red'], medal: ['medal', 'gold'], belt0: ['medal', 'gold'],
+  debut: ['pen', 'blue'], bonus: ['coins', 'gold'], belt1: ['trophy', 'gold'], belt2: ['trophy', 'gold'], belt3: ['trophy', 'gold'],
+  belt4: ['trophy', 'gold'], def3: ['shield', 'gold'], streak10: ['flame', 'red'], unbeaten10: ['star', 'gold'],
+  finishes20: ['target', 'red'], fights50: ['dumbbell', 'blue'], age40: ['hourglass', 'blue'], world_tier: ['pin', 'blue'],
+  million: ['coins', 'green'], ten_million: ['card', 'green'], freak1: ['megaphone', 'purple'], freak5: ['megaphone', 'purple'],
+  freak_loss: ['mic', 'purple'], peer3: ['users', 'blue'], split: ['scale', 'red'], honor: ['heart', 'green'], liar: ['x', 'red'],
+  gg: ['shirt', 'blue'], kebab: ['receipt', 'gold'], osiedle_world: ['home', 'gold'], hard_pl: ['trend', 'red'],
+  retire_champ: ['trophy', 'gold'], wasted: ['hourglass', 'red'], daily: ['calendar', 'blue'], legacy3000: ['museum', 'gold'],
+  double_champ: ['trophy', 'gold'], interim: ['trophy', 'blue'], short_win: ['clock', 'green'], tickets: ['ticket', 'green'],
+  mic: ['mic', 'purple'], fans100k: ['phone', 'purple'], grappling_gold: ['knot', 'gold'], boxing_win: ['glove', 'red'],
+  abroad_win: ['pin', 'gold'], top_exit: ['door', 'gold'], nemesis: ['scale', 'green'],
+};
+/** Ikona i kolor osiągnięcia (do listy, toastów i ekranu końca kariery). */
+export function achIcon(id: string): { icon: string; tone: AchTone } {
+  const [icon, tone] = ICONS[id] ?? ['star', 'blue'];
+  return { icon, tone };
 }

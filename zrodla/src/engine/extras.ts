@@ -176,6 +176,7 @@ export function honours(s: GameState): { icon: string; emoji: string; text: stri
   if (f('bonuses') >= 3) out.push({ icon: 'star', emoji: '⭐', text: `${f('bonuses')} bonusy wieczoru` });
   const fans = followersOf(s);
   if (fans >= 1000) out.push({ icon: 'phone', emoji: '📱', text: `${fmtFans(fans)} obserwujących` });
+  if (f('nemesisSettled')) out.push({ icon: 'scale', emoji: '⚖️', text: 'Wyrównane rachunki z zadrą' });
   if (f('stripped')) out.push({ icon: 'x', emoji: '⚠️', text: 'Odebrany pas' });
   return out;
 }

@@ -263,6 +263,7 @@ export const TUNEUP_GALAS: { gala: string; city: string; venue: string }[] = [
   { gala: 'Noc Wojowników 2', city: 'Dolny Kubin', venue: 'Sala gimnastyczna gimnazjum' },
   { gala: 'Halušky Fight Club 11', city: 'Żylina', venue: 'Hala targowa' },
   { gala: 'Granica Cup', city: 'Czadca', venue: 'Dyskoteka Galaxy' },
+  { gala: 'Klatka 3', city: 'Martin', venue: 'Hala zimowa przy basenie' },
 ];
 
 /** Dziwni sponsorzy, których podsuwa menedżer: kasa jest, gorzej z wizerunkiem. */

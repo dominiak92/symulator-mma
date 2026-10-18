@@ -66,8 +66,31 @@ export interface RosterFighter extends Fighter {
 export interface Roster {
   fed: string;
   tier: number;
+  /** kategoria wagowa (stare zapisy: brak = obecna) */
+  div?: WeightKey;
+  /** rok kariery gracza, do którego skład jest aktualny */
+  season?: number;
   list: RosterFighter[];
 }
+
+/** Zadra: zawodnik ze składu federacji, który cię pokonał i nie daje o tym zapomnieć. */
+export interface Nemesis {
+  id: string;
+  name: string;
+  fed: string;
+  tier: number;
+  div: WeightKey;
+  since: number;
+}
+
+export interface NewsItem {
+  /** po której walce roku (liczba rozegranych walk) */
+  after: number;
+  kind: 'result' | 'title' | 'injury' | 'callout' | 'nemesis' | 'debut';
+  text: string;
+}
+
+export type CoachId = 'club' | 'boks' | 'parter' | 'naroznik' | 'kontakty';
 
 export interface Peer extends Fighter {
   tier: number;
@@ -313,6 +336,7 @@ export interface FightReport {
   poster?: { city: string; venue: string; bouts: { a: string; ar: string; b: string; br: string; tag: string }[] };
   winBonus?: number;
   rival?: boolean;
+  nemesis?: boolean;
   /** walka na odbudowę rekordu (słaby rywal na dziwnej gali) */
   tuneup?: boolean;
   cards?: [number, number][];
@@ -336,6 +360,7 @@ export interface Tourney {
 }
 
 export interface SeasonRun {
+  news?: NewsItem[];
   tourneys?: Tourney[];
   tIdx?: number;
   form: SeasonForm;
@@ -412,6 +437,7 @@ export interface FightOffer {
   superfight?: string;
   /** rewanż wywalczony po kontrowersyjnym werdykcie */
   rematch?: boolean;
+  nemesis?: boolean;
   /** sprzedaż biletów (gale regionalne) */
   tickets?: TicketPlan;
   /** wynik ważenia, gdy waga nie wyszła */
@@ -527,6 +553,10 @@ export interface GameState {
   yearGoal?: { season: number; id: string } | null;
   /** stały skład federacji: mistrz i ranking */
   roster?: Roster | null;
+  /** składy innych federacji i kategorii, do których można wrócić */
+  rosterArchive?: Roster[];
+  nemesis?: Nemesis | null;
+  coach?: CoachId;
   /** ksywka nadana przez kibiców */
   fanNick?: string;
   /** atuty wybrane na ten rok (obóz) */

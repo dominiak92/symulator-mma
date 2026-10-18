@@ -25,6 +25,8 @@ import type {
   PostFight,
   SocialMode,
   TicketPlan,
+  CoachId,
+  RosterFighter,
 } from './types';
 import {
   AMATEUR_TOURNEYS,
@@ -86,8 +88,9 @@ import {
 import { advanceFight, applyDecision, chanceFrom, distFrom, newSim, rollOutcome, type FightCtx } from './fight';
 import { EVENTS, eventWeight, findEvent } from './events';
 import { buildInvite, resolveInvite, sideChance } from './side';
-import { activePerks, MAX_PERKS, PERKS, perkUnlocked } from './perks';
-import { ensureRoster, rosterAfterFight, rosterFighter, rosterFor, rosterOpp, rosterSync, rosterYear } from './roster';
+import { activePerks, MAX_PERKS, PERKS, perkUnlocked, type Perk } from './perks';
+import { COACHES, coachCost, coachGrowth, coachOf, coachOpen } from './coaches';
+import { archiveRoster, ensureRoster, rosterAfterFight, rosterFighter, rosterFor, rosterNews, rosterOpp, rosterSync, rosterYear } from './roster';
 import { addFans, fanGain, fmtFans, followersOf, jobDef, jobForm, socialCost, socialForm, socialIncome, ticketRep, ticketSale, ticketsAvailable } from './extras';
 
 export const SAVE_VERSION = 2;
@@ -164,12 +167,13 @@ export function weightMissChance(s: GameState): number {
 export function changeDivision(s0: GameState, key: WeightKey): GameState {
   if (!divisionOptions(s0).includes(key) || key === divisionKey(s0) || s0.tier < 1) return s0;
   const s = clone(s0);
+  // skład obecnej kategorii czeka na twój powrót
+  archiveRoster(s);
   s.division = key;
   if (s.rank !== null) {
     s.rank = null;
     s.titleDefenses = 0;
   }
-  s.roster = undefined;
   log(s, `Zmiana kategorii: ${WEIGHTS[key].label.toLowerCase()}.`);
   return s;
 }
@@ -375,6 +379,7 @@ export function trainingPreview(s: GameState, k: StatKey): number {
   const room = Math.max(0, s.potential[k] - CLUB_CAP[s.club.quality] - s.stats[k]);
   let g = room * 0.13 + 2.2;
   if (k === s.club.specialty) g *= 1.15;
+  g *= coachGrowth(s, k);
   if (s.age >= 33) g *= 0.5;
   if (room <= 0) g = 0.5;
   return Math.max(0.5, Math.round(g * 10) / 10);
@@ -389,6 +394,7 @@ export function trainingForecast(s: GameState, k: StatKey, focused: boolean, cam
   const room = Math.max(0, s.potential[k] - CLUB_CAP[s.club.quality] - s.stats[k]);
   let g = room * growthRate(s) * 0.85;
   if (k === s.club.specialty) g *= 1.25;
+  g *= coachGrowth(s, k);
   if (focused) g += trainingPreview(s, k);
   const v = clamp(Math.round(s.stats[k] + g), 1, 99);
   return camp ? clamp(v + Math.max(0, Math.min(campGain(s, camp, k), s.potential[k] - v)), 1, 99) : v;
@@ -447,9 +453,11 @@ export function doTraining(s0: GameState, k: StatKey, campId?: string | null): G
       const room = Math.max(0, s.potential[key] - CLUB_CAP[s.club.quality] - s.stats[key]);
       let g = room * rate * 0.85;
       if (key === s.club.specialty) g *= 1.25;
+      g *= coachGrowth(s, key);
       if (key === k) {
         let focus = room * 0.13 + 2.2 + rng.next() * 0.8 - 0.4;
         if (key === s.club.specialty) focus *= 1.15;
+        focus *= coachGrowth(s, key);
         if (s.age >= 33) focus *= 0.5;
         if (room <= 0) focus = 0.5;
         g += focus;
@@ -550,6 +558,8 @@ export function budgetLines(s: GameState): BudgetLine[] {
   const staff = [0, 0, 2500, 6000, 30000][s.tier];
   if (staff > 0 && s.contract.kind !== 'freak')
     lines.push({ label: 'Sztab', sub: 'trener przygotowania, dietetyk', amount: -staff, icon: 'users' });
+  const cc = coachOpen(s) ? coachCost(s) : 0;
+  if (cc > 0) lines.push({ label: 'Trener główny', sub: `${coachOf(s).name} · ${coachOf(s).role}`, amount: -cc, icon: 'users' });
   // zaplecze do wyboru
   if (backroomOpen(s)) {
     for (const b of BACKROOM) {
@@ -1632,7 +1642,7 @@ function fightCtx(s: GameState, opp: Fighter): FightCtx {
     // czwarta i piąta walka w roku: organizm nie nadąża
     form: s.run!.form.mod + jobForm(s) + socialForm(s) + ((s.flags.expBoost ?? 0) > 0 ? 5 : 0) - Math.max(0, s.run!.fights.length - 3) * 5 + (s.run!.planned < s.contract.fights && s.contract.kind !== 'freak' ? 3 : 0) + fightMods(s),
     penalty: s.injury?.penalty ?? 0,
-    perks: activePerks(s),
+    perks: [...activePerks(s), ...coachPerks(s)],
     allowDecision: true,
     decisionChance: 0.55,
   };
@@ -1735,7 +1745,7 @@ function specialOffer(rng: Rng, s: GameState): FightOffer | null {
     avoidMyName(rng, s, opp);
     const title = !!extra.title;
     const spot = cardSpot(rng, s, title, opp, false);
-    const purse = Math.round((purseFor(s, opp, title, spot) * (0.95 + rng.next() * 0.15) * (extra.rematch ? 1.15 : 1)) / 100) * 100;
+    const purse = Math.round((purseFor(s, opp, title, spot) * (0.95 + rng.next() * 0.15) * (extra.rematch ? 1.15 : extra.nemesis ? 1.3 : 1)) / 100) * 100;
     return { opp, title, defense: false, spot, gala: galaName(rng, s, s.fed), purse, winBonus: Math.round(s.contract.winBonus * (title ? 1.8 : 1)), negotiated: false, ...extra };
   };
   // unifikacja: tymczasowy mistrz kontra wracający mistrz
@@ -1762,6 +1772,24 @@ function specialOffer(rng: Rng, s: GameState): FightOffer | null {
         hook: `Rewanż, o który się upomniałeś. ${opp.lastName} wie, że pierwsza walka nie przekonała nikogo.${defense ? ' Tym razem bronisz pasa.' : title ? ' Tym razem o pas.' : ''}`,
       });
     }
+  }
+  // zadra: rewanż raz w roku, częściej gdy rywal zaczepia w mediach
+  const nf = nemesisFighter(s);
+  if (nf && s.flags.nemesisYear !== s.season && !s.run!.fights.some((f) => f.opp.id === nf.id) && rng.chance((s.flags.nemesisHeat ?? 0) > 0 ? 0.6 : 0.3)) {
+    s.flags.nemesisYear = s.season;
+    s.flags.nemesisHeat = 0;
+    const { h2h, champSince: _c, ...base } = nf;
+    void _c;
+    const opp: Fighter = { ...base, stats: { ...nf.stats }, record: { ...nf.record } };
+    const defense = s.rank === 0;
+    if (defense) opp.rank = clamp(opp.rank || 1, 1, RANK_SIZE[tier]);
+    const title = defense || (nf.rank === 0 && s.rank !== null && s.rank <= 3);
+    return mk(opp, {
+      title,
+      defense,
+      nemesis: true,
+      hook: `Zadra. ${opp.firstName} ${opp.lastName} od waszej walki nie daje ci spokoju w mediach. Bilans ${h2h.w}-${h2h.l}${h2h.d ? `-${h2h.d}` : ''}. Organizator dokłada 30% do gaży, bo bilety na tę walkę sprzedadzą się same.${title ? (defense ? ' I tym razem bronisz pasa.' : ' A on ma pas.') : ''}`,
+    });
   }
   // wywołany przez mikrofon mistrz przyjmuje wyzwanie
   if ((s.flags.titleCall ?? 0) > 0 && s.rank !== 0 && s.rank !== null) {
@@ -1839,7 +1867,7 @@ function abroadWanted(rng: Rng, s: GameState): boolean {
   // federacja na wyłączność nie puszcza na inne gale MMA
   if (isExclusiveFed(s.contract.fed)) return false;
   if (s.injury && s.injury.penalty >= 5) return false;
-  return rng.chance(0.11);
+  return rng.chance(coachOf(s).contacts ? 0.2 : 0.11);
 }
 
 function buildAbroad(rng: Rng, s: GameState): FightOffer {
@@ -1876,7 +1904,7 @@ function inviteWanted(rng: Rng, s: GameState): boolean {
   if (s.tier < 1 || s.contract.kind === 'freak' || run.inviteOffered || s.quick) return false;
   if (run.fights.length === 0 || run.fights.length >= run.planned) return false;
   if (s.injury && s.injury.penalty >= 5) return false;
-  return rng.chance(0.4);
+  return rng.chance(coachOf(s).contacts ? 0.62 : 0.4);
 }
 
 export function isExclusiveContract(s: GameState): boolean {
@@ -2047,7 +2075,7 @@ export function seasonNext(s0: GameState): GameState {
       }
       const o = buildOffer(rng, s, idx);
       // szybka kariera: ofertę widzisz tylko przy walce o pas i z rywalem, resztę narożnik przyjmuje sam
-      if (s.quick && !(o.title || o.rival || o.superfight || o.rematch)) {
+      if (s.quick && !(o.title || o.rival || o.superfight || o.rematch || o.nemesis)) {
         o.prep = 'std';
         if (ticketsAvailable(s, o)) o.tickets = 'std';
         startFight(rng, s, o);
@@ -2190,6 +2218,7 @@ function startFight(rng: Rng, s: GameState, o: FightOffer) {
       purse: amateur ? 0 : o.purse,
       winBonus: amateur ? 0 : o.winBonus,
       rival: o.rival,
+      nemesis: o.nemesis,
       tuneup: o.tuneup,
       short: o.short,
       interim: o.interim,
@@ -2992,6 +3021,46 @@ function updateRank(s: GameState, rep: FightReport) {
   if (s.rank !== null && s.rank > size) s.rank = null;
 }
 
+/** Zadra: rywal ze składu, który cię pokonał przed czasem albo dwa razy. Rewanż daje rozgłos, wygrana wyrównuje rachunki. */
+function nemesisAfterFight(s: GameState, rep: FightReport, rf: RosterFighter, res: 'W' | 'L' | 'D') {
+  const opp = rep.opp;
+  const nem = s.nemesis;
+  if (nem && nem.id === opp.id) {
+    rep.nemesis = true;
+    if (res === 'W') {
+      s.media = clamp(s.media + 4, 0, 100);
+      s.rep = clamp(s.rep + 2, 0, 100);
+      if (rf.h2h.w >= rf.h2h.l) {
+        s.nemesis = null;
+        s.flags.nemesisSettled = (s.flags.nemesisSettled ?? 0) + 1;
+        rep.moments.push({ round: rep.round, title: 'Rachunki wyrównane', text: `${opp.firstName} ${opp.lastName} leży, a ty patrzysz mu w oczy. Bilans ${rf.h2h.w}-${rf.h2h.l}. Zadra wyjęta, kibice to pamiętają.`, tone: 'good' });
+      } else
+        rep.moments.push({ round: rep.round, title: 'Zadra', text: `Wygrana z rywalem, który zalazł ci za skórę. Bilans ${rf.h2h.w}-${rf.h2h.l}, jeszcze jedna i rachunki wyrównane.`, tone: 'good' });
+    } else if (res === 'L') {
+      s.media = clamp(s.media + 1, 0, 100);
+      rep.moments.push({ round: rep.round, title: 'Zadra', text: `${opp.lastName} znowu górą. Bilans ${rf.h2h.w}-${rf.h2h.l}. W mediach śmieje się, że ma cię „w kieszeni”.`, tone: 'bad' });
+    }
+    return;
+  }
+  if (res !== 'L' || nem) return;
+  const finish = rep.method === 'KO/TKO' || rep.method === 'Poddanie';
+  if (!finish && rf.h2h.l < 2) return;
+  s.nemesis = { id: opp.id, name: `${opp.firstName} ${opp.lastName}`, fed: s.fed, tier: s.tier, div: divisionKey(s), since: s.season };
+  rep.moments.push({
+    round: rep.round,
+    title: 'Zadra',
+    text: `${opp.lastName} po walce nie podaje ci ręki, a w wywiadzie mówi, że „to było za łatwe”. Od dziś to sprawa osobista. Rewanż z nim da więcej pieniędzy i rozgłosu.`,
+    tone: 'bad',
+  });
+}
+
+/** Zadra z obecnej federacji i kategorii (do oferty rewanżu). */
+export function nemesisFighter(s: GameState): RosterFighter | undefined {
+  const n = s.nemesis;
+  if (!n || n.fed !== s.fed || n.tier !== s.tier || n.div !== divisionKey(s)) return undefined;
+  return rosterFighter(s, n.id);
+}
+
 function finalizeFight(rng: Rng, s: GameState, rep: FightReport) {
   const opp = rep.opp;
   // dogrywka w drabince: remisów nie ma
@@ -3147,6 +3216,12 @@ function finalizeFight(rng: Rng, s: GameState, rep: FightReport) {
   rep.rankAfter = s.rank;
   if (rf) rosterAfterFight(s, opp.id, res, rep.title && !rep.interim && !rep.superfight, rep.defense, rep.rankBefore);
   else rosterSync(s);
+  if (rf) nemesisAfterFight(s, rep, rf, res);
+  // wiadomości z federacji między walkami
+  if (!rep.amateur && !rep.freak && s.run && rng.chance(0.75)) {
+    const n = rosterNews(rng, s, rep.idx + 1);
+    if (n) (s.run.news ??= []).push(n);
+  }
   if (s.rank !== null) {
     if (s.tier > s.peakTier || (s.tier === s.peakTier && (s.peakRank === null || s.rank < s.peakRank))) {
       s.peakTier = s.tier;
@@ -3974,6 +4049,21 @@ export function donate(s0: GameState, amount: number): GameState {
 }
 
 /** Atuty na rok: maksymalnie dwa, tylko odblokowane. */
+/** Taktyk w narożniku działa jak atut: premia do każdej decyzji od 2. rundy. */
+function coachPerks(s: GameState): Perk[] {
+  const c = coachOf(s);
+  if (!c.corner) return [];
+  const { from, bonus } = c.corner;
+  return [{ id: 'coach', name: 'Narożnik', desc: '', req: { stat: 'iq', min: 0 }, bonus: (_o, r) => (r >= from ? bonus : 0) }];
+}
+
+export function setCoach(s0: GameState, id: CoachId): GameState {
+  if (!COACHES.some((c) => c.id === id) || !coachOpen(s0)) return s0;
+  const s = clone(s0);
+  s.coach = id;
+  return s;
+}
+
 export function setPerks(s0: GameState, ids: string[]): GameState {
   const s = clone(s0);
   s.perks = ids.filter((id) => PERKS.some((p) => p.id === id && perkUnlocked(s, p))).slice(0, MAX_PERKS);
