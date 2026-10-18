@@ -147,11 +147,7 @@ const READ_K = 1.3;
 const PLAN_STYLE: Record<'stand' | 'wrest' | 'bjj', string> = { stand: 'boxer', wrest: 'wrestler', bjj: 'grappler' };
 
 function planText(opp: Fighter): string {
-  const scout = opp.freak ? '' : scoutNote(opp);
-  const hasGap = scout.startsWith('Z nagrań');
-  // „wszechstronny, bez dziur” kłóci się z wyraźną dziurą z nagrań
-  const style = opp.style === 'allround' && hasGap ? 'Rywal gra wszystkiego po trochu.' : styleNote(opp);
-  return `Dziesięć minut do wyjścia. Trener siada obok i pyta o plan. ${style} ${scout} Plan ustawia, jak walczysz przez całą walkę.`.replace(/\s+/g, ' ').trim();
+  return `Dziesięć minut do wyjścia. Trener siada obok i pyta o plan. ${styleNote(opp)} Plan ustawia, jak walczysz przez całą walkę.`;
 }
 
 /** Scouting: gdzie rywal jest najsłabszy, a gdzie najgroźniejszy. */
