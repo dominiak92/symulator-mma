@@ -21,6 +21,10 @@ import type {
   Tourney,
   TourneyStage,
   CardSpot,
+  JobMode,
+  PostFight,
+  SocialMode,
+  TicketPlan,
 } from './types';
 import {
   AMATEUR_TOURNEYS,
@@ -81,6 +85,7 @@ import {
 } from './fighter';
 import { advanceFight, applyDecision, chanceFrom, distFrom, newSim, rollOutcome, type FightCtx } from './fight';
 import { EVENTS, eventWeight, findEvent } from './events';
+import { addFans, fanGain, fmtFans, followersOf, jobDef, jobForm, socialCost, socialForm, socialIncome, ticketRep, ticketSale, ticketsAvailable } from './extras';
 
 export const SAVE_VERSION = 2;
 
@@ -549,17 +554,21 @@ export function budgetLines(s: GameState): BudgetLine[] {
       lines.push({ label: b.name, sub: c === 0 ? 'pokrywa Ground Game Labs' : b.short, amount: -c, icon: b.icon });
     }
   }
-  const job = s.tier <= 1 && s.age >= 19;
-  // na krajówce wielu zawodników dalej dorabia na pół etatu
-  const halfJob = s.tier === 2 && s.age >= 19 && (s.rank === null || s.rank > 3) && s.contract.kind !== 'freak';
-  const living = Math.round((livingCost(s.age) * (job ? 0.15 : halfJob ? 0.5 : 1)) / 500) * 500 + (s.flags.kid ? 10000 : 0);
+  // etat obok treningów: do krajowej federacji wybierasz, ile pracujesz
+  const jd = jobDef(s);
+  const living = Math.round((livingCost(s.age) * (jd ? jd.living : 1)) / 500) * 500 + (s.flags.kid ? 10000 : 0);
   if (living > 0)
     lines.push({
       label: 'Życie',
-      sub: job ? 'etat pokrywa większość, trenujesz po pracy' : halfJob ? 'pół etatu pokrywa połowę kosztów' : s.flags.kid ? 'mieszkanie, jedzenie, dziecko' : 'mieszkanie i jedzenie',
+      sub: jd?.id === 'full' ? 'etat pokrywa większość, trenujesz po pracy' : jd?.id === 'half' ? 'pół etatu pokrywa połowę kosztów' : s.flags.kid ? 'mieszkanie, jedzenie, dziecko' : 'mieszkanie i jedzenie',
       amount: -living,
       icon: 'home',
     });
+  // social media: koszt managera i przychód ze współprac
+  const smm = socialCost(s);
+  if (smm > 0) lines.push({ label: 'Social media manager', sub: 'montaż filmów i współprace', amount: -smm, icon: 'phone' });
+  const si = socialIncome(s);
+  if (si > 0) lines.push({ label: 'Współprace w social mediach', sub: `${fmtFans(followersOf(s))} obserwujących`, amount: si, icon: 'phone' });
   for (const l of s.loans) lines.push({ label: 'Rata kredytu', sub: `${l.left === 1 ? 'ostatnia rata' : `zostało ${l.left} ${pl(l.left, 'rata', 'raty', 'rat')}`}`, amount: -l.installment, icon: 'card' });
   for (const sp of s.sponsors)
     lines.push({ label: sp.name, sub: `${sp.clause} · ${sp.seasonsLeft === 1 ? 'ostatni rok' : `jeszcze ${sp.seasonsLeft} ${pl(sp.seasonsLeft, 'rok', 'lata', 'lat')}`}`, amount: sp.perSeason, logo: { kind: 'sponsor', name: sp.name } });
@@ -762,7 +771,13 @@ export function takeBreakYear(s0: GameState): GameState {
     s.rep = clamp(s.rep - 3, 0, 100);
     s.relations += 1;
     const wasRanked = s.tier > 0 && s.rank !== null && s.contract.kind !== 'freak';
+    if (s.tier > 0 && s.rank === 0 && s.contract.kind !== 'freak') {
+      s.titleDefenses = 0;
+      s.flags.stripped = (s.flags.stripped ?? 0) + 1;
+      log(s, 'Federacja odbiera pas: rok przerwy mistrza to za dużo.');
+    }
     if (s.tier > 0) s.rank = null;
+    s.flags.interim = 0;
     const job =
       s.age < 19
         ? 'Rok przerwy od turniejów. Weekendy na zmywaku i przy rozładunku, w tygodniu szkoła.'
@@ -842,7 +857,14 @@ export function rehabYear(s0: GameState): GameState {
     s.wear = clamp(s.wear - 12, 0, 100);
     s.media = clamp(s.media - 5, 0, 100);
     const wasRanked = s.tier > 0 && s.rank !== null;
-    if (s.tier > 0) s.rank = null;
+    const wasChamp = s.tier > 0 && s.rank === 0 && s.contract.kind !== 'freak';
+    if (s.tier > 0) s.rank = wasChamp ? 2 : null;
+    s.flags.interim = 0;
+    if (wasChamp) {
+      s.titleDefenses = 0;
+      s.flags.stripped = (s.flags.stripped ?? 0) + 1;
+      log(s, 'Federacja odbiera pas: mistrz nie może pauzować przez cały rok.');
+    }
     // po powrocie jeszcze chwilę czuć uraz
     s.injury = { name: `${name} (powrót po urazie)`, seasons: 2, penalty: 3 };
     const story = rng.pick([
@@ -859,7 +881,7 @@ export function rehabYear(s0: GameState): GameState {
         { label: 'Zdrowie', value: 60, note: 'zużycie organizmu spadło' },
         { label: 'Forma fizyczna', value: 20, note: 'umiejętności spadły' },
       ],
-      story: `${name.charAt(0).toUpperCase() + name.slice(1)}. ${nfz ? 'Na prywatną klinikę cię nie stać, więc kolejka na NFZ i ćwiczenia z filmików. ' : ''}${story}${wasRanked ? ' Wypadasz z rankingu.' : ''}`,
+      story: `${name.charAt(0).toUpperCase() + name.slice(1)}. ${nfz ? 'Na prywatną klinikę cię nie stać, więc kolejka na NFZ i ćwiczenia z filmików. ' : ''}${story}${wasChamp ? ' Federacja nie może czekać rok: odbiera ci pas i robi walkę o wakat. Wracasz jako numer 2 w rankingu, z prawem do walki o tytuł.' : wasRanked ? ' Wypadasz z rankingu.' : ''}`,
     };
     s.seasons.push(summary);
     s.lastSummary = summary;
@@ -1196,6 +1218,10 @@ export function startSeason(s0: GameState): GameState {
   const s = clone(s0);
   withRng(s, (rng) => {
     s.money += budgetBalance(s);
+    if (jobDef(s)?.id === 'none' && !s.flags.quitJob) {
+      s.flags.quitJob = 1;
+      log(s, 'Rzucasz etat. Od teraz żyjesz z walk.');
+    }
     for (const l of s.loans) l.left -= 1;
     s.loans = s.loans.filter((l) => l.left > 0);
     // wydarzenia przedsezonowe
@@ -1543,6 +1569,12 @@ function pickOpponent(rng: Rng, s: GameState, idx: number): { opp: Fighter; titl
     return { opp, title: false, defense: false, peer: null, grudge: true };
   }
   let r: number | null = clamp(mine + rng.int(-3, 1) - Math.floor(q / 2), 1, size + 3);
+  // wywołanie przez mikrofon: ktoś wyraźnie wyżej w rankingu
+  if ((s.flags.callUp ?? 0) > 0) {
+    s.flags.callUp = 0;
+    r = clamp(mine - rng.int(3, 5), 1, size);
+    return { opp: generateOpponent(rng, tier, r, hard), title: false, defense: false, peer: null };
+  }
   if (r > size) r = null;
   if (s.rank === null && rng.chance(0.5 - q * 0.1)) r = null;
   return { opp: generateOpponent(rng, tier, r, hard), title: false, defense: false, peer: null };
@@ -1554,7 +1586,13 @@ function fightMods(s: GameState): number {
   if (!cur || cur.amateur) return 0;
   const sh = weightShift(s);
   let m = sh < 0 ? 4 : sh > 0 ? -2 : 0;
-  if (cur.weightMiss) m -= 5;
+  m += cur.weighMod ?? 0;
+  // zastępstwo: kilka dni na przygotowanie zamiast obozu
+  if (cur.short) m -= 6;
+  // superfight: rywal z innej kategorii (większy albo szybszy)
+  if (cur.superfight) m -= 3;
+  if (cur.tickets?.plan === 'push') m -= 2;
+  if (cur.tickets?.plan === 'none') m += 1;
   if (cur.prep === 'rival') m += 4;
   if (cur.prep === 'hard') m += 3;
   m += cur.pressMod ?? 0;
@@ -1569,7 +1607,7 @@ function fightCtx(s: GameState, opp: Fighter): FightCtx {
     meName: fullName(s),
     opp,
     // czwarta i piąta walka w roku: organizm nie nadąża
-    form: s.run!.form.mod + ((s.flags.expBoost ?? 0) > 0 ? 5 : 0) - Math.max(0, s.run!.fights.length - 3) * 5 + (s.run!.planned < s.contract.fights && s.contract.kind !== 'freak' ? 3 : 0) + fightMods(s),
+    form: s.run!.form.mod + jobForm(s) + socialForm(s) + ((s.flags.expBoost ?? 0) > 0 ? 5 : 0) - Math.max(0, s.run!.fights.length - 3) * 5 + (s.run!.planned < s.contract.fights && s.contract.kind !== 'freak' ? 3 : 0) + fightMods(s),
     penalty: s.injury?.penalty ?? 0,
     allowDecision: true,
     decisionChance: 0.55,
@@ -1583,6 +1621,8 @@ function purseFor(s: GameState, opp: Fighter, title: boolean, spot: CardSpot | u
   else if (spot === 'główna') p *= 1.15;
   else if (spot === 'wieczoru') p *= 1.35;
   if (opp.peer) p *= 1.1;
+  // regionalne gale: kto sprzedaje bilety, ten dostaje lepsze stawki
+  if (s.tier === 1) p *= 1 + 0.05 * clamp(ticketRep(s), -2, 4);
   const mg = activeManager(s);
   if (mg) p *= mg.purse;
   return Math.round(p / 100) * 100;
@@ -1598,6 +1638,9 @@ function galaName(rng: Rng, s: GameState, fed: string) {
 function cardSpot(rng: Rng, s: GameState, title: boolean, opp: Fighter, freak: boolean): CardSpot {
   if (title) return 'wieczoru';
   if (freak) return rng.chance(0.4) ? 'wieczoru' : 'główna';
+  if (s.tier === 1 && ticketRep(s) >= 4 && s.proDebut) return rng.chance(0.5) ? 'wieczoru' : 'główna';
+  if (s.tier === 1 && ticketRep(s) >= 2 && s.proDebut) return 'główna';
+  if (s.tier === 1 && ticketRep(s) <= -1) return 'wstępna';
   if (!s.proDebut) return 'wstępna';
   if (s.rank !== null && s.rank <= 3) return rng.chance(0.35) ? 'wieczoru' : 'główna';
   if ((s.rank !== null && s.rank <= 7) || opp.peer || s.media >= 40) return 'główna';
@@ -1615,7 +1658,17 @@ function finishTime(rng: Rng, rep: FightReport) {
 /** Rozgrywa kolejną walkę roku (albo do decyzji). */
 /** Oferta kolejnej walki (zawodowcy): rywal, miejsce w karcie i gaża. */
 function buildOffer(rng: Rng, s: GameState, idx: number): FightOffer {
-  const { opp, title, defense, grudge, peer } = pickOpponent(rng, s, idx);
+  const special = specialOffer(rng, s);
+  if (special) return special;
+  const picked = pickOpponent(rng, s, idx);
+  const { title, defense, grudge, peer } = picked;
+  let opp = picked.opp;
+  // mistrz kontuzjowany: zamiast walki o pas jest walka o pas tymczasowy
+  let interim = false;
+  if (title && !defense && s.rank !== 0 && opp.rank === 0 && !peer && s.tier >= 2 && !s.flags.interim && rng.chance(0.3)) {
+    interim = true;
+    opp = generateOpponent(rng, s.tier, rng.int(1, 3), s.profile.difficulty === 'hard');
+  }
   avoidMyName(rng, s, opp);
   const freak = s.contract.kind === 'freak';
   const fed = freak ? s.contract.fed : s.fed;
@@ -1636,7 +1689,139 @@ function buildOffer(rng: Rng, s: GameState, idx: number): FightOffer {
     purse,
     winBonus: Math.round(s.contract.winBonus * (title ? 1.8 : 1)),
     negotiated: false,
-    hook: rival && peer ? rivalHook(peer, title, defense, trilogy) : undefined,
+    hook: interim
+      ? `Mistrz ${fedShort(s)} jest kontuzjowany i nie wróci przed końcem roku. Federacja robi walkę o pas tymczasowy. Wygrany zmierzy się z mistrzem w walce unifikacyjnej.`
+      : rival && peer
+        ? rivalHook(peer, title, defense, trilogy)
+        : undefined,
+    interim: interim || undefined,
+  };
+}
+
+function fedShort(s: GameState) {
+  return s.fed.split(' – ')[0];
+}
+
+/** Walka wywalczona wcześniej: rewanż po kontrowersji, unifikacja, wywołany mistrz. */
+function specialOffer(rng: Rng, s: GameState): FightOffer | null {
+  if (s.contract.kind === 'freak' || isAmateurRun(s)) return null;
+  const tier = s.tier;
+  const hard = s.profile.difficulty === 'hard';
+  const metThisSeason = new Set(s.run!.fights.map((f) => f.opp.id));
+  const mk = (opp: Fighter, extra: Partial<FightOffer>): FightOffer => {
+    avoidMyName(rng, s, opp);
+    const title = !!extra.title;
+    const spot = cardSpot(rng, s, title, opp, false);
+    const purse = Math.round((purseFor(s, opp, title, spot) * (0.95 + rng.next() * 0.15) * (extra.rematch ? 1.15 : 1)) / 100) * 100;
+    return { opp, title, defense: false, spot, gala: galaName(rng, s, s.fed), purse, winBonus: Math.round(s.contract.winBonus * (title ? 1.8 : 1)), negotiated: false, ...extra };
+  };
+  // unifikacja: tymczasowy mistrz kontra wracający mistrz
+  if ((s.flags.interim ?? 0) > 0 && s.rank !== 0) {
+    const opp = generateOpponent(rng, tier, 0, hard);
+    return mk(opp, { title: true, unify: true, hook: `Mistrz wrócił po kontuzji. Twój pas tymczasowy kontra jego pas: walka unifikacyjna, zwycięzca zostaje jedynym mistrzem.` });
+  }
+  // rewanż wywalczony po kontrowersyjnym werdykcie
+  const rm = s.rematchOpp;
+  if (rm) {
+    s.rematchOpp = null;
+    if (!metThisSeason.has(rm.id) && (rm.rank === null || rm.rank <= RANK_SIZE[tier] + 3)) {
+      const opp: Fighter = { ...rm, stats: { ...rm.stats }, record: { ...rm.record } };
+      const title = rm.rank === 0 && s.rank !== 0;
+      return mk(opp, { title, rematch: true, rival: !!s.rivalId && rm.id === s.rivalId, hook: `Rewanż, o który się upomniałeś. ${opp.lastName} wie, że pierwsza walka nie przekonała nikogo.${title ? ' Tym razem o pas.' : ''}` });
+    }
+  }
+  // wywołany przez mikrofon mistrz przyjmuje wyzwanie
+  if ((s.flags.titleCall ?? 0) > 0 && s.rank !== 0 && s.rank !== null) {
+    s.flags.titleCall = 0;
+    // za daleko w rankingu: zamiast pasa eliminator z kimś z samej czołówki
+    if (s.rank > 3) {
+      s.flags.callUp = 1;
+      return null;
+    }
+    const opp = generateOpponent(rng, tier, 0, hard);
+    return mk(opp, { title: true, hook: `Twoje wezwanie po ostatniej walce obiegło internet. Mistrz odpowiedział: „Chcesz? To masz”. Federacja daje ci walkę o pas.` });
+  }
+  return null;
+}
+
+/** Dopełniacz nazw kategorii: „mistrz wagi półciężkiej”. */
+const WEIGHT_GEN: Record<WeightKey, string> = { piorkowa: 'piórkowej', lekka: 'lekkiej', polsrednia: 'półśredniej', srednia: 'średniej', polciezka: 'półciężkiej', ciezka: 'ciężkiej' };
+
+/** Superfight: mistrz kontra mistrz kategorii obok. */
+function superDivision(s: GameState): WeightKey {
+  const i = WEIGHT_KEYS.indexOf(divisionKey(s));
+  return WEIGHT_KEYS[i < WEIGHT_KEYS.length - 1 ? i + 1 : i - 1];
+}
+
+function superfightWanted(rng: Rng, s: GameState): boolean {
+  if (s.rank !== 0 || s.tier < 3 || s.contract.kind === 'freak' || s.titleDefenses < 1) return false;
+  if ((s.flags.superDone ?? 0) >= 2 || s.flags.superYear === s.season) return false;
+  if ((s.flags.superCall ?? 0) > 0) return true;
+  return rng.chance(0.18);
+}
+
+function buildSuperfight(rng: Rng, s: GameState): FightOffer {
+  s.flags.superYear = s.season;
+  s.flags.superCall = 0;
+  const div = superDivision(s);
+  const up = WEIGHT_KEYS.indexOf(div) > WEIGHT_KEYS.indexOf(divisionKey(s));
+  const opp = generateOpponent(rng, s.tier, 0, s.profile.difficulty === 'hard');
+  // większy albo szybszy: rywal ma przewagę warunków
+  if (up) {
+    opp.stats.chin = clamp(opp.stats.chin + 4, 1, 99);
+    opp.stats.stand = clamp(opp.stats.stand + 2, 1, 99);
+  } else {
+    opp.stats.cardio = clamp(opp.stats.cardio + 4, 1, 99);
+  }
+  avoidMyName(rng, s, opp);
+  const mg = activeManager(s);
+  const purse = Math.round((s.contract.purse * 2.6 * (mg?.purse ?? 1) * (0.95 + rng.next() * 0.15)) / 1000) * 1000;
+  const label = WEIGHT_GEN[div];
+  return {
+    opp,
+    title: false,
+    defense: false,
+    spot: 'wieczoru',
+    gala: galaName(rng, s, s.fed),
+    purse,
+    winBonus: Math.round(s.contract.winBonus * 2),
+    negotiated: false,
+    superfight: label,
+    hook: `Superfight: mistrz kontra mistrz. ${opp.firstName} ${opp.lastName} trzyma pas wagi ${label}. ${up ? 'Idziesz kategorię wyżej, rywal będzie cięższy.' : 'Schodzisz kategorię niżej, rywal będzie szybszy.'} Wygrana to drugi pas i miejsce w historii. Twój pas nie jest stawką.`,
+  };
+}
+
+/** Telefon z zastępstwem: rywal wypadł, walka za kilka dni. */
+function shortWanted(rng: Rng, s: GameState): boolean {
+  const run = s.run!;
+  if (s.tier < 1 || s.contract.kind === 'freak' || run.shortOffered || run.autoAccept || s.quick) return false;
+  if (s.injury && s.injury.penalty >= 5) return false;
+  if (run.fights.length === 0 || run.fights.length >= 5 || s.rank === 0) return false;
+  return rng.chance(0.14);
+}
+
+function buildShortNotice(rng: Rng, s: GameState): FightOffer {
+  s.run!.shortOffered = true;
+  const size = RANK_SIZE[s.tier];
+  const mine = s.rank ?? size + 2;
+  const r = clamp(mine - rng.int(3, 5), 1, size);
+  const opp = generateOpponent(rng, s.tier, s.rank === null && rng.chance(0.4) ? rng.int(Math.max(1, size - 3), size) : r, s.profile.difficulty === 'hard');
+  avoidMyName(rng, s, opp);
+  const spot: CardSpot = s.tier <= 1 ? 'główna' : rng.chance(0.5) ? 'główna' : 'wieczoru';
+  const base = purseFor(s, opp, false, spot);
+  const purse = Math.round((base * 1.45 * (0.95 + rng.next() * 0.1)) / 100) * 100;
+  const who = currentManager(s)?.name ?? 'Organizator';
+  return {
+    opp,
+    title: false,
+    defense: false,
+    spot,
+    gala: galaName(rng, s, s.fed),
+    purse,
+    winBonus: Math.round(s.contract.winBonus * 1.3),
+    negotiated: true,
+    short: true,
+    tip: `${who}: „Rywal z karty głównej wypadł, gala za sześć dni. Bierzesz? Płacą prawie półtorej stawki, a ${opp.lastName} jest wyżej w rankingu. Bez obozu, ${weightShift(s) < 0 ? 'wagę trzeba zbić na szybko' : 'ale wagę masz'}.”`,
   };
 }
 
@@ -1712,10 +1897,18 @@ export function seasonNext(s0: GameState): GameState {
   if (!run || run.done) return s;
   const cur = run.fights[run.fights.length - 1];
   if (cur && !cur.sim.finished) return s; // czeka na decyzję
-  if (run.offer || run.press) return s; // czeka na ofertę albo konferencję
+  if (run.offer || run.press || run.weigh || run.post) return s; // czeka na ofertę, konferencję, ważenie albo decyzję po walce
   withRng(s, (rng) => {
     const idx = run.fights.length;
     if (!isAmateurRun(s)) {
+      if (superfightWanted(rng, s)) {
+        run.offer = buildSuperfight(rng, s);
+        return;
+      }
+      if (shortWanted(rng, s)) {
+        run.offer = buildShortNotice(rng, s);
+        return;
+      }
       if (tuneupWanted(rng, s, idx)) {
         run.tuneupOffered = true;
         run.offer = buildTuneup(rng, s);
@@ -1723,14 +1916,16 @@ export function seasonNext(s0: GameState): GameState {
       }
       const o = buildOffer(rng, s, idx);
       // szybka kariera: ofertę widzisz tylko przy walce o pas i z rywalem, resztę narożnik przyjmuje sam
-      if (s.quick && !(o.title || o.rival)) {
+      if (s.quick && !(o.title || o.rival || o.superfight || o.rematch)) {
         o.prep = 'std';
+        if (ticketsAvailable(s, o)) o.tickets = 'std';
         startFight(rng, s, o);
         return;
       }
       if (run.autoAccept) {
         const p = run.autoPrep ?? 'std';
         o.prep = p === 'rival' && s.money < prepCost(s, o) ? 'std' : p;
+        if (ticketsAvailable(s, o)) o.tickets = (['none', 'std', 'push'] as const)[s.flags.autoTickets ?? 1];
         startFight(rng, s, o);
       }
       else run.offer = o;
@@ -1810,13 +2005,24 @@ function startFight(rng: Rng, s: GameState, o: FightOffer) {
   const idx = run.fights.length;
   const { opp, title, defense, grudge } = o;
   const amateur = isAmateurRun(s);
+  // ważenie: gdy waga nie wychodzi, gracz decyduje (sauna albo kara z gaży)
+  if (!amateur && s.contract.kind !== 'freak' && !o.weigh && weightShift(s) < 0) {
+    const p = weightMissChance(s) * (o.short ? 2 : 1) + (o.short ? 10 : 0);
+    if (rng.chance(p / 100)) {
+      if (s.quick && !(title || o.rival || o.superfight)) o.weigh = 'paid';
+      else {
+        run.weigh = o;
+        return;
+      }
+    }
+  }
   const t = amateur ? run.tourneys![run.tIdx ?? 0] : undefined;
   {
     {
     const freak = s.contract.kind === 'freak';
     const fed = freak ? s.contract.fed : s.fed;
     const stage = t?.stage ?? undefined;
-    const rounds = amateur ? (stage === 'qf' || stage === 'sf' ? 1 : 3) : title ? 5 : 3;
+    const rounds = amateur ? (stage === 'qf' || stage === 'sf' ? 1 : 3) : title || o.superfight ? 5 : 3;
     const spot = amateur ? undefined : o.spot;
     const rep: FightReport = {
       idx,
@@ -1843,6 +2049,10 @@ function startFight(rng: Rng, s: GameState, o: FightOffer) {
       winBonus: amateur ? 0 : o.winBonus,
       rival: o.rival,
       tuneup: o.tuneup,
+      short: o.short,
+      interim: o.interim,
+      unify: o.unify,
+      superfight: o.superfight,
       earned: 0,
     };
     if (o.tuneup) rep.fed = o.gala;
@@ -1860,16 +2070,57 @@ function startFight(rng: Rng, s: GameState, o: FightOffer) {
       } else if (rep.prep === 'hard') {
         rep.moments.push({ round: 0, title: 'Ciężki obóz', text: 'Dwa treningi dziennie przez sześć tygodni. Forma jest, ale ciało jest zmęczone.', tone: 'neutral' });
       }
-      if (!freak && weightShift(s) < 0 && rng.chance(weightMissChance(s) / 100)) {
+      if (o.short)
+        rep.moments.push({ round: 0, title: 'Zastępstwo', text: `Sześć dni temu oglądałeś tę galę z kanapy. Teraz idziesz w karcie głównej. Bez obozu, bez planu pod rywala, na samej formie z sali.`, tone: 'neutral' });
+      if (o.weigh === 'paid') {
         rep.weightMiss = true;
+        rep.weighMod = -5;
         const fine = Math.round((rep.purse * 0.25) / 100) * 100;
         rep.purse -= fine;
         s.rep = clamp(s.rep - 2, 0, 100);
         rep.moments.push({ round: 0, title: 'Nie zrobiłeś wagi', text: `Waga pokazuje o 1,2 kg za dużo. ${fine.toLocaleString('pl-PL')} zł z gaży idzie do rywala, a ty wchodzisz do klatki wysuszony.`, tone: 'bad' });
+      } else if (o.weigh === 'cut_ok') {
+        rep.weighMod = -2;
+        s.wear = clamp(s.wear + 2, 0, 100);
+        rep.moments.push({ round: 0, title: 'Waga w ostatniej chwili', text: 'Godzina w saunie i dwie w foliach. O szóstej rano waga pokazuje limit co do grama. Gaża cała, ale nogi jak z waty.', tone: 'neutral' });
+      } else if (o.weigh === 'cut_fail') {
+        rep.weightMiss = true;
+        rep.weighMod = -9;
+        const fine = Math.round((rep.purse * 0.3) / 100) * 100;
+        rep.purse -= fine;
+        s.wear = clamp(s.wear + 3, 0, 100);
+        s.rep = clamp(s.rep - 3, 0, 100);
+        rep.moments.push({ round: 0, title: 'Sauna nie pomogła', text: `Po trzech godzinach zbijania dalej brakuje 600 gramów, a ty ledwo stoisz. ${fine.toLocaleString('pl-PL')} zł kary i walka z pustym bakiem.`, tone: 'bad' });
       }
+      if (o.tickets && ticketsAvailable(s, o)) {
+        const sale = ticketSale(s, o.tickets, rng.next());
+        rep.tickets = { ...sale, plan: o.tickets };
+        s.money += sale.cut;
+        s.totalEarned += sale.cut;
+        const tr = s.flags.ticketRep ?? 0;
+        s.flags.ticketRep = clamp(tr + (o.tickets === 'none' ? -1 : sale.sold >= 100 ? 2 : sale.sold >= 55 ? 1 : 0), -2, 5);
+        if (o.tickets === 'push') addFans(s, sale.sold * 3);
+        s.flags.ticketsSold = (s.flags.ticketsSold ?? 0) + sale.sold;
+        rep.moments.push(
+          o.tickets === 'none'
+            ? { round: 0, title: 'Bilety', text: 'Nie sprzedajesz ani jednego biletu. Organizator nic nie mówi, ale przy następnej gali o tym pamięta.', tone: 'neutral' }
+            : {
+                round: 0,
+                title: 'Bilety',
+                text: `Sprzedajesz ${sale.sold} ${pl(sale.sold, 'bilet', 'bilety', 'biletów')}${o.tickets === 'push' ? ' po tygodniu objazdu po siłowniach' : ''}. Prowizja: ${sale.cut.toLocaleString('pl-PL')} zł. ${sale.sold >= 100 ? 'Pół hali przyszło dla ciebie, organizator już dzwoni z kolejną datą.' : sale.sold >= 55 ? 'Organizator zadowolony, będzie lepsze miejsce w karcie.' : 'Mogło być lepiej, ale sektor z twoimi ludźmi słychać.'}`,
+                tone: sale.sold >= 55 ? 'good' : 'neutral',
+              },
+        );
+      }
+      if (o.superfight)
+        rep.moments.push({ round: 0, title: 'Superfight', text: `Mistrz kontra mistrz. Pięć rund w wadze ${o.superfight}. Twój pas zostaje w szatni, stawką jest drugi i miejsce w historii.`, tone: 'purple' });
+      if (o.interim)
+        rep.moments.push({ round: 0, title: 'Pas tymczasowy', text: 'Mistrz leczy kontuzję, więc federacja robi walkę o pas tymczasowy. Pięć rund jak w walce o tytuł.', tone: 'purple' });
+      if (o.unify)
+        rep.moments.push({ round: 0, title: 'Unifikacja', text: 'Dwa pasy, jeden mistrz. Ty z tymczasowym, on z prawdziwym. Po tej walce zostanie jeden.', tone: 'purple' });
     }
     if (!amateur && !freak) rep.sim.pro = true;
-    if (!amateur && !freak && (title || o.rival)) {
+    if (!amateur && !freak && (title || o.rival || o.superfight)) {
       rep.sim.big = true;
       rep.moments.push({
         round: 0,
@@ -1966,7 +2217,7 @@ export function seasonSkip(s0: GameState): GameState {
     if (!run || run.done) break;
     const cur = run.fights[run.fights.length - 1];
     if (cur && cur.sim.pending) break;
-    if (run.offer || run.press) break;
+    if (run.offer || run.press || run.weigh || run.post) break;
     s = seasonNext(s);
     if (s.run?.offer) break;
   }
@@ -1995,18 +2246,19 @@ export function declineBlocked(s: GameState): string | null {
 }
 
 /** Przyjmuje tę ofertę i wszystkie kolejne w tym roku. */
-export function acceptAllOffers(s0: GameState, prep: 'std' | 'rival' | 'hard' = 'std'): GameState {
-  const s = acceptOffer(s0, prep);
+export function acceptAllOffers(s0: GameState, prep: 'std' | 'rival' | 'hard' = 'std', tickets: TicketPlan = 'std'): GameState {
+  const s = acceptOffer(s0, prep, tickets);
   if (s.run) {
     s.run.autoAccept = true;
     s.run.autoPrep = prep;
+    s.flags.autoTickets = tickets === 'none' ? 0 : tickets === 'push' ? 2 : 1;
   }
   return s;
 }
 
 // Konferencja przed galą: tylko przy dużych walkach (karta główna, rywal, pas)
 export function pressEligible(o: FightOffer) {
-  return !o.tuneup && !!(o.title || o.rival || o.spot === 'główna' || o.spot === 'wieczoru' || o.opp.freak);
+  return !o.tuneup && !o.short && !!(o.title || o.rival || o.superfight || o.spot === 'główna' || o.spot === 'wieczoru' || o.opp.freak);
 }
 const PRESS_QUOTES = [
   'Ten {n} to zawodnik z przypadku. W klatce zobaczy, jak wygląda prawdziwe MMA.',
@@ -2146,15 +2398,183 @@ export function pressAnswer(s0: GameState, key: PressAnswer): GameState {
   return s;
 }
 
+/** Szansa, że sauna i folie dowiozą limit. */
+export function cutChance(s: GameState): number {
+  const o = s.run?.weigh;
+  let c = 62 + (hasBackroom(s, 'doctor') ? 10 : 0) - (s.age >= 32 ? 10 : 0) - (o?.short ? 15 : 0) - (weightShift(s) < -1 ? 10 : 0) - Math.round(s.wear / 10);
+  return Math.round(clamp(c, 20, 85));
+}
+
+/** Ważenie: zbijasz dalej (szansa na pełną gażę) albo płacisz karę. */
+export function weighIn(s0: GameState, choice: 'cut' | 'pay'): GameState {
+  const s = clone(s0);
+  const o = s.run?.weigh;
+  if (!o) return s0;
+  withRng(s, (rng) => {
+    o.weigh = choice === 'pay' ? 'paid' : rng.chance(cutChance(s0) / 100) ? 'cut_ok' : 'cut_fail';
+    s.run!.weigh = null;
+    startFight(rng, s, o);
+  });
+  return s;
+}
+
+/** Decyzja po walce: mikrofon albo reakcja na kontrowersyjny werdykt. */
+export function postAnswer(s0: GameState, key: string): GameState {
+  const s = clone(s0);
+  const run = s.run;
+  const post = run?.post;
+  if (!run || !post) return s0;
+  const opt = post.options.find((x) => x.key === key);
+  if (!opt) return s0;
+  run.post = null;
+  const rep = run.fights[run.fights.length - 1];
+  withRng(s, (rng) => {
+    const ok = opt.chance === undefined || rng.chance(opt.chance / 100);
+    const fansBase = [40, 200, 1200, 6000, 40000][s.tier] ?? 200;
+    let text = '';
+    let tone: Moment['tone'] = ok ? 'good' : 'bad';
+    switch (key) {
+      case 'champ':
+        if (ok) {
+          s.flags.titleCall = 1;
+          if ((s.rank ?? 99) <= 3) s.flags.micTitle = (s.flags.micTitle ?? 0) + 1;
+          s.media = clamp(s.media + 4, 0, 100);
+          addFans(s, fansBase * 3);
+          text = (s.rank ?? 99) <= 3
+            ? 'Patrzysz prosto w kamerę i wywołujesz mistrza po nazwisku. Hala wybucha, a po godzinie mistrz odpisuje: „Chcesz? To masz”. Następna walka: o pas.'
+            : 'Wywołujesz mistrza po nazwisku. Federacja lubi ten szum, ale na pas jeszcze za wcześnie: dostaniesz eliminator z kimś z samej czołówki.';
+          tone = 'purple';
+        } else {
+          s.media = clamp(s.media + 2, 0, 100);
+          s.rep = clamp(s.rep - 4, 0, 100);
+          addFans(s, fansBase);
+          text = 'Wywołujesz mistrza, a on w wywiadzie tylko się śmieje: „Najpierw niech zasłuży”. Internet ma używanie, w federacji kręcą głowami.';
+        }
+        break;
+      case 'up':
+        if (ok) {
+          s.flags.callUp = 1;
+          s.media = clamp(s.media + 2, 0, 100);
+          addFans(s, fansBase * 1.5);
+          text = 'Wywołujesz kogoś z czołówki. Federacja kupuje ten pomysł: następny rywal będzie wyżej w rankingu.';
+        } else {
+          s.media = clamp(s.media + 1, 0, 100);
+          addFans(s, fansBase * 0.5);
+          text = 'Wywołany zawodnik odpowiada, że ma inne plany. Kibice to zapamiętali, federacja niekoniecznie.';
+          tone = 'neutral';
+        }
+        break;
+      case 'rival':
+        s.flags.rivalCallout = 1;
+        s.media = clamp(s.media + 3, 0, 100);
+        addFans(s, fansBase * 2);
+        text = 'Mówisz do kamery, że czas wyrównać rachunki z odwiecznym rywalem. Organizator już liczy bilety.';
+        tone = 'purple';
+        break;
+      case 'super':
+        if (ok) {
+          s.flags.superCall = 1;
+          s.media = clamp(s.media + 5, 0, 100);
+          addFans(s, fansBase * 4);
+          text = 'Z pasem na ramieniu wywołujesz mistrza kategorii obok. Federacja zaciera ręce: superfight jest w planach.';
+          tone = 'purple';
+        } else {
+          s.media = clamp(s.media + 2, 0, 100);
+          addFans(s, fansBase);
+          text = 'Wywołujesz mistrza kategorii obok, ale jego obóz mówi, że „nie walczy w dół ani w górę”. Może kiedyś.';
+          tone = 'neutral';
+        }
+        break;
+      case 'thanks':
+        s.rep = clamp(s.rep + 2, 0, 100);
+        addFans(s, fansBase * 0.6);
+        text = 'Dziękujesz trenerowi, rodzinie i kibicom, którzy przyjechali za tobą. Krótko i z klasą.';
+        tone = 'good';
+        break;
+      case 'rematch':
+        if (ok) {
+          s.rematchOpp = { ...rep.opp, stats: { ...rep.opp.stats }, record: { ...rep.opp.record }, rank: rep.defense && rep.result === 'L' ? 0 : rep.opp.rank };
+          s.media = clamp(s.media + 2, 0, 100);
+          addFans(s, fansBase);
+          text = 'Federacja ogląda walkę jeszcze raz i przyznaje: należy się rewanż. Wraca przy najbliższej okazji.';
+          tone = 'purple';
+        } else {
+          s.rep = clamp(s.rep - 1, 0, 100);
+          text = 'Federacja odpowiada krótko: werdykt jest werdyktem, a ona ma inne plany na tego rywala.';
+          tone = 'neutral';
+        }
+        break;
+      case 'class':
+        s.rep = clamp(s.rep + 3, 0, 100);
+        text = 'Mówisz, że wrócisz silniejszy, i gratulujesz rywalowi. Środowisko to docenia.';
+        tone = 'good';
+        break;
+      case 'rant':
+        s.media = clamp(s.media + 3, 0, 100);
+        s.rep = clamp(s.rep - 3, 0, 100);
+        addFans(s, fansBase * 3);
+        text = 'Nagrywasz wściekły film o „skorumpowanych sędziach”. Milion wyświetleń, ale w federacji nikt się nie uśmiecha.';
+        tone = 'neutral';
+        break;
+    }
+    if (rep && text) rep.moments.push({ round: rep.round, title: post.kind === 'mic' ? 'Mikrofon' : 'Po werdykcie', text, tone });
+  });
+  return s;
+}
+
+/** Po wygranej: mikrofon w klatce. Po kontrowersyjnej porażce: reakcja na werdykt. */
+function buildPost(rng: Rng, s: GameState, rep: FightReport): PostFight | null {
+  if (rep.amateur || rep.freak || rep.tuneup || s.tier < 1 || s.contract.kind === 'freak') return null;
+  if (s.quick && !rep.sim.big) return null;
+  const finish = rep.method === 'KO/TKO' || rep.method === 'Poddanie' || rep.method === 'Lekarz';
+  if (rep.result === 'W') {
+    if ((s.flags[`mic:${s.season}`] ?? 0) >= 2) return null;
+    const p = finish ? 0.85 : rep.spot === 'wstępna' ? 0.25 : 0.5;
+    if (!rep.title && !rep.superfight && !rng.chance(p)) return null;
+    s.flags[`mic:${s.season}`] = (s.flags[`mic:${s.season}`] ?? 0) + 1;
+    const opts: PostFight['options'] = [];
+    const rk = s.rank;
+    if (rk === 0 && s.tier >= 3 && s.titleDefenses >= 1 && (s.flags.superDone ?? 0) < 2 && !rep.superfight)
+      opts.push({ key: 'super', label: 'Wywołaj mistrza kategorii obok', desc: 'Superfight o drugi pas. Wielkie pieniądze, jeśli federacja to kupi.', chance: Math.round(clamp(30 + s.media / 3 + (finish ? 10 : 0), 15, 80)) });
+    if (rk !== null && rk !== 0 && rk <= 6 && !(s.flags.interim ?? 0))
+      opts.push({ key: 'champ', label: 'Wywołaj mistrza', desc: 'Uda się: następna walka o pas. Nie uda: wyjdziesz na pyszałka.', chance: Math.round(clamp(12 + s.media / 3 + (finish ? 12 : 0) + (rk <= 2 ? 20 : rk <= 4 ? 10 : 0), 8, 80)) });
+    if (rk !== 0)
+      opts.push({ key: 'up', label: rk === null ? 'Wywołaj kogoś z rankingu' : 'Wywołaj kogoś z czołówki', desc: 'Mocniejszy rywal w następnej walce i większy skok w rankingu po wygranej.', chance: Math.round(clamp(42 + s.media / 4 + (finish ? 10 : 0), 20, 88)) });
+    const rival = s.rivalId ? s.peers.find((x) => x.id === s.rivalId && !x.retired && x.tier === s.tier) : undefined;
+    if (rival && rival.id !== rep.opp.id && rk !== 0) opts.push({ key: 'rival', label: `Wywołaj rywala: ${rival.lastName}`, desc: 'Pewna walka z odwiecznym rywalem przy najbliższej okazji.' });
+    opts.push({ key: 'thanks', label: 'Podziękuj i zejdź z klatki', desc: 'Bez show. Trochę szacunku w środowisku.' });
+    const lead = finish ? `${rep.opp.lastName} jeszcze dochodzi do siebie, a ty dostajesz mikrofon.` : 'Ręka w górze. Komentator podaje ci mikrofon.';
+    return { kind: 'mic', title: 'Mikrofon jest twój', text: `${lead} Cała hala i transmisja czekają, co powiesz.`, options: opts.slice(0, 4) };
+  }
+  if (rep.result === 'L' && (rep.method === 'Decyzja niejednogłośna' || rep.method === 'Decyzja większościowa')) {
+    const chance = Math.round(clamp(35 + s.media / 3 + (rep.title ? 15 : 0) + (rep.opp.peer ? 10 : 0), 15, 85));
+    return {
+      kind: 'robbed',
+      title: 'Kontrowersyjny werdykt',
+      text: 'Hala gwiżdże, w internecie wrze. Wielu uważa, że to ty wygrałeś. Co robisz?',
+      options: [
+        { key: 'rematch', label: 'Domagaj się rewanżu', desc: 'Federacja może dać ci tę samą walkę jeszcze raz.', chance },
+        { key: 'class', label: 'Przyjmij werdykt z klasą', desc: 'Reputacja w górę. Idziesz dalej.' },
+        { key: 'rant', label: 'Nagraj wściekły film', desc: 'Dużo obserwujących, ale federacja się obrazi.' },
+      ],
+    };
+  }
+  return null;
+}
+
 export function prepCost(_s: GameState, o: FightOffer): number {
   return Math.max(1000, Math.round((o.purse * 0.35) / 100) * 100);
 }
 
-export function acceptOffer(s0: GameState, prep: 'std' | 'rival' | 'hard' = 'std'): GameState {
+export function acceptOffer(s0: GameState, prep: 'std' | 'rival' | 'hard' = 'std', tickets: TicketPlan = 'std'): GameState {
   const s = clone(s0);
   const o = s.run?.offer;
   if (!o) return s0;
-  o.prep = prep === 'rival' && s.money < prepCost(s, o) ? 'std' : prep;
+  // zastępstwo: bez obozu
+  o.prep = o.short ? 'std' : prep === 'rival' && s.money < prepCost(s, o) ? 'std' : prep;
+  if (ticketsAvailable(s, o)) o.tickets = tickets;
+  // zastępstwo to walka ponad plan
+  if (o.short) s.run!.planned += 1;
   s.run!.offer = null;
   if (pressEligible(o) && !s.run!.autoAccept) {
     withRng(s, (rng) => {
@@ -2207,11 +2627,18 @@ export function negotiateOffer(s0: GameState): GameState {
 
 export function declineOffer(s0: GameState): GameState {
   if (declineBlocked(s0) || !s0.run?.offer) return s0;
-  if (s0.run.offer.tuneup) {
+  const o0 = s0.run.offer;
+  if (o0.tuneup || o0.short || o0.superfight) {
     const s = clone(s0);
     withRng(s, (rng) => {
       s.run!.notes = s.run!.notes ?? [];
-      s.run!.notes.push(`Odmawiasz walki na ${s0.run!.offer!.gala.split(' · ')[0]}. Federacja ma dla ciebie normalnego rywala.`);
+      s.run!.notes.push(
+        o0.short
+          ? `Odmawiasz zastępstwa (${o0.opp.firstName} ${o0.opp.lastName}). Bez obozu to loteria, czekasz na swoją walkę.`
+          : o0.superfight
+            ? `Odmawiasz superfightu. Skupiasz się na obronie pasa w swojej kategorii.`
+            : `Odmawiasz walki na ${o0.gala.split(' · ')[0]}. Federacja ma dla ciebie normalnego rywala.`,
+      );
       s.run!.offer = buildOffer(rng, s, s.run!.fights.length);
     });
     return s;
@@ -2315,13 +2742,35 @@ function updateRank(s: GameState, rep: FightReport) {
   const opp = rep.opp;
   const mine = s.rank;
   if (rep.freak || rep.amateur) return;
+  // superfight: twój pas nie jest stawką, w rankingu nic się nie zmienia
+  if (rep.superfight) {
+    if (res === 'W') {
+      s.flags.superDone = (s.flags.superDone ?? 0) + 1;
+      s.flags.doubleChamp = 1;
+      const name = `${BELT_NAMES[s.tier]} wagi ${rep.superfight} (superfight)`;
+      s.belts.push({ name, season: s.season, age: s.age });
+      log(s, `👑 Podwójny mistrz! Superfight wygrany z ${opp.firstName} ${opp.lastName} (w wadze ${rep.superfight}).`);
+    } else s.flags.superDone = (s.flags.superDone ?? 0) + 1;
+    return;
+  }
+  // pas tymczasowy: wygrany czeka na unifikację
+  if (rep.interim) {
+    if (res === 'W') {
+      s.flags.interim = 1;
+      s.flags.interimBelts = (s.flags.interimBelts ?? 0) + 1;
+      s.rank = 1;
+      log(s, `Pas tymczasowy (${galaPrefix(rep.fed)}). Pokonany: ${opp.firstName} ${opp.lastName}.`);
+    } else s.rank = res === 'D' ? 2 : 3;
+    return;
+  }
   if (rep.title && !rep.defense) {
+    if (rep.unify) s.flags.interim = 0;
     if (res === 'W') {
       s.rank = 0;
       s.titleDefenses = 0;
       const name = `${BELT_NAMES[s.tier]} (${galaPrefix(rep.fed)})`;
       s.belts.push({ name, season: s.season, age: s.age });
-      log(s, `🏆 ${name}. Pokonany mistrz: ${opp.firstName} ${opp.lastName}.`);
+      log(s, `🏆 ${name}${rep.unify ? ' po unifikacji' : ''}. Pokonany mistrz: ${opp.firstName} ${opp.lastName}.`);
     } else if (res === 'L') s.rank = 2;
     return;
   }
@@ -2351,6 +2800,8 @@ function updateRank(s: GameState, rep: FightReport) {
     else next = cur - 1 - (finish ? 1 : 0) - (opp.rank !== null ? 1 : 0);
     // dobry menedżer umie sprzedać zwycięstwo: większy skok w rankingu
     next -= activeManager(s)?.quality ?? 0;
+    // uratowana gala: organizator i ranking to pamiętają
+    if (rep.short) next -= 1;
     s.rank = clamp(next, 1, size + 2);
   } else if (res === 'L') {
     s.rank = cur + 2 + (finish ? 1 : 0);
@@ -2600,12 +3051,37 @@ function finalizeFight(rng: Rng, s: GameState, rep: FightReport) {
   if (res === 'W' && rep.method === 'KO/TKO' && s.finishes.ko === 1) log(s, `Pierwszy nokaut (${rep.detail}).`);
   if (rep.freak && s.freakFights === 1) log(s, `Pierwszy freak fight (${opp.freak}).`);
 
+  // obserwujący
+  const fans = fanGain(
+    s,
+    { result: res, finish: rep.method === 'KO/TKO' || rep.method === 'Poddanie', title: rep.title || !!rep.superfight, freak: rep.freak, bonus: !!rep.bonus, tier: s.tier, amateur: rep.amateur },
+    rng.next(),
+  );
+  if (fans > 0) {
+    rep.fans = fans;
+    addFans(s, fans);
+  }
+  if (rep.short && res === 'W') {
+    s.flags.shortWins = (s.flags.shortWins ?? 0) + 1;
+    s.rep = clamp(s.rep + 2, 0, 100);
+    s.media = clamp(s.media + 2, 0, 100);
+    rep.moments.push({ round: rep.round, title: 'Uratowana gala', text: 'Wziąłeś walkę z sześciodniowym wyprzedzeniem i wygrałeś. Organizator nie zapomni, ranking też nie.', tone: 'purple' });
+  }
+  if (rep.superfight && res === 'W') {
+    s.media = clamp(s.media + 10, 0, 100);
+    s.rep = clamp(s.rep + 8, 0, 100);
+    rep.moments.push({ round: rep.round, title: 'Podwójny mistrz', text: `Dwa pasy na dwóch ramionach. Mało komu w historii federacji się to udało.`, tone: 'purple' });
+  }
+  if (rep.interim && res === 'W')
+    rep.moments.push({ round: rep.round, title: 'Tymczasowy mistrz', text: 'Pas tymczasowy jest twój. Teraz czeka cię walka z prawdziwym mistrzem, gdy wróci po kontuzji.', tone: 'purple' });
+
   if (rep.amateur) advanceTourney(s, rep, res);
   else if (s.run!.fights.length >= s.run!.planned) s.run!.done = true;
   if (s.flags.injuryStop) {
     s.flags.injuryStop = 0;
     s.run!.done = true;
   }
+  if (rep.result) s.run!.post = buildPost(rng, s, rep);
 }
 
 export const METHOD_SHORT: Record<string, string> = {
@@ -3067,6 +3543,66 @@ export function marketWarnings(s: GameState): string[] {
   return out;
 }
 
+// Negocjacje kontraktu na kartce (jedna próba na rynek)
+export type ContractAsk = 'purse' | 'bonus' | 'signing';
+export const CONTRACT_ASKS: { id: ContractAsk; label: string; desc: string }[] = [
+  { id: 'purse', label: 'Wyższa gaża', desc: '+15% za każdą walkę' },
+  { id: 'bonus', label: 'Premia za wygraną', desc: 'premia ×1,6, płacą za wyniki' },
+  { id: 'signing', label: 'Bonus za podpis', desc: 'jednorazowy zastrzyk gotówki' },
+];
+
+export function contractNegoChance(s: GameState, c: Contract, ask: ContractAsk): number {
+  const mg = currentManager(s);
+  let ch = 35 + (mg?.negotiate ?? 0) + s.media / 4 + Math.max(0, s.streak) * 3 + (followersOf(s) >= 50000 ? 5 : 0) - c.tier * 4;
+  if (c.kind === 'promotion' && s.rank !== null && s.rank <= 2) ch += 10;
+  if (c.kind === 'freak') ch += 10;
+  if (ask === 'bonus') ch += 12;
+  if (ask === 'signing') ch -= 5;
+  return Math.round(clamp(ch, 10, 80));
+}
+
+export function signingAmount(c: Contract): number {
+  return Math.max(2000, Math.round((c.purse * 1.2) / 1000) * 1000);
+}
+
+export function negotiateContract(s0: GameState, idx: number, ask: ContractAsk): GameState {
+  const m0 = s0.market;
+  if (!m0 || m0.negotiated || !m0.contracts[idx]) return s0;
+  const s = clone(s0);
+  const m = s.market!;
+  const c = m.contracts[idx];
+  withRng(s, (rng) => {
+    const ok = rng.chance(contractNegoChance(s0, m0.contracts[idx], ask) / 100);
+    m.negotiated = true;
+    if (ok) {
+      if (ask === 'purse') c.purse = Math.round((c.purse * 1.15) / 100) * 100;
+      if (ask === 'bonus') c.winBonus = Math.round((c.winBonus * 1.6) / 100) * 100;
+      if (ask === 'signing') c.signing = signingAmount(c);
+      const what = ask === 'purse' ? `gaża ${c.purse.toLocaleString('pl-PL')} zł za walkę` : ask === 'bonus' ? `premia za wygraną ${c.winBonus.toLocaleString('pl-PL')} zł` : `bonus za podpis ${c.signing!.toLocaleString('pl-PL')} zł`;
+      c.nego = { ask, ok: true, text: `Federacja się zgadza: ${what}. Dopisują to długopisem nad podpisem.` };
+    } else if (ask === 'purse' && rng.chance(0.25)) {
+      c.purse = Math.round((c.purse * 0.95) / 100) * 100;
+      c.nego = { ask, ok: false, text: `Federacja się obraża: „Takie stawki to nie u nas”. Nowa wersja umowy jest o 5% gorsza.` };
+    } else {
+      c.nego = { ask, ok: false, text: 'Federacja nie ustępuje. Warunki zostają, jakie były.' };
+    }
+  });
+  return s;
+}
+
+export function setJob(s0: GameState, job: JobMode | undefined): GameState {
+  const s = clone(s0);
+  s.job = job;
+  return s;
+}
+
+export function setSocial(s0: GameState, mode: SocialMode): GameState {
+  const s = clone(s0);
+  s.social = mode;
+  if (s.followers === undefined) s.followers = followersOf(s0);
+  return s;
+}
+
 export function confirmMarket(s0: GameState): GameState {
   const s = clone(s0);
   const m = s.market;
@@ -3118,7 +3654,12 @@ export function confirmMarket(s0: GameState): GameState {
       log(s, `${s.fed} skreśla cię z rankingu po przejściu do freak fightów.`);
     }
   }
-  s.contract = c;
+  if (c.signing) {
+    s.money += c.signing;
+    s.totalEarned += c.signing;
+    log(s, `Bonus za podpis: ${c.signing.toLocaleString('pl-PL')} zł (${c.fed.split(' – ')[0]}).`);
+  }
+  s.contract = { ...c, signing: undefined, nego: undefined };
   s.contractSeasonsLeft = c.seasons;
   if (s.tier > s.peakTier) {
     s.peakTier = s.tier;
@@ -3186,7 +3727,9 @@ export function quickAmateur(s0: GameState): GameState {
       case 'season': {
         const run = s.run!;
         const cur = run.fights[run.fights.length - 1];
-        if (run.press) s = pressAnswer(s, 'calm');
+        if (run.weigh) s = weighIn(s, 'pay');
+        else if (run.post) s = postAnswer(s, 'thanks');
+        else if (run.press) s = pressAnswer(s, 'calm');
         else if (run.offer) s = acceptOffer(s);
         else if (cur?.sim.pending) s = decide(s, [...cur.sim.pending.options].sort((a, b) => b.chance - a.chance)[0].key);
         else if (run.done) s = toSummary(s);
@@ -3350,6 +3893,8 @@ export function legacyScore(s: GameState): number {
     beltCount[t] = k + 1;
     pts += BELT_PTS[t] * (k === 0 ? 1 : t === 0 ? 0.2 : t <= 2 ? 0.25 : 0.6);
   }
+  // pas tymczasowy liczy się, ale dużo mniej niż prawdziwy
+  pts += (s.flags.interimBelts ?? 0) * (BELT_PTS[Math.min(4, s.peakTier)] ?? 0) * 0.25;
   if (!s.quick) pts += s.medals.gold * 12 + s.medals.silver * 6 + s.medals.bronze * 4;
   // wyjście poza Polskę jest warte więcej niż kolejne pasy w kraju
   pts += [0, 40, 120, 400, 850][s.peakTier] ?? 0;

@@ -8,6 +8,17 @@ export type TourneyStage = 'qf' | 'sf' | 'f' | 'b';
 export type StartProfile = 'osiedle' | 'biznes' | 'junior' | 'wybraniec';
 export type Difficulty = 'normal' | 'hard';
 export type Outcome = 'super' | 'success' | 'fail';
+export type TicketPlan = 'none' | 'std' | 'push';
+export type JobMode = 'full' | 'half' | 'none';
+export type SocialMode = 'off' | 'self' | 'pro';
+
+/** decyzja po walce: wywołanie przez mikrofon albo reakcja na kontrowersyjny werdykt */
+export interface PostFight {
+  kind: 'mic' | 'robbed';
+  title: string;
+  text: string;
+  options: { key: string; label: string; desc: string; chance?: number }[];
+}
 
 export interface Record3 {
   w: number;
@@ -69,6 +80,10 @@ export interface Contract {
   reason?: string;
   /** kontrakt na wyłączność: wyższa gaża, bez walk na innych galach */
   exclusive?: boolean;
+  /** bonus za podpis (jednorazowo, wynegocjowany) */
+  signing?: number;
+  /** wynik negocjacji na kartce */
+  nego?: { ask: 'purse' | 'bonus' | 'signing'; ok: boolean; text: string };
 }
 
 export interface Sponsor {
@@ -248,6 +263,16 @@ export interface FightReport {
   prep?: 'std' | 'rival' | 'hard';
   /** nie zrobiłeś wagi */
   weightMiss?: boolean;
+  /** kara/premia do formy z ważenia */
+  weighMod?: number;
+  short?: boolean;
+  interim?: boolean;
+  unify?: boolean;
+  superfight?: string;
+  /** sprzedane bilety i prowizja */
+  tickets?: { sold: number; cut: number; plan: TicketPlan };
+  /** przyrost obserwujących po walce */
+  fans?: number;
   pressMod?: number;
   /** plakat gali: miasto, hala i inne walki w karcie */
   poster?: { city: string; venue: string; bouts: { a: string; ar: string; b: string; br: string; tag: string }[] };
@@ -306,6 +331,12 @@ export interface SeasonRun {
   formSeen?: boolean;
   /** czy w tym roku była już propozycja walki na odbudowę */
   tuneupOffered?: boolean;
+  /** czy w tym roku był już telefon z zastępstwem */
+  shortOffered?: boolean;
+  /** ważenie: nie zrobiłeś limitu, czekamy na decyzję */
+  weigh?: FightOffer | null;
+  /** decyzja po walce (mikrofon, kontrowersja) */
+  post?: PostFight | null;
 }
 
 export interface FightOffer {
@@ -329,6 +360,20 @@ export interface FightOffer {
   pressCtx?: { id: string; question: string; labels: Record<'calm' | 'provoke' | 'insult', [string, string]>; provoke: number; insult: number };
   /** komunikat po negocjacjach */
   note?: string;
+  /** walka na zastępstwo: telefon kilka dni przed galą */
+  short?: boolean;
+  /** pas tymczasowy (mistrz kontuzjowany) */
+  interim?: boolean;
+  /** unifikacja: tymczasowy mistrz kontra mistrz */
+  unify?: boolean;
+  /** superfight: mistrz kontra mistrz kategorii obok */
+  superfight?: string;
+  /** rewanż wywalczony po kontrowersyjnym werdykcie */
+  rematch?: boolean;
+  /** sprzedaż biletów (gale regionalne) */
+  tickets?: TicketPlan;
+  /** wynik ważenia, gdy waga nie wyszła */
+  weigh?: 'paid' | 'cut_ok' | 'cut_fail';
   /** walka na odbudowę rekordu: słaby rywal z ujemnym bilansem na dziwnej gali */
   tuneup?: boolean;
   /** podpowiedź menedżera przy ofercie */
@@ -426,6 +471,14 @@ export interface GameState {
   money: number;
   totalEarned: number;
   media: number; // 0..100
+  /** obserwujący w social mediach */
+  followers?: number;
+  /** jak prowadzisz social media */
+  social?: SocialMode;
+  /** praca obok treningów (początek kariery) */
+  job?: JobMode;
+  /** rywal, z którym wywalczyłeś rewanż (po kontrowersji) */
+  rematchOpp?: Fighter | null;
   rep: number; // 0..100
   relations: number; // ukryte
   wear: number; // 0..100
@@ -484,7 +537,7 @@ export interface GameState {
   eventQueue: string[];
   run: SeasonRun | null;
   lastSummary: SeasonSummary | null;
-  market: { contracts: Contract[]; clubs: Club[]; pickedContract: number; pickedClub: number } | null;
+  market: { contracts: Contract[]; clubs: Club[]; pickedContract: number; pickedClub: number; negotiated?: boolean } | null;
   flags: Record<string, number>;
   seenEvents: string[];
   ending: Ending | null;

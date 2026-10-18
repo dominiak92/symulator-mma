@@ -51,6 +51,12 @@ export const ACHIEVEMENTS: Achievement[] = [
   { id: 'wasted', title: 'Zmarnowany talent', desc: 'Jako Wybraniec nie wyjdź poza polską federację.', secret: true, check: (s) => s.phase === 'ended' && s.profile.start === 'wybraniec' && s.peakTier <= 2 },
   { id: 'daily', title: 'Codzienna dawka', desc: 'Ukończ Karierę dnia.', check: (s) => s.mode === 'daily' && s.phase === 'ended' },
   { id: 'legacy3000', title: 'Legenda', desc: 'Zdobądź 4500 punktów LEGACY w jednej karierze.', check: (s) => (s.ending?.legacy ?? 0) >= 4500 },
+  { id: 'double_champ', title: 'Podwójny mistrz', desc: 'Wygraj superfight o pas drugiej kategorii.', check: (s) => f(s, 'doubleChamp') >= 1 },
+  { id: 'interim', title: 'Tymczasowo najlepszy', desc: 'Zdobądź pas tymczasowy.', check: (s) => f(s, 'interimBelts') >= 1 },
+  { id: 'short_win', title: 'Ratownik gali', desc: 'Wygraj walkę wziętą na zastępstwo.', check: (s) => f(s, 'shortWins') >= 1 },
+  { id: 'tickets', title: 'Sam sprzedam halę', desc: 'Sprzedaj w karierze 500 biletów.', check: (s) => f(s, 'ticketsSold') >= 500 },
+  { id: 'mic', title: 'Daj mi mikrofon', desc: 'Wywołaj mistrza i dostań walkę o pas.', check: (s) => f(s, 'micTitle') >= 1 },
+  { id: 'fans100k', title: 'Influencer', desc: 'Zbierz 100 tysięcy obserwujących.', check: (s) => (s.followers ?? 0) >= 100000 },
   { id: 'top_exit', title: 'Na własnych warunkach', desc: 'Zakończ karierę jako panujący mistrz albo na serii zwycięstw.', check: (s) => !!s.ending?.top },
 ];
 
