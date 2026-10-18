@@ -1,6 +1,6 @@
 import { STAT_LABELS, TIER_LEVEL } from '../../engine/data';
 import { ovr } from '../../engine/fighter';
-import { changeDivision, clubAvailability, clubLimits, confirmMarket, divisionKey, divisionOptions, marketWarnings, pickClub, pickContract, retire, retireBonus, setManager, weightMissChance } from '../../engine/game';
+import { recStr, changeDivision, clubAvailability, clubLimits, confirmMarket, divisionKey, divisionOptions, marketWarnings, pickClub, pickContract, retire, retireBonus, setManager, weightMissChance } from '../../engine/game';
 import { WEIGHTS } from '../../engine/data';
 import { MANAGERS, currentManager, managerBlocked } from '../../engine/managers';
 import type { Contract } from '../../engine/types';
@@ -49,6 +49,15 @@ export default function Market({ game, setGame }: StepProps) {
           Kontrakty · rok {g.season} kariery
         </div>
         <h2>Gdzie walczysz w tym roku?</h2>
+        {g.quick && g.tier === 0 && (
+          <div className="quick-am">
+            <Icon name="medal" size={16} />
+            <span>
+              <b>Amatorka w skrócie.</b> Turnieje amatorskie za tobą: {recStr(g.amRecord)}
+              {g.medals.gold + g.medals.silver + g.medals.bronze > 0 ? `, medale ${g.medals.gold}·${g.medals.silver}·${g.medals.bronze}` : ''}. Masz {lat(g.age)} i pierwszy kontrakt zawodowy na stole.
+            </span>
+          </div>
+        )}
         <p className="muted small" style={{ marginTop: 4 }}>
           Masz {lat(g.age)}. Wybierz galę, niżej klub.
         </p>

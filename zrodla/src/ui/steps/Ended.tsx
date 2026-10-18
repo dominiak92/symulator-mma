@@ -49,7 +49,7 @@ export default function Ended({ game, onNewCareer, onMenu }: { game: GameState; 
   }, [g, theme]);
 
   const fileName = `kariera-${g.profile.lastName.toLowerCase().replace(/[^a-ząćęłńóśźż0-9]+/gi, '-')}.png`;
-  const shareText = `${displayName(g)}: ${recStr(mainRecord(g))}${g.proDebut ? '' : ' w amatorce'}, ${e.verdict}. ${e.legacy} pkt LEGACY w Symulatorze Polskiego Zawodnika MMA.`;
+  const shareText = `${displayName(g)}: ${recStr(mainRecord(g))}${g.proDebut ? '' : ' w amatorce'}, ${e.verdict}. ${e.legacy} pkt LEGACY${g.quick ? ' (szybka kariera)' : ''} w Symulatorze Polskiego Zawodnika MMA.`;
 
   const share = async () => {
     if (!blob) return;
@@ -80,7 +80,7 @@ export default function Ended({ game, onNewCareer, onMenu }: { game: GameState; 
             <Fighter weight={divisionKey(g)} seed={`${g.profile.firstName}${g.profile.lastName}`} corner="blue" shorts={clubCrest(g.club).bg} size={96} belt={g.belts.length > 0} />
           </div>
           <div className="sum-head">
-            <div className="kicker">Koniec kariery · {lat(g.age)}</div>
+            <div className="kicker">Koniec {g.quick ? 'szybkiej ' : ''}kariery · {lat(g.age)}</div>
             <h2 className="verdict-big">{e.verdict}</h2>
             <div className="sum-rec">
               {recStr(mainRecord(g))}

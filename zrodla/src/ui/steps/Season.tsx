@@ -1,8 +1,8 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
 import { createPortal } from 'react-dom';
-import type { CardSpot, DecisionOption, DecisionPoint, FightOffer, FightReport, GameState, Moment } from '../../engine/types';
+import type { CardSpot, DecisionOption, DecisionPoint, FightOffer, FightReport, GameState, Moment, Stats } from '../../engine/types';
 import { galaPrefix, SEASON_FORMS, STAGE_LABELS, STAT_LABELS, STYLE_LABELS } from '../../engine/data';
-import { divisionKey, weightMissChance, PRESS_OPTIONS, pressAnswer, prepCost, acceptAllOffers, acceptOffer, declineBlocked, declineOffer, decide, negotiateChance, negotiateOffer, recStr, seasonNext, seasonSkip, toSummary } from '../../engine/game';
+import { divisionKey, effectiveStats, weightMissChance, PRESS_OPTIONS, pressAnswer, prepCost, acceptAllOffers, acceptOffer, declineBlocked, declineOffer, decide, negotiateChance, negotiateOffer, recStr, seasonNext, seasonSkip, toSummary } from '../../engine/game';
 import { activeManager, currentManager } from '../../engine/managers';
 import { sfxCash, sfxClick, sfxCrowd, sfxGong, sfxLoss, sfxThud } from '../sound';
 import { OUTCOME_LABEL } from '../../engine/fight';
@@ -337,6 +337,47 @@ function FightRow({ f, open, onToggle }: { f: FightReport; open: boolean; onTogg
   );
 }
 
+/** Scouting z nagrań: ty kontra rywal w trzech płaszczyznach, do ogarnięcia jednym spojrzeniem. */
+function ScoutBars({ me, opp, oppName }: { me: Stats; opp: Stats; oppName: string }) {
+  const rows: { k: 'stand' | 'wrest' | 'bjj'; label: string }[] = [
+    { k: 'stand', label: 'Stójka' },
+    { k: 'wrest', label: 'Zapasy' },
+    { k: 'bjj', label: 'Parter' },
+  ];
+  return (
+    <div className="scout" aria-label={`Z nagrań: ty kontra ${oppName}`}>
+      <div className="scout-head">
+        <span className="me">Ty</span>
+        <span className="mid">z nagrań</span>
+        <span className="op">{oppName}</span>
+      </div>
+      {rows.map(({ k, label }) => {
+        const a = Math.round(me[k]);
+        const b = Math.round(opp[k]);
+        const d = a - b;
+        const tone = d >= 4 ? 'adv' : d <= -4 ? 'dis' : 'even';
+        return (
+          <div key={k} className={`scout-row ${tone}`}>
+            <span className="sv me">{a}</span>
+            <span className="sbar me">
+              <i style={{ width: `${Math.min(100, a)}%` }} />
+            </span>
+            <span className="sl">
+              <Icon name={STAT_ICON[k]} size={13} />
+              {label}
+              <b>{tone === 'adv' ? 'lepszy' : tone === 'dis' ? 'gorszy' : 'równo'}</b>
+            </span>
+            <span className="sbar op">
+              <i style={{ width: `${Math.min(100, b)}%` }} />
+            </span>
+            <span className="sv op">{b}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 /** Bieżąca walka: karta VS z rundami, pieczątką wyniku i decyzją. */
 function LiveCard({ g, f, start, animate, setGame }: { g: GameState; f: FightReport; start: number; animate: boolean; setGame: (s: GameState) => void }) {
   const hold = useHudHold();
@@ -377,7 +418,14 @@ function LiveCard({ g, f, start, animate, setGame }: { g: GameState; f: FightRep
         </span>
       </div>
       <h3>{pending.title}</h3>
-      <p className="decision-text">{pending.text}</p>
+      {pending.id === 'plan' && !f.opp.freak ? (
+        <>
+          <ScoutBars me={effectiveStats(g)} opp={f.opp.stats} oppName={f.opp.lastName} />
+          <p className="decision-text small">Plan ustawia, jak walczysz przez całą walkę. Celuj tam, gdzie masz przewagę.</p>
+        </>
+      ) : (
+        <p className="decision-text">{pending.text}</p>
+      )}
       {pending.status && <FightStatus st={pending.status} />}
       {pending.id === 'plan' ? (
         <CoachTip id="plan">Plan ustawia twój styl na całą walkę. Celuj w słaby punkt rywala z nagrań, ale patrz też na szanse: liczą się twoje umiejętności.</CoachTip>
