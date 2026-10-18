@@ -157,6 +157,13 @@ export function FighterGallery() {
         </div>
       ))}
       <div style={{ flexBasis: '100%' }} />
+      {[18, 27, 37].map((a) => (
+        <div key={'m' + a} style={{ textAlign: 'center', color: '#aaa', fontSize: 11 }}>
+          <Fighter seed="JanKowalski" age={a} marks={{ ear: true, scar: true, nose: true }} size={110} />
+          <div>ślady {a}</div>
+        </div>
+      ))}
+      <div style={{ flexBasis: '100%' }} />
       {names.slice(0, 8).map((n) => (
         <div key={'w' + n} style={{ display: 'flex', gap: 2, textAlign: 'center', color: '#aaa', fontSize: 11 }}>
           {[18, 27, 37].map((a) => (

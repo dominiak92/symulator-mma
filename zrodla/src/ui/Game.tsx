@@ -1,3 +1,4 @@
+import { careerMarks, champTitle } from './titles';
 import { clubLogo } from './logos';
 import { Fighter } from './FighterArt';
 import TextSize from './TextSize';
@@ -349,9 +350,10 @@ export default function Game({
                 <SheetHead title="Zawodnik" onClose={() => setSheet(null)} />
                 <div className="sk-hero">
                   {clubLogo(g.club?.name) && <img className="sk-wm" src={clubLogo(g.club?.name)!} alt="" aria-hidden="true" />}
-                  <Fighter weight={divisionKey(g)} age={g.age} country={g.profile.origin} seed={`${g.profile.firstName}${g.profile.lastName}`} corner="blue" shorts={clubCrest(g.club).bg} size={104} belt={g.rank === 0 && g.tier > 0 ? g.tier : false} />
+                  <Fighter weight={divisionKey(g)} age={g.age} country={g.profile.origin} marks={careerMarks(g)} seed={`${g.profile.firstName}${g.profile.lastName}`} corner="blue" shorts={clubCrest(g.club).bg} size={104} belt={g.rank === 0 && g.tier > 0 ? g.tier : false} />
                   <div className="sk-id">
                     <b>{g.profile.firstName} {g.profile.nickname ? <em>„{g.profile.nickname}”</em> : null} {g.profile.lastName}</b>
+                    {champTitle(g) && <em className="champ-tag">{champTitle(g)}</em>}
                     <span>{g.age} lat · {g.profile.hometown}</span>
                     <span className="sk-ovr">OVR {ovr(g.stats)}</span>
                   </div>

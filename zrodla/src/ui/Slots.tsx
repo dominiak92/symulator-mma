@@ -1,3 +1,4 @@
+import { careerMarks } from './titles';
 import { useState } from 'react';
 import { loadSlot } from '../storage';
 import { TIER_NAMES } from '../engine/data';
@@ -39,7 +40,7 @@ export default function Slots({
             {s ? (
               <div className="row wrap">
                 <span className="slot-av" aria-hidden="true">
-                  <Fighter head country={s.profile.origin} seed={`${s.profile.firstName}${s.profile.lastName}`} age={s.age} weight={divisionKey(s)} size={58} />
+                  <Fighter head country={s.profile.origin} marks={careerMarks(s)} seed={`${s.profile.firstName}${s.profile.lastName}`} age={s.age} weight={divisionKey(s)} size={58} />
                 </span>
                 <div style={{ flex: 1, minWidth: 160 }}>
                   <h3>

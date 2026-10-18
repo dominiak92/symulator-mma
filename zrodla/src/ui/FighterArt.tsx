@@ -142,7 +142,10 @@ export function Fighter({
   age,
   country,
   head,
+  marks,
 }: {
+  /** ślady kariery (ucho, blizna, złamany nos) dodawane do wyglądu */
+  marks?: { ear?: boolean; scar?: boolean; nose?: boolean };
   /** tylko głowa (awatar w listach) */
   head?: boolean;
   seed: string;
@@ -163,7 +166,9 @@ export function Fighter({
 }) {
   const uid = useId().replace(/[^a-zA-Z0-9]/g, '');
   const base = lookFor(seed, country);
-  const l = weight && WEIGHT_BUILD[weight] !== undefined ? { ...base, build: WEIGHT_BUILD[weight] } : base;
+  const l0 = weight && WEIGHT_BUILD[weight] !== undefined ? { ...base, build: WEIGHT_BUILD[weight] } : base;
+  const l = marks ? { ...l0, ear: l0.ear || !!marks.ear, scar: l0.scar || !!marks.scar } : l0;
+  const brokenNose = !!marks?.nose;
   const S = hex(l.skin);
   // siwizna dopiero u weterana (wiek z gry), wcześniej naturalny kolor
   const hairHex = l.hair === HAIRS[9] && (age === undefined || age < 33) ? (SKINS.indexOf(l.skin) >= 5 ? HAIRS[1] : HAIRS[3]) : l.hair;
@@ -281,11 +286,24 @@ export function Fighter({
           {beardLayers && draw(beardLayers, 'beard')}
           {l.ear && (
             <g>
-              <path d="M382 262 C362 268 360 292 370 300 C360 312 368 330 384 330 C394 316 396 280 382 262 Z" fill={pal.skinS} stroke={OUT} strokeWidth="7" />
-              <path d="M376 282 q-6 8 2 14 M378 306 q-6 6 2 12" stroke={OUT} strokeWidth="5" fill="none" strokeLinecap="round" />
+              <path d="M392 258 C372 252 356 266 360 282 C350 292 356 310 366 314 C362 326 374 338 390 334 C398 322 400 272 392 258 Z" fill={pal.skinS} stroke={OUT} strokeWidth="7" strokeLinejoin="round" />
+              <path d="M378 272 q-10 8 -2 16 M372 296 q-8 8 2 14 M384 318 q-6 4 0 8" stroke={OUT} strokeWidth="5" fill="none" strokeLinecap="round" />
+              <ellipse cx="372" cy="284" rx="6" ry="4" fill={pal.skinH} opacity=".7" />
             </g>
           )}
-          {l.scar && <path d="M601 226 L589 258" stroke={css(mix(S, [235, 170, 160], 0.5))} strokeWidth="6" strokeLinecap="round" opacity=".9" />}
+          {brokenNose && (
+            <g fill="none" stroke={OUT} strokeLinecap="round" strokeLinejoin="round">
+              <path d="M520 300 q-12 12 -2 22 q8 8 -1 18" strokeWidth="6" opacity=".55" />
+              <path d="M528 306 q6 4 4 10" strokeWidth="4" opacity=".35" />
+            </g>
+          )}
+          {l.scar && (
+            <g strokeLinecap="round">
+              <path d="M604 222 L586 264" stroke="#9c4a3c" strokeWidth="10" opacity=".75" />
+              <path d="M604 222 L586 264" stroke={css(mix(S, [255, 236, 228], 0.6))} strokeWidth="4" />
+              <path d="M588 236 l18 8 M582 250 l18 8" stroke="#9c4a3c" strokeWidth="4" opacity=".7" />
+            </g>
+          )}
           {hurt && (
             <g>
               <ellipse cx="583" cy="274" rx="40" ry="28" fill="#6d2f5c" opacity=".45" />
