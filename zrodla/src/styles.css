@@ -6535,3 +6535,73 @@ details.intro-notes[open] summary::before { content: '▸'; transform: rotate(90
 @keyframes cpNudge { 0%, 100% { transform: none; } 20% { transform: scale(1.12); } 40% { transform: translateX(-4px); } 60% { transform: translateX(4px); } 80% { transform: translateX(-2px); } }
 .cn-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
 .cn-cancel { font-size: 0.78rem; }
+
+/* v47: plakaty gal w stylu federacji */
+.poster[class*='th-'] {
+  --p-base: #0c0c10;
+  --p-g1: rgba(1, 174, 238, 0.28);
+  --p-g2: rgba(225, 29, 72, 0.22);
+  --p-pat: repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.025) 0 12px, transparent 12px 24px);
+  --p-t1: #fff;
+  --p-t2: #9fd8f5;
+  --p-glow: rgba(1, 174, 238, 0.45);
+  --p-acc: #01aeee;
+  --p-rb: #01aeee;
+  --p-rf: #00111a;
+  --p-font: var(--display);
+  --p-skew: 0deg;
+  position: relative;
+  background: var(--p-pat), radial-gradient(110% 60% at 50% 0%, var(--p-g1), transparent 65%), radial-gradient(90% 50% at 50% 100%, var(--p-g2), transparent 70%), var(--p-base);
+  border-color: color-mix(in srgb, var(--p-acc) 45%, transparent);
+}
+.poster[class*='th-'].title-bout {
+  background: var(--p-pat), radial-gradient(110% 60% at 50% 0%, var(--p-g1), transparent 65%), radial-gradient(90% 50% at 50% 100%, var(--p-g2), transparent 70%), var(--p-base);
+  border-color: var(--gold);
+  box-shadow: 0 0 0 1px rgba(245, 183, 0, 0.4), 0 0 50px -12px rgba(245, 183, 0, 0.55), 0 30px 80px -20px rgba(0, 0, 0, 0.9);
+}
+.poster[class*='th-'] .pst-head h2 {
+  font-family: var(--p-font);
+  transform: skewX(var(--p-skew));
+  background: linear-gradient(180deg, var(--p-t1) 30%, var(--p-t2));
+  -webkit-background-clip: text;
+  background-clip: text;
+  filter: drop-shadow(0 4px 18px var(--p-glow));
+}
+.poster[class*='th-'].title-bout .pst-head h2 { background: linear-gradient(180deg, #fff3c4 20%, #f5b700); -webkit-background-clip: text; background-clip: text; filter: drop-shadow(0 4px 18px rgba(245, 183, 0, 0.45)); }
+.pst-ribbon { justify-self: center; padding: 3px 12px; border-radius: 3px; font-family: var(--cond); font-weight: 700; font-size: 0.62rem; letter-spacing: 0.16em; text-transform: uppercase; background: var(--p-rb); color: var(--p-rf); transform: skewX(-8deg); box-shadow: 0 6px 18px -8px var(--p-glow); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pst-tagline { font-size: 0.76rem; font-style: italic; letter-spacing: 0.03em; color: var(--p-acc); }
+.poster[class*='th-'] .pst-card li.me { background: color-mix(in srgb, var(--p-acc) 16%, transparent); border-color: var(--p-acc); }
+.poster[class*='th-'] .pst-card li.me .pst-tag { color: var(--p-acc); }
+.poster[class*='th-'] .pst-card-title { color: var(--p-acc); }
+.poster[class*='th-'] .pst-bout i { color: var(--p-acc); }
+
+.poster.th-babel { --p-base: #120a05; --p-g1: rgba(255, 122, 0, 0.36); --p-g2: rgba(255, 50, 0, 0.18); --p-pat: repeating-linear-gradient(135deg, rgba(255, 122, 0, 0.05) 0 10px, transparent 10px 26px); --p-t2: #ffb36b; --p-glow: rgba(255, 122, 0, 0.5); --p-acc: #ff8a1f; --p-rb: #ff7a00; --p-rf: #140800; }
+.poster.th-armada { --p-base: #061220; --p-g1: rgba(0, 190, 170, 0.3); --p-g2: rgba(0, 70, 160, 0.4); --p-pat: repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.03) 0 2px, transparent 2px 11px); --p-t2: #7ff0de; --p-glow: rgba(0, 190, 170, 0.5); --p-acc: #2fe0c8; --p-rb: #0aa896; --p-rf: #001613; }
+.poster.th-thunder { --p-base: #0d0d06; --p-g1: rgba(255, 221, 0, 0.3); --p-g2: rgba(120, 90, 255, 0.2); --p-pat: repeating-linear-gradient(60deg, rgba(255, 221, 0, 0.05) 0 6px, transparent 6px 20px); --p-t2: #ffe94d; --p-glow: rgba(255, 221, 0, 0.45); --p-acc: #ffdd00; --p-rb: #ffdd00; --p-rf: #111; --p-skew: -4deg; }
+.poster.th-xsw { --p-base: #0b0303; --p-g1: rgba(220, 20, 20, 0.4); --p-g2: rgba(90, 0, 0, 0.45); --p-pat: repeating-linear-gradient(115deg, rgba(255, 40, 40, 0.06) 0 3px, transparent 3px 22px); --p-t2: #ff5a5a; --p-glow: rgba(255, 30, 30, 0.55); --p-acc: #ff2d2d; --p-rb: #d40000; --p-rf: #fff; --p-skew: -7deg; }
+.poster.th-fan { --p-base: #0a0614; --p-g1: rgba(170, 60, 255, 0.42); --p-g2: rgba(0, 220, 255, 0.25); --p-pat: repeating-linear-gradient(90deg, rgba(200, 120, 255, 0.04) 0 1px, transparent 1px 16px); --p-t2: #d9a6ff; --p-glow: rgba(170, 60, 255, 0.65); --p-acc: #c77dff; --p-rb: linear-gradient(90deg, #a23cff, #00d4ff); --p-rf: #fff; }
+.poster.th-cw { --p-base: #0c1014; --p-g1: rgba(130, 160, 190, 0.3); --p-g2: rgba(30, 40, 55, 0.55); --p-pat: repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.025) 0 1px, transparent 1px 3px); --p-t1: #eef3f8; --p-t2: #9fb3c8; --p-glow: rgba(140, 170, 200, 0.4); --p-acc: #8fb3d9; --p-rb: #3a4a5c; --p-rf: #fff; }
+.poster.th-hex { --p-base: #060b1d; --p-g1: rgba(40, 90, 255, 0.36); --p-g2: rgba(230, 30, 60, 0.26); --p-pat: radial-gradient(circle, rgba(255, 255, 255, 0.05) 1.5px, transparent 2.5px) 0 0 / 14px 14px; --p-t2: #aac4ff; --p-glow: rgba(60, 110, 255, 0.5); --p-acc: #6d93ff; --p-rb: linear-gradient(90deg, #2149d6 33%, #fff 33% 66%, #d61f3c 66%); --p-rf: #0a0f2a; }
+.poster.th-brava { --p-base: #140f08; --p-g1: rgba(230, 170, 80, 0.36); --p-g2: rgba(0, 160, 150, 0.26); --p-pat: repeating-linear-gradient(170deg, rgba(240, 190, 100, 0.04) 0 8px, transparent 8px 20px); --p-t2: #f3c97a; --p-glow: rgba(230, 170, 80, 0.5); --p-acc: #e8b45a; --p-rb: #c88a2c; --p-rf: #1a1003; }
+.poster.th-okta { --p-base: #05110b; --p-g1: rgba(30, 200, 110, 0.34); --p-g2: rgba(240, 240, 240, 0.08); --p-pat: repeating-linear-gradient(45deg, rgba(60, 230, 140, 0.04) 0 8px, transparent 8px 16px), repeating-linear-gradient(-45deg, rgba(60, 230, 140, 0.04) 0 8px, transparent 8px 16px); --p-t2: #9af0c0; --p-glow: rgba(30, 200, 110, 0.5); --p-acc: #2ee08a; --p-rb: #18b86c; --p-rf: #021; }
+.poster.th-ufl { --p-base: #050505; --p-g1: rgba(225, 29, 42, 0.32); --p-g2: rgba(245, 183, 0, 0.18); --p-pat: linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 30%); --p-t2: #ffd36b; --p-glow: rgba(225, 29, 42, 0.5); --p-acc: #ff3341; --p-rb: #e11d2a; --p-rf: #fff; }
+.poster.th-bal { --p-base: #070a1a; --p-g1: rgba(230, 30, 60, 0.32); --p-g2: rgba(40, 60, 200, 0.38); --p-pat: repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.03) 0 2px, transparent 2px 9px); --p-t2: #ff9aa8; --p-glow: rgba(230, 30, 60, 0.5); --p-acc: #ff4d6a; --p-rb: #1a2a8a; --p-rf: #fff; }
+.poster.th-two { --p-base: #12060a; --p-g1: rgba(255, 40, 60, 0.5); --p-g2: rgba(255, 255, 255, 0.06); --p-pat: repeating-conic-gradient(from 0deg at 50% 0%, rgba(255, 255, 255, 0.035) 0 5deg, transparent 5deg 12deg); --p-t2: #ffd0d6; --p-glow: rgba(255, 40, 60, 0.6); --p-acc: #ff4b5c; --p-rb: #fff; --p-rf: #c8102e; }
+.poster.th-plf { --p-base: #061214; --p-g1: rgba(0, 200, 220, 0.32); --p-g2: rgba(200, 200, 220, 0.15); --p-pat: repeating-linear-gradient(0deg, rgba(200, 255, 255, 0.03) 0 1px, transparent 1px 14px), repeating-linear-gradient(90deg, rgba(200, 255, 255, 0.03) 0 1px, transparent 1px 14px); --p-t2: #bff6ff; --p-glow: rgba(0, 200, 220, 0.5); --p-acc: #2ad4e8; --p-rb: linear-gradient(90deg, #cfd8dc, #8fa4ab); --p-rf: #022; }
+.poster.th-freak { --p-base: #10040c; --p-g1: rgba(255, 0, 170, 0.36); --p-g2: rgba(255, 200, 0, 0.18); --p-pat: repeating-linear-gradient(135deg, rgba(255, 0, 170, 0.06) 0 12px, transparent 12px 24px); --p-t2: #ff9be0; --p-glow: rgba(255, 0, 170, 0.6); --p-acc: #ff4fd0; --p-rb: linear-gradient(90deg, #ff00aa, #ffcc00); --p-rf: #1a0010; --p-skew: -5deg; }
+.poster.th-cheap { --p-base: #1b1b1b; --p-g1: rgba(255, 255, 255, 0.06); --p-g2: transparent; --p-pat: repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.035) 0 1px, transparent 1px 3px); --p-t1: #f0f0f0; --p-t2: #bdbdbd; --p-glow: transparent; --p-acc: #d6d6d6; --p-rb: #e8e000; --p-rf: #111; --p-font: 'Courier New', ui-monospace, monospace; filter: grayscale(0.4); }
+.poster.th-cheap .pst-head h2 { transform: rotate(-2deg); letter-spacing: -0.02em; }
+.poster.th-desert { --p-base: #140b04; --p-g1: rgba(255, 170, 40, 0.48); --p-g2: rgba(180, 60, 20, 0.32); --p-pat: repeating-radial-gradient(ellipse at 50% 130%, rgba(255, 190, 90, 0.05) 0 10px, transparent 10px 24px); --p-t1: #fff6dc; --p-t2: #ffc04d; --p-glow: rgba(255, 170, 40, 0.55); --p-acc: #ffb02e; --p-rb: linear-gradient(90deg, #ffcf6b, #e08a12); --p-rf: #2a1600; }
+
+/* wydarzenia poza federacją */
+.inv-chance { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 8px 0 2px; font-size: 0.86rem; color: var(--muted); }
+.inv-excl { margin: 4px 0 0; }
+.inv-lines { margin: 8px 0 4px; padding-left: 20px; display: grid; gap: 4px; font-size: 0.9rem; }
+.inv-lines li { animation: rowIn 0.35s calc(var(--i, 0) * 0.35s) ease-out both; }
+.inv-lines li:last-child { font-weight: 600; }
+.post-ico.inv-grappling { background: rgba(1, 174, 238, 0.14); color: var(--cyan); animation: none; }
+.post-ico.inv-boxing { background: rgba(239, 68, 68, 0.14); color: var(--bad); animation: none; }
+.post-ico.inv-seminar { background: rgba(34, 197, 94, 0.14); color: var(--good); animation: none; }
+.side-note b { color: var(--text); }
+.side-note.tone-purple .res-badge, .side-note.tone-good .res-badge { color: var(--gold); }
+@media (prefers-reduced-motion: reduce) { .inv-lines li { animation: none; } }
