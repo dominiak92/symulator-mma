@@ -26,6 +26,7 @@ __export(game_exports, {
   PITCH_SLOTS: () => PITCH_SLOTS,
   PRESS_OPTIONS: () => PRESS_OPTIONS,
   SAVE_VERSION: () => SAVE_VERSION,
+  SPONSOR_POSTS: () => SPONSOR_POSTS,
   YEAR_GOALS: () => YEAR_GOALS,
   academyIncome: () => academyIncome,
   academyName: () => academyName,
@@ -1791,6 +1792,54 @@ var THREADS = [
     choices: () => [
       { label: "Prosisz o zmian\u0119 zdj\u0119cia", desc: "Wysy\u0142asz nowe.", effects: { note: "nowy plakat po dw\xF3ch dniach" } },
       { label: "Udost\u0119pniasz z dopiskiem", desc: "\u201EW\u0105sik wraca na t\u0119 walk\u0119\u201D.", effects: { media: 3 } }
+    ]
+  },
+  // ---------- Klub reaguje na wyniki ----------
+  {
+    id: "klub.pas",
+    app: "gym",
+    from: "Trener",
+    title: "Grill w klubie",
+    start: { weight: 40, cond: (s, c) => !c.pre && !!s.history.length && s.history[s.history.length - 1].title && s.history[s.history.length - 1].result === "W" && s.history[s.history.length - 1].season === s.season, repeat: true },
+    text: () => "MISTRZU!!! \u{1F3C6} Ca\u0142a sala ogl\u0105da\u0142a na rzutniku. W sobot\u0119 grill w klubie, przynie\u015B pas, dzieciaki z grupy junior\xF3w nie \u015Bpi\u0105 z emocji.",
+    choices: (s) => [
+      { label: "Stawiasz pizz\u0119 ca\u0142emu klubowi", desc: "Dwadzie\u015Bcia pizz i cola. Klub zapami\u0119ta.", effects: { money: -zl(s, 400), relations: 2, rep: 1 } },
+      { label: "Przychodzisz z pasem na zdj\u0119cia", desc: "Ka\u017Cdy junior chce zdj\u0119cie z pasem. Ka\u017Cdy.", effects: { media: 1, relations: 1 } },
+      { label: "Odpoczywasz, nie dasz rady", desc: "Cia\u0142o m\xF3wi \u201Edo\u015B\u0107\u201D. Trener rozumie, dzieciaki troch\u0119 mniej.", effects: { wear: -1, relations: -1 } }
+    ]
+  },
+  {
+    id: "klub.seria",
+    app: "gym",
+    from: "Trener",
+    title: "Dwie pora\u017Cki z rz\u0119du",
+    start: { weight: 30, cond: (s, c) => !c.pre && pro(s) && s.history.length >= 2 && s.history.slice(-2).every((h) => h.result === "L" && !h.amateur), repeat: true },
+    text: () => "Dwie pora\u017Cki z rz\u0119du. Jutro 7:00 w klubie, pogadamy. Bez telefonu, bez wym\xF3wek.",
+    choices: () => [
+      { label: "Przychodzisz i gadacie szczerze", desc: "Godzina rozmowy, nagrania, nowy plan. Boli, ale pomaga.", effects: { nextFight: 2, relations: 1 } },
+      { label: "Bierzesz tydzie\u0144 wolnego", desc: "G\u0142owa musi odpocz\u0105\u0107. Trener kr\u0119ci nosem.", effects: { wear: -2, nextFight: -1 } },
+      {
+        label: "M\xF3wisz, \u017Ce to wina s\u0119dzi\xF3w",
+        desc: "Trener patrzy na ciebie d\u0142ugo i nic nie m\xF3wi.",
+        chance: 30,
+        success: { relations: 0, note: "trener odpuszcza, ale zapami\u0119ta" },
+        successText: "Trener wzdycha: \u201EDobra. Ale w nast\u0119pnej walce nie zostawiasz decyzji s\u0119dziom\u201D.",
+        fail: { relations: -2, nextFight: -1 },
+        failText: "Trener wychodzi z sali bez s\u0142owa. Mietek m\xF3wi, \u017Ce jeszcze go takim nie widzia\u0142."
+      }
+    ]
+  },
+  {
+    id: "klub.nokaut",
+    app: "gym",
+    from: "Mietek",
+    title: "WIDZIELI\u015ACIE TO?!",
+    start: { weight: 12, cond: (s, c) => !c.pre && !!s.history.length && s.history[s.history.length - 1].result === "W" && s.history[s.history.length - 1].method === "KO/TKO" && !s.history[s.history.length - 1].title && s.history[s.history.length - 1].season === s.season, repeat: true },
+    text: () => "WIDZIELI\u015ACIE TEN LEWY?!?! \u{1F631}\u{1F631} Puszczam w p\u0119tli od wczoraj. Ty, to po sparingach ze mn\u0105 taki lewy, nie?",
+    choices: () => [
+      { label: "\u201EJasne, to twoja zas\u0142uga\u201D", desc: "Mietek b\u0119dzie to powtarza\u0142 do ko\u0144ca \u017Cycia.", effects: { relations: 1, note: "Mietek drukuje sobie zdj\u0119cie" } },
+      { label: "Wrzucasz film na Fotogram", desc: "Nokaut w zwolnionym tempie, z muzyk\u0105 z \u201ERocky\u2019ego\u201D.", effects: { media: 1 } },
+      { label: "\u201E\u0106wiczy\u0142em go sam\u201D", desc: "Mietek odpisuje tylko \u201Eok\u201D.", effects: { relations: -1, rep: 1 } }
     ]
   }
 ];
@@ -8638,6 +8687,7 @@ function fotoPost(s0, kind) {
       const pay = s.sponsors.length * Math.round(150 * ([1, 1.5, 3, 5, 8][Math.min(4, s.tier)] ?? 1) / 50) * 50;
       applyEffects(s, { money: pay, media: 1 }, rng);
       addFans(s, fans * 0.01);
+      s.flags[`fpSp:${s.season}`] = (s.flags[`fpSp:${s.season}`] ?? 0) + 1;
     } else {
       applyEffects(s, { rep: 2 }, rng);
       addFans(s, fans * 0.03 + 30);
@@ -10476,10 +10526,33 @@ function settleYearGoal(s, run) {
   }
   return { label: g.label, ok, reward };
 }
+var SPONSOR_POSTS = 2;
+function settleSponsorPosts(s, run) {
+  if (!s.proDebut || run.tourneys || !s.sponsors.length || s.flags[`fpSettled:${s.season}`] || run.fights.filter((f) => !f.amateur && f.sim.finished).length < 2) return null;
+  s.flags[`fpSettled:${s.season}`] = 1;
+  const n = s.flags[`fpSp:${s.season}`] ?? 0;
+  if (n >= SPONSOR_POSTS) {
+    const bonus = s.sponsors.length * Math.round(250 * ([1, 1.5, 3, 5, 8][Math.min(4, s.tier)] ?? 1) / 50) * 50;
+    s.money += bonus;
+    s.totalEarned += bonus;
+    return { icon: "check", label: "Sponsorzy zadowoleni z post\xF3w", value: `${n} ${pl(n, "post", "posty", "post\xF3w")} z produktem, premia ${bonus.toLocaleString("pl-PL")} z\u0142` };
+  }
+  if (n === 0) {
+    const sp = [...s.sponsors].sort((a, b) => b.seasonsLeft - a.seasonsLeft)[0];
+    if (sp.seasonsLeft > 1) {
+      sp.seasonsLeft = 1;
+      return { icon: "x", label: `${sp.name} zrywa umow\u0119`, value: "ani jednego posta z produktem przez ca\u0142y rok" };
+    }
+    return { icon: "x", label: `${sp.name} niezadowolony`, value: "ani jednego posta z produktem, nie przed\u0142u\u017Cy umowy" };
+  }
+  return { icon: "phone", label: "Posty dla sponsor\xF3w", value: `${n} z ${SPONSOR_POSTS}, bez premii` };
+}
 function outsideRows(s, run) {
   const rows = [];
   const yg = settleYearGoal(s, run);
   if (yg) rows.push({ icon: yg.ok ? "check" : "x", label: `Cel roku: ${yg.label}`, value: yg.ok ? `zaliczony, premia ${yg.reward.toLocaleString("pl-PL")} z\u0142` : "nie uda\u0142o si\u0119" });
+  const sp = settleSponsorPosts(s, run);
+  if (sp) rows.push(sp);
   const fans = followersOf(s) - (run.startFans ?? followersOf(s));
   if (fans > 0 && !run.tourneys) rows.push({ icon: "phone", label: "Obserwuj\u0105cy", value: `+${fmtFans(fans)} (razem ${fmtFans(followersOf(s))})` });
   const tix = run.fights.filter((f) => f.tickets);
