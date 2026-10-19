@@ -34,9 +34,21 @@ const cors = {
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { ...cors, 'Content-Type': 'application/json' } });
 
 const DAY = 86400000;
-const dayIndex = (season: { starts_at: string }) => Math.floor((Date.now() - new Date(season.starts_at).getTime()) / DAY);
+// doba sezonu liczy się po polskiemu: nowe lata przychodzą o północy czasu warszawskiego
+const WAW = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Warsaw', year: 'numeric', month: '2-digit', day: '2-digit' });
+const wawDay = (t: number) => Math.floor(Date.parse(WAW.format(new Date(t)) + 'T00:00:00Z') / DAY);
+const dayIndex = (season: { starts_at: string }, t = Date.now()) => wawDay(t) - wawDay(new Date(season.starts_at).getTime());
+/** Chwila, w której zaczyna się doba `d` sezonu (północ w Warszawie). */
+function dayStart(season: { starts_at: string }, d: number): number {
+  const target = wawDay(new Date(season.starts_at).getTime()) + d;
+  // północ w Warszawie to 22:00 albo 23:00 UTC poprzedniego dnia
+  for (const off of [2, 1]) {
+    const t = target * DAY - off * 3600000;
+    if (wawDay(t) === target && wawDay(t - 1) === target - 1) return t;
+  }
+  return target * DAY;
+}
 
-/** Stan dla przeglądarki: bez ziarna losowania (podmienione na przypadkowe, żeby lokalne liczenie nic nie zdradzało). */
 function forClient(s: GameState): GameState {
   return { ...s, rngState: (Math.random() * 4294967296) >>> 0 };
 }
@@ -44,30 +56,56 @@ function legacyOf(s: GameState): number {
   return Math.max(0, Math.round(s.ending?.legacy ?? G.legacyScore(s)));
 }
 function refill(c: { bank: number; refill_day: number }, season: any) {
-  const d = Math.min(dayIndex(season), Math.floor((new Date(season.ends_at).getTime() - new Date(season.starts_at).getTime()) / DAY));
+  const d = Math.min(dayIndex(season), dayIndex(season, new Date(season.ends_at).getTime() - 1));
   if (d > c.refill_day) {
     c.bank = Math.min(season.bank_cap, c.bank + (d - c.refill_day) * season.years_per_day);
     c.refill_day = d;
   }
 }
 function nextRefillAt(season: any, c: { refill_day: number }) {
-  return new Date(new Date(season.starts_at).getTime() + (c.refill_day + 1) * DAY).toISOString();
+  return new Date(dayStart(season, c.refill_day + 1)).toISOString();
 }
+
+// klient bazy tworzony raz na instancję funkcji (oszczędza czas przy każdej akcji)
+const db = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, { auth: { persistSession: false, autoRefreshToken: false } });
+
+/** Kto pyta: podpis tokenu sprawdzany lokalnie (klucze JWKS), a gdy się nie da, pytamy serwer logowania. */
+async function userId(jwt: string): Promise<string | null> {
+  if (!jwt) return null;
+  try {
+    if (typeof db.auth.getClaims === 'function') {
+      const { data, error } = await db.auth.getClaims(jwt);
+      const sub = data?.claims?.sub;
+      if (!error && typeof sub === 'string' && (data.claims.exp ?? 0) * 1000 > Date.now()) return sub;
+    }
+  } catch {
+    /* spadamy do getUser */
+  }
+  const { data, error } = await db.auth.getUser(jwt);
+  return error || !data?.user ? null : data.user.id;
+}
+
+const later = (p: PromiseLike<unknown>) => {
+  const rt = (globalThis as any).EdgeRuntime;
+  if (rt?.waitUntil) rt.waitUntil(Promise.resolve(p));
+  else return p;
+};
 
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
   try {
-    const db = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, { auth: { persistSession: false } });
     const jwt = (req.headers.get('Authorization') ?? '').replace('Bearer ', '');
-    const { data: u, error: ue } = await db.auth.getUser(jwt);
-    if (ue || !u?.user) return json({ error: 'Brak sesji gracza.' }, 401);
-    const uid = u.user.id;
-    const body = await req.json();
+    const [uid, body] = await Promise.all([userId(jwt), req.json().catch(() => ({}))]);
+    if (!uid) return json({ error: 'Brak sesji gracza.' }, 401);
     const op = body.op as string;
 
     const now = new Date().toISOString();
-    const { data: season } = await db.from('seasons').select('*').lte('starts_at', now).order('starts_at', { ascending: false }).limit(1).maybeSingle();
-    const { data: player } = await db.from('players').select('*').eq('id', uid).maybeSingle();
+    const needCareer = (op === 'load' || op === 'act') && typeof body.careerId === 'string';
+    const [{ data: season }, { data: player }, careerRes] = await Promise.all([
+      db.from('seasons').select('*').lte('starts_at', now).order('starts_at', { ascending: false }).limit(1).maybeSingle(),
+      db.from('players').select('*').eq('id', uid).maybeSingle(),
+      needCareer ? db.from('careers').select('*').eq('id', body.careerId).eq('player_id', uid).maybeSingle() : Promise.resolve({ data: null }),
+    ]);
 
     const leaderboard = async () => {
       if (!season) return [];
@@ -113,8 +151,8 @@ Deno.serve(async (req: Request) => {
     }
 
     if (op === 'load' || op === 'act') {
-      const { data: c } = await db.from('careers').select('*').eq('id', body.careerId).eq('player_id', uid).maybeSingle();
-      if (!c) return json({ error: 'Nie ma takiej kariery.' }, 404);
+      const c = careerRes.data;
+      if (!c || c.season_id !== season.id) return json({ error: 'Nie ma takiej kariery.' }, 404);
       const bank0 = c.bank;
       refill(c, season);
       let s: GameState = c.state;
@@ -131,9 +169,10 @@ Deno.serve(async (req: Request) => {
           s = next;
         }
         const legacy = legacyOf(s);
-        const { error } = await db.from('careers').update({ state: s, bank: c.bank, refill_day: c.refill_day, legacy, finished: s.phase === 'ended', version: c.version + 1, updated_at: now }).eq('id', c.id).eq('version', c.version);
-        if (error) return json({ error: 'Zapis się nie udał, spróbuj jeszcze raz.' }, 409);
-        await db.from('career_log').insert({ career_id: c.id, ops, season_before: seasonBefore, season_after: s.season });
+        // zapis tylko wtedy, gdy nikt (np. druga karta) nie zmienił kariery w międzyczasie
+        const { data: saved, error } = await db.from('careers').update({ state: s, bank: c.bank, refill_day: c.refill_day, legacy, finished: s.phase === 'ended', version: c.version + 1, updated_at: now }).eq('id', c.id).eq('version', c.version).select('id');
+        if (error || !saved?.length) return json({ error: 'Kariera zmieniła się w innym oknie. Wczytaj ją jeszcze raz.', stale: true }, 409);
+        await later(db.from('career_log').insert({ career_id: c.id, ops, season_before: seasonBefore, season_after: s.season }));
       } else if (c.bank !== bank0) await db.from('careers').update({ bank: c.bank, refill_day: c.refill_day }).eq('id', c.id);
       return json({ state: forClient(s), bank: c.bank, nextRefillAt: nextRefillAt(season, c) });
     }
