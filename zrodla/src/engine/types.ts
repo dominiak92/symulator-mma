@@ -318,12 +318,16 @@ export interface FightReport {
   prep?: 'std' | 'rival' | 'hard';
   /** nie zrobiłeś wagi */
   weightMiss?: boolean;
+  /** mistrz stracił pas przez wagę mimo wygranej */
+  stripped?: boolean;
   /** kara/premia do formy z ważenia */
   weighMod?: number;
   short?: boolean;
   interim?: boolean;
   unify?: boolean;
   superfight?: string;
+  /** walka pożegnalna przed własną publicznością */
+  farewell?: boolean;
   /** sprzedane bilety i prowizja */
   tickets?: { sold: number; cut: number; plan: TicketPlan };
   /** przyrost obserwujących po walce */
@@ -437,6 +441,8 @@ export interface FightOffer {
   unify?: boolean;
   /** superfight: mistrz kontra mistrz kategorii obok */
   superfight?: string;
+  /** walka pożegnalna: ostatnia walka kariery, w rodzinnym mieście */
+  farewell?: boolean;
   /** rewanż wywalczony po kontrowersyjnym werdykcie */
   rematch?: boolean;
   nemesis?: boolean;
@@ -525,6 +531,8 @@ export interface Ending {
   story: string;
   /** premia za odejście na własnych warunkach */
   top?: { title: string; pts: number; lines: string[] };
+  /** co zawodnik robi po karierze (wybór gracza na ekranie końca) */
+  after?: string;
 }
 
 export interface GameState {

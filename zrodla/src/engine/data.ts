@@ -135,10 +135,10 @@ export const START_PROFILES: Record<StartProfile, StartProfileDef> = {
   },
   wybraniec: {
     label: 'Wybraniec',
-    desc: 'Talent nie z tej ziemi. Pasy same się pchają, ale punkty LEGACY się nie liczą.',
+    desc: 'Talent nie z tej ziemi, ale wszyscy chcą cię pokonać, a ciało szybciej się zużywa. Punkty LEGACY się nie liczą.',
     mult: null,
     money: 10000,
-    talent: [0.92, 1],
+    talent: [0.86, 0.98],
     intro:
       'Masz 16 lat. Na pierwszym sparingu przewracasz trenera. Na drugim jego brata. Na trzecim pod klubem stoi gość w kurtce dużej federacji i nagrywa cię telefonem.',
   },

@@ -254,7 +254,7 @@ export function newGame(opts: NewGameOpts): GameState {
   const potential = mapStats((k) => clamp(Math.round(potBase + prof[k] * 0.8 + rng.int(-5, 5)), 35, 99));
   const startBase = 17 + talent * 9;
   const stats = mapStats((k) => clamp(Math.round(startBase + prof[k] * 0.6 + rng.int(-3, 3)), 6, 60));
-  if (p.start === 'wybraniec') for (const k of STAT_KEYS) potential[k] = clamp(potential[k] + 6, 35, 99);
+  if (p.start === 'wybraniec') for (const k of STAT_KEYS) potential[k] = clamp(potential[k] + 3, 35, 99);
   if (p.start === 'junior') {
     stats.wrest = clamp(stats.wrest + 10, 6, 60);
     potential.wrest = clamp(potential.wrest + 6, 35, 99);
@@ -1693,6 +1693,7 @@ function finishTime(rng: Rng, rep: FightReport) {
 /** Rozgrywa kolejną walkę roku (albo do decyzji). */
 /** Oferta kolejnej walki (zawodowcy): rywal, miejsce w karcie i gaża. */
 function buildOffer(rng: Rng, s: GameState, idx: number): FightOffer {
+  if (s.flags.farewell && s.tier > 0 && s.contract.kind !== 'freak') return farewellOffer(rng, s);
   const special = specialOffer(rng, s);
   if (special) return special;
   const picked = pickOpponent(rng, s, idx);
@@ -1700,29 +1701,37 @@ function buildOffer(rng: Rng, s: GameState, idx: number): FightOffer {
   let opp = picked.opp;
   // mistrz kontuzjowany: zamiast walki o pas jest walka o pas tymczasowy
   let interim = false;
-  if (title && !defense && s.rank !== 0 && opp.rank === 0 && !peer && s.tier >= 2 && !s.flags.interim && rng.chance(0.3)) {
+  let title2 = title;
+  const usedIds = new Set(s.run!.fights.map((f) => f.opp.id));
+  if (title && !defense && s.rank !== 0 && opp.rank === 0 && !peer && s.tier >= 1 && !s.flags.interim && rng.chance(0.4)) {
     interim = true;
-    opp = rosterOpp(rng, s, rng.int(1, 3), new Set(s.run!.fights.map((f) => f.opp.id)));
+    opp = rosterOpp(rng, s, rng.int(1, 3), usedIds);
+  } else if (!title && !defense && !peer && s.tier >= 1 && s.rank !== null && s.rank >= 1 && s.rank <= 3 && !s.flags.interim && !s.run!.fights.some((f) => f.interim) && rng.chance(0.12)) {
+    // mistrz łapie kontuzję w trakcie roku: czołówka walczy o pas tymczasowy
+    interim = true;
+    title2 = true;
+    const r = rng.int(1, 4);
+    opp = rosterOpp(rng, s, r === s.rank ? (r === 1 ? 2 : r - 1) : r, usedIds);
   }
   avoidMyName(rng, s, opp);
   const freak = s.contract.kind === 'freak';
   const fed = freak ? s.contract.fed : s.fed;
-  const spot = cardSpot(rng, s, title, opp, freak);
+  const spot = cardSpot(rng, s, title2, opp, freak);
   const rival = !!peer && !!s.rivalId && peer.id === s.rivalId;
   const trilogy = rival && !!peer && peer.h2h.w === 1 && peer.h2h.l === 1;
-  let purse = purseFor(s, opp, title, spot) * (rival ? (trilogy ? 1.3 : 1.15) : 1);
+  let purse = purseFor(s, opp, title2, spot) * (rival ? (trilogy ? 1.3 : 1.15) : 1);
   // organizator raz daje więcej, raz próbuje zaoszczędzić
   purse = Math.round((purse * (0.85 + rng.next() * 0.3)) / 100) * 100;
   return {
     opp,
-    title,
+    title: title2,
     defense,
     grudge,
     rival,
     spot,
     gala: galaName(rng, s, fed),
     purse,
-    winBonus: Math.round(s.contract.winBonus * (title ? 1.8 : 1)),
+    winBonus: Math.round(s.contract.winBonus * (title2 ? 1.8 : 1)),
     negotiated: false,
     hook: interim
       ? `Mistrz ${fedShort(s)} jest kontuzjowany i nie wróci przed końcem roku. Federacja robi walkę o pas tymczasowy. Wygrany zmierzy się z mistrzem w walce unifikacyjnej.`
@@ -1731,6 +1740,33 @@ function buildOffer(rng: Rng, s: GameState, idx: number): FightOffer {
         : undefined,
     interim: interim || undefined,
   };
+}
+
+/** Walka pożegnalna: ostatni rok kariery z jedną walką w rodzinnym mieście. */
+export function farewellAvailable(s: GameState): boolean {
+  return s.tier > 0 && s.contract.kind !== 'freak' && !s.flags.farewell && !!s.proDebut && ((s.wear >= 65 && s.age >= 27) || s.age >= 34);
+}
+export function setFarewell(s0: GameState, on: boolean): GameState {
+  const s = clone(s0);
+  s.flags.farewell = on ? 1 : 0;
+  return s;
+}
+function farewellOffer(rng: Rng, s: GameState): FightOffer {
+  const used = new Set<string>();
+  // najlepiej rywal z rocznika albo zadra; inaczej ktoś z czołówki
+  const peer = s.rivalId ? s.peers.find((p) => p.id === s.rivalId && !p.retired && p.tier === s.tier) : undefined;
+  let opp: Fighter = rosterOpp(rng, s, s.rank === 0 ? 1 : clamp((s.rank ?? 6) - 1, 1, 6), used);
+  let hook = `Ostatni raz wchodzisz do klatki. Gala w mieście ${s.profile.hometown}, hala wyprzedana w dwa dni, a w pierwszym rzędzie siedzi cała rodzina.`;
+  if (peer) {
+    opp = rosterOpp(rng, s, peer.rank ?? 3, used);
+    Object.assign(opp, { firstName: peer.firstName, lastName: peer.lastName, nickname: peer.nickname, id: peer.id, peer: true });
+    hook = `Na pożegnanie ten, z którym wszystko się zaczęło: ${peer.firstName} ${peer.lastName}. Gala w mieście ${s.profile.hometown}, hala wyprzedana w dwa dni.`;
+  }
+  avoidMyName(rng, s, opp);
+  const champ = s.rank === 0;
+  const spot = 'wieczoru' as FightOffer['spot'];
+  const purse = Math.round((purseFor(s, opp, champ, spot) * 1.8) / 100) * 100;
+  return { opp, title: champ, defense: champ, spot, gala: `Gala pożegnalna · ${s.profile.hometown}`, purse, winBonus: Math.round(s.contract.winBonus * 1.5), negotiated: true, farewell: true, hook };
 }
 
 function fedShort(s: GameState) {
@@ -2225,6 +2261,7 @@ function startFight(rng: Rng, s: GameState, o: FightOffer) {
       unify: o.unify,
       superfight: o.superfight,
       abroad: o.abroad,
+      farewell: o.farewell,
       earned: 0,
     };
     if (o.tuneup || o.abroad) rep.fed = o.gala.split(' · ')[0];
@@ -2295,6 +2332,8 @@ function startFight(rng: Rng, s: GameState, o: FightOffer) {
         rep.moments.push({ round: 0, title: 'Superfight', text: `Mistrz kontra mistrz. Pięć rund w wadze ${o.superfight}. Twój pas zostaje w szatni, stawką jest drugi i miejsce w historii.`, tone: 'purple' });
       if (o.interim)
         rep.moments.push({ round: 0, title: 'Pas tymczasowy', text: 'Mistrz leczy kontuzję, więc federacja robi walkę o pas tymczasowy. Pięć rund jak w walce o tytuł.', tone: 'purple' });
+      if (o.farewell)
+        rep.moments.push({ round: 0, title: 'Walka pożegnalna', text: `Ostatni obóz, ostatnie ważenie, ostatnie wyjście. W mieście ${s.profile.hometown} na bilbordach twoja twarz, a w szatni stary trener, który pamięta cię jako szesnastolatka.`, tone: 'purple' });
       if (o.unify)
         rep.moments.push({ round: 0, title: 'Unifikacja', text: 'Dwa pasy, jeden mistrz. Ty z tymczasowym, on z prawdziwym. Po tej walce zostanie jeden.', tone: 'purple' });
     }
@@ -2420,6 +2459,7 @@ export function negotiateChance(s: GameState): number {
 export function declineBlocked(s: GameState): string | null {
   const o = s.run?.offer;
   if (!o) return null;
+  if (o.farewell) return 'Na własną galę pożegnalną się nie odmawia.';
   if (o.title) return o.defense ? 'Mistrz nie odmawia obrony pasa.' : 'O pas się nie odmawia.';
   return null;
 }
@@ -2853,10 +2893,12 @@ export function declineOffer(s0: GameState): GameState {
 /** Ile walk chcesz stoczyć w roku (przed startem roku). */
 export function fightRange(s: GameState): [number, number] | null {
   if (s.tier === 0 || s.contract.kind === 'freak') return null;
+  if (s.flags.farewell) return [1, 1];
   const f = s.contract.fights;
   return [Math.max(1, f - 1), Math.min(5, f + 1)];
 }
 export function plannedFights(s: GameState): number {
+  if (s.flags.farewell && s.tier > 0) return 1;
   const r = fightRange(s);
   if (!r) return s.contract.kind === 'freak' ? 2 : s.contract.fights;
   return clamp(s.flags.wantFights || s.contract.fights, r[0], r[1]);
@@ -2988,6 +3030,15 @@ function updateRank(s: GameState, rep: FightReport) {
       s.titleDefenses++;
       s.flags.maxDef = Math.max(s.flags.maxDef ?? 0, s.titleDefenses);
       if (res === 'W') log(s, `Obrona pasa nr ${s.titleDefenses} (${opp.lastName}).`);
+      // mistrz bez wagi: wygrana na zero, bo federacja i tak odbiera pas
+      if (rep.weightMiss) {
+        s.rank = 1;
+        s.titleDefenses = 0;
+        s.flags.stripped = (s.flags.stripped ?? 0) + 1;
+        rep.stripped = true;
+        rep.moments.push({ round: rep.round, title: 'Pas odebrany', text: 'Wygrywasz, ale mistrz, który nie zrobił wagi, nie może zatrzymać pasa. Federacja ogłasza wakat, a ty spadasz na pierwsze miejsce w rankingu.', tone: 'bad' });
+        log(s, 'Federacja odbiera pas: mistrz nie zrobił wagi przed obroną.');
+      }
     } else {
       s.rank = 1;
       log(s, `Pas stracony. Nowy mistrz: ${opp.firstName} ${opp.lastName}.`);
@@ -3063,6 +3114,7 @@ export function nemesisFighter(s: GameState): RosterFighter | undefined {
 
 function finalizeFight(rng: Rng, s: GameState, rep: FightReport) {
   const opp = rep.opp;
+  if (rep.farewell) s.flags.farewellDone = 1;
   // dogrywka w drabince: remisów nie ma
   if (rep.amateur && rep.result === 'D') {
     const edge = (ovr(s.stats) - ovr(opp.stats)) / 40 + rep.sim.momentum / 100 + (s.run!.form.mod - (s.injury?.penalty ?? 0)) / 100;
@@ -3181,6 +3233,8 @@ function finalizeFight(rng: Rng, s: GameState, rep: FightReport) {
   // zużycie i kontuzje
   const dmgTaken = rep.sim.me.dmg;
   s.wear = clamp(s.wear + (dmgTaken / 10) * (rep.amateur ? 0.4 : 1) * (hasBackroom(s, 'physio') ? 0.7 : 1) + (res === 'L' && (rep.method === 'KO/TKO' || rep.method === 'Lekarz') ? (rep.amateur ? 3 : 7) : 0) + (s.age >= 32 ? 1.5 : 0), 0, 100);
+  // Wybraniec: każdy chce zrobić sobie nazwisko na tobie, więc wojny są cięższe
+  if (s.profile.start === 'wybraniec' && !rep.amateur) s.wear = clamp(s.wear + 0.5 + dmgTaken / 70, 0, 100);
   const extra = !rep.amateur && s.run ? Math.max(0, s.run.fights.length - 3) : 0;
   // zbijanie wagi i ciężki obóz męczą organizm
   if (!rep.amateur && weightShift(s) < 0) s.wear = clamp(s.wear + 1, 0, 100);
@@ -3672,9 +3726,35 @@ function ageOneYear(rng: Rng, s: GameState) {
 }
 
 export function checkEnd(s: GameState): string | null {
+  if ((s.flags.farewellDone ?? 0) > 0) {
+    const h = s.history[s.history.length - 1];
+    return h?.result === 'W'
+      ? `Walka pożegnalna wygrana przed własną publicznością w mieście ${s.profile.hometown}. Zdejmujesz rękawice na środku klatki i kładziesz je na macie.`
+      : h?.result === 'D'
+        ? `Walka pożegnalna kończy się remisem. Hala i tak wstaje, a ty kładziesz rękawice na środku klatki.`
+        : `Walka pożegnalna przegrana, ale hala w mieście ${s.profile.hometown} skanduje twoje nazwisko długo po werdykcie. Rękawice zostają na macie.`;
+  }
   if (s.age >= 40) return 'Czterdziestka na karku. Komisja lekarska nie przedłuża ci licencji.';
   if (s.quick && s.age >= 35) return 'Szybka kariera dobiega końca: 35 lat i czas zawiesić rękawice.';
-  if (s.wear >= 100) return 'Lekarze nie dają ci zgody na kolejne walki. Za dużo przyjętych ciosów.';
+  if (s.wear >= 100) {
+    const pick = <T,>(a: T[]) => a[(s.season * 7 + s.record.w * 3 + s.finishes.ko) % a.length];
+    if (s.finishes.koLosses >= 6)
+      return pick([
+        'Rezonans głowy po ostatniej walce. Neurolog długo milczy, potem odkłada wyniki i mówi tylko: „Wystarczy”. Komisja nie przedłuża licencji.',
+        'Po kolejnym nokaucie lekarz komisji kładzie ci rękę na ramieniu. Szczęka i głowa przyjęły już za dużo. Licencja cofnięta.',
+      ]);
+    if (s.finishes.subLosses >= 4)
+      return pick([
+        'Bark wyskakuje przy zwykłej rozgrzewce. Trzecia operacja w karierze nie wchodzi w grę, ortopeda skreśla dalsze walki.',
+        'Łokieć po dźwigniach nie prostuje się do końca. Lekarze mówią jasno: albo klatka, albo sprawna ręka na resztę życia.',
+      ]);
+    return pick([
+      'Lekarze nie dają ci zgody na kolejne walki. Za dużo przyjętych ciosów.',
+      'Kolana, kręgosłup, barki: wyniki badań wyglądają jak u pięćdziesięciolatka. Komisja lekarska nie podpisuje zgody na kolejny sezon.',
+      'Okulista wykrywa uszkodzenie siatkówki. Jeden mocny cios i możesz stracić oko. Licencji już nie dostaniesz.',
+      'Organizm odmawia posłuszeństwa: obóz zaczyna się od zastrzyków, a kończy na rehabilitacji. Lekarz federacji mówi „dość” i tym razem to nie podlega dyskusji.',
+    ]);
+  }
   if (s.finishes.koLosses >= 9 && s.proDebut) return 'Dziewiąty nokaut w karierze. Komisja lekarska cofa licencję: szczęka już nie wytrzyma.';
   if ((s.flags.lastSeason ?? 0) > 0) return 'Obiecałeś rodzinie, że to ostatni rok. Dotrzymujesz słowa.';
   if (s.age >= 27 && s.finishes.koLosses >= 5 && s.history.slice(-4).filter((h) => h.result === 'L' && h.method === 'KO/TKO').length >= 3)
@@ -4460,6 +4540,15 @@ export function careerStory(s: GameState): string {
 function endCareer(s: GameState, reason: string) {
   const v = verdictFor(s);
   s.ending = { reason, verdict: v.verdict, verdictDesc: v.desc, legacy: legacyScore(s), story: careerStory(s) };
+  // walka pożegnalna: kibice zapamiętają koniec na twoich warunkach
+  if ((s.flags.farewellDone ?? 0) > 0) {
+    const h = s.history[s.history.length - 1];
+    const won = h?.result === 'W';
+    const base = [0, 30, 80, 180, 400][s.tier] ?? 30;
+    const pts = Math.round((won ? base : base * 0.4) * (START_PROFILES[s.profile.start].mult ?? 0) * DIFFICULTY[s.profile.difficulty].mult);
+    s.ending.top = { title: won ? 'Pożegnanie jak z filmu' : 'Pożegnanie z honorem', pts, lines: [won ? `Wygrana walka pożegnalna: +${pts}` : `Walka pożegnalna przed własną publicznością: +${pts}`] };
+    s.ending.legacy += pts;
+  }
   log(s, `Koniec kariery w wieku ${s.age} lat.`);
   s.phase = 'ended';
 }
@@ -4490,6 +4579,7 @@ export interface RankRow {
   name: string;
   record: string;
   flag: string;
+  country?: string;
   me?: boolean;
   peer?: boolean;
   /** bilans gracza z tym zawodnikiem (stały skład federacji) */
@@ -4504,7 +4594,7 @@ export function rankingTable(s: GameState): RankRow[] {
   const ro = rosterFor(s);
   if (ro) {
     // stały skład federacji; gracz wchodzi na swoje miejsce, reszta przesuwa się w dół
-    const list = [...ro.list].sort((a, b) => a.rank - b.rank).map((f) => ({ rank: f.rank, name: `${f.firstName} ${f.lastName}`, record: recStr(f.record), flag: f.flag, met: f.h2h.w + f.h2h.l + f.h2h.d > 0 ? `${f.h2h.w}-${f.h2h.l}` : undefined } as RankRow));
+    const list = [...ro.list].sort((a, b) => a.rank - b.rank).map((f) => ({ rank: f.rank, name: `${f.firstName} ${f.lastName}`, record: recStr(f.record), flag: f.flag, country: f.country, met: f.h2h.w + f.h2h.l + f.h2h.d > 0 ? `${f.h2h.w}-${f.h2h.l}` : undefined } as RankRow));
     const mine = s.rank;
     const seq: (RankRow | null)[] = [...list];
     if (mine !== null && mine <= size) seq.splice(mine, 0, null);
@@ -4517,7 +4607,7 @@ export function rankingTable(s: GameState): RankRow[] {
     const rng = createRng((s.createdAt ^ (s.season * 7919) ^ (tier * 104729)) >>> 0);
     for (let r = 0; r <= size; r++) {
       const o = generateOpponent(rng, tier, r, false);
-      rows.push({ rank: r, name: `${o.firstName} ${o.lastName}`, record: recStr(o.record), flag: o.flag });
+      rows.push({ rank: r, name: `${o.firstName} ${o.lastName}`, record: recStr(o.record), flag: o.flag, country: o.country });
     }
   }
   for (const p of s.peers) {
@@ -4528,4 +4618,91 @@ export function rankingTable(s: GameState): RankRow[] {
     rows[s.rank] = { rank: s.rank, name: `${s.profile.firstName} ${s.profile.lastName}`, record: recStr(s.record), flag: '🇵🇱', me: true };
   }
   return rows;
+}
+
+// ---------------------------------------------------------------------------
+// Po karierze: wybór dalszej drogi (epilog, bez powrotu do klatki)
+// ---------------------------------------------------------------------------
+
+export interface AfterPath {
+  key: string;
+  title: string;
+  icon: string;
+  desc: string;
+  /** czemu ta droga jest zamknięta (brak = dostępna) */
+  locked?: string;
+  epilogue: string;
+}
+
+export function afterPaths(s: GameState): AfterPath[] {
+  const n = s.profile.lastName;
+  const town = s.profile.hometown;
+  const champ = s.belts.length > 0;
+  const fans = s.followers ?? 0;
+  const club = s.club?.name ?? 'swoim klubie';
+  const list: AfterPath[] = [
+    {
+      key: 'coach',
+      title: 'Trener',
+      icon: 'users',
+      desc: `Zostajesz na sali w klubie ${club} i prowadzisz młodych.`,
+      epilogue: `Pięć lat później w narożniku stoi trener ${n}. ${champ ? 'Na ścianie wisi twój pas, a pod nim zdjęcie szesnastolatka w za dużych rękawicach.' : 'Uczysz tego, czego sam nauczyłeś się za późno.'} Jeden z twoich chłopaków właśnie podpisał pierwszy zawodowy kontrakt.`,
+    },
+    {
+      key: 'academy',
+      title: 'Własna akademia',
+      icon: 'home',
+      desc: `Otwierasz klub pod swoim nazwiskiem w mieście ${town}.`,
+      locked: s.academy || s.totalEarned >= 250000 ? undefined : 'potrzeba 250 tys. zł zarobionych w karierze',
+      epilogue: `Akademia ${n} w mieście ${town} ma dziś trzysta osób na zapisach i listę oczekujących na grupę dzieci. ${champ ? 'Rodzice przyprowadzają synów „do tego od pasa”.' : 'Nikt nie pyta o twój rekord, wszyscy pytają o grafik.'}`,
+    },
+    {
+      key: 'commentator',
+      title: 'Komentator',
+      icon: 'mic',
+      desc: 'Siadasz przy stoliku komentatorskim największej federacji w kraju.',
+      locked: s.media >= 40 ? undefined : 'potrzeba rozpoznawalności w mediach (40+)',
+      epilogue: `„Tu się kończy ta walka!” — twój okrzyk zna cała Polska. ${n} przy stoliku komentatorskim to dziś marka sama w sobie, a zawodnicy proszą cię o rozbiór swoich walk.`,
+    },
+    {
+      key: 'promoter',
+      title: 'Promotor gal',
+      icon: 'ticket',
+      desc: 'Zakładasz własną federację i sam układasz karty walk.',
+      locked: s.totalEarned >= 800000 ? undefined : 'potrzeba 800 tys. zł zarobionych w karierze',
+      epilogue: `Twoja federacja robi cztery gale rocznie, a na konferencjach to ty uspokajasz zawodników. Czasem łapiesz się na tym, że negocjujesz z kimś dokładnie tak, jak kiedyś negocjowano z tobą.`,
+    },
+    {
+      key: 'creator',
+      title: 'Twórca internetowy',
+      icon: 'star',
+      desc: 'Podcast, kanał i walki pokazowe dla zasięgów.',
+      locked: fans >= 80000 ? undefined : 'potrzeba 80 tys. obserwujących',
+      epilogue: `Podcast „Po gongu” z ${n} ma milion wyświetleń miesięcznie. Najchętniej oglądany odcinek to ten, w którym opowiadasz, jak w wieku 16 lat mama wyjmowała pieniądze z koperty na pierwsze rękawice.`,
+    },
+    {
+      key: 'firefighter',
+      title: 'Straż pożarna',
+      icon: 'flame',
+      desc: 'Zdajesz testy sprawnościowe i idziesz do jednostki w mieście rodzinnym.',
+      epilogue: `Testy sprawnościowe zdajesz z najlepszym wynikiem w historii jednostki w mieście ${town}. Na zmianach koledzy wciąż proszą o pokazanie duszenia, a na akcji spokój z klatki przydaje się bardziej, niż myślałeś.`,
+    },
+    {
+      key: 'normal',
+      title: 'Zwykłe życie',
+      icon: 'briefcase',
+      desc: 'Etat, rodzina, weekendy bez wagi i sauny.',
+      epilogue: `Praca od ósmej do szesnastej, obiad w niedzielę u rodziców i pizza bez liczenia kalorii. Galę oglądasz z kanapy, a gdy ktoś w biurze pyta, skąd te uszy, tylko się uśmiechasz.`,
+    },
+  ];
+  return list;
+}
+
+export function chooseAfter(s0: GameState, key: string): GameState {
+  if (!s0.ending || s0.ending.after) return s0;
+  const p = afterPaths(s0).find((x) => x.key === key);
+  if (!p || p.locked) return s0;
+  const s = clone(s0);
+  s.ending!.after = key;
+  return s;
 }
