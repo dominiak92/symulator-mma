@@ -3879,10 +3879,16 @@ details.intro-notes p {
   }
 }
 .sum-art:has(.sum-trophies) {
-  margin-right: 24px;
+  margin-right: 4px;
 }
+/* trofea wewnątrz kadru zawodnika: pas na biodrach, medale w rogu, nic nie wchodzi w tekst */
 .sum-trophies {
-  right: -30px;
+  right: -4px;
+}
+.sum-trophies:has(.belt-art) {
+  right: auto;
+  left: 50%;
+  translate: -50% 0;
 }
 .vs {
   max-width: 520px;
@@ -7605,3 +7611,4 @@ p, .offer-note, .frow-ctx, .pst-text { text-wrap: pretty; }
 .tot .tot-belt dd { color: var(--gold); font-weight: 700; white-space: normal; line-height: 1.2; text-wrap: balance; }
 .tot .tot-belt dd svg { vertical-align: -1px; }
 .tot .tot-belt dd.none { color: var(--faint); font-weight: 400; }
+.hb-ko.long { font-size: 0.78rem; letter-spacing: 0.08em; }
