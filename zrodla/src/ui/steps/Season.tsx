@@ -487,7 +487,7 @@ function ResultReveal({ g, f, onClose }: { g: GameState; f: FightReport; onClose
 /** Pasek zdrowia jak w bijatyce. Przy trafieniu: odłamek, który zbija się z paska i świeci,
  *  liczba obrażeń, wstrząs ramy (mocniejszy przy ciężkim ciosie), czerwony ślad doganiający
  *  pasek. Przy nokaucie rama gaśnie na czerwono i wpada pieczątka K.O.; zwycięzca dostaje złoty połysk. */
-function HpBar({ hp, st, win }: { hp: number; st: number; win: boolean }) {
+function HpBar({ hp, st, win, end }: { hp: number; st: number; win: boolean; end: string }) {
   const v = Math.max(0, Math.min(100, Math.round(hp)));
   const s = Math.max(0, Math.min(100, Math.round(st)));
   const prev = useRef(v);
@@ -508,7 +508,7 @@ function HpBar({ hp, st, win }: { hp: number; st: number; win: boolean }) {
           {hit && <i key={hit.n} className="hb-chip" style={{ ['--f' as string]: hit.from, ['--t' as string]: hit.to } as CSSProperties} />}
           <i className="hb-ticks" />
         </span>
-        {v <= 0 && <b className="hb-ko">K.O.</b>}
+        {v <= 0 && <b className={`hb-ko ${end.length > 5 ? 'long' : ''}`}>{end}</b>}
       </span>
       {hit && dmg > 0 && v > 0 && (
         <b key={`d${hit.n}`} className={`hb-dmg ${dmg >= 18 ? 'big' : ''}`} style={{ ['--t' as string]: hit.to } as CSSProperties}>
@@ -555,7 +555,9 @@ function LiveCard({ g, f, start, animate, setGame }: { g: GameState; f: FightRep
     }
     return v;
   })();
-  const bars = (hp: number, st: number, side: 'me' | 'opp') => <HpBar hp={hp} st={st} win={done && barRound >= played && (side === 'me' ? won : f.result === 'L')} />;
+  // napis na pustym pasku przegranego: zależy od tego, jak skończyła się walka
+  const endWord = f.method === 'KO/TKO' ? 'K.O.' : f.method === 'Poddanie' ? 'PODDANIE' : f.method === 'Lekarz' ? 'LEKARZ' : f.method === 'Walkower' ? 'W.O.' : f.method?.startsWith('Dyskwal') ? 'DQ' : 'PUNKTY';
+  const bars = (hp: number, st: number, side: 'me' | 'opp') => <HpBar hp={hp} st={st} win={done && barRound >= played && (side === 'me' ? won : f.result === 'L')} end={endWord} />;
   const finish = f.method === 'KO/TKO' || f.method === 'Lekarz' || f.method === 'Poddanie';
   const won = f.result === 'W';
   const myShorts = clubCrest(g.club).bg;

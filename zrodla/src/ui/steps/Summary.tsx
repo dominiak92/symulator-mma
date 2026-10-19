@@ -49,7 +49,7 @@ export default function Summary({ game, setGame, onPeers }: StepProps & { onPeer
             {!amateur && fedLogo(s.fed) && <img className="sum-fed" src={fedLogo(s.fed)!} alt="" aria-hidden="true" />}
             Rok {s.season} kariery · {s.year}
           </div>
-          {champTitle(g) && <em className="champ-tag" style={{ justifySelf: 'start' }}>{champTitle(g)}</em>}
+          {champTitle(g) && !s.beltWon && <em className="champ-tag" style={{ justifySelf: 'start' }}>{champTitle(g)}</em>}
           <div className={`grade ${gradeTone}`}>{s.beltWon ? (amateur ? 'Mistrz Polski amatorów!' : isDoubleChamp(g) ? 'Podwójny mistrz!' : 'Rok z pasem!') : s.grade}</div>
           <div className="sum-rec">
             {s.w}-{s.l}
