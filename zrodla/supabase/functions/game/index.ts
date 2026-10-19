@@ -185,6 +185,7 @@ __export(game_exports, {
   setManager: () => setManager,
   setPerks: () => setPerks,
   setSocial: () => setSocial,
+  setTickets: () => setTickets,
   setWantFights: () => setWantFights,
   setYearGoal: () => setYearGoal,
   signingAmount: () => signingAmount,
@@ -207,6 +208,7 @@ __export(game_exports, {
   tourneyResultText: () => tourneyResultText,
   trainingForecast: () => trainingForecast,
   trainingPreview: () => trainingPreview,
+  upcomingOffer: () => upcomingOffer,
   weekAnswer: () => weekAnswer,
   weekChance: () => weekChance,
   weekGo: () => weekGo,
@@ -405,7 +407,7 @@ var THREADS = [
       { label: "Zostawiasz klapki jako dow\xF3d", desc: "Niech s\u0142u\u017C\u0105 sprawiedliwo\u015Bci.", effects: { media: 1, note: "klapki w aktach sprawy" } }
     ]
   },
-  // ---------- Okazja na Taśmie ----------
+  // ---------- Okazja na Oliksie ----------
   {
     id: "okazja.start",
     note: true,
@@ -440,9 +442,9 @@ var THREADS = [
     id: "okazja.scam",
     note: true,
     app: "bank",
-    from: "Bankoteka",
+    from: "Rewolwer",
     title: "Reklamacja odrzucona",
-    text: () => "\u201ETwoja reklamacja przelewu zosta\u0142a odrzucona. Przelew wykonano zgodnie z dyspozycj\u0105.\u201D Na Ta\u015Bmie pi\u0119\u0107 os\xF3b pisze, \u017Ce te\u017C wp\u0142aci\u0142o zaliczk\u0119 temu samemu go\u015Bciowi.",
+    text: () => "\u201ETwoja reklamacja przelewu zosta\u0142a odrzucona. Przelew wykonano zgodnie z dyspozycj\u0105.\u201D Na Oliksie pi\u0119\u0107 os\xF3b pisze, \u017Ce te\u017C wp\u0142aci\u0142o zaliczk\u0119 temu samemu go\u015Bciowi.",
     choices: (s) => [
       { label: "Ostrzegasz innych na grupie", desc: "Przynajmniej nikt wi\u0119cej si\u0119 nie nabierze.", effects: { rep: 1, media: 1, note: "admin banuje sprzedawc\u0119 po trzech dniach" } },
       { label: "Kupujesz r\u0119kawice w sklepie", desc: "Nauczka kosztuje podw\xF3jnie.", effects: { money: -zl(s, 900), gear: -35 } },
@@ -473,10 +475,10 @@ var THREADS = [
     id: "dojazd.start",
     note: true,
     app: "mapka",
-    from: "Mapka",
+    from: "Gugle Mapy",
     title: "Jak dojedziesz na gal\u0119?",
     start: { weight: 4, cond: (s) => pro(s) && s.tier <= 2, repeat: true },
-    text: () => "Gala w drugim ko\u0144cu Polski. Organizator nie zapewnia transportu. Mapka pokazuje 6 godzin drogi i trzy objazdy.",
+    text: () => "Gala w drugim ko\u0144cu Polski. Organizator nie zapewnia transportu. Gugle Mapy pokazuj\u0105 6 godzin drogi i trzy objazdy.",
     choices: (s) => [
       {
         label: "Poci\u0105g InterTrz\u0119\u015B",
@@ -528,7 +530,7 @@ var THREADS = [
     choices: (s) => [
       { label: "Oddajesz ca\u0142o\u015B\u0107", desc: "Bez dyskusji.", effects: { money: -zl(s, 500) } },
       { label: "Oddajesz po\u0142ow\u0119", desc: "To on trzyma\u0142 nog\u0119 na gazie.", effects: { money: -zl(s, 250) } },
-      { label: "Wrzucasz zdj\u0119cie na Fotogram", desc: "\u201EPrzygotowanie mentalne przed walk\u0105\u201D.", effects: { media: 2, follow: { step: "dojazd.seba", after: 1 } } }
+      { label: "Wrzucasz zdj\u0119cie na Instagrym", desc: "\u201EPrzygotowanie mentalne przed walk\u0105\u201D.", effects: { media: 2, follow: { step: "dojazd.seba", after: 1 } } }
     ]
   },
   {
@@ -547,7 +549,7 @@ var THREADS = [
     id: "parking.start",
     note: true,
     app: "mapka",
-    from: "Mapka",
+    from: "Gugle Mapy",
     title: "Parking pod hal\u0105",
     start: { weight: 4, cond: (s) => pro(s) },
     text: () => "Parking pod hal\u0105 pe\u0142ny. Jest jedno miejsce przy zakazie, tu\u017C przy wej\u015Bciu dla zawodnik\xF3w.",
@@ -606,7 +608,7 @@ var THREADS = [
     title: "S\u0142ysza\u0142em podcast",
     text: () => "\u201ES\u0142ysza\u0142em tw\xF3j podcast. Nast\u0119pn\u0105 walk\u0119 masz na karcie wst\u0119pnej o 17:30, przy pustej hali. Pozdrawiam.\u201D",
     choices: () => [
-      { label: "Przepraszasz publicznie", desc: "Nagranie z przeprosinami na Fotogram.", effects: { rep: 2, media: -1 } },
+      { label: "Przepraszasz publicznie", desc: "Nagranie z przeprosinami na Instagrym.", effects: { rep: 2, media: -1 } },
       { label: "Podtrzymujesz zdanie", desc: "Prawda w oczy kole.", effects: { media: 2, rep: -2, nextFight: -1, note: "\u0142atka \u201Etrudnego zawodnika\u201D" } }
     ]
   },
@@ -627,7 +629,7 @@ var THREADS = [
     id: "wpis.start",
     note: true,
     app: "fotogram",
-    from: "Fotogram",
+    from: "Instagrym",
     title: "Wpis po wygranej",
     start: { weight: 7, cond: (s, c) => pro(s) && !c.pre && lastWin(s), repeat: true },
     text: () => "Po wygranej telefon nie przestaje wibrowa\u0107. Masz u\u0142amek sekundy na wpis, zanim emocje opadn\u0105.",
@@ -913,7 +915,7 @@ var THREADS = [
     id: "przelew.start",
     note: true,
     app: "bank",
-    from: "Bankoteka",
+    from: "Rewolwer",
     title: "Ga\u017Ca nie wp\u0142yn\u0119\u0142a",
     start: { weight: 3, cond: (s, c) => pro(s) && !c.pre && s.tier <= 2 },
     text: () => "Brak wp\u0142ywu ga\u017Cy z ostatniej gali. Min\u0119\u0142y trzy tygodnie. Organizator odpisuje: \u201Ew tym tygodniu na pewno\u201D.",
@@ -1080,7 +1082,7 @@ var THREADS = [
     from: "Nieznany numer",
     title: "Kto\u015B ukrad\u0142 telefon",
     start: { weight: 3, cond: (s, c) => pro(s) && !c.pre },
-    text: () => "To ja, pisz\u0119 od brata. M\xF3j telefon znikn\u0105\u0142 z szatni w czasie walki. Kontakty, zdj\u0119cia, Fotogram, wszystko. Co teraz?",
+    text: () => "To ja, pisz\u0119 od brata. M\xF3j telefon znikn\u0105\u0142 z szatni w czasie walki. Kontakty, zdj\u0119cia, Instagrym, wszystko. Co teraz?",
     choices: (s) => [
       { label: "Kupujesz nowy telefon", desc: "I przywracasz kopi\u0119 zapasow\u0105.", effects: { money: -zl(s, 1200) } },
       { label: "Stary telefon brata", desc: "P\u0119kni\u0119ty ekran i 12 GB pami\u0119ci.", effects: { follow: { step: "telefon.menedzer", after: 1 } } }
@@ -1094,7 +1096,7 @@ var THREADS = [
     text: () => "\u201EDzwoni\u0142em do ciebie trzy dni! Mia\u0142em walk\u0119 na zast\u0119pstwo za trzy razy wy\u017Csz\u0105 ga\u017C\u0119. Wzi\u0105\u0142 j\u0105 kto inny.\u201D",
     choices: () => [
       { label: "Przepraszasz", desc: "I wysy\u0142asz nowy numer.", effects: { rep: -1, note: "stracona okazja" } },
-      { label: "M\xF3wisz, \u017Ceby pisa\u0142 na Fotogram", desc: "Tam zawsze odpiszesz.", effects: { media: 1 } }
+      { label: "M\xF3wisz, \u017Ceby pisa\u0142 na Instagrym", desc: "Tam zawsze odpiszesz.", effects: { media: 1 } }
     ]
   },
   // ---------- Kolega z podstawówki ----------
@@ -1136,7 +1138,7 @@ var THREADS = [
     choices: (s) => [
       { label: "Prosisz o sprostowanie", desc: "Grzecznie, przez telefon.", effects: { rep: 1, media: 1, note: "sprostowanie na stronie 12" } },
       { label: "Odpuszczasz", desc: "Najwa\u017Cniejsze, \u017Ce pisz\u0105.", effects: { follow: { step: "gazeta.ksywa", after: 2 } } },
-      { label: "Wrzucasz na Fotogram", desc: `\u201EPozdrawiam, ${twistName(s.profile.lastName)}\u201D.`, effects: { media: 2 } }
+      { label: "Wrzucasz na Instagrym", desc: `\u201EPozdrawiam, ${twistName(s.profile.lastName)}\u201D.`, effects: { media: 2 } }
     ]
   },
   {
@@ -1220,7 +1222,7 @@ var THREADS = [
     app: "tasma",
     from: "Sporty walki \u2014 kupi\u0119/sprzedam",
     title: "34 puszki w piwnicy",
-    text: () => "W piwnicy wci\u0105\u017C 34 puszki. Smak bubble gum da si\u0119 pi\u0107 tylko z zamkni\u0119tymi oczami. Wystawiasz na Ta\u015Bmie?",
+    text: () => "W piwnicy wci\u0105\u017C 34 puszki. Smak bubble gum da si\u0119 pi\u0107 tylko z zamkni\u0119tymi oczami. Wystawiasz na Oliksie?",
     choices: (s) => [
       {
         label: "Sprzedajesz",
@@ -1519,7 +1521,7 @@ var THREADS = [
     from: "Ola",
     title: "Weekend w g\xF3rach?",
     start: { weight: 4, cond: (s) => s.age >= 19 && s.age <= 34 },
-    text: () => "Kochanie, mam wolny weekend. Jedziemy w g\xF3ry? Wiem, \u017Ce za tydzie\u0144 masz walk\u0119, ale ostatnio widzimy si\u0119 tylko na Fotogramie.",
+    text: () => "Kochanie, mam wolny weekend. Jedziemy w g\xF3ry? Wiem, \u017Ce za tydzie\u0144 masz walk\u0119, ale ostatnio widzimy si\u0119 tylko na Instagrymie.",
     choices: (s) => [
       { label: "Jedziecie", desc: "G\xF3ry, schronisko, zero trening\xF3w.", effects: { relations: 2, nextFight: -1 } },
       {
@@ -1738,19 +1740,19 @@ var THREADS = [
     id: "fake.start",
     note: true,
     app: "fotogram",
-    from: "Fotogram",
+    from: "Instagrym",
     title: "Kto\u015B si\u0119 pod ciebie podszywa",
     start: { weight: 3, cond: (s) => pro(s) && s.media >= 12 },
     text: (s) => `Konto \u201E${s.profile.lastName.toLowerCase()}_oficjalne_mma\u201D zbiera pieni\u0105dze na \u201Eoperacj\u0119 kolana\u201D. Ma twoje zdj\u0119cia i wi\u0119cej obserwuj\u0105cych ni\u017C ty.`,
     choices: () => [
       {
-        label: "Zg\u0142aszasz do Fotogramu",
+        label: "Zg\u0142aszasz do Instagryma",
         desc: "Formularz ma osiem krok\xF3w.",
         chance: 55,
         success: { rep: 1 },
         successText: "Konto znika po dw\xF3ch dniach. Kolano masz zdrowe.",
         fail: { rep: -2, follow: { step: "fake.fani", after: 1 } },
-        failText: "Fotogram odpisuje, \u017Ce \u201Ekonto nie narusza zasad\u201D. Zbi\xF3rka trwa."
+        failText: "Instagrym odpisuje, \u017Ce \u201Ekonto nie narusza zasad\u201D. Zbi\xF3rka trwa."
       },
       { label: "Nagrywasz ostrze\u017Cenie", desc: "Twarz, imi\u0119, \u201Eto nie ja\u201D.", effects: { media: 2, rep: 1 } }
     ]
@@ -1844,7 +1846,7 @@ var THREADS = [
     text: () => "WIDZIELI\u015ACIE TEN LEWY?!?! \u{1F631}\u{1F631} Puszczam w p\u0119tli od wczoraj. Ty, to po sparingach ze mn\u0105 taki lewy, nie?",
     choices: () => [
       { label: "\u201EJasne, to twoja zas\u0142uga\u201D", desc: "Mietek b\u0119dzie to powtarza\u0142 do ko\u0144ca \u017Cycia.", effects: { relations: 1, note: "Mietek drukuje sobie zdj\u0119cie" } },
-      { label: "Wrzucasz film na Fotogram", desc: "Nokaut w zwolnionym tempie, z muzyk\u0105 z \u201ERocky\u2019ego\u201D.", effects: { media: 1 } },
+      { label: "Wrzucasz film na Instagrym", desc: "Nokaut w zwolnionym tempie, z muzyk\u0105 z \u201ERocky\u2019ego\u201D.", effects: { media: 1 } },
       { label: "\u201E\u0106wiczy\u0142em go sam\u201D", desc: "Mietek odpisuje tylko \u201Eok\u201D.", effects: { relations: -1, rep: 1 } }
     ]
   }
@@ -2037,7 +2039,7 @@ var CAMP_ACTS = [
     desc: "Wywiady, nagrania, zdj\u0119cia z produktem.",
     hint: "media, mniej formy",
     roll: (s, rng) => ({
-      text: rng.pick(["Trzy wywiady, dwa podcasty i sesja zdj\u0119ciowa. Trening wciskasz mi\u0119dzy nagrania.", "Tydzie\u0144 jak w telewizji: kamera wsz\u0119dzie, nawet na rozci\u0105ganiu.", "Spotkanie ze sponsorem i rolka na Fotogram. Telefon \u0142adujesz cz\u0119\u015Bciej ni\u017C siebie."]),
+      text: rng.pick(["Trzy wywiady, dwa podcasty i sesja zdj\u0119ciowa. Trening wciskasz mi\u0119dzy nagrania.", "Tydzie\u0144 jak w telewizji: kamera wsz\u0119dzie, nawet na rozci\u0105ganiu.", "Spotkanie ze sponsorem i rolka na Instagrym. Telefon \u0142adujesz cz\u0119\u015Bciej ni\u017C siebie."]),
       effects: { media: 2, money: s.sponsors.length ? zl3(s, 200) : 0 },
       mod: 0
     })
@@ -2146,7 +2148,7 @@ var WEEK_EVENTS = [
     choices: (s) => [
       { label: "Kupujesz wszystko od nowa", desc: "Sklep sportowy przy galerii, ceny jak na lotnisku.", effects: { money: -zl4(s, 450) } },
       { label: "Po\u017Cyczasz od ch\u0142opak\xF3w z innych klub\xF3w", desc: "Spodenki dwa rozmiary za du\u017Ce, ale s\u0105.", chance: 70, success: { rep: 1, note: "p\xF3\u0142 szatni ma u ciebie piwo" }, successText: "Kto\u015B po\u017Cycza r\u0119kawice, kto\u015B spodenki, kto\u015B ochraniacz (\u201Ewygotowany, przysi\u0119gam\u201D). Szatnia dawno nie by\u0142a tak zgrana.", fail: { nextFight: -1 }, failText: "Spodenki spadaj\u0105 przy ka\u017Cdym kopni\u0119ciu. Na rozgrzewce trzymasz je jedn\u0105 r\u0119k\u0105." },
-      { label: "Piszesz posta z p\u0142aczem do linii lotniczych", desc: "Mo\u017Ce si\u0119 rozniesie.", chance: 45, success: { media: 3, note: "linia lotnicza przeprasza na Fotogramie" }, successText: "Post wybucha. Linia lotnicza przysy\u0142a kuriera z torb\u0105 i voucher na lot. Ludzie pisz\u0105, \u017Ce to lepsze ni\u017C serial.", fail: { money: -zl4(s, 450), media: 1 }, failText: "Linia odpisuje automatem: \u201ETwoje zg\u0142oszenie jest dla nas wa\u017Cne\u201D. Kupujesz wszystko od nowa." }
+      { label: "Piszesz posta z p\u0142aczem do linii lotniczych", desc: "Mo\u017Ce si\u0119 rozniesie.", chance: 45, success: { media: 3, note: "linia lotnicza przeprasza na Instagrymie" }, successText: "Post wybucha. Linia lotnicza przysy\u0142a kuriera z torb\u0105 i voucher na lot. Ludzie pisz\u0105, \u017Ce to lepsze ni\u017C serial.", fail: { money: -zl4(s, 450), media: 1 }, failText: "Linia odpisuje automatem: \u201ETwoje zg\u0142oszenie jest dla nas wa\u017Cne\u201D. Kupujesz wszystko od nowa." }
     ]
   },
   {
@@ -2300,7 +2302,7 @@ var WEEK_EVENTS = [
     text: () => "Wywiad na \u017Cywo dla kana\u0142u federacji. Prowadz\u0105cy, zamiast o walk\u0119, pyta, co my\u015Blisz o nowym zwi\u0105zku pewnej celebrytki i czy \u201Eto prawda, \u017Ce jeste\u015Bcie znajomymi\u201D.",
     choices: () => [
       { label: "\u201ENie znam pani, ale \u017Cycz\u0119 szcz\u0119\u015Bcia\u201D", desc: "Dyplomacja.", effects: { rep: 1 } },
-      { label: "Udajesz tajemniczego", desc: "\u201ENie mog\u0119 o tym m\xF3wi\u0107\u201D.", chance: 50, success: { media: 5 }, successText: "Plotkarskie portale szalej\u0105 przez trzy dni. Twoje nazwisko pierwszy raz w zak\u0142adce \u201Egwiazdy\u201D.", fail: { media: 2, rep: -2 }, failText: "Celebrytka dementuje na Fotogramie: \u201Ekto to w og\xF3le jest?\u201D. P\xF3\u0142 internetu pyta to samo." },
+      { label: "Udajesz tajemniczego", desc: "\u201ENie mog\u0119 o tym m\xF3wi\u0107\u201D.", chance: 50, success: { media: 5 }, successText: "Plotkarskie portale szalej\u0105 przez trzy dni. Twoje nazwisko pierwszy raz w zak\u0142adce \u201Egwiazdy\u201D.", fail: { media: 2, rep: -2 }, failText: "Celebrytka dementuje na Instagrymie: \u201Ekto to w og\xF3le jest?\u201D. P\xF3\u0142 internetu pyta to samo." },
       { label: "Wracasz do tematu walki", desc: "Jeste\u015B tu, \u017Ceby si\u0119 bi\u0107.", effects: { nextFight: 1 } }
     ]
   },
@@ -9114,11 +9116,11 @@ function tasmaDeal(s0, id) {
       if (fake) {
         applyEffects(s, { gear: -10 }, rng);
         s.flags.tasmaLast = 2;
-        log(s, `Ta\u015Bma: \u201E${it.title}\u201D okaza\u0142y si\u0119 podr\xF3bk\u0105. Logo krzywe, szwy puszczaj\u0105.`);
+        log(s, `Oliks: \u201E${it.title}\u201D okaza\u0142y si\u0119 podr\xF3bk\u0105. Logo krzywe, szwy puszczaj\u0105.`);
       } else {
         applyEffects(s, it.effects, rng);
         s.flags.tasmaLast = 1;
-        log(s, `Ta\u015Bma: kupione \u201E${it.title}\u201D.`);
+        log(s, `Oliks: kupione \u201E${it.title}\u201D.`);
       }
     } else {
       s.money += it.price;
@@ -9126,7 +9128,7 @@ function tasmaDeal(s0, id) {
       applyEffects(s, it.effects, rng);
       if (id === "medal") s.flags.medalsSold = (s.flags.medalsSold ?? 0) + 1;
       s.flags.tasmaLast = 3;
-      log(s, `Ta\u015Bma: sprzedane \u201E${it.title}\u201D.`);
+      log(s, `Oliks: sprzedane \u201E${it.title}\u201D.`);
     }
   });
   return s;
@@ -10374,6 +10376,18 @@ function buildPost(rng, s, rep) {
 function prepCost(s, o) {
   const cap = [1e3, 2500, 8e3, 18e3, 4e4][s.tier] ?? 8e3;
   return Math.round(clamp(o.purse * 0.15, 800, cap) / 100) * 100;
+}
+function upcomingOffer(s) {
+  const r = s.run;
+  if (!r) return null;
+  return r.announce ?? r.camp?.o ?? r.week?.o ?? r.press ?? r.weigh ?? null;
+}
+function setTickets(s0, plan) {
+  const o0 = upcomingOffer(s0);
+  if (!o0 || !ticketsAvailable(s0, o0) || o0.tickets === plan) return s0;
+  const s = clone(s0);
+  upcomingOffer(s).tickets = plan;
+  return s;
 }
 function acceptOffer(s0, prep = "std", tickets = "std") {
   const s = clone(s0);
@@ -12248,7 +12262,8 @@ var ALLOWED = /* @__PURE__ */ new Set([
   "announceAnswer",
   "afterNext",
   "weekAnswer",
-  "weekGo"
+  "weekGo",
+  "setTickets"
 ]);
 var YEAR_COST = {
   startSeason: () => 1,
