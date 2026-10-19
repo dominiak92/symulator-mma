@@ -1,3 +1,5 @@
+import { FlagMark } from './Flag';
+import { TrophySheet } from './Trophies';
 import { careerMarks, champTitle } from './titles';
 import { clubLogo } from './logos';
 import { Fighter } from './FighterArt';
@@ -45,7 +47,7 @@ export interface StepProps {
   setGame: (s: GameState) => void;
 }
 
-type SheetName = 'menu' | 'history' | 'peers' | 'ranking' | 'skills' | 'goals';
+type SheetName = 'menu' | 'history' | 'peers' | 'ranking' | 'skills' | 'goals' | 'trophies';
 
 export function shortName(g: GameState) {
   const p = g.profile;
@@ -282,6 +284,10 @@ export default function Game({
                 <Icon name="users" size={15} />
                 Rocznik
               </button>
+              <button className="btn btn-ghost btn-small btn-ico" onClick={() => setSheet('trophies')}>
+                <Icon name="trophy" size={15} />
+                Gablota
+              </button>
             </div>
           </aside>
         )}
@@ -292,7 +298,7 @@ export default function Game({
           {g.phase === 'season' && <Season game={g} setGame={setGame} />}
           {g.phase === 'summary' && <Summary game={g} setGame={setGame} onPeers={() => setSheet('peers')} />}
           {g.phase === 'market' && <Market game={g} setGame={setGame} />}
-          {g.phase === 'ended' && <Ended game={g} onNewCareer={onNewCareer} onMenu={onMenu} />}
+          {g.phase === 'ended' && <Ended game={g} setGame={setGame} onNewCareer={onNewCareer} onMenu={onMenu} />}
         </div>
       </div>
 
@@ -311,6 +317,10 @@ export default function Game({
                   <button className="btn btn-ghost btn-block btn-ico" onClick={() => setSheet('ranking')}>
                     <Icon name={g.tier === 0 ? 'medal' : 'trophy'} />
                     {g.tier === 0 ? 'Medale i warunki debiutu' : 'Ranking'}
+                  </button>
+                  <button className="btn btn-ghost btn-block btn-ico" onClick={() => setSheet('trophies')}>
+                    <Icon name="trophy" />
+                    Gablota: pasy, medale, najlepsze wygrane
                   </button>
                   <button className="btn btn-ghost btn-block btn-ico" onClick={() => setSheet('history')}>
                     <Icon name="list" />
@@ -363,6 +373,7 @@ export default function Game({
               </>
             )}
             {sheet === 'history' && <HistorySheet g={g} onClose={() => setSheet(null)} />}
+            {sheet === 'trophies' && <TrophySheet g={g} onClose={() => setSheet(null)} />}
             {sheet === 'peers' && <PeersSheet g={g} onClose={() => setSheet(null)} />}
             {sheet === 'goals' && <GoalsSheet g={g} onClose={() => setSheet(null)} />}
             {sheet === 'ranking' && <RankingSheet g={g} onClose={() => setSheet(null)} />}
@@ -627,7 +638,8 @@ export function CareerPanel({ g, onRanking }: { g: GameState; onRanking?: () => 
             <div key={r.rank} className={`rank-item ${r.me ? 'me' : ''}`}>
               <span className="pos">{r.rank === 0 ? 'M' : r.rank}</span>
               <span>
-                {r.flag} {r.name}
+                <FlagMark country={r.country} flag={r.flag} />
+                {r.name}
                 {r.peer && <small>z twojego rocznika</small>}
                 {r.me && r.rank === 0 && <small>obrony pasa: {g.titleDefenses}</small>}
               </span>

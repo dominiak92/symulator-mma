@@ -161,24 +161,52 @@ export function tutorialSeen() {
   return loadSettings().tutorialSeen;
 }
 
-/** Podpowiedź trenera. Pokazuje się raz (id), dopóki gracz nie wyłączy wskazówek. */
+/** Jedna podpowiedź naraz: kolejne czekają, aż gracz zamknie bieżącą. */
+let tipActive: string | null = null;
+const tipSubs = new Set<() => void>();
+const tipRelease = (id: string) => {
+  if (tipActive !== id) return;
+  tipActive = null;
+  tipSubs.forEach((f) => f());
+};
+
+/** Podpowiedź trenera. Pokazuje się raz (id), dopóki gracz nie wyłączy wskazówek. Na ekranie zawsze najwyżej jedna. */
 export function CoachTip({ id, children }: { id: string; children: ReactNode }) {
-  const [visible, setVisible] = useState(() => {
+  const eligible = () => {
     const st = loadSettings();
     return st.tips && !st.tipsSeen.includes(id);
+  };
+  const [visible, setVisible] = useState(() => {
+    if (!eligible() || (tipActive && tipActive !== id)) return false;
+    tipActive = id;
+    return true;
   });
+  useEffect(() => {
+    const retry = () => {
+      if (tipActive || !eligible()) return;
+      tipActive = id;
+      setVisible(true);
+    };
+    tipSubs.add(retry);
+    return () => {
+      tipSubs.delete(retry);
+      tipRelease(id);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   // raz pokazana podpowiedź nie wraca w kolejnych latach
   useEffect(() => {
     if (!visible) return;
     const st = loadSettings();
     if (!st.tipsSeen.includes(id)) saveSettings({ ...st, tipsSeen: [...st.tipsSeen, id] });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [visible]);
   if (!visible) return null;
   const off = () => {
     const st = loadSettings();
     saveSettings({ ...st, tips: false });
     setVisible(false);
+    tipRelease(id);
   };
   return (
     <aside className="coach" role="note">
@@ -189,7 +217,7 @@ export function CoachTip({ id, children }: { id: string; children: ReactNode }) 
           Wyłącz podpowiedzi
         </button>
       </div>
-      <button className="coach-x" aria-label="Zamknij podpowiedź" onClick={() => setVisible(false)}>
+      <button className="coach-x" aria-label="Zamknij podpowiedź" onClick={() => { setVisible(false); tipRelease(id); }}>
         <Icon name="x" size={16} />
       </button>
     </aside>

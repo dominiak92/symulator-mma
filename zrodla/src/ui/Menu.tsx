@@ -46,7 +46,7 @@ export default function Menu({
           </a>
           <span>przedstawia</span>
         </div>
-        <div className="kicker">Kariera w klatce · 20 minut</div>
+        <div className="kicker">Kariera w klatce · od 15 do 60 minut</div>
         <h1>
           Symulator Polskiego
           <span className="red">Zawodnika MMA</span>

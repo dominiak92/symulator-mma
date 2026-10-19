@@ -1,3 +1,4 @@
+import { FlagMark } from './Flag';
 import type { GameState, HistoryEntry, Peer } from '../engine/types';
 import { fedLogo } from './logos';
 import { STAGE_LABELS, TIER_NAMES } from '../engine/data';
@@ -87,7 +88,8 @@ function HistoryRow({ h }: { h: HistoryEntry }) {
       {!h.freak && <Face name={h.opponent} flag={h.oppFlag} age={h.age} />}
       <div className="hist-main">
         <div className="hist-opp">
-          {h.oppFlag} {h.opponent}
+          <FlagMark flag={h.oppFlag} />
+          {h.opponent}
           <span className="faint"> ({h.oppRecord})</span>
           {h.title && <span className="tag gold">pas</span>}
           {h.freak && <span className="tag">freak</span>}
@@ -221,7 +223,8 @@ export function RankingSheet({ g, onClose }: { g: GameState; onClose: () => void
           <div key={r.rank} className={`rank-item ${r.me ? 'me' : ''}`}>
             <span className="pos">{r.rank === 0 ? 'M' : r.rank}</span>
             <span>
-              {r.flag} {r.name}
+              <FlagMark country={r.country} flag={r.flag} />
+                {r.name}
               {r.rank === 0 && <small>mistrz</small>}
               {r.peer && <small>z twojego rocznika</small>}
               {r.met && !r.me && <small className="rank-met">wasz bilans {r.met}</small>}
