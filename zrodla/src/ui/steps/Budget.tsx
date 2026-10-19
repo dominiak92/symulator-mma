@@ -426,7 +426,7 @@ export default function Budget({ game, setGame }: StepProps) {
               <span className="sp-row-txt">
                 <b>{sp.name}</b>
                 <small>
-                  {sponsorPoolOf(sp.name) === 'global' ? 'światowa' : sponsorPoolOf(sp.name) === 'national' ? 'krajowa' : 'lokalna'} · {sp.clause} · {sp.seasonsLeft === 1 ? 'ostatni rok' : `jeszcze ${sp.seasonsLeft} lata`}
+                  {sponsorPoolOf(sp.name) === 'global' ? 'światowa' : sponsorPoolOf(sp.name) === 'national' ? 'krajowa' : 'lokalna'} · {sp.clause} · {sp.seasonsLeft === 1 ? 'ostatni rok' : `jeszcze ${sp.seasonsLeft} ${plural(sp.seasonsLeft, 'rok', 'lata', 'lat')}`}
                 </small>
               </span>
               <b className="sp-row-amt">+{money(sp.perSeason)}</b>

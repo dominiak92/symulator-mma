@@ -517,10 +517,18 @@ function LiveCard({ g, f, start, animate, setGame }: { g: GameState; f: FightRep
     }
     return v;
   })();
+  // pasek jak w bijatyce: rama, żółte zdrowie, czerwony ślad obrażeń, błysk przy trafieniu, kondycja pod spodem
   const bars = (hp: number, st: number) => (
-    <span className="hpbars" aria-label={`zdrowie ${hp}%, kondycja ${st}%`}>
-      <i className={`hp ${hp < 30 ? 'low' : hp < 60 ? 'mid' : ''}`} style={{ ['--v' as string]: `${hp}%` } as CSSProperties} />
-      <i className="st" style={{ ['--v' as string]: `${st}%` } as CSSProperties} />
+    <span className={`hpbars ${hp <= 0 ? 'ko' : hp < 30 ? 'low' : hp < 60 ? 'mid' : ''}`} aria-label={`zdrowie ${hp}%, kondycja ${st}%`} style={{ ['--v' as string]: Math.max(0, Math.min(100, hp)), ['--s' as string]: Math.max(0, Math.min(100, st)) } as CSSProperties}>
+      <span className="hb-frame">
+        <i className="hb-trail" />
+        <i className="hb-fill" />
+        {hp < 100 && <i key={hp} className="hb-hit" />}
+        <i className="hb-ticks" />
+      </span>
+      <span className="hb-st">
+        <i />
+      </span>
     </span>
   );
   const finish = f.method === 'KO/TKO' || f.method === 'Lekarz' || f.method === 'Poddanie';
