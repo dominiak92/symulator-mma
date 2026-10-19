@@ -31,6 +31,8 @@ for (let i = 0; i < N; i++) {
           if (o.interim) inc('pas tymczasowy (oferta)');
           if (o.unify) inc('unifikacja (oferta)');
           if (o.rematch) inc('rewanż (oferta)');
+          if (o.title && !o.defense) inc(`walka o pas t${s.tier} (oferta)`);
+          if (o.defense) inc('obrona pasa (oferta)');
           s = G.acceptOffer(s, 'std', 'std');
         }
         else if (cur?.sim.pending) s = G.decide(s, [...cur.sim.pending.options].sort((a, b) => b.chance - a.chance)[0].key);
@@ -53,6 +55,7 @@ for (let i = 0; i < N; i++) {
   }
   if (s.flags.doubleChamp) inc('podwójny mistrz');
   inc('pas odebrany', s.flags.stripped ?? 0);
+  if (s.flags.breakYear || s.flags.injuryYear) inc('rok przerwy/urazu');
   inc('pas tymczasowy zdobyty', s.flags.interimBelts ?? 0);
   fans += s.followers ?? 0;
 }

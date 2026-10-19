@@ -31,6 +31,8 @@ with sync_playwright() as p:
             shot(pg, 'scena-wyniku'); pg.locator('.rv-scene .btn').first.click(); pg.wait_for_timeout(300); continue
         if pg.locator('.post-modal .btn-primary, .weigh-modal .choice, .post-modal .choice, .invite-modal .btn-primary').count():
             shot(pg, 'po-walce'); pg.locator('.post-modal .btn-primary, .weigh-modal .choice, .post-modal .choice, .invite-modal .btn-primary').first.click(); pg.wait_for_timeout(300); continue
+        if pg.locator('.press-modal .press-result').count():
+            shot(pg, 'konferencja-wynik'); pg.get_by_role('button', name='Do walki').click(); pg.wait_for_timeout(300); continue
         if pg.locator('.press-modal').count():
             shot(pg, 'konferencja'); pg.locator('.press-opt').nth(1).click(); pg.wait_for_timeout(300); continue
         if pg.locator('.offer-modal').count():
@@ -75,7 +77,11 @@ with sync_playwright() as p:
             except Exception: pass
             pg.wait_for_timeout(600); continue
         if pg.get_by_role('button', name='Dalej: kontrakty').count():
-            shot(pg, 'podsumowanie'); pg.get_by_role('button', name='Dalej: kontrakty').click(); pg.wait_for_timeout(600); continue
+            shot(pg, 'podsumowanie')
+            if pg.locator('.photo-btn').count() and seen.get('karta-roku', 0) < 2:
+                pg.locator('.photo-btn').click(); pg.wait_for_selector('.photo-frame img', timeout=8000); shot(pg, 'karta-roku')
+                pg.get_by_role('button', name='Zamknij').click(); pg.wait_for_timeout(300)
+            pg.get_by_role('button', name='Dalej: kontrakty').click(); pg.wait_for_timeout(600); continue
         if pg.locator('.mgr-section:not(.coach-section)').count() or pg.get_by_role('button', name='Podpisuję').count():
             shot(pg, 'rynek')
             if pg.locator('.mgr-section:not(.coach-section)').count():

@@ -1,5 +1,5 @@
 """Wczytuje zapis (JSON) do slotu 1 i otwiera grę: python3 scripts/load_save.py URL save.json szerokość wysokość katalog"""
-import sys, json
+import sys, json, re
 from playwright.sync_api import sync_playwright
 URL, SAVE, W, H, OUT = sys.argv[1], sys.argv[2], int(sys.argv[3]), int(sys.argv[4]), sys.argv[5]
 data = open(SAVE).read()
@@ -13,5 +13,5 @@ def open_game(p, anim=False):
     pg.evaluate("([d]) => { localStorage.setItem('spz-mma-slot-1', d); localStorage.setItem('spz-mma-settings', JSON.stringify({animations:true,cardTheme:'dark',tips:false,tipsSeen:[],tutorialSeen:true})); }", [data])
     pg.reload(); pg.wait_for_timeout(300)
     pg.get_by_role('button', name='Graj').first.click(); pg.wait_for_timeout(300)
-    pg.locator('.slot button, button').filter(has_text='Kontynuuj').first.click(); pg.wait_for_timeout(500)
+    pg.locator('.slot button, button').filter(has_text=re.compile('Kontynuuj|Zobacz kartę')).first.click(); pg.wait_for_timeout(500)
     return b, pg, errs
