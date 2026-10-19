@@ -7612,3 +7612,4 @@ p, .offer-note, .frow-ctx, .pst-text { text-wrap: pretty; }
 .tot .tot-belt dd svg { vertical-align: -1px; }
 .tot .tot-belt dd.none { color: var(--faint); font-weight: 400; }
 .hb-ko.long { font-size: 0.78rem; letter-spacing: 0.08em; }
+.tag.inj-tag { white-space: normal; height: auto; line-height: 1.35; padding-block: 4px; align-items: flex-start; text-align: left; max-width: 100%; }
