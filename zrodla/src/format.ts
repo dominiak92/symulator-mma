@@ -11,7 +11,7 @@ export function money(n: number, signed = false): string {
 export function moneyShort(n: number): string {
   const a = Math.abs(n);
   let v: string;
-  if (a >= 1_000_000) v = `${(a / 1_000_000).toLocaleString('pl-PL', { maximumFractionDigits: 1 })} mln`;
+  if (a >= 1_000_000) v = `${(a / 1_000_000).toLocaleString('pl-PL', { maximumFractionDigits: a >= 10_000_000 ? 0 : 1 })} mln`;
   else if (a >= 10000) v = `${Math.round(a / 1000)} tys.`;
   else if (a >= 1000) v = `${(a / 1000).toLocaleString('pl-PL', { maximumFractionDigits: 1 })} tys.`;
   else v = `${Math.round(a)}`;
