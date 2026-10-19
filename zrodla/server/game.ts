@@ -15,7 +15,7 @@ const ALLOWED = new Set([
   'startSeason', 'chooseEvent', 'continueAfterEvent', 'setFarewell', 'acceptInvite', 'declineInvite', 'seasonNext', 'decide',
   'seasonSkip', 'acceptAllOffers', 'pressAnswer', 'weighIn', 'postAnswer', 'acceptOffer', 'negotiateOffer', 'declineOffer',
   'setWantFights', 'setManager', 'setYearGoal', 'toSummary', 'toMarket', 'pickContract', 'pickClub', 'negotiateContract',
-  'setJob', 'donate', 'setCoach', 'setPerks', 'setSocial', 'confirmMarket', 'retire', 'chooseAfter',
+  'setJob', 'donate', 'setCoach', 'setPerks', 'setSocial', 'confirmMarket', 'retire', 'chooseAfter', 'answerMessage', 'startErrand', 'claimErrand',
 ]);
 // akcje, które otwierają nowy rok kariery: zużywają lata z dziennego limitu
 const YEAR_COST: Record<string, (s: GameState, args: unknown[]) => number> = {
@@ -161,7 +161,10 @@ Deno.serve(async (req: Request) => {
         const seasonBefore = s.season;
         for (const o of ops) {
           if (!ALLOWED.has(o?.name)) return json({ error: `Niedozwolona akcja: ${o?.name}` }, 400);
-          const args = Array.isArray(o.args) ? o.args : [];
+          const args = Array.isArray(o.args) ? [...o.args] : [];
+          // czas sprawy „na mieście” liczy zegar serwera, nie przeglądarki
+          if (o.name === 'startErrand') args[1] = Date.now();
+          if (o.name === 'claimErrand') args[0] = Date.now();
           const cost = YEAR_COST[o.name]?.(s, args) ?? 0;
           if (cost > 0 && c.bank < cost) return json({ error: 'limit', bank: c.bank, nextRefillAt: nextRefillAt(season, c), state: forClient(s) }, 429);
           const next = (G as any)[o.name](s, ...args);
