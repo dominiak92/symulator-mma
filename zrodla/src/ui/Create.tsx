@@ -224,7 +224,7 @@ export default function Create({ slot, onBack, onStart }: { slot: number; onBack
         </div>
         <p className="cr-desc">
           {quick
-            ? 'Startujesz od zawodowstwa, mniejsze walki rozgrywa narożnik, ty decydujesz w walkach o pas i z rywalem. Koniec najpóźniej w wieku 35 lat. Osobny ranking LEGACY.'
+            ? 'Startujesz od zawodowstwa, mniejsze walki rozgrywa narożnik, ty decydujesz w walkach o pas i z rywalem. Koniec najpóźniej w wieku 35 lat. Osobny ranking dorobku.'
             : 'Od turniejów amatorskich w wieku 16 lat. Każda walka i każda decyzja w twoich rękach.'}{' '}
           {DIFFICULTY[p.difficulty].desc}
         </p>

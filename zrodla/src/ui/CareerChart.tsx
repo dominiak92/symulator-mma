@@ -51,7 +51,7 @@ export function keyMoments(g: GameState): KeyMoment[] {
 
 const W = 400;
 const H = 210;
-const padL = 36;
+const padL = 46;
 const padR = 10;
 const padT = 12;
 const padB = 24;
@@ -161,11 +161,12 @@ export default function CareerChart({ g, full = false }: { g: GameState; full?: 
     for (const h of g.history) earned.set(h.season, (earned.get(h.season) ?? 0) + (h.earned ?? 0));
     const vals = ss.map((s) => earned.get(s.season) ?? 0);
     const maxV = Math.max(1000, ...vals);
-    const sy = (y: number) => padT + (1 - y / maxV) * (H - padT - padB);
+    // skala pierwiastkowa: jeden rok z pasem nie spłaszcza całej reszty kariery do zera
+    const sy = (y: number) => padT + (1 - Math.sqrt(Math.max(0, y) / maxV)) * (H - padT - padB);
     const bw = Math.max(3, Math.min(16, ((W - padL - padR) / ss.length) * 0.6));
     const yOf = (season: number) => sy(earned.get(season) ?? 0) - 10;
     const short = (v: number) => (v >= 1e6 ? `${(v / 1e6).toFixed(v >= 1e7 ? 0 : 1).replace('.', ',')} mln` : v >= 1000 ? `${Math.round(v / 1000)} tys.` : String(v));
-    const ticks = [0, maxV / 2, maxV];
+    const ticks = [0, maxV / 4, maxV];
     chart = (
       <svg viewBox={`0 0 ${W} ${H}`} width="100%" role="img" aria-label="Zarobki z walk w kolejnych latach" style={{ display: 'block' }}>
         {ticks.map((v, i) => (

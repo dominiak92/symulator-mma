@@ -1,4 +1,5 @@
 import { FlagMark } from './Flag';
+import { pointEffects, isDoubleChamp, legacyScore } from '../engine/game';
 import { TrophySheet } from './Trophies';
 import { careerMarks, champTitle } from './titles';
 import { clubLogo } from './logos';
@@ -82,7 +83,8 @@ export default function Game({
       h.tabIndex = -1;
       h.focus({ preventScroll: true });
     }
-  }, [g.phase, g.season]);
+  // nowe wydarzenie w tej samej fazie (kilka zdarzeń z rzędu) też zaczyna się od góry
+  }, [g.phase, g.season, g.phase === 'event' ? g.event?.id : null]);
 
   // blokada podwójnego stuknięcia: zaraz po zmianie ekranu przycisk w tym samym miejscu
   // (np. „Trenuję” → „Zaczynam rok”) nie może przyjąć drugiego kliknięcia
@@ -247,7 +249,7 @@ export default function Game({
                 <small>Ranking</small>
                 <b>
                   <Icon name="trophy" size={14} />
-                  {g.rank === 0 ? 'pas' : g.rank === null ? '–' : `#${g.rank}`}
+                  {g.rank === 0 ? (isDoubleChamp(g) ? '2 pasy' : 'pas') : g.rank === null ? '–' : `#${g.rank}`}
                 </b>
               </button>
             )}
@@ -471,17 +473,16 @@ function SkillsPanel({ g, plain }: { g: GameState; plain?: boolean }) {
       {g.injury && <p className="tag bad" style={{ marginTop: 10 }}><Icon name="bandage" size={13} />Kontuzja: {g.injury.name}, testy −{g.injury.penalty} pkt</p>}
       <PredictNote g={g} />
       <WearBar wear={g.wear} />
+      <PointsPanel g={g} />
       <div className="kv-grid">
         <span>Waga</span>
         <b>{WEIGHTS[g.profile.weight ?? 'polsrednia'].label}</b>
         <span>Styl</span>
         <b>{STYLE_LABELS[g.profile.style]}</b>
-        <span>Media / reputacja</span>
-        <b>
-          {g.media} / {g.rep}
-        </b>
         <span>Obserwujący</span>
         <b>{fmtFans(followersOf(g))}</b>
+        <span>Dorobek kariery</span>
+        <b className="kv-gold">{START_PROFILES[g.profile.start].mult === null ? 'nie liczy się' : `${legacyScore(g).toLocaleString('pl-PL')} pkt`}</b>
         {g.proDebut && (
           <>
             <span>Szczęka</span>
@@ -642,6 +643,7 @@ export function CareerPanel({ g, onRanking }: { g: GameState; onRanking?: () => 
                 {r.name}
                 {r.peer && <small>z twojego rocznika</small>}
                 {r.me && r.rank === 0 && <small>obrony pasa: {g.titleDefenses}</small>}
+                {r.me && r.rank === 0 && isDoubleChamp(g) && <small className="double-note">i pas {[...g.belts].reverse().find((b) => /superfight/.test(b.name))?.name.match(/wagi (\S+)/)?.[1] ?? 'drugiej kategorii'}</small>}
               </span>
               <span className="num">{r.record}</span>
             </div>
@@ -767,5 +769,35 @@ function GoalsSheet({ g, onClose }: { g: GameState; onClose: () => void }) {
         {row(t.weekly.id, t.weekly.title, g.quick && goalBlockedInQuick(t.weekly.id) ? `${t.weekly.desc} Nie liczy się w szybkiej karierze.` : t.weekly.desc, (st) => goalMet(t.weekly, st), gs.weeklyDone, true)}
       </ul>
     </>
+  );
+}
+
+/** Media, reputacja i rodzina: wartość i to, co realnie teraz dają. */
+function PointsPanel({ g }: { g: GameState }) {
+  const rows = pointEffects(g);
+  const ICON: Record<string, string> = { media: 'megaphone', rep: 'star', family: 'heart' };
+  return (
+    <div className="pts">
+      {rows.map((r) => (
+        <details key={r.key} className="pts-row">
+          <summary>
+            <span className="pts-name">
+              <Icon name={ICON[r.key]} size={14} />
+              {r.label}
+            </span>
+            <span className="bar">
+              <i style={{ width: `${r.bar}%` }} />
+            </span>
+            <b>{r.value}</b>
+          </summary>
+          <ul>
+            {r.lines.map((l) => (
+              <li key={l}>{l}</li>
+            ))}
+          </ul>
+        </details>
+      ))}
+      <p className="pts-hint">Dotknij, żeby zobaczyć, co dają punkty.</p>
+    </div>
   );
 }

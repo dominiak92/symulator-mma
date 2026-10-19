@@ -1,8 +1,10 @@
 import { galaPrefix } from '../engine/data';
+import { isDoubleChamp } from '../engine/game';
 import type { GameState } from '../engine/types';
 
 /** Tytuł przy nazwisku: „mistrz XSW”, „były mistrz Armady”, „mistrz Polski amatorów”. Pusty, gdy brak pasów. */
 export function champTitle(g: GameState): string {
+  if (isDoubleChamp(g)) return `podwójny mistrz ${galaPrefix(g.fed)}`;
   if (g.tier > 0 && g.rank === 0 && g.contract?.kind !== 'freak') return `mistrz ${galaPrefix(g.fed)}`;
   const pro = [...g.belts].reverse().find((b) => /\(([^)]+)\)$/.test(b.name) && !/superfight/.test(b.name));
   if (pro) return `były mistrz ${pro.name.match(/\(([^)]+)\)$/)![1]}`;

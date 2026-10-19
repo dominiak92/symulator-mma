@@ -81,7 +81,7 @@ export function MuseumScreen({ onBack }: { onBack: () => void }) {
     );
   const best = (fn: (e: (typeof list)[0]) => number) => list.reduce((a, b) => (fn(b) > fn(a) ? b : a));
   const records = [
-    { label: 'Najwięcej LEGACY', e: best((e) => (e.ranked ? e.legacy : -1)), v: (e: (typeof list)[0]) => `${e.legacy} pkt` },
+    { label: 'Największy dorobek', e: best((e) => (e.ranked ? e.legacy : -1)), v: (e: (typeof list)[0]) => `${e.legacy} pkt` },
     { label: 'Najwięcej pasów', e: best((e) => e.belts), v: (e: (typeof list)[0]) => `${e.belts}` },
     { label: 'Najwięcej skończeń', e: best((e) => e.ko + e.sub), v: (e: (typeof list)[0]) => `${e.ko} KO, ${e.sub} ${plural(e.sub, 'poddanie', 'poddania', 'poddań')}` },
     { label: 'Największe zarobki', e: best((e) => e.earned), v: (e: (typeof list)[0]) => money(e.earned) },
@@ -108,7 +108,7 @@ export function MuseumScreen({ onBack }: { onBack: () => void }) {
               <th>Zawodnik</th>
               <th>Werdykt</th>
               <th className="r">Rekord</th>
-              <th className="r">LEGACY</th>
+              <th className="r">Dorobek</th>
             </tr>
           </thead>
           <tbody>

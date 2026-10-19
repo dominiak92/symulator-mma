@@ -66,10 +66,10 @@ export default function Menu({
         const quick = bestOf(true);
         if (!full && !quick) return null;
         return (
-          <div className="legacy-best" aria-label="Twoje rekordy LEGACY">
+          <div className="legacy-best" aria-label="Twoje najlepsze wyniki dorobku">
             <span className="lb-title">
               <Icon name="trophy" size={14} />
-              Twój rekord LEGACY
+              Twój najlepszy dorobek
             </span>
             {full > 0 && (
               <span className="lb-item">
@@ -101,7 +101,7 @@ export default function Menu({
           <strong>Kariera dnia</strong>
           <span>
             {doneToday
-              ? `Dzisiaj: ${done.verdict}, ${done.legacy} pkt LEGACY. Zobacz wynik.`
+              ? `Dzisiaj: ${done.verdict}, ${done.legacy} pkt dorobku. Zobacz wynik.`
               : 'Jedno podejście. Dziś wszyscy grają tym samym zawodnikiem'}
           </span>
         </button>
@@ -149,7 +149,7 @@ export default function Menu({
             </span>
             <div>
               <strong>Idź w górę</strong>
-              <span>gale, pasy, punkty LEGACY</span>
+              <span>gale, pasy, punkty dorobku</span>
             </div>
           </li>
         </ol>

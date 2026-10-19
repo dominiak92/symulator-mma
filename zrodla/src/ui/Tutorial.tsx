@@ -78,7 +78,7 @@ const SLIDES: Slide[] = [
   },
   {
     title: 'Zostaw legendę',
-    text: 'Na koniec dostajesz kartę kariery z punktami LEGACY. Możesz ją pobrać i wysłać znajomym. Potem spróbuj pobić swój rekord.',
+    text: 'Na koniec dostajesz kartę kariery z punktami dorobku. Możesz ją pobrać i wysłać znajomym. Potem spróbuj pobić swój rekord.',
     art: (
       <div className="tut-belt">
         <Belt size={170} tier={4} />

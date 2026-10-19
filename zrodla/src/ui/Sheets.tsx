@@ -180,7 +180,7 @@ export function PeersTable({ g }: { g: GameState }) {
               {peerStatus(p)} · {recStr(p.record)}
             </small>
           </div>
-          <span className="peer-h2h">{p.metCount ? `${p.h2h.w}-${p.h2h.l}` : ''}</span>
+          <span className="peer-h2h" title="Wasze walki: twoje wygrane i porażki">{p.metCount ? (<><small>z nim</small>{p.h2h.w}W {p.h2h.l}P</>) : ''}</span>
         </div>
       ))}
     </div>
