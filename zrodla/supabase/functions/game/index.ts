@@ -46,6 +46,7 @@ __export(game_exports, {
   budgetLines: () => budgetLines,
   buildMarket: () => buildMarket,
   buildTuneup: () => buildTuneup,
+  buyGear: () => buyGear,
   campBlocked: () => campBlocked,
   campCost: () => campCost,
   campGain: () => campGain,
@@ -101,6 +102,7 @@ __export(game_exports, {
   foundationLegacy: () => foundationLegacy,
   foundationOpen: () => foundationOpen,
   fullName: () => fullName,
+  gearCost: () => gearCost,
   gearMod: () => gearMod,
   goDagestan: () => goDagestan,
   goExpedition: () => goExpedition,
@@ -8466,6 +8468,17 @@ function pickOpponent(rng, s, idx) {
   if (s.rank === null && rng.chance(0.5 - q * 0.1)) r = null;
   return { opp: r === null ? generateOpponent(rng, tier, r, hard) : rosterOpp(rng, s, r, metThisSeason), title: false, defense: false, peer: null };
 }
+function gearCost(s) {
+  return Math.round(700 * ([1, 1.5, 3, 5, 8][Math.min(4, s.tier)] ?? 1) / 50) * 50;
+}
+function buyGear(s0) {
+  if (s0.phase !== "budget" || (s0.gear ?? 0) < 20 || s0.money < gearCost(s0)) return s0;
+  const s = clone(s0);
+  s.money -= gearCost(s);
+  s.gear = 0;
+  log(s, "Nowy komplet sprz\u0119tu: r\u0119kawice, ochraniacze, kask.");
+  return s;
+}
 function gearMod(s) {
   const g = s.gear ?? 0;
   return g >= 90 ? -2 : g >= 70 ? -1 : 0;
@@ -11352,7 +11365,8 @@ var ALLOWED = /* @__PURE__ */ new Set([
   "startErrand",
   "claimErrand",
   "campWeek",
-  "campGo"
+  "campGo",
+  "buyGear"
 ]);
 var YEAR_COST = {
   startSeason: () => 1,
