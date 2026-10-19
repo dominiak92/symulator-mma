@@ -8085,13 +8085,15 @@ function phoneCheck(rng, s, pre) {
     const st = findStep(d.step);
     if (st && (!st.cond || st.cond(s))) deliverStep(s, st);
   }
+  const t = s.run?.tourneys?.[s.run.tIdx ?? 0];
+  if (t && s.run.fights.some((f) => f.tourney === `${t.name} \xB7 ${t.city}`)) return;
   const tries = [s.quick ? 0.35 : 0.8, s.quick ? 0 : 0.35];
   for (const p of tries) {
     if (ph.inbox.filter((m) => m.picked === void 0).length >= 2 || !rng.chance(p)) return;
     const busy = /* @__PURE__ */ new Set([...ph.inbox.map((m) => threadOf(m.id)), ...ph.due.map((d) => threadOf(d.step))]);
     const pool = THREADS.filter(
-      (t) => t.start && !busy.has(threadOf(t.id)) && (t.start.repeat ? ph.tick - (ph.lastAt?.[threadOf(t.id)] ?? -99) >= 8 : !ph.started.includes(threadOf(t.id))) && t.start.cond(s, { pre })
-    ).map((t) => ({ item: t, w: t.start.weight }));
+      (t2) => t2.start && !busy.has(threadOf(t2.id)) && (t2.start.repeat ? ph.tick - (ph.lastAt?.[threadOf(t2.id)] ?? -99) >= 8 : !ph.started.includes(threadOf(t2.id))) && t2.start.cond(s, { pre })
+    ).map((t2) => ({ item: t2, w: t2.start.weight }));
     if (!pool.length) return;
     deliverStep(s, rng.weighted(pool));
   }
