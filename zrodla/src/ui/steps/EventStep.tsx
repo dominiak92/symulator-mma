@@ -150,8 +150,8 @@ export default function EventStep({ game, setGame }: StepProps) {
             <div className="event-result-head">
               <strong>{ev.choices[picked].label}</strong>
               {ev.rolled && (
-                <span className={`tag ${ev.rolled === 'fail' ? 'bad' : ev.rolled === 'super' ? 'gold' : 'good'}`}>
-                  {ev.rolled === 'super' ? 'pełen sukces' : ev.rolled === 'success' ? 'udało się' : 'nie wyszło'}
+                <span className={`tag ${ev.rolled === 'fail' || ev.rolled === 'disaster' ? 'bad' : ev.rolled === 'super' ? 'gold' : 'good'}`}>
+                  {ev.rolled === 'super' ? 'pełen sukces' : ev.rolled === 'success' ? 'udało się' : ev.rolled === 'disaster' ? 'katastrofa' : 'nie wyszło'}
                 </span>
               )}
             </div>
