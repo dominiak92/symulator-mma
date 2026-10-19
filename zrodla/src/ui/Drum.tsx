@@ -4,7 +4,7 @@
  * nie jak automat: jeden bęben, żadnych symboli kasyna, wynik jest już policzony.
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
-import type { Outcome } from '../engine/types';
+import type { EventRoll as Outcome } from '../engine/types';
 import { distFrom } from '../engine/fight';
 import { sfxDraw, sfxTick } from './sound';
 
@@ -12,6 +12,7 @@ const ROW: Record<Outcome, { icon: string; text: string }> = {
   super: { icon: '★', text: 'Pełen sukces' },
   success: { icon: '✓', text: 'Udało się' },
   fail: { icon: '✗', text: 'Nie wyszło' },
+  disaster: { icon: '!', text: 'Katastrofa' },
 };
 const H = 46;
 const N = 26;
@@ -27,16 +28,16 @@ export function Drum({ chance, outcome, label, onDone, rows, binary }: { chance:
       let o: Outcome;
       do {
         const r = Math.random() * 100;
-        o = r < sup ? (binary ? 'success' : 'super') : r < sup + suc ? 'success' : 'fail';
+        o = r < sup ? (binary ? 'success' : 'super') : r < sup + suc ? 'success' : !binary && Math.random() < 0.2 ? 'disaster' : 'fail';
       } while (o === prev && Math.random() < 0.6);
       out.push(o);
       prev = o;
     }
     // przedostatni inny niż wynik, żeby zatrzymanie było widać
-    if (out[N - 2] === outcome) out[N - 2] = outcome === 'fail' ? 'success' : 'fail';
+    if (out[N - 2] === outcome) out[N - 2] = outcome === 'fail' || outcome === 'disaster' ? 'success' : 'fail';
     out.push(outcome);
     // jeszcze jeden pod spodem, żeby okienko nie było puste po zatrzymaniu
-    out.push(outcome === 'fail' ? 'success' : 'fail');
+    out.push(outcome === 'fail' || outcome === 'disaster' ? 'success' : 'fail');
     return out;
   }, [chance, outcome]);
   const reduce = typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;

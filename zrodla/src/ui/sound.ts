@@ -128,7 +128,7 @@ export function sfxTick(pitch = 1) {
 }
 
 /** Wynik losowania: góra (pełen sukces), środek (udało się), dół (nie wyszło). */
-export function sfxDraw(kind: 'super' | 'success' | 'fail') {
+export function sfxDraw(kind: 'super' | 'success' | 'fail' | 'disaster') {
   if (kind === 'super') {
     tone(784, 0.12, 'triangle', 0.16);
     tone(988, 0.12, 'triangle', 0.16, 0.08);
@@ -136,5 +136,8 @@ export function sfxDraw(kind: 'super' | 'success' | 'fail') {
   } else if (kind === 'success') {
     tone(659, 0.1, 'triangle', 0.14);
     tone(988, 0.25, 'triangle', 0.14, 0.08);
+  } else if (kind === 'disaster') {
+    tone(196, 0.25, 'sawtooth', 0.1, 0, 147);
+    tone(147, 0.5, 'triangle', 0.18, 0.18, 98);
   } else tone(262, 0.3, 'triangle', 0.16, 0, 196);
 }
