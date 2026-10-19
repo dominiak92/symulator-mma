@@ -7675,3 +7675,24 @@ p, .offer-note, .frow-ctx, .pst-text { text-wrap: pretty; }
 .drum.out-fail .drum-frame { border-color: #fbbf24; box-shadow: 0 0 14px rgba(251, 191, 36, 0.45); }
 @keyframes drumHit { 50% { transform: scale(1.03); } }
 @media (prefers-reduced-motion: reduce) { .drum.stop .drum-frame { animation: none; } }
+/* długie chipy nie rozpychają kart: zawijają się w obrębie przycisku */
+.choice { min-width: 0; }
+.choice > * { min-width: 0; }
+.chips .tag, .ev-out .tag { white-space: normal; max-width: 100%; text-align: left; line-height: 1.3; padding-block: 3px; }
+/* zabezpieczenie: strona nigdy nie przewija się w bok */
+html, body { overflow-x: clip; }
+/* kartka kontraktu przewija się tylko w pionie */
+.contract-paper { overflow-x: hidden; }
+/* kartka kontraktu: tekst do lewej (wyjustowany robi dziury na wąskim ekranie), bez widocznego paska */
+.cp-parties, .cp-fine { text-align: left; }
+.contract-paper { scrollbar-width: none; }
+.contract-paper::-webkit-scrollbar { display: none; }
+.cp-more { background: linear-gradient(180deg, rgba(243, 235, 216, 0), #f3ebd8 38%); }
+/* paski przewijania w okienkach: cienkie i ciemne zamiast systemowych */
+.offer-modal, .poster-modal, .press-modal, .sheet, .sheet-body, .notice-modal, .post-modal, .invite-modal { scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, 0.18) transparent; }
+.drum-row.r-disaster { color: #f43f5e; }
+.drum-row.r-disaster i { background: rgba(244, 63, 94, 0.18); font-weight: 900; }
+.drum.out-disaster .drum-frame { border-color: #f43f5e; box-shadow: 0 0 18px rgba(244, 63, 94, 0.6); }
+.drum.out-disaster.stop { animation: drumShake 0.4s linear 0.05s; }
+@keyframes drumShake { 20% { transform: translateX(-4px); } 40% { transform: translateX(4px); } 60% { transform: translateX(-3px); } 80% { transform: translateX(2px); } }
+@media (prefers-reduced-motion: reduce) { .drum.out-disaster.stop { animation: none; } }
