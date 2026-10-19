@@ -35,6 +35,8 @@ __export(game_exports, {
   acceptSponsorOffer: () => acceptSponsorOffer,
   afterPaths: () => afterPaths,
   amLevel: () => amLevel,
+  answerMessage: () => answerMessage,
+  answerPhoneAll: () => answerPhoneAll,
   applyEffects: () => applyEffects,
   backroomAvailable: () => backroomAvailable,
   backroomCost: () => backroomCost,
@@ -49,12 +51,14 @@ __export(game_exports, {
   campGain: () => campGain,
   canStartSeason: () => canStartSeason,
   careerStory: () => careerStory,
+  chanceOf: () => chanceOf,
   changeDivision: () => changeDivision,
   cheaperClub: () => cheaperClub,
   checkEnd: () => checkEnd,
   choiceChance: () => choiceChance,
   chooseAfter: () => chooseAfter,
   chooseEvent: () => chooseEvent,
+  claimErrand: () => claimErrand,
   clone: () => clone,
   clubAvailability: () => clubAvailability,
   clubLimits: () => clubLimits,
@@ -79,6 +83,9 @@ __export(game_exports, {
   downgradeClub: () => downgradeClub,
   effectChips: () => effectChips,
   effectiveStats: () => effectiveStats,
+  errandMs: () => errandMs,
+  errandOptions: () => errandOptions,
+  errandsLeft: () => errandsLeft,
   expectedPurses: () => expectedPurses,
   expeditionBlocked: () => expeditionBlocked,
   expeditionById: () => expeditionById,
@@ -91,6 +98,7 @@ __export(game_exports, {
   foundationLegacy: () => foundationLegacy,
   foundationOpen: () => foundationOpen,
   fullName: () => fullName,
+  gearMod: () => gearMod,
   goDagestan: () => goDagestan,
   goExpedition: () => goExpedition,
   h2hWords: () => h2hWords,
@@ -110,11 +118,13 @@ __export(game_exports, {
   marketWarnings: () => marketWarnings,
   medalCount: () => medalCount,
   momentTone: () => momentTone,
+  msgChance: () => msgChance,
   negotiateChance: () => negotiateChance,
   negotiateContract: () => negotiateContract,
   negotiateOffer: () => negotiateOffer,
   nemesisFighter: () => nemesisFighter,
   newGame: () => newGame,
+  phoneUnread: () => phoneUnread,
   pickClub: () => pickClub,
   pickContract: () => pickContract,
   pitchBlocked: () => pitchBlocked,
@@ -159,6 +169,7 @@ __export(game_exports, {
   sponsorCap: () => sponsorCap,
   sponsorHalf: () => sponsorHalf,
   sponsorPoolOf: () => sponsorPoolOf,
+  startErrand: () => startErrand,
   startSeason: () => startSeason,
   syncRival: () => syncRival,
   takeBreakYear: () => takeBreakYear,
@@ -306,6 +317,1323 @@ function createRng(seed) {
     state: () => s
   };
   return rng;
+}
+
+// src/engine/threads.ts
+var sc = (s) => [1, 1.5, 3, 5, 8][Math.min(4, Math.max(0, s.tier))] ?? 1;
+var zl = (s, n) => Math.max(50, Math.round(n * sc(s) / 50) * 50);
+var pro = (s) => s.tier >= 1 && !!s.proDebut;
+var lastWin = (s) => s.history[s.history.length - 1]?.result === "W";
+function twistName(n) {
+  if (n.endsWith("ski")) return `${n.slice(0, -3)}cki`;
+  if (n.endsWith("cki")) return `${n.slice(0, -3)}ski`;
+  if (n.endsWith("ak")) return `${n.slice(0, -2)}ek`;
+  if (n.endsWith("ek")) return `${n.slice(0, -2)}ak`;
+  return `${n.slice(0, -1)}o`;
+}
+var THREADS = [
+  // ---------- Torba z szatni ----------
+  {
+    id: "torba.start",
+    app: "gym",
+    from: "Mietek",
+    title: "Kto\u015B zwin\u0105\u0142 twoj\u0105 torb\u0119",
+    start: { weight: 6, cond: () => true },
+    text: () => "Ziomek, twojej torby nie ma w szatni. R\u0119kawice, ochraniacz, nawet te klapki w kropki. Kamera nad wej\u015Bciem od 2019 roku jest atrap\u0105, sam j\u0105 wiesza\u0142em.",
+    choices: (s) => [
+      { label: "Kupujesz nowy sprz\u0119t", desc: "Boli w portfelu, ale masz porz\u0105dne rzeczy.", effects: { money: -zl(s, 600), gear: -40, follow: { step: "torba.tasma", after: 2 } } },
+      { label: "Po\u017Cyczasz stary z klubu", desc: "R\u0119kawice pami\u0119taj\u0105 jeszcze poprzedniego trenera.", effects: { gear: 30, note: "r\u0119kawice pachn\u0105 rokiem 2009", follow: { step: "torba.tasma", after: 2 } } },
+      { label: "Zg\u0142aszasz na policj\u0119", desc: "Dzielnicowy obiecuje \u201Eprzyjrze\u0107 si\u0119 sprawie\u201D.", effects: { gear: 20, follow: { step: "torba.policja", after: 3 } } }
+    ]
+  },
+  {
+    id: "torba.tasma",
+    app: "tasma",
+    from: "Sporty walki \u2014 kupi\u0119/sprzedam",
+    title: "Ta torba wygl\u0105da znajomo",
+    text: () => "Nowe og\u0142oszenie: \u201ETorba sportowa z wyposa\u017Ceniem, r\u0119kawice prawie nowe, klapki gratis. Cena do negocjacji. Odbi\xF3r osobisty, osiedle S\u0142oneczne.\u201D Na zdj\u0119ciu twoje klapki w kropki.",
+    choices: (s) => [
+      { label: "Odkupujesz swoj\u0105 torb\u0119", desc: "P\u0142acisz z\u0142odziejowi za w\u0142asne rzeczy.", effects: { money: -zl(s, 300), gear: -25, note: "sprzedawca m\xF3wi \u201Edobry wyb\xF3r, szefie\u201D" } },
+      {
+        label: "Umawiasz si\u0119 i \u201Eodbierasz\u201D",
+        desc: "Idziesz na odbi\xF3r w bluzie klubowej.",
+        chance: 60,
+        success: { gear: -30, rep: 2 },
+        successText: "Sprzedawca widzi twoje uszy, oddaje torb\u0119 i dorzuca przeprosiny. Klapki wyprane.",
+        fail: { rep: -4, media: 2, nextFight: -2 },
+        failText: "Okazuje si\u0119, \u017Ce sprzedawca te\u017C trenuje. Kickboxing. Wracasz z torb\u0105 i podbitym okiem, a nagranie l\u0105duje w KlatkaNews."
+      },
+      { label: "Wysy\u0142asz link dzielnicowemu", desc: "Niech prawo dzia\u0142a.", effects: { follow: { step: "torba.policja", after: 1 } } }
+    ]
+  },
+  {
+    id: "torba.policja",
+    app: "sms",
+    from: "Dzielnicowy Zbyszek",
+    title: "Odzyskali\u015Bmy torb\u0119",
+    text: () => "Dzie\u0144 dobry, tu dzielnicowy. Odzyskali\u015Bmy pana torb\u0119. R\u0119kawice niestety kto\u015B ju\u017C przetestowa\u0142 na z\u0142odzieju rower\xF3w, ale klapki s\u0105 ca\u0142e.",
+    choices: () => [
+      { label: "Odbierasz i dzi\u0119kujesz", desc: "Przynosisz p\u0105czki na komisariat.", effects: { gear: -15, rep: 1 } },
+      { label: "Zostawiasz klapki jako dow\xF3d", desc: "Niech s\u0142u\u017C\u0105 sprawiedliwo\u015Bci.", effects: { media: 1, note: "klapki w aktach sprawy" } }
+    ]
+  },
+  // ---------- Okazja na Taśmie ----------
+  {
+    id: "okazja.start",
+    app: "tasma",
+    from: "Sporty walki \u2014 kupi\u0119/sprzedam",
+    title: "R\u0119kawice za p\xF3\u0142 ceny",
+    start: { weight: 5, cond: (s) => (s.gear ?? 0) >= 20 },
+    text: () => "Og\u0142oszenie: \u201ER\u0119kawice FAJRTEKS 16 oz, NOWE, orygina\u0142 100%, za p\xF3\u0142 ceny, bo kupi\u0142em za du\u017Ce. Wysy\u0142ka po wp\u0142acie zaliczki albo odbi\xF3r pod Biedronk\u0105.\u201D",
+    choices: (s) => [
+      {
+        label: "Wp\u0142acasz zaliczk\u0119",
+        desc: "Sprzedawca ma 3 pozytywne opinie. Z czego 2 od siebie.",
+        chance: 40,
+        success: { money: -zl(s, 250), gear: -35 },
+        successText: "Paczka przychodzi. R\u0119kawice prawdziwe, sprzedawca nawet dorzuci\u0142 naklejk\u0119. Czasem si\u0119 udaje.",
+        fail: { money: -zl(s, 250), follow: { step: "okazja.scam", after: 1 } },
+        failText: "Paczka nie przychodzi. Sprzedawca od wczoraj \u201Enie ma zasi\u0119gu\u201D."
+      },
+      {
+        label: "Tylko odbi\xF3r osobisty",
+        desc: "Pod Biedronk\u0105, o 21:00, got\xF3wka.",
+        chance: 55,
+        success: { money: -zl(s, 500), gear: -35 },
+        successText: "R\u0119kawice jak nowe. Sprzedawca naprawd\u0119 kupi\u0142 za du\u017Ce.",
+        fail: { money: -zl(s, 500), gear: -10, follow: { step: "okazja.fake", after: 1 } },
+        failText: "Na \u017Cywo wygl\u0105daj\u0105 dobrze. Logo troch\u0119 krzywe, ale kto by si\u0119 przygl\u0105da\u0142."
+      },
+      { label: "Kupujesz w sklepie", desc: "Dro\u017Cej, ale z paragonem.", effects: { money: -zl(s, 900), gear: -40 } }
+    ]
+  },
+  {
+    id: "okazja.scam",
+    app: "bank",
+    from: "Bankoteka",
+    title: "Reklamacja odrzucona",
+    text: () => "\u201ETwoja reklamacja przelewu zosta\u0142a odrzucona. Przelew wykonano zgodnie z dyspozycj\u0105.\u201D Na Ta\u015Bmie pi\u0119\u0107 os\xF3b pisze, \u017Ce te\u017C wp\u0142aci\u0142o zaliczk\u0119 temu samemu go\u015Bciowi.",
+    choices: (s) => [
+      { label: "Ostrzegasz innych na grupie", desc: "Przynajmniej nikt wi\u0119cej si\u0119 nie nabierze.", effects: { rep: 1, media: 1, note: "admin banuje sprzedawc\u0119 po trzech dniach" } },
+      { label: "Kupujesz r\u0119kawice w sklepie", desc: "Nauczka kosztuje podw\xF3jnie.", effects: { money: -zl(s, 900), gear: -35 } },
+      { label: "Trenujesz w starych", desc: "Jeszcze troch\u0119 wytrzymaj\u0105.", effects: { gear: 15 } }
+    ]
+  },
+  {
+    id: "okazja.fake",
+    app: "gym",
+    from: "Mietek",
+    title: "Z r\u0119kawicy wysz\u0142a g\u0105bka",
+    text: () => "Na sparingu z twojej nowej r\u0119kawicy wychodzi \u017C\xF3\u0142ta g\u0105bka. Mietek podnosi j\u0105 z maty i pyta, czy to \u201Enowy model\u201D.",
+    choices: (s) => [
+      { label: "Kupujesz porz\u0105dne", desc: "Tym razem w sklepie.", effects: { money: -zl(s, 900), gear: -40 } },
+      {
+        label: "Sklejasz ta\u015Bm\u0105",
+        desc: "Srebrna ta\u015Bma naprawi wszystko.",
+        chance: 70,
+        success: { gear: 15 },
+        successText: "Trzyma. Wygl\u0105da jak z filmu o Rockym, ale trzyma.",
+        fail: { gear: 20, nextFight: -2, wear: 5 },
+        failText: "Na sparingu ta\u015Bma puszcza i rozcinasz koledze \u0142uk brwiowy. Potem on tobie."
+      }
+    ]
+  },
+  // ---------- Dojazd na galę ----------
+  {
+    id: "dojazd.start",
+    app: "mapka",
+    from: "Mapka",
+    title: "Jak dojedziesz na gal\u0119?",
+    start: { weight: 4, cond: (s) => pro(s) && s.tier <= 2, repeat: true },
+    text: () => "Gala w drugim ko\u0144cu Polski. Organizator nie zapewnia transportu. Mapka pokazuje 6 godzin drogi i trzy objazdy.",
+    choices: (s) => [
+      {
+        label: "Poci\u0105g InterTrz\u0119\u015B",
+        desc: "Tanio i mo\u017Cna si\u0119 przespa\u0107. Je\u015Bli przyjedzie.",
+        chance: 70,
+        success: { money: -zl(s, 150), nextFight: 1 },
+        successText: "Poci\u0105g na czas. Przesypiasz ca\u0142\u0105 drog\u0119 i wysiadasz wypocz\u0119ty.",
+        fail: { money: -zl(s, 150), nextFight: -3 },
+        failText: "Op\xF3\u017Anienie 140 minut z powodu \u201Eutrudnie\u0144\u201D. Na wa\u017Cenie wbiegasz w kurtce."
+      },
+      {
+        label: "Aplikacja Podw\xF3zka",
+        desc: "Obcy kierowca, 80 z\u0142, \u201Eklima jest\u201D.",
+        chance: 60,
+        success: { money: -zl(s, 80) },
+        successText: "Kierowca s\u0142ucha disco polo, ale jedzie r\xF3wno i nie gada.",
+        fail: { money: -zl(s, 80), nextFight: -2 },
+        failText: "Kierowca przez 6 godzin opowiada o te\u015Bciowej. Nie \u015Bpisz ani minuty."
+      },
+      {
+        label: "Autem kumpla Seby",
+        desc: "Seba jedzie dopingowa\u0107. Auto ma 21 lat.",
+        chance: 55,
+        success: { money: -zl(s, 100), nextFight: 1, follow: { step: "dojazd.mandat", after: 2 } },
+        successText: "Seba prowadzi jak kierowca rajdowy. Jeste\u015Bcie dwie godziny przed czasem.",
+        fail: { money: -zl(s, 100), follow: { step: "dojazd.laweta", after: 1 } },
+        failText: "Doje\u017Cd\u017Cacie, ale pod koniec co\u015B zaczyna stuka\u0107 w silniku. Seba m\xF3wi, \u017Ce \u201Etak ma\u201D."
+      }
+    ]
+  },
+  {
+    id: "dojazd.laweta",
+    app: "sms",
+    from: "Seba",
+    title: "Laweta",
+    text: () => "Mordo, w drodze powrotnej silnik pad\u0142 pod \u0141odzi\u0105. Laweta to 900 z\u0142. Dzielimy na p\xF3\u0142? Ty przecie\u017C zarabiasz w klatce.",
+    choices: (s) => [
+      { label: "P\u0142acisz po\u0142ow\u0119", desc: "Sprawiedliwie.", effects: { money: -zl(s, 450) } },
+      { label: "P\u0142acisz ca\u0142o\u015B\u0107", desc: "Jechali\u015Bcie na twoj\u0105 walk\u0119.", effects: { money: -zl(s, 900), rep: 1, note: "Seba m\xF3wi o tobie \u201Ebrat\u201D" } },
+      { label: "To jego auto, jego problem", desc: "Formalnie masz racj\u0119.", effects: { follow: { step: "dojazd.seba", after: 2 } } }
+    ]
+  },
+  {
+    id: "dojazd.mandat",
+    app: "sms",
+    from: "Seba",
+    title: "Fotoradar",
+    text: () => "Seba przysy\u0142a zdj\u0119cie z fotoradaru: 87 km/h w terenie zabudowanym. Ty \u015Bpisz na fotelu pasa\u017Cera z otwart\u0105 buzi\u0105. \u201EMandat 500 z\u0142 przyszed\u0142 na mnie, ale jechali\u015Bmy na twoj\u0105 gal\u0119.\u201D",
+    choices: (s) => [
+      { label: "Oddajesz ca\u0142o\u015B\u0107", desc: "Bez dyskusji.", effects: { money: -zl(s, 500) } },
+      { label: "Oddajesz po\u0142ow\u0119", desc: "To on trzyma\u0142 nog\u0119 na gazie.", effects: { money: -zl(s, 250) } },
+      { label: "Wrzucasz zdj\u0119cie na Fotogram", desc: "\u201EPrzygotowanie mentalne przed walk\u0105\u201D.", effects: { media: 2, follow: { step: "dojazd.seba", after: 1 } } }
+    ]
+  },
+  {
+    id: "dojazd.seba",
+    app: "gym",
+    from: "Seba",
+    title: "Niekt\xF3rzy zapominaj\u0105",
+    text: () => "Seba na grupie: \u201Eniekt\xF3rzy zapominaj\u0105, kto ich wozi\u0142 na gale\u201D. Pod spodem 14 reakcji z p\u0142acz\u0105c\u0105 bu\u017Ak\u0105.",
+    choices: (s) => [
+      { label: "Przepraszasz i oddajesz kas\u0119", desc: "Kumpel jest jeden.", effects: { money: -zl(s, 400), rep: 1 } },
+      { label: "Ignorujesz", desc: "Przejdzie mu.", effects: { rep: -1, note: "Seba nie przyjdzie na nast\u0119pn\u0105 gal\u0119" } }
+    ]
+  },
+  // ---------- Auto pod halą ----------
+  {
+    id: "parking.start",
+    app: "mapka",
+    from: "Mapka",
+    title: "Parking pod hal\u0105",
+    start: { weight: 4, cond: (s) => pro(s) },
+    text: () => "Parking pod hal\u0105 pe\u0142ny. Jest jedno miejsce przy zakazie, tu\u017C przy wej\u015Bciu dla zawodnik\xF3w.",
+    choices: () => [
+      {
+        label: "Stajesz na zakazie",
+        desc: "Przecie\u017C tylko na chwil\u0119. Na cztery godziny.",
+        chance: 35,
+        success: { note: "nikt si\u0119 nie przyczepi\u0142" },
+        successText: "Auto stoi tam, gdzie je zostawi\u0142e\u015B. Tym razem si\u0119 uda\u0142o.",
+        fail: { follow: { step: "parking.holownik", after: 1 } },
+        failText: "Biegn\u0105c na rozgrzewk\u0119, widzisz stra\u017Cnika miejskiego z notesem."
+      },
+      { label: "Parkujesz 2 km dalej", desc: "Idziesz z torb\u0105 przez p\xF3\u0142 miasta.", effects: { wear: 1, note: "rozgrzewka gratis" } }
+    ]
+  },
+  {
+    id: "parking.holownik",
+    app: "sms",
+    from: "Stra\u017C Miejska",
+    title: "Pojazd odholowany",
+    text: () => "Informujemy, \u017Ce pojazd zosta\u0142 odholowany na parking depozytowy. Op\u0142ata 600 z\u0142 plus 50 z\u0142 za ka\u017Cd\u0105 rozpocz\u0119t\u0105 dob\u0119. Godziny otwarcia: pn\u2013pt 8:00\u201315:00.",
+    choices: (s) => [
+      { label: "P\u0142acisz od razu", desc: "Taks\xF3wka na parking depozytowy te\u017C kosztuje.", effects: { money: -zl(s, 650) } },
+      { label: "Odbierasz za tydzie\u0144", desc: "Nie masz czasu, masz treningi.", effects: { money: -zl(s, 1e3) } },
+      {
+        label: "Piszesz odwo\u0142anie",
+        desc: "Znak by\u0142 zas\u0142oni\u0119ty przez kibica z flag\u0105.",
+        chance: 20,
+        success: { note: "odwo\u0142anie uwzgl\u0119dnione" },
+        successText: "Odwo\u0142anie uwzgl\u0119dnione. Urz\u0119dnik okaza\u0142 si\u0119 twoim kibicem.",
+        fail: { money: -zl(s, 850) },
+        failText: "Odwo\u0142anie odrzucone. Za czas odwo\u0142ania naliczyli kolejne doby."
+      }
+    ]
+  },
+  // ---------- Podkast ----------
+  {
+    id: "podkast.start",
+    app: "podkast",
+    from: "Na Macie u Zdzicha",
+    title: "Zaproszenie do podcastu",
+    start: { weight: 5, cond: (s) => pro(s) && s.media >= 5 },
+    text: () => "Zdzichu zaprasza ci\u0119 do studia: piwnica, dwa mikrofony, lampka z marketu. Nagrywacie dwie godziny. Na koniec pada pytanie: \u201ENo to jaki masz plan na najbli\u017Csz\u0105 walk\u0119?\u201D",
+    choices: (s) => [
+      { label: "Opowiadasz plan ze szczeg\xF3\u0142ami", desc: "Ludzie lubi\u0105 konkrety.", effects: { media: 3, nextFight: -3, note: "rywal ogl\u0105da odcinek dwa razy" } },
+      { label: "Jedziesz po organizatorze gali", desc: "\u201EP\u0142ac\u0105 grosze i robi\u0105 cyrk.\u201D", effects: { media: 5, rep: -2, follow: { step: "podkast.gala", after: 1 } } },
+      s.sponsors.length ? { label: "Chwalisz sponsora i trenera", desc: "\u0141adnie, z nazwy.", effects: { rep: 2, media: 1, follow: { step: "podkast.sponsor", after: 1 } } } : { label: "Chwalisz trenera i klub", desc: "Bez nich by ci\u0119 nie by\u0142o.", effects: { rep: 2, media: 1 } },
+      { label: "\u201EPlan? Wygra\u0107.\u201D", desc: "Zdzichu wzdycha do mikrofonu.", effects: { media: 1 } }
+    ]
+  },
+  {
+    id: "podkast.gala",
+    app: "sms",
+    from: "Organizator gali",
+    title: "S\u0142ysza\u0142em podcast",
+    text: () => "\u201ES\u0142ysza\u0142em tw\xF3j podcast. Nast\u0119pn\u0105 walk\u0119 masz na karcie wst\u0119pnej o 17:30, przy pustej hali. Pozdrawiam.\u201D",
+    choices: () => [
+      { label: "Przepraszasz publicznie", desc: "Nagranie z przeprosinami na Fotogram.", effects: { rep: 2, media: -1 } },
+      { label: "Podtrzymujesz zdanie", desc: "Prawda w oczy kole.", effects: { media: 2, rep: -2, nextFight: -1, note: "\u0142atka \u201Etrudnego zawodnika\u201D" } }
+    ]
+  },
+  {
+    id: "podkast.sponsor",
+    app: "sms",
+    from: (s) => s.sponsors[0]?.name ?? "Sponsor",
+    title: "Premia za reklam\u0119",
+    cond: (s) => s.sponsors.length > 0,
+    text: () => "\u201EWidzieli\u015Bmy podcast! Sprzeda\u017C w tym tygodniu w g\xF3r\u0119. Przelewamy premi\u0119, tylko powt\xF3rz to jeszcze kiedy\u015B.\u201D",
+    choices: (s) => [
+      { label: "Dzi\u0119kujesz", desc: "I obiecujesz kolejn\u0105 reklam\u0119.", effects: { money: zl(s, 400) } },
+      { label: "Prosisz o d\u0142u\u017Csz\u0105 umow\u0119", desc: "Kuj \u017Celazo, p\xF3ki gor\u0105ce.", chance: 40, success: { money: zl(s, 900) }, successText: "Zgadzaj\u0105 si\u0119 i dorzucaj\u0105 wi\u0119cej.", fail: { money: zl(s, 200) }, failText: "Daj\u0105 mniejsz\u0105 premi\u0119 i \u201Ewr\xF3c\u0105 do tematu\u201D." }
+    ]
+  },
+  // ---------- Wpis po wygranej ----------
+  {
+    id: "wpis.start",
+    app: "fotogram",
+    from: "Fotogram",
+    title: "Wpis po wygranej",
+    start: { weight: 7, cond: (s, c) => pro(s) && !c.pre && lastWin(s), repeat: true },
+    text: () => "Po wygranej telefon nie przestaje wibrowa\u0107. Masz u\u0142amek sekundy na wpis, zanim emocje opadn\u0105.",
+    choices: (s) => [
+      s.rank !== null && s.rank <= 10 ? { label: "Wyzywasz mistrza", desc: "\u201EJeste\u015B nast\u0119pny.\u201D", effects: { media: 4, follow: { step: "wpis.mistrz", after: 1 } } } : { label: "Wyzywasz kogo\u015B z rankingu", desc: "Oznaczasz pierwszego z brzegu.", effects: { media: 3, rep: -1 } },
+      { label: "Dzi\u0119kujesz ekipie i mamie", desc: "Zdj\u0119cie z naro\u017Cnikiem.", effects: { relations: 2, rep: 1 } },
+      { label: "Zdj\u0119cie z kebabem", desc: "Podpis: \u201Ezas\u0142u\u017Cone\u201D.", effects: { media: 2, follow: { step: "kebab.collab", after: 1 } } }
+    ]
+  },
+  {
+    id: "wpis.mistrz",
+    app: "fotogram",
+    from: "Mistrz federacji",
+    title: "Mistrz odpisa\u0142",
+    text: () => "\u201ENie znam go\u015Bcia. Ale ch\u0119tnie poznam w klatce.\u201D Pod spodem 3 tysi\u0105ce komentarzy i kto\u015B ju\u017C robi grafik\u0119 z waszymi twarzami.",
+    choices: () => [
+      { label: "Odpisujesz ostro", desc: "Internet p\u0142onie.", effects: { media: 3, nextFight: -1, note: "nie \u015Bpisz przez komentarze" } },
+      { label: "Ignorujesz", desc: "Najpierw najbli\u017Csza walka.", effects: { rep: 1 } }
+    ]
+  },
+  // ---------- Ważka ----------
+  {
+    id: "wazka.start",
+    app: "wazka",
+    from: "Wa\u017Cka",
+    title: "Za du\u017Co na wadze",
+    start: { weight: 4, cond: (s) => pro(s), repeat: true },
+    text: () => "\u201EDo wa\u017Cenia 10 dni. Jeste\u015B 3,2 kg nad limitem. Dzisiejsza sugestia: ry\u017C z kurczakiem (posi\u0142ek nr 412).\u201D",
+    choices: () => [
+      { label: "Dieta, powoli i bez cud\xF3w", desc: "Ry\u017C, kurczak, ry\u017C.", effects: { nextFight: 1, note: "ry\u017C \u015Bni ci si\u0119 po nocach" } },
+      {
+        label: "Sauna i worek na \u015Bmieci",
+        desc: "Na ostatnie dni.",
+        chance: 70,
+        success: {},
+        successText: "Mie\u015Bcisz si\u0119 co do grama. Woda wraca wieczorem.",
+        fail: { nextFight: -4, wear: 4 },
+        failText: "Na wadze si\u0119 mie\u015Bcisz, ale na walk\u0119 wychodzisz jak z suszarki."
+      },
+      {
+        label: "\u201EZbij\u0119 w tydzie\u0144\u201D, a teraz pizza",
+        desc: "Co ma by\u0107, to b\u0119dzie.",
+        chance: 35,
+        success: { note: "jakim\u015B cudem" },
+        successText: "Jakim\u015B cudem waga si\u0119 zgadza. Nikt nie wie jak, ty te\u017C nie.",
+        fail: { money: -400, nextFight: -3, follow: { step: "kebab.start", after: 1 } },
+        failText: "P\xF3\u0142 kilo za du\u017Co. Cz\u0119\u015B\u0107 ga\u017Cy idzie do rywala, a ty idziesz na kebaba z \u017Calu."
+      }
+    ]
+  },
+  // ---------- Kebab o północy ----------
+  {
+    id: "kebab.start",
+    app: "klatka",
+    from: "KlatkaNews",
+    title: "Nagranie z kebaba",
+    start: { weight: 3, cond: (s) => pro(s) && s.media >= 8 },
+    text: (s) => `\u201E${s.profile.lastName} w trakcie ci\u0119cia wagi zajada kebaba o 1:12 w nocy. WIDEO!\u201D Nagra\u0142 ci\u0119 kto\u015B z kolejki. Wida\u0107 nawet sos czosnkowy.`,
+    choices: () => [
+      { label: "\u201ETo by\u0142 kebab na wodzie\u201D", desc: "Obracasz w \u017Cart.", effects: { media: 3, follow: { step: "kebab.collab", after: 1 } } },
+      {
+        label: "M\xF3wisz, \u017Ce to by\u0142 brat",
+        desc: "Jeste\u015Bcie troch\u0119 podobni.",
+        chance: 40,
+        success: { media: 1 },
+        successText: "Ludzie wierz\u0105. Brat nie bardzo.",
+        fail: { rep: -2, media: 2 },
+        failText: "Brat wrzuca zdj\u0119cie z innego miasta z tego samego wieczoru."
+      },
+      { label: "Milczysz", desc: "Za tydzie\u0144 nikt nie b\u0119dzie pami\u0119ta\u0142.", effects: {} }
+    ]
+  },
+  {
+    id: "kebab.collab",
+    app: "sms",
+    from: "Kebab \u201ESu\u0142tan\u201D z Rynku",
+    title: "Rollo twojego imienia?",
+    cond: (s) => !s.sponsors.some((x) => x.name.includes("Su\u0142tan")),
+    text: (s) => `\u201EPanie ${s.profile.lastName}, by\u0142 pan u nas! Robimy rollo twojego imienia, z podw\xF3jnym mi\u0119sem. P\u0142acimy za ka\u017Cd\u0105 wygran\u0105 i dajemy je\u015B\u0107 za darmo.\u201D`,
+    choices: (s) => [
+      {
+        label: "Zgoda",
+        desc: "Logo kebaba na spodenkach.",
+        effects: { sponsor: { name: "Kebab \u201ESu\u0142tan\u201D", perSeason: zl(s, 1200), seasonsLeft: 2, clause: "zdj\u0119cie z rollo po ka\u017Cdej wygranej" }, media: 2 }
+      },
+      { label: "Odmawiasz, jeste\u015B na diecie", desc: "Z b\xF3lem serca.", effects: { rep: 1 } }
+    ]
+  },
+  // ---------- Mietek prosi o pomoc ----------
+  {
+    id: "mietek.start",
+    app: "gym",
+    from: "Mietek",
+    title: "Pomo\u017Cesz przed walk\u0105?",
+    start: { weight: 6, cond: () => true },
+    text: () => "Mietek walczy za dwa tygodnie z ma\u0144kutem, zapa\u015Bnikiem. Prosi o sparingi \u201Epod rywala\u201D: masz go obala\u0107 i dociska\u0107 przez pi\u0119\u0107 rund.",
+    choices: () => [
+      { label: "Pomagasz", desc: "Twoje plecy b\u0119d\u0105 to pami\u0119ta\u0107.", effects: { wear: 5, follow: { step: "mietek.cynk", after: 2 } } },
+      { label: "Odmawiasz, masz sw\xF3j ob\xF3z", desc: "Ka\u017Cdy ma swoje sprawy.", effects: { follow: { step: "mietek.foch", after: 1 } } }
+    ]
+  },
+  {
+    id: "mietek.cynk",
+    app: "gym",
+    from: "Mietek",
+    title: "Cynk o rywalu",
+    text: () => "\u201EPami\u0119tam, jak mi pomog\u0142e\u015B. Sparowa\u0142em kiedy\u015B z twoim najbli\u017Cszym rywalem. Po kopni\u0119ciu zawsze opuszcza lew\u0105 r\u0119k\u0119. Zawsze.\u201D",
+    choices: () => [
+      { label: "Wpisujesz to w plan", desc: "Trener rozrysowuje to na tablicy.", effects: { nextFight: 4 } },
+      { label: "Dzi\u0119kujesz, ale robisz swoje", desc: "Nie zmienia si\u0119 planu przed walk\u0105.", effects: { nextFight: 1, rep: 1 } }
+    ]
+  },
+  {
+    id: "mietek.foch",
+    app: "gym",
+    from: "Mietek",
+    title: "Ka\u017Cdy sobie",
+    text: () => "Mietek nie przychodzi na twoje sparingi. Na grupie pisze tylko: \u201Eka\u017Cdy sobie\u201D.",
+    choices: (s) => [
+      { label: "Stawiasz piwo i przepraszasz", desc: "Bezalkoholowe, ob\xF3z trwa.", effects: { money: -zl(s, 60) } },
+      { label: "Szukasz innego partnera", desc: "Nowy jest o 20 kg ci\u0119\u017Cszy.", effects: { nextFight: -2 } }
+    ]
+  },
+  // ---------- Mama pożycza na obóz ----------
+  {
+    id: "mama.start",
+    app: "sms",
+    from: "Mama",
+    title: "Pieni\u0105dze na ob\xF3z",
+    start: { weight: 6, cond: (s, c) => c.pre && s.money < zl(s, 1500) && s.relations >= 0 },
+    text: (s) => `Synek, s\u0142ysza\u0142am, \u017Ce nie masz na ob\xF3z. Mamy z tat\u0105 od\u0142o\u017Cone na Chorwacj\u0119. We\u017A ${zl(s, 2e3).toLocaleString("pl-PL")} z\u0142, oddasz, jak wygrasz.`,
+    choices: (s) => [
+      { label: "Bierzesz", desc: "Lepszy ob\xF3z, wi\u0119kszy d\u0142ug.", effects: { money: zl(s, 2e3), nextFight: 1, follow: { step: "mama.zwrot", after: 3 } } },
+      { label: "Odmawiasz", desc: "Niech jad\u0105 nad morze.", effects: { relations: 1, note: "tata m\xF3wi, \u017Ce jeste\u015B honorowy" } }
+    ]
+  },
+  {
+    id: "mama.zwrot",
+    app: "sms",
+    from: "Mama",
+    title: "O tych pieni\u0105dzach",
+    text: () => "Synek, nie naciskam, ale pani z biura podr\xF3\u017Cy dzwoni\u0142a, \u017Ce zosta\u0142y ostatnie miejsca na wrzesie\u0144.",
+    choices: (s) => [
+      { label: "Oddajesz ca\u0142o\u015B\u0107", desc: "S\u0142owo to s\u0142owo.", effects: { money: -zl(s, 2e3), relations: 3 } },
+      { label: "Oddajesz po\u0142ow\u0119", desc: "I obiecujesz reszt\u0119.", effects: { money: -zl(s, 1e3) } },
+      { label: "\u201EPo nast\u0119pnej walce\u201D", desc: "Mama m\xF3wi \u201Edobrze\u201D, ale inaczej ni\u017C zwykle.", effects: { relations: -3, follow: { step: "mama.tata", after: 2 } } }
+    ]
+  },
+  {
+    id: "mama.tata",
+    app: "sms",
+    from: "Tata",
+    title: "Matka nie \u015Bpi",
+    text: () => "Matka nie \u015Bpi przez te pieni\u0105dze. Wiesz, co masz zrobi\u0107.",
+    choices: (s) => [
+      { label: "Oddajesz od razu", desc: "Nawet je\u015Bli boli.", effects: { money: -zl(s, 2e3), relations: 1 } },
+      { label: "Znowu przek\u0142adasz", desc: "Wigilia b\u0119dzie cicha.", effects: { relations: -5 } }
+    ]
+  },
+  // ---------- Wujek z Niemiec ----------
+  {
+    id: "wujek.start",
+    app: "sms",
+    from: "Wujek Heniek",
+    title: "Wujek ma znajomo\u015Bci",
+    start: { weight: 3, cond: (s) => s.tier <= 2 },
+    text: () => "S\u0142uchaj, ja tu w Niemczech mam znajomo\u015Bci. Daj\u0119 ci pieni\u0105dze i jestem twoim mened\u017Cerem. Tylko na papierze, nic nie musisz robi\u0107.",
+    choices: (s) => [
+      { label: "Bierzesz pieni\u0105dze", desc: "Co mo\u017Ce p\xF3j\u015B\u0107 nie tak?", effects: { money: zl(s, 2500), follow: { step: "wujek.umowa", after: 2 } } },
+      { label: "Dzi\u0119kujesz, ale nie", desc: "Wujek m\xF3wi \u201Ejak chcesz\u201D i roz\u0142\u0105cza si\u0119.", effects: { relations: -1 } }
+    ]
+  },
+  {
+    id: "wujek.umowa",
+    app: "sms",
+    from: "Wujek Heniek",
+    title: "Za\u0142atwione!",
+    text: () => "\u201EZa\u0142atwi\u0142em! Walka w Niemczech na gali K\xC4FIG KRIEG. Przeciwnik to kulturysta z internetu, 130 kg. P\u0142ac\u0105 dobrze. Wyjazd w pi\u0105tek, bus spod ko\u015Bcio\u0142a.\u201D",
+    choices: (s) => [
+      {
+        label: "Jedziesz",
+        desc: "Kasa jest kasa.",
+        chance: 75,
+        success: { money: zl(s, 4e3), media: 4, rep: -3 },
+        successText: "Kulturysta pada po 40 sekundach. Niemiecki internet szaleje, polski si\u0119 \u015Bmieje.",
+        fail: { money: zl(s, 2e3), media: 3, rep: -5, wear: 6 },
+        failText: "Kulturysta przygniata ci\u0119 do siatki na trzy rundy. Przegrywasz na punkty z kim\u015B, kto nie umie kopa\u0107."
+      },
+      { label: "Odmawiasz i oddajesz pieni\u0105dze", desc: "Kariera sportowa wa\u017Cniejsza.", effects: { money: -zl(s, 2500), relations: -2, rep: 1 } },
+      { label: "Odmawiasz i nie oddajesz", desc: "Przecie\u017C to by\u0142 prezent.", effects: { relations: -6, note: "wigilia b\u0119dzie ciekawa" } }
+    ]
+  },
+  // ---------- Bramka w „Prestiżu” ----------
+  {
+    id: "bramka.start",
+    app: "gym",
+    from: "Dawid z bramki",
+    title: "Fucha na sobot\u0119",
+    start: { weight: 5, cond: (s) => s.tier <= 2 && s.age >= 18 },
+    text: (s) => `Potrzebuj\u0119 kogo\u015B na bramk\u0119 w klubie \u201EPresti\u017C\u201D w sobot\u0119. ${zl(s, 400)} z\u0142 za noc, do 4:00. Krawat dam.`,
+    choices: (s) => [
+      { label: "Bierzesz zmian\u0119", desc: "Kasa si\u0119 przyda, sen mniej.", effects: { money: zl(s, 400), nextFight: -1, follow: { step: "bramka.film", after: 1 } } },
+      { label: "Odmawiasz", desc: "Sobota to sparingi.", effects: { nextFight: 1 } }
+    ]
+  },
+  {
+    id: "bramka.film",
+    app: "klatka",
+    from: "KlatkaNews",
+    title: "Wideo z bramki",
+    text: () => "\u201EZawodnik MMA wynosi awanturnika z klubu jak worek ziemniak\xF3w.\u201D Kto\u015B nagra\u0142, jak wynosisz go\u015Bcia w r\xF3\u017Cowej koszuli. 40 tysi\u0119cy wy\u015Bwietle\u0144.",
+    choices: () => [
+      {
+        label: "Udost\u0119pniasz z dopiskiem",
+        desc: "\u201EBez przemocy, sama technika.\u201D",
+        chance: 70,
+        success: { media: 4, rep: 1, follow: { step: "bramka.wlasciciel", after: 1 } },
+        successText: "Internet ci\u0119 kocha. Kto\u015B robi z tego mem z muzyk\u0105 z westernu.",
+        fail: { media: 3, rep: -3 },
+        failText: "Okazuje si\u0119, \u017Ce go\u015B\u0107 w r\xF3\u017Cowej koszuli to syn radnego. Radny pisze list otwarty."
+      },
+      { label: "Prosisz o usuni\u0119cie", desc: "Nie chcesz \u0142atki ochroniarza.", effects: { rep: 1 } }
+    ]
+  },
+  {
+    id: "bramka.wlasciciel",
+    app: "sms",
+    from: "W\u0142a\u015Bciciel klubu \u201EPresti\u017C\u201D",
+    title: "Podoba mi si\u0119, jak pracujesz",
+    cond: (s) => !s.sponsors.some((x) => x.name.includes("Presti\u017C")),
+    text: () => "\u201EWidzia\u0142em film. Chcesz logo \xBBPresti\u017Cu\xAB na spodenkach? P\u0142ac\u0119 i masz wej\u015Bcie VIP do ko\u0144ca \u017Cycia.\u201D",
+    choices: (s) => [
+      { label: "Bierzesz", desc: "Logo dyskoteki na spodenkach.", effects: { sponsor: { name: "Klub \u201EPresti\u017C\u201D", perSeason: zl(s, 1500), seasonsLeft: 2, clause: "raz w miesi\u0105cu stoisz na bramce" }, media: 1 } },
+      { label: "Odmawiasz", desc: "Nie chcesz kojarzy\u0107 si\u0119 z dyskotek\u0105.", effects: { rep: 1 } }
+    ]
+  },
+  // ---------- „Witaminki” ----------
+  {
+    id: "witaminki.start",
+    app: "fotogram",
+    from: "@mass_monster_pl",
+    title: "Co\u015B na regeneracj\u0119",
+    start: { weight: 4, cond: (s) => pro(s) && !s.flags.witaminki },
+    text: (s) => `Brachu, mam co\u015B na regeneracj\u0119. Zero wykrywalno\u015Bci, wszyscy w federacji bior\u0105. Kuracja ${zl(s, 800)} z\u0142, wysy\u0142ka dyskretna.`,
+    choices: (s) => [
+      { label: "Bierzesz", desc: "Wszyscy bior\u0105, prawda?", effects: { money: -zl(s, 800), nextFight: 3, flag: "witaminki", follow: { step: "witaminki.test", after: 2 } } },
+      { label: "Blokujesz konto", desc: "Nie ten sport.", effects: { rep: 1 } },
+      { label: "Zg\u0142aszasz do federacji", desc: "Ze zrzutami ekranu.", effects: { rep: 2, media: 1, note: "federacja dzi\u0119kuje i nic nie robi" } }
+    ]
+  },
+  {
+    id: "witaminki.test",
+    app: "sms",
+    from: "Komisja Antydopingowa",
+    title: "Wynik kontroli",
+    text: () => "Kontrola antydopingowa po ostatniej walce. Pr\xF3bka A zosta\u0142a zbadana. Wynik w za\u0142\u0105czniku. Prosimy usi\u0105\u015B\u0107 przed otwarciem.",
+    choices: (s) => [
+      {
+        label: "Otwierasz za\u0142\u0105cznik",
+        desc: "R\u0119ce si\u0119 trz\u0119s\u0105.",
+        chance: 35,
+        success: { note: "wynik negatywny" },
+        successText: "Wynik negatywny. Tym razem si\u0119 uda\u0142o. Nast\u0119pnym razem mo\u017Ce nie.",
+        fail: { rep: -10, media: 3, money: -zl(s, 2e3), nextFight: -4, note: "wpadka dopingowa" },
+        failText: "Wynik pozytywny. Kara finansowa, zawieszenie i nag\u0142\xF3wek \u201ESKANDAL\u201D na KlatkaNews. Sponsorzy przestaj\u0105 odbiera\u0107 telefony."
+      },
+      {
+        label: "\u017B\u0105dasz badania pr\xF3bki B",
+        desc: "P\u0142acisz za drugie badanie.",
+        chance: 20,
+        success: { money: -zl(s, 1500), note: "pr\xF3bka B czysta" },
+        successText: "Pr\xF3bka B czysta. Laboratorium przeprasza za \u201Ezanieczyszczenie\u201D.",
+        fail: { money: -zl(s, 3500), rep: -11, media: 3, nextFight: -4, note: "pr\xF3bka B potwierdza" },
+        failText: "Pr\xF3bka B r\xF3wnie\u017C pozytywna. Teraz jeszcze p\u0142acisz za badanie."
+      }
+    ]
+  },
+  // ---------- Gala nie płaci ----------
+  {
+    id: "przelew.start",
+    app: "bank",
+    from: "Bankoteka",
+    title: "Ga\u017Ca nie wp\u0142yn\u0119\u0142a",
+    start: { weight: 3, cond: (s, c) => pro(s) && !c.pre && s.tier <= 2 },
+    text: () => "Brak wp\u0142ywu ga\u017Cy z ostatniej gali. Min\u0119\u0142y trzy tygodnie. Organizator odpisuje: \u201Ew tym tygodniu na pewno\u201D.",
+    choices: (s) => [
+      {
+        label: "Czekasz cierpliwie",
+        desc: "Ka\u017Cdemu mo\u017Ce si\u0119 zdarzy\u0107.",
+        chance: 50,
+        success: {},
+        successText: "Pieni\u0105dze przychodz\u0105 w pi\u0105tek o 23:58.",
+        fail: { money: -zl(s, 700), follow: { step: "przelew.upada", after: 1 } },
+        failText: "Przychodzi po\u0142owa. W tytule przelewu: \u201Ereszta wkr\xF3tce\u201D."
+      },
+      {
+        label: "Piszesz codziennie",
+        desc: "Rano, w po\u0142udnie i wieczorem.",
+        chance: 70,
+        success: {},
+        successText: "P\u0142ac\u0105 ca\u0142o\u015B\u0107, \u017Ceby si\u0119 od ciebie odczepi\u0107.",
+        fail: { money: -zl(s, 700), rep: -1 },
+        failText: "Organizator blokuje ci\u0119 wsz\u0119dzie. Przychodzi po\u0142owa."
+      },
+      { label: "Idziesz do prawnika", desc: "Prawnik bierze zaliczk\u0119.", effects: { money: -zl(s, 500), follow: { step: "przelew.prawnik", after: 2 } } }
+    ]
+  },
+  {
+    id: "przelew.upada",
+    app: "klatka",
+    from: "KlatkaNews",
+    title: "Gala og\u0142asza upad\u0142o\u015B\u0107",
+    text: () => "\u201EOrganizator gali og\u0142asza zawieszenie dzia\u0142alno\u015Bci.\u201D W komentarzach dwudziestu zawodnik\xF3w pisze, \u017Ce te\u017C czeka na pieni\u0105dze.",
+    choices: (s) => [
+      { label: "Do\u0142\u0105czasz do pozwu zbiorowego", desc: "Mo\u017Ce za dwa lata co\u015B odzyskacie.", effects: { money: -zl(s, 200), note: "sprawa w toku" } },
+      { label: "Odpuszczasz", desc: "Szkoda nerw\xF3w.", effects: { rep: 1 } }
+    ]
+  },
+  {
+    id: "przelew.prawnik",
+    app: "sms",
+    from: "Mecenas Wies\u0142aw",
+    title: "Sprawa wygrana",
+    text: () => "\u201EWygrali\u015Bmy. Organizator zap\u0142aci z odsetkami. Moja faktura w za\u0142\u0105czniku.\u201D",
+    choices: (s) => [{ label: "Otwierasz faktur\u0119", desc: "Z bij\u0105cym sercem.", effects: { money: zl(s, 900) } }]
+  },
+  // ---------- Skarbówka ----------
+  {
+    id: "skarb.start",
+    app: "bank",
+    from: "Ksi\u0119gowa kuzyna",
+    title: "Premia w kopercie",
+    start: { weight: 3, cond: (s) => pro(s) && s.tier >= 1 && s.totalEarned > 2e4 },
+    text: () => "Ksi\u0119gowa kuzyna robi ci rozliczenie. Pyta, czy premi\u0119 za nokaut wpisa\u0107, \u201Ebo to w kopercie by\u0142o, prawda?\u201D.",
+    choices: (s) => [
+      { label: "Wpisujesz wszystko", desc: "Spokojny sen jest bezcenny.", effects: { money: -zl(s, 400), rep: 1 } },
+      {
+        label: "Nie wpisujesz",
+        desc: "Kto by sprawdza\u0142.",
+        chance: 60,
+        success: {},
+        successText: "Nikt nie pyta. Na razie.",
+        fail: { follow: { step: "skarb.kontrola", after: 2 } },
+        failText: "Ksi\u0119gowa m\xF3wi \u201Ejak chcesz\u201D i robi min\u0119, kt\xF3rej nie lubisz."
+      }
+    ]
+  },
+  {
+    id: "skarb.kontrola",
+    app: "sms",
+    from: "Urz\u0105d Skarbowy",
+    title: "Wezwanie",
+    text: () => "Wezwanie do z\u0142o\u017Cenia wyja\u015Bnie\u0144 w sprawie przychod\xF3w z gal sport\xF3w walki. Prosimy zabra\u0107 dokumenty i dobry humor.",
+    choices: (s) => [
+      { label: "P\u0142acisz z odsetkami", desc: "Szybko i bez dyskusji.", effects: { money: -zl(s, 1200) } },
+      {
+        label: "Idziesz z doradc\u0105",
+        desc: "Doradca bierze swoje, ale zna przepisy.",
+        chance: 50,
+        success: { money: -zl(s, 500) },
+        successText: "Doradca znajduje ulg\u0119 dla sportowc\xF3w. P\u0142acisz tylko jego faktur\u0119.",
+        fail: { money: -zl(s, 1700) },
+        failText: "Doradca m\xF3wi, \u017Ce \u201Emog\u0142o by\u0107 gorzej\u201D. P\u0142acisz podatek, odsetki i jego."
+      }
+    ]
+  },
+  // ---------- Kwatera w górach ----------
+  {
+    id: "kwatera.start",
+    app: "mapka",
+    from: "Trener",
+    title: "Ob\xF3z w g\xF3rach",
+    start: { weight: 6, cond: (_s, c) => c.pre },
+    text: () => "Trener chce ob\xF3z w g\xF3rach przed sezonem. Mapka: pok\xF3j u g\xF3rala po 60 z\u0142 za dob\u0119 albo hotel ze spa po 300 z\u0142.",
+    choices: (s) => [
+      {
+        label: "U g\xF3rala",
+        desc: "Tanio i swojsko.",
+        chance: 60,
+        success: { money: -zl(s, 600), nextFight: 2, follow: { step: "kwatera.goral", after: 1 } },
+        successText: "G\xF3ral karmi jak na weselu, a rano budzi ci\u0119 koguta. Forma ro\u015Bnie.",
+        fail: { money: -zl(s, 600), wear: 5, nextFight: -1 },
+        failText: "W pokoju grzyb na \u015Bcianie i pierzyna z lat 70. Kaszlesz p\xF3\u0142 obozu."
+      },
+      { label: "Hotel ze spa", desc: "Basen, sauna, zero grzyba.", effects: { money: -zl(s, 2800), nextFight: 2 } },
+      { label: "Trenujesz w domu", desc: "Za darmo, ale bez g\xF3r.", effects: {} }
+    ]
+  },
+  {
+    id: "kwatera.goral",
+    app: "sms",
+    from: "G\xF3ral J\xF3zek",
+    title: "Sprawdzimy si\u0119?",
+    text: () => "\u201EJo tyz trenuje! Zapasy g\xF3ralskie, od dziecka. Sprawdzimy si\u0119 na \u0142\u0105ce za stodo\u0142\u0105?\u201D",
+    choices: () => [
+      {
+        label: "Sparujecie",
+        desc: "Co mo\u017Ce g\xF3ral?",
+        chance: 50,
+        success: { stats: { wrest: 1 } },
+        successText: "J\xF3zek rzuca tob\u0105 jak snopkiem siana, ale uczysz si\u0119 wi\u0119cej ni\u017C przez miesi\u0105c na sali.",
+        fail: { wear: 5 },
+        failText: "J\xF3zek dociska ci\u0119 do \u0142\u0105ki tak, \u017Ce Giewont widzisz od spodu."
+      },
+      { label: "Grzecznie odmawiasz", desc: "J\xF3zek m\xF3wi, \u017Ce \u201Emioztowi sie boj\u0105\u201D.", effects: { media: 0, note: "J\xF3zek opowiada o tym ca\u0142ej wsi" } }
+    ]
+  },
+  // ---------- Grzybica ----------
+  {
+    id: "grzyb.start",
+    app: "gym",
+    from: "Mietek",
+    title: "Co\u015B ci wysz\u0142o na \u0142ydce",
+    start: { weight: 4, cond: () => true },
+    text: () => "Na \u0142ydce wyskoczy\u0142a ci czerwona plama w k\xF3\u0142ko. Mietek ogl\u0105da i m\xF3wi: \u201EGrzybica. Maty nie myte od Wielkanocy.\u201D",
+    choices: (s) => [
+      { label: "Ma\u015B\u0107 i w\u0142asne kimono", desc: "Apteka i sklep sportowy.", effects: { money: -zl(s, 250) } },
+      {
+        label: "Olewasz, samo przejdzie",
+        desc: "Zawsze przechodzi\u0142o.",
+        chance: 30,
+        success: {},
+        successText: "Rzeczywi\u015Bcie schodzi. Masz szcz\u0119\u015Bcie.",
+        fail: { follow: { step: "grzyb.grupa", after: 1 } },
+        failText: "Plama ro\u015Bnie i robi si\u0119 z niej mapa Europy."
+      },
+      { label: "Myjesz ca\u0142\u0105 sal\u0119", desc: "Sam, w niedziel\u0119, z wiadrem.", effects: { wear: 2, rep: 2, note: "klub stawia ci obiad" } }
+    ]
+  },
+  {
+    id: "grzyb.grupa",
+    app: "gym",
+    from: "Mietek",
+    title: "Kto mi to przyni\xF3s\u0142???",
+    text: () => "Na grupie zdj\u0119cie \u0142ydki Mietka i podpis: \u201EKto mi to przyni\xF3s\u0142???\u201D. Wszyscy wiedz\u0105 kto.",
+    choices: (s) => [
+      { label: "Przyznajesz si\u0119 i kupujesz ma\u015B\u0107 dla wszystkich", desc: "Hurtowo.", effects: { money: -zl(s, 400), rep: 1 } },
+      { label: "Milczysz", desc: "Mo\u017Ce nie skojarz\u0105.", effects: { nextFight: -1, note: "nikt nie chce z tob\u0105 sparowa\u0107" } }
+    ]
+  },
+  // ---------- Telefon skradziony ----------
+  {
+    id: "telefon.start",
+    app: "sms",
+    from: "Nieznany numer",
+    title: "Kto\u015B ukrad\u0142 telefon",
+    start: { weight: 3, cond: (s, c) => pro(s) && !c.pre },
+    text: () => "Piszesz z telefonu brata. Tw\xF3j znikn\u0105\u0142 z szatni w czasie walki. Kontakty, zdj\u0119cia, Fotogram, wszystko.",
+    choices: (s) => [
+      { label: "Kupujesz nowy telefon", desc: "I przywracasz kopi\u0119 zapasow\u0105.", effects: { money: -zl(s, 1200) } },
+      { label: "Stary telefon brata", desc: "P\u0119kni\u0119ty ekran i 12 GB pami\u0119ci.", effects: { follow: { step: "telefon.menedzer", after: 1 } } }
+    ]
+  },
+  {
+    id: "telefon.menedzer",
+    app: "sms",
+    from: "Mened\u017Cer",
+    title: "Dzwoni\u0142em trzy dni!",
+    text: () => "\u201EDzwoni\u0142em do ciebie trzy dni! Mia\u0142em walk\u0119 na zast\u0119pstwo za trzy razy wy\u017Csz\u0105 ga\u017C\u0119. Wzi\u0105\u0142 j\u0105 kto inny.\u201D",
+    choices: () => [
+      { label: "Przepraszasz", desc: "I wysy\u0142asz nowy numer.", effects: { rep: -1, note: "stracona okazja" } },
+      { label: "M\xF3wisz, \u017Ceby pisa\u0142 na Fotogram", desc: "Tam zawsze odpiszesz.", effects: { media: 1 } }
+    ]
+  },
+  // ---------- Kolega z podstawówki ----------
+  {
+    id: "kolega.start",
+    app: "fotogram",
+    from: "@motywacja_kamil",
+    title: "Rewan\u017C z podstaw\xF3wki",
+    start: { weight: 3, cond: (s) => pro(s) && s.media >= 10 },
+    text: () => "Kolega z podstaw\xF3wki, dzi\u015B \u201Einfluencer motywacyjny\u201D, wrzuca film: \u201EKiedy\u015B go la\u0142em na przerwach. Rewan\u017C na gali freak? Kasa jest.\u201D",
+    choices: (s) => [
+      { label: "Przyjmujesz wyzwanie", desc: "Kasa jest. Kamil te\u017C.", effects: { money: zl(s, 2500), media: 3, rep: -2, follow: { step: "kolega.konferencja", after: 1 } } },
+      { label: "Wy\u015Bmiewasz go w komentarzu", desc: "\u201ELa\u0142e\u015B mnie? Pami\u0119tam inaczej.\u201D", effects: { media: 2 } },
+      { label: "Ignorujesz", desc: "Nie dla freak\xF3w.", effects: { rep: 1 } }
+    ]
+  },
+  {
+    id: "kolega.konferencja",
+    app: "klatka",
+    from: "KlatkaNews",
+    title: "Konferencja freak",
+    text: () => "Konferencja przed gal\u0105 freak. Kamil rzuca w ciebie butelk\u0105 wody i krzyczy co\u015B o twojej mamie.",
+    choices: () => [
+      { label: "Siedzisz spokojnie", desc: "Woda sp\u0142ywa po twarzy.", effects: { rep: 2, media: 1, note: "w walce Kamil pada po 40 sekundach" } },
+      { label: "Rzucasz krzes\u0142em", desc: "Freak to freak.", effects: { media: 5, rep: -4, note: "krzes\u0142o trafia ochroniarza" } },
+      { label: "Wychodzisz", desc: "Nie b\u0119dziesz bra\u0142 w tym udzia\u0142u.", effects: { rep: 1, media: -1 } }
+    ]
+  },
+  // ---------- Gazeta powiatowa ----------
+  {
+    id: "gazeta.start",
+    app: "klatka",
+    from: "Gazeta Powiatowa",
+    title: "Pisz\u0105 o tobie!",
+    start: { weight: 4, cond: (s) => s.history.length >= 2 },
+    text: (s) => `\u201EGazeta Powiatowa\u201D pisze o tobie na stronie 7, obok og\u0142osze\u0144 o sprzeda\u017Cy k\xF3z. Tylko nazwisko przekr\u0119cili: \u201E${twistName(s.profile.lastName)}\u201D.`,
+    choices: (s) => [
+      { label: "Prosisz o sprostowanie", desc: "Grzecznie, przez telefon.", effects: { rep: 1, media: 1, note: "sprostowanie na stronie 12" } },
+      { label: "Odpuszczasz", desc: "Najwa\u017Cniejsze, \u017Ce pisz\u0105.", effects: { follow: { step: "gazeta.ksywa", after: 2 } } },
+      { label: "Wrzucasz na Fotogram", desc: `\u201EPozdrawiam, ${twistName(s.profile.lastName)}\u201D.`, effects: { media: 2 } }
+    ]
+  },
+  {
+    id: "gazeta.ksywa",
+    app: "gym",
+    from: "Trener",
+    title: "Nowa ksywka",
+    text: (s) => `Na sali wszyscy m\xF3wi\u0105 na ciebie \u201E${twistName(s.profile.lastName)}\u201D. Nawet trener. Nawet na plakacie gali kto\u015B tak napisa\u0142.`,
+    choices: () => [
+      { label: "Przyjmujesz ksywk\u0119", desc: "Lepiej si\u0119 nie da.", effects: { media: 2, note: "nowa ksywka" } },
+      { label: "Walczysz z tym", desc: "Bez szans, ale walczysz.", effects: { rep: 1 } }
+    ]
+  },
+  // ---------- Zużyty sprzęt ----------
+  {
+    id: "sprzet.start",
+    app: "gym",
+    from: "Trener",
+    title: "Twoje r\u0119kawice",
+    start: { weight: 14, cond: (s) => (s.gear ?? 0) >= 60, repeat: true },
+    text: (s) => `Twoje r\u0119kawice \u015Bmierdz\u0105 tak, \u017Ce Mietek trenuje w masce. Sprz\u0119t zu\u017Cyty w ${Math.round(s.gear ?? 0)}%. Kup nowe, zanim co\u015B p\u0119knie na sparingu.`,
+    choices: (s) => [
+      { label: "Kupujesz nowy komplet", desc: "R\u0119kawice, ochraniacze, kask.", effects: { money: -zl(s, 700), gear: -55 } },
+      {
+        label: "Pierzesz w pralce z sod\u0105",
+        desc: "Patent z internetu.",
+        chance: 50,
+        success: { gear: -15 },
+        successText: "Pachn\u0105 prawie normalnie. Prawie.",
+        fail: { gear: -10, relations: -1 },
+        failText: "Pralka mamy ju\u017C nigdy nie b\u0119dzie taka sama."
+      },
+      { label: "Trenujesz w tym, co masz", desc: "Jeszcze poci\u0105gn\u0105.", effects: { gear: 5, nextFight: -1 } }
+    ]
+  },
+  // ---------- Fryzjer przed galą ----------
+  {
+    id: "fryzjer.start",
+    app: "mapka",
+    from: "Salon u Gra\u017Cyny",
+    title: "Wzorek przed gal\u0105",
+    start: { weight: 3, cond: (s, c) => pro(s) && !c.pre },
+    text: () => "Pani Gra\u017Cyna proponuje wzorek na boku g\u0142owy przed gal\u0105: b\u0142yskawica albo twoje inicja\u0142y. \u201ERobi\u0142am ju\u017C dla pi\u0142karzy z czwartej ligi.\u201D",
+    choices: () => [
+      {
+        label: "B\u0142yskawica",
+        desc: "Gro\u017Anie.",
+        chance: 50,
+        success: { media: 3 },
+        successText: "Wygl\u0105da gro\u017Anie. Kto\u015B robi z tego mema, ale w dobrym sensie.",
+        fail: { media: 2, rep: -1 },
+        failText: "Wysz\u0142o co\u015B pomi\u0119dzy b\u0142yskawic\u0105 a logo pizzerii."
+      },
+      { label: "Zwyk\u0142e ci\u0119cie", desc: "Kr\xF3tko po bokach.", effects: { note: "pani Gra\u017Cyna rozczarowana" } }
+    ]
+  },
+  // ---------- Białko „bubble gum” ----------
+  {
+    id: "bialko.start",
+    app: "sms",
+    from: "MegaMass",
+    title: "Wsp\xF3\u0142praca w naturze",
+    start: { weight: 3, cond: (s) => pro(s) && s.media >= 6 },
+    text: () => "\u201EProponujemy wsp\xF3\u0142prac\u0119! Zamiast pieni\u0119dzy 40 puszek bia\u0142ka o smaku bubble gum. Wystarczy oznacza\u0107 nas w relacjach.\u201D",
+    choices: (s) => [
+      { label: "Bierzesz", desc: "Zaoszcz\u0119dzisz na od\u017Cywkach.", effects: { money: zl(s, 300), follow: { step: "bialko.piwnica", after: 2 } } },
+      {
+        label: "Prosisz o pieni\u0105dze",
+        desc: "Puszki nie p\u0142ac\u0105 rachunk\xF3w.",
+        chance: 30,
+        success: { money: zl(s, 1e3) },
+        successText: "Zgadzaj\u0105 si\u0119. Pierwszy przelew przychodzi z dopiskiem \u201Ebubble gum\u201D.",
+        fail: {},
+        failText: "Nie odpisuj\u0105. Widzisz, \u017Ce inny zawodnik ju\u017C pozuje z puszk\u0105."
+      }
+    ]
+  },
+  {
+    id: "bialko.piwnica",
+    app: "tasma",
+    from: "Sporty walki \u2014 kupi\u0119/sprzedam",
+    title: "34 puszki w piwnicy",
+    text: () => "W piwnicy wci\u0105\u017C 34 puszki. Smak bubble gum da si\u0119 pi\u0107 tylko z zamkni\u0119tymi oczami. Wystawiasz na Ta\u015Bmie?",
+    choices: (s) => [
+      {
+        label: "Sprzedajesz",
+        desc: "Po 40 z\u0142 za puszk\u0119.",
+        chance: 60,
+        success: { money: zl(s, 500) },
+        successText: "Schodzi wszystko. Kupuj\u0105cy pyta, czy b\u0119dzie smak \u201Ewata cukrowa\u201D.",
+        fail: { money: zl(s, 150), rep: -1 },
+        failText: "Sprzedajesz trzy. Kupuj\u0105cy pisze, \u017Ce od tego bia\u0142ka \u015Bwieci mu si\u0119 j\u0119zyk."
+      },
+      { label: "Rozdajesz w klubie", desc: "Niech wszyscy cierpi\u0105 razem.", effects: { rep: 2 } }
+    ]
+  },
+  // ---------- Sparing z YouTuberem ----------
+  {
+    id: "youtuber.start",
+    app: "fotogram",
+    from: "@sparingi_z_gwiazdami",
+    title: "Sparing na lajcie?",
+    start: { weight: 4, cond: (s) => pro(s) && s.media >= 8 },
+    text: () => "Siema! Robi\u0119 seri\u0119 \u201ESparuj\u0119 z zawodowcami\u201D. Pi\u0119\u0107 minut, na lajcie, bez spiny. Kamera tylko dla pami\u0105tki.",
+    choices: () => [
+      {
+        label: "Idziesz",
+        desc: "Co mo\u017Ce p\xF3j\u015B\u0107 nie tak?",
+        chance: 50,
+        success: { media: 3, follow: { step: "youtuber.collab", after: 2 } },
+        successText: "YouTuber naprawd\u0119 idzie na lajcie. Film ma milion wy\u015Bwietle\u0144, a ty wygl\u0105dasz jak profesor.",
+        fail: { media: 2, rep: -2 },
+        failText: "Po 30 sekundach \u201Elajtu\u201D go\u015B\u0107 wali z ca\u0142ej si\u0142y. Do filmu wchodzi tylko moment, w kt\xF3rym trafia ciebie."
+      },
+      { label: "Odmawiasz", desc: "Nie jeste\u015B rekwizytem.", effects: { rep: 1 } }
+    ]
+  },
+  {
+    id: "youtuber.collab",
+    app: "fotogram",
+    from: "@sparingi_z_gwiazdami",
+    title: "Zr\xF3bmy co\u015B razem",
+    text: () => "Film zrobi\u0142 robot\u0119! Mam sponsora na drugi odcinek. Dzielimy si\u0119 po po\u0142owie. Tym razem ty uczysz mnie kopni\u0119\u0107.",
+    choices: (s) => [
+      { label: "Wchodzisz w to", desc: "Pieni\u0105dze za uczenie kopni\u0119\u0107.", effects: { money: zl(s, 800), media: 2 } },
+      { label: "Wystarczy jeden odcinek", desc: "Wracasz do sali.", effects: { rep: 1 } }
+    ]
+  },
+  // ---------- Suspensor ----------
+  {
+    id: "suspensor.start",
+    app: "gym",
+    from: "Trener",
+    title: "Godzina do walki",
+    start: { weight: 4, cond: (s, c) => pro(s) && !c.pre },
+    text: () => "Godzina do wej\u015Bcia. Trener grzebie w twojej torbie: \u201EGdzie jest suspensor?\u201D Suspensor jest w domu, na kaloryferze.",
+    choices: (s) => [
+      {
+        label: "Po\u017Cyczasz od kogo\u015B z karty",
+        desc: "Kto\u015B zawsze ma zapasowy.",
+        chance: 70,
+        success: { note: "zawodnik z karty wst\u0119pnej ratuje ci wiecz\xF3r" },
+        successText: "Zawodnik z karty wst\u0119pnej ma zapasowy. Pasuje. Nie pytasz o histori\u0119.",
+        fail: { nextFight: -2 },
+        failText: "Jedyny zapasowy jest o dwa rozmiary za ma\u0142y. Wchodzisz do klatki, my\u015Bl\u0105c tylko o tym."
+      },
+      { label: "Kolega biegnie do sklepu sportowego", desc: "Taks\xF3wka w dwie strony.", effects: { money: -zl(s, 150), nextFight: -1, note: "rozgrzewka w nerwach" } },
+      {
+        label: "Walczysz bez",
+        desc: "Kto nie ryzykuje\u2026",
+        chance: 80,
+        success: {},
+        successText: "Rywal nie kopie nisko. Masz szcz\u0119\u015Bcie, o kt\xF3rym nikomu nie powiesz.",
+        fail: { nextFight: -3, media: 1 },
+        failText: "Pierwsze kopni\u0119cie rywala l\u0105duje dok\u0142adnie tam. S\u0119dzia daje ci pi\u0119\u0107 minut. Wszyscy w hali sycz\u0105 razem z tob\u0105."
+      }
+    ]
+  },
+  // ---------- Ochraniacz zębów ----------
+  {
+    id: "zeby.start",
+    app: "gym",
+    from: "Mietek",
+    title: "Ochraniacz zgin\u0105\u0142",
+    start: { weight: 3, cond: (s, c) => pro(s) && !c.pre },
+    text: () => "Dwie godziny przed walk\u0105: ochraniacz z\u0119b\xF3w znikn\u0105\u0142. Ostatnio widziany w kieszeni bluzy, kt\xF3r\u0105 mama wypra\u0142a.",
+    choices: (s) => [
+      {
+        label: "Formujesz nowy w czajniku",
+        desc: "Czajnik z szatni, gor\u0105ca woda, z\u0119by.",
+        chance: 65,
+        success: {},
+        successText: "Wyszed\u0142 krzywo, ale trzyma. Smakuje jak czajnik z szatni.",
+        fail: { nextFight: -1 },
+        failText: "Za d\u0142ugo w wodzie. Ochraniacz jest mi\u0119kki jak guma do \u017Cucia i co rund\u0119 wypada."
+      },
+      {
+        label: "Walczysz bez ochraniacza",
+        desc: "Jak w dawnych czasach.",
+        chance: 75,
+        success: {},
+        successText: "\u017Badnego czystego trafienia w szcz\u0119k\u0119. Dentysta b\u0119dzie musia\u0142 poczeka\u0107.",
+        fail: { money: -zl(s, 800), note: "nowa jedynka" },
+        failText: "Jedno trafienie i jedynka zostaje w klatce. Dentysta liczy jak gala."
+      }
+    ]
+  },
+  // ---------- Mama w pierwszym rzędzie ----------
+  {
+    id: "mamarzad.start",
+    app: "sms",
+    from: "Mama",
+    title: "Kupi\u0142am bilet!",
+    start: { weight: 4, cond: (s, c) => pro(s) && !c.pre && s.relations >= -2 },
+    text: () => "Synek! Kupi\u0142am bilet w pierwszym rz\u0119dzie. Bior\u0119 cioci\u0119 Halin\u0119 i transparent. Nie m\xF3w nie.",
+    choices: () => [
+      {
+        label: "Cieszysz si\u0119",
+        desc: "Mama w pierwszym rz\u0119dzie to doping.",
+        chance: 70,
+        success: { relations: 2, nextFight: 1 },
+        successText: "S\u0142yszysz mam\u0119 przez ca\u0142\u0105 walk\u0119. To pomaga bardziej ni\u017C naro\u017Cnik.",
+        fail: { relations: 1, media: 2, nextFight: -1 },
+        failText: "Mama krzyczy na s\u0119dziego tak, \u017Ce ochrona prosi j\u0105 o spok\xF3j. Kamera telewizji pokazuje to dwa razy."
+      },
+      { label: "Prosisz, \u017Ceby ogl\u0105da\u0142a w domu", desc: "Nie chcesz jej stresowa\u0107.", effects: { relations: -2, nextFight: 1, note: "mama ogl\u0105da przez palce" } }
+    ]
+  },
+  // ---------- Urodziny tydzień przed walką ----------
+  {
+    id: "urodziny.start",
+    app: "sms",
+    from: "Kumpel Kamil",
+    title: "Urodziny w sobot\u0119",
+    start: { weight: 5, cond: (s) => s.age <= 30 },
+    text: () => "Stary, w sobot\u0119 moje 30. urodziny w \u201EPresti\u017Cu\u201D. Tydzie\u0144 przed twoj\u0105 walk\u0105, ale na chwil\u0119 wpadniesz, nie? Bez ciebie to nie to samo.",
+    choices: () => [
+      {
+        label: "Wpadasz na chwil\u0119",
+        desc: "Do 23:00, s\u0142owo.",
+        chance: 40,
+        success: { note: "wychodzisz o 23:00, jak obieca\u0142e\u015B" },
+        successText: "Wychodzisz o 23:00, jak obieca\u0142e\u015B. Kamil szcz\u0119\u015Bliwy, trener nie wie.",
+        fail: { nextFight: -3, media: 1 },
+        failText: "Wychodzisz o 5:00. Trener wie, bo kto\u015B wrzuci\u0142 relacj\u0119."
+      },
+      { label: "Idziesz i pijesz tylko wod\u0119", desc: "Najtrze\u017Awiejszy go\u015B\u0107 w historii \u201EPresti\u017Cu\u201D.", effects: { nextFight: -1, rep: 1 } },
+      { label: "Odmawiasz", desc: "Najpierw walka.", effects: { nextFight: 1, note: "Kamil m\xF3wi, \u017Ce jeste\u015B nudziarz" } }
+    ]
+  },
+  // ---------- Festyn parafialny ----------
+  {
+    id: "festyn.start",
+    app: "sms",
+    from: "Ksi\u0105dz proboszcz",
+    title: "Pokaz na festynie",
+    start: { weight: 3, cond: (s) => s.history.length >= 3 && s.tier <= 2 },
+    text: () => "Szcz\u0119\u015B\u0107 Bo\u017Ce. Na festynie parafialnym chcieliby\u015Bmy pokaz sztuk walki. Honorarium skromne: kie\u0142basa i b\u0142ogos\u0142awie\u0144stwo.",
+    choices: () => [
+      { label: "Robisz pokaz", desc: "Z wikarym jako przeciwnikiem.", effects: { rep: 2, relations: 2, media: 1, follow: { step: "festyn.ciasto", after: 1 } } },
+      { label: "Grzecznie odmawiasz", desc: "Ob\xF3z trwa.", effects: { relations: -1 } }
+    ]
+  },
+  {
+    id: "festyn.ciasto",
+    app: "wazka",
+    from: "Wa\u017Cka",
+    title: "Ciasto od Ko\u0142a Gospody\u0144",
+    text: () => "Panie z Ko\u0142a Gospody\u0144 Wiejskich da\u0142y ci na drog\u0119 p\xF3\u0142 blachy dro\u017Cd\u017Cowego z kruszonk\u0105. Wa\u017Cka pyta, czy wpisa\u0107 \u201Eciasto, 1 sztuka\u201D.",
+    choices: () => [
+      { label: "Zjadasz", desc: "Nie godzi si\u0119 odm\xF3wi\u0107.", effects: { relations: 1, nextFight: -1, note: "+1,2 kg na wadze" } },
+      { label: "Oddajesz trenerowi", desc: "Trener te\u017C cz\u0142owiek.", effects: { rep: 1, note: "trener zjada ca\u0142\u0105 blach\u0119" } }
+    ]
+  },
+  // ---------- Radny przed wyborami ----------
+  {
+    id: "radny.start",
+    app: "sms",
+    from: "Radny Kazimierz",
+    title: "Zdj\u0119cie z pasem?",
+    start: { weight: 3, cond: (s) => s.belts.length > 0 || s.medals.gold > 0 },
+    text: () => "Dzie\u0144 dobry, radny Kazimierz. Chcia\u0142bym zdj\u0119cie z panem i pasem. W zamian za\u0142atwi\u0119 nowe maty dla klubu, s\u0142owo radnego.",
+    choices: () => [
+      {
+        label: "Robisz zdj\u0119cie",
+        desc: "Klub potrzebuje mat.",
+        chance: 55,
+        success: { nextFight: 1, rep: 1, note: "klub dostaje nowe maty" },
+        successText: "Maty przychodz\u0105 po tygodniu. Radny nawet przyjecha\u0142 je rozpakowa\u0107.",
+        fail: { rep: -2, media: 1 },
+        failText: "Maty nie przysz\u0142y, a twoje zdj\u0119cie wisi na plakacie wyborczym przy ka\u017Cdym przystanku."
+      },
+      { label: "Odmawiasz", desc: "Sport to nie polityka.", effects: { rep: 1 } }
+    ]
+  },
+  // ---------- Telewizja śniadaniowa ----------
+  {
+    id: "tv.start",
+    app: "klatka",
+    from: "Kawa z Mlekiem TV",
+    title: "Telewizja \u015Bniadaniowa",
+    start: { weight: 3, cond: (s) => pro(s) && s.media >= 15 },
+    text: () => "Telewizja \u015Bniadaniowa zaprasza: pi\u0119\u0107 minut o samoobronie dla kobiet, z prezenterk\u0105 jako \u201Enapastnikiem\u201D. Na \u017Cywo, o 8:15.",
+    choices: () => [
+      {
+        label: "Jedziesz do studia",
+        desc: "Pobudka o 5:00.",
+        chance: 70,
+        success: { media: 4, rep: 1 },
+        successText: "Prezenterka zachwycona, a twoja mama nagrywa telewizor telefonem.",
+        fail: { media: 3, rep: -1 },
+        failText: "Rzucasz prezenterk\u0119 troch\u0119 za mocno. Ona si\u0119 \u015Bmieje, internet nie."
+      },
+      { label: "Odmawiasz", desc: "\u015Apisz do 9:00.", effects: { nextFight: 1 } }
+    ]
+  },
+  // ---------- Fan z tatuażem ----------
+  {
+    id: "tatuaz.start",
+    app: "fotogram",
+    from: "@fan_nr1",
+    title: "Mam ci\u0119 na \u0142ydce!",
+    start: { weight: 3, cond: (s) => pro(s) && s.media >= 12 },
+    text: () => "Fan wrzuca zdj\u0119cie: wytatuowa\u0142 sobie twoj\u0105 twarz na \u0142ydce. Podobie\u0144stwo umiarkowane. Bardziej przypomina twojego trenera.",
+    choices: () => [
+      { label: "Repost z podzi\u0119kowaniem", desc: "Szacunek dla kibica.", effects: { media: 3, rep: 1, follow: { step: "tatuaz.gala", after: 1 } } },
+      { label: "\u201ETo nie ja\u201D", desc: "Bo troch\u0119 nie ty.", effects: { media: 2, rep: -1 } }
+    ]
+  },
+  {
+    id: "tatuaz.gala",
+    app: "fotogram",
+    from: "@fan_nr1",
+    title: "B\u0119d\u0119 na gali!",
+    text: () => "Fan z tatua\u017Cem kupi\u0142 bilet. Ma transparent, tr\u0105bk\u0119 i koleg\xF3w z ca\u0142ej klasy maturalnej z 2009 roku.",
+    choices: () => [
+      { label: "Za\u0142atwiasz im wej\u015Bcie do szatni", desc: "Zdj\u0119cie po walce.", effects: { nextFight: 1, media: 1 } },
+      { label: "Dzi\u0119kujesz i tyle", desc: "Skupienie przed walk\u0105.", effects: { nextFight: 1 } }
+    ]
+  },
+  // ---------- Darek pożycza ----------
+  {
+    id: "darek.start",
+    app: "sms",
+    from: "Darek z podstaw\xF3wki",
+    title: "Po\u017Cyczysz do pi\u0105tku?",
+    start: { weight: 4, cond: (s) => s.money > zl(s, 1e3) },
+    text: (s) => `Stary, po\u017Cycz ${zl(s, 500)} z\u0142 do pi\u0105tku. Oddam co do grosza, wiesz, \u017Ce jestem s\u0142owny.`,
+    choices: (s) => [
+      { label: "Po\u017Cyczasz", desc: "Kumpel to kumpel.", effects: { money: -zl(s, 500), follow: { step: "darek.piatek", after: 2 } } },
+      { label: "Odmawiasz", desc: "Pami\u0119tasz rower z 2011 roku.", effects: { note: "Darek pisze \u201Espoko\u201D i nic wi\u0119cej" } }
+    ]
+  },
+  {
+    id: "darek.piatek",
+    app: "sms",
+    from: "Darek z podstaw\xF3wki",
+    title: "Ten pi\u0105tek",
+    text: () => "Min\u0119\u0142y trzy pi\u0105tki. Darek wrzuca na Fotogram zdj\u0119cia z Egiptu.",
+    choices: (s) => [
+      {
+        label: "Przypominasz si\u0119",
+        desc: "Komentarz pod zdj\u0119ciem z basenu.",
+        chance: 45,
+        success: { money: zl(s, 500) },
+        successText: "Darek oddaje ca\u0142o\u015B\u0107 i dorzuca magnes na lod\xF3wk\u0119 z wielb\u0142\u0105dem.",
+        fail: { note: "Darek zmieni\u0142 numer" },
+        failText: "Darek odpisuje \u201Ejutro\u201D. Potem zmienia numer."
+      },
+      { label: "Odpuszczasz", desc: "Lekcja kosztuje.", effects: { rep: 1 } }
+    ]
+  },
+  // ---------- Klucze do sali ----------
+  {
+    id: "klucze.start",
+    app: "gym",
+    from: "Trener",
+    title: "Kto zamyka\u0142 sal\u0119?",
+    start: { weight: 3, cond: (s) => s.clubSeasons >= 1 },
+    text: () => "Rano sala otwarta, klucze w zamku, nie ma dw\xF3ch work\xF3w i czajnika. Na grupie trener pyta: \u201EKto wczoraj zamyka\u0142?\u201D. Zamyka\u0142e\u015B ty.",
+    choices: (s) => [
+      { label: "Przyznajesz si\u0119 i odkupujesz", desc: "Worki i czajnik.", effects: { money: -zl(s, 700), rep: 1 } },
+      {
+        label: "M\xF3wisz, \u017Ce to nie ty",
+        desc: "Kamera przecie\u017C jest atrap\u0105.",
+        chance: 30,
+        success: {},
+        successText: "Nikt nie dochodzi prawdy. Czajnika i tak nikt nie lubi\u0142.",
+        fail: { rep: -2, nextFight: -1 },
+        failText: "Okazuje si\u0119, \u017Ce trener w ko\u0144cu pod\u0142\u0105czy\u0142 kamer\u0119. Tydzie\u0144 zbierasz r\u0119czniki po wszystkich."
+      }
+    ]
+  },
+  // ---------- Ola i weekend ----------
+  {
+    id: "ola.start",
+    app: "sms",
+    from: "Ola",
+    title: "Weekend w g\xF3rach?",
+    start: { weight: 4, cond: (s) => s.age >= 19 && s.age <= 34 },
+    text: () => "Kochanie, mam wolny weekend. Jedziemy w g\xF3ry? Wiem, \u017Ce za tydzie\u0144 masz walk\u0119, ale ostatnio widzimy si\u0119 tylko na Fotogramie.",
+    choices: (s) => [
+      { label: "Jedziecie", desc: "G\xF3ry, schronisko, zero trening\xF3w.", effects: { relations: 2, nextFight: -1 } },
+      {
+        label: "Proponujesz po walce",
+        desc: "Obiecujesz najlepszy weekend w \u017Cyciu.",
+        chance: 60,
+        success: { relations: 1 },
+        successText: "Ola rozumie i rezerwuje pok\xF3j na termin po walce.",
+        fail: { relations: -2 },
+        failText: "Ola jedzie z kole\u017Cank\u0105. Zdj\u0119cia z g\xF3r ogl\u0105dasz mi\u0119dzy sparingami."
+      },
+      { label: "Zabierasz j\u0105 na ob\xF3z", desc: "Ona czyta, ty biegasz po g\xF3rach.", effects: { money: -zl(s, 400), relations: 1 } }
+    ]
+  },
+  // ---------- Rywal pisze ----------
+  {
+    id: "rywal.start",
+    app: "fotogram",
+    from: "Najbli\u017Cszy rywal",
+    title: "Wiadomo\u015B\u0107 od rywala",
+    start: { weight: 3, cond: (s, c) => pro(s) && !c.pre },
+    text: () => "Tw\xF3j najbli\u017Cszy rywal pisze prywatnie: \u201ESzacunek, nic osobistego. Po walce piwo, niezale\u017Cnie od wyniku?\u201D",
+    choices: () => [
+      { label: "\u201EJasne, szacunek\u201D", desc: "Sport to sport.", effects: { rep: 2 } },
+      { label: "Wrzucasz zrzut z dopiskiem \u201Eboi si\u0119\u201D", desc: "Psychologia przed walk\u0105.", effects: { media: 3, rep: -2, nextFight: 1 } },
+      { label: "Nie odpisujesz", desc: "Skupienie.", effects: {} }
+    ]
+  },
+  // ---------- Zgubiony bagaż ----------
+  {
+    id: "bagaz.start",
+    app: "mapka",
+    from: "Linie lotnicze",
+    title: "Baga\u017C nie dolecia\u0142",
+    start: { weight: 4, cond: (s, c) => s.tier >= 3 && !c.pre },
+    text: () => "\u201EPrzepraszamy, Tw\xF3j baga\u017C polecia\u0142 do Lizbony. Zwr\xF3cimy go w ci\u0105gu 3\u20135 dni roboczych.\u201D Gala za 2 dni. W baga\u017Cu ca\u0142y sprz\u0119t.",
+    choices: (s) => [
+      { label: "Kupujesz wszystko na miejscu", desc: "Ceny jak w strefie wolnoc\u0142owej.", effects: { money: -zl(s, 1e3), gear: -30 } },
+      { label: "Po\u017Cyczasz od miejscowego klubu", desc: "R\u0119kawice z histori\u0105.", effects: { gear: 15, nextFight: -1 } }
+    ]
+  },
+  // ---------- Dwie wagi ----------
+  {
+    id: "waga.start",
+    app: "wazka",
+    from: "Wa\u017Cka",
+    title: "Kt\xF3ra waga k\u0142amie?",
+    start: { weight: 3, cond: (s) => pro(s) },
+    text: () => "Waga w \u0142azience pokazuje 2 kg mniej ni\u017C waga na sali. Wa\u017Cka grzecznie pyta, kt\xF3rej wadze wierzysz.",
+    choices: (s) => [
+      {
+        label: "Wierzysz \u0142azienkowej",
+        desc: "Jest nowsza.",
+        chance: 30,
+        success: {},
+        successText: "K\u0142ama\u0142a waga na sali. Trener j\u0105 wyrzuca.",
+        fail: { nextFight: -3 },
+        failText: "K\u0142ama\u0142a \u0142azienkowa. Ostatnie trzy dni zbijasz wag\u0119 w saunie."
+      },
+      { label: "Kupujesz wag\u0119 z atestem", desc: "Koniec zgadywania.", effects: { money: -zl(s, 300), nextFight: 1 } }
+    ]
+  }
+];
+function findStep(id) {
+  return THREADS.find((t) => t.id === id);
+}
+
+// src/engine/errands.ts
+var sc2 = (s) => [1, 1.5, 3, 5, 8][Math.min(4, Math.max(0, s.tier))] ?? 1;
+var zl2 = (s, n) => Math.max(50, Math.round(n * sc2(s) / 50) * 50);
+var ERRANDS_PER_YEAR = 2;
+var ERRANDS = [
+  {
+    id: "bramka",
+    name: "Zmiana na bramce",
+    hours: 3,
+    desc: "Noc w klubie \u201EPresti\u017C\u201D. Kasa do r\u0119ki, sen w plecy.",
+    cond: (s) => s.age >= 18 && s.tier <= 2,
+    outcomes: (s) => [
+      { w: 6, text: "Spokojna noc. Najgro\u017Aniejszy by\u0142 pan w garniturze, kt\xF3ry chcia\u0142 wej\u015B\u0107 z kotem.", effects: { money: zl2(s, 400), wear: 1 } },
+      { w: 3, text: "O 3:40 trzech go\u015Bci pr\xF3buje wej\u015B\u0107 bez kolejki. Wychodz\u0105 szybciej, ni\u017C przyszli. Szef bramki dorzuca premi\u0119.", effects: { money: zl2(s, 550), rep: 1, wear: 2 } },
+      { w: 2, text: "Kto\u015B nagrywa, jak wyprowadzasz awanturnika. Film kr\u0105\u017Cy po osiedlowych grupach.", effects: { money: zl2(s, 400), media: 2, rep: -1 } },
+      { w: 1, text: "Awanturnik okaza\u0142 si\u0119 zapa\u015Bnikiem. Wygrywasz, ale nadgarstek boli przez tydzie\u0144.", effects: { money: zl2(s, 400), wear: 4, nextFight: -1 } }
+    ]
+  },
+  {
+    id: "seminarium",
+    name: "Seminarium parterowe",
+    hours: 2,
+    desc: "Czarny pas z Brazylii, sala gimnastyczna w liceum, 40 os\xF3b na macie.",
+    cost: (s) => zl2(s, 250),
+    outcomes: () => [
+      { w: 5, text: "Trzy nowe wej\u015Bcia w tr\xF3jk\u0105t i jedno, kt\xF3rego nikt nie umia\u0142 powt\xF3rzy\u0107. Ty umia\u0142e\u015B.", effects: { stats: { bjj: 1 } } },
+      { w: 2, text: "Instruktor bierze ci\u0119 do pokaz\xF3w. Dwie godziny bycia manekinem ucz\u0105 wi\u0119cej ni\u017C tydzie\u0144 na sali.", effects: { stats: { bjj: 1, iq: 1 }, wear: 1 } },
+      { w: 1, text: "Po\u0142owa seminarium o oddychaniu i \u201Eflow\u201D. Wychodzisz zrelaksowany i bez nowych technik.", effects: { wear: -2 } }
+    ]
+  },
+  {
+    id: "fizjo",
+    name: "Fizjoterapeuta",
+    hours: 1,
+    desc: "Pani Ewa ma r\u0119ce jak imad\u0142o i zero lito\u015Bci.",
+    cost: (s) => zl2(s, 200),
+    outcomes: () => [
+      { w: 6, text: "Pani Ewa znajduje trzy spi\u0119cia, o kt\xF3rych nie wiedzia\u0142e\u015B. Wychodzisz l\u017Cejszy o pi\u0119\u0107 lat.", effects: { wear: -5 } },
+      { w: 2, text: "Godzina, po kt\xF3rej nie mo\u017Cesz podnie\u015B\u0107 r\u0119ki do telefonu. Nast\u0119pnego dnia czujesz si\u0119 jak nowy.", effects: { wear: -7 } }
+    ]
+  },
+  {
+    id: "budowa",
+    name: "Fucha na budowie",
+    hours: 2,
+    desc: "Kuzyn wylewa fundament i potrzebuje kogo\u015B do taczki.",
+    cond: (s) => s.tier <= 1,
+    outcomes: (s) => [
+      { w: 5, text: "Dwie godziny taczki. Kuzyn p\u0142aci got\xF3wk\u0105 i m\xF3wi, \u017Ce jeste\u015B \u201Esilny jak ko\u0144, ale wolny\u201D.", effects: { money: zl2(s, 300), wear: 2 } },
+      { w: 2, text: "Betoniarka si\u0119 psuje, wi\u0119c mieszasz \u0142opat\u0105. Plecy pami\u0119taj\u0105 to do wieczora.", effects: { money: zl2(s, 350), wear: 4 } },
+      { w: 1, text: "Kierownik budowy rozpoznaje ci\u0119 z gali i ka\u017Ce tylko robi\u0107 sobie z nim zdj\u0119cia. P\u0142aci tak samo.", effects: { money: zl2(s, 300), media: 1 } }
+    ]
+  },
+  {
+    id: "dzieci",
+    name: "Trening dla dzieci",
+    hours: 1,
+    desc: "Grupa 7\u201310 lat. Dwunastu ma\u0142ych zawodnik\xF3w i jeden plan zaj\u0119\u0107.",
+    outcomes: (s) => [
+      { w: 5, text: "Dzieci ucz\u0105 si\u0119 przewrot\xF3w, ty uczysz si\u0119 cierpliwo\u015Bci. Rodzice robi\u0105 zdj\u0119cia.", effects: { money: zl2(s, 150), rep: 1 } },
+      { w: 2, text: "Ma\u0142y Antek zak\u0142ada ci duszenie zza plec\xF3w. Ca\u0142a grupa krzyczy, a ty udajesz, \u017Ce klepiesz.", effects: { money: zl2(s, 150), rep: 1, relations: 1 } },
+      { w: 1, text: "Jedno dziecko p\u0142acze, drugie gryzie, trzecie pyta, ile zarabiasz. Wychodzisz zm\u0119czony bardziej ni\u017C po sparingu.", effects: { money: zl2(s, 150), wear: 1 } }
+    ]
+  },
+  {
+    id: "openmat",
+    name: "Open mat w obcym klubie",
+    hours: 2,
+    desc: "Klub z drugiego ko\u0144ca miasta. Nikt ci\u0119 nie zna, wszyscy chc\u0105 ci\u0119 sprawdzi\u0107.",
+    outcomes: () => [
+      { w: 4, text: "Miejscowy \u201Eniebieski pas\u201D chcia\u0142 si\u0119 sprawdzi\u0107. Sprawdzi\u0142. Wymieniacie si\u0119 numerami.", effects: { stats: { wrest: 1 }, rep: 1 } },
+      { w: 3, text: "Trafiasz na by\u0142ego zapa\u015Bnika kadry. Godzina pod nim to lekcja, kt\xF3rej nie kupisz.", effects: { stats: { wrest: 1 }, wear: 2 } },
+      { w: 1, text: "Kto\u015B idzie na sto procent i trafia ci\u0119 \u0142okciem. \u0141uk brwiowy do szycia.", effects: { wear: 4, nextFight: -1 } }
+    ]
+  },
+  {
+    id: "sesja",
+    name: "Sesja zdj\u0119ciowa sponsora",
+    hours: 1,
+    desc: "Fotograf, o\u015Bwietlenie i produkt sponsora w ka\u017Cdym kadrze.",
+    cond: (s) => s.sponsors.length > 0,
+    outcomes: (s) => [
+      { w: 5, text: "Godzina pozowania z produktem. Zdj\u0119cia wychodz\u0105 \u015Bwietnie, sponsor zadowolony.", effects: { money: zl2(s, 300), media: 2 } },
+      { w: 2, text: "Fotograf ka\u017Ce ci \u201Epatrze\u0107 gro\u017Anie, ale przyja\u017Anie\u201D. Po 200 zdj\u0119ciach jedno si\u0119 nadaje. To wystarczy.", effects: { money: zl2(s, 300), media: 1 } }
+    ]
+  }
+];
+function findErrand(id) {
+  return ERRANDS.find((e) => e.id === id);
 }
 
 // src/engine/data.ts
@@ -2110,7 +3438,7 @@ function cash(s, frac, min = 100, max = Infinity) {
   return Math.round(raw / step) * step;
 }
 var inBanda = (s) => s.sponsors.some((x) => x.name === "Ground Game");
-var zl = (n) => `${n.toLocaleString("pl-PL")} z\u0142`;
+var zl3 = (n) => `${n.toLocaleString("pl-PL")} z\u0142`;
 var MONEY_EVENTS = [
   {
     id: "skrzynia_passat",
@@ -2118,8 +3446,8 @@ var MONEY_EVENTS = [
     weight: 2,
     cond: (s) => s.age >= 19 && s.tier <= 2,
     text: (s) => vary(s, [
-      `Znowu pad\u0142a skrzynia bieg\xF3w w passacie. Mechanik kr\u0119ci g\u0142ow\u0105: \u201E${zl(cash(s, 0.09, 600, 9e3))} i b\u0119dzie jak nowa. Prawie.\u201D`,
-      `W drodze na trening passat wydaje d\u017Awi\u0119k, kt\xF3rego nie powinien wydawa\u0107 \u017Caden samoch\xF3d. Diagnoza: skrzynia. Wycena: ${zl(cash(s, 0.09, 600, 9e3))}.`
+      `Znowu pad\u0142a skrzynia bieg\xF3w w passacie. Mechanik kr\u0119ci g\u0142ow\u0105: \u201E${zl3(cash(s, 0.09, 600, 9e3))} i b\u0119dzie jak nowa. Prawie.\u201D`,
+      `W drodze na trening passat wydaje d\u017Awi\u0119k, kt\xF3rego nie powinien wydawa\u0107 \u017Caden samoch\xF3d. Diagnoza: skrzynia. Wycena: ${zl3(cash(s, 0.09, 600, 9e3))}.`
     ]),
     choices: (s) => [
       { label: "Naprawiasz u mechanika", desc: "Drogo, ale na gwarancji.", effects: { money: -cash(s, 0.09, 600, 9e3) } },
@@ -2141,8 +3469,8 @@ var MONEY_EVENTS = [
     weight: 4,
     cond: (s) => s.tier >= 1,
     text: (s) => vary(s, [
-      `Kumpel, z kt\xF3rym kiedy\u015B rolowa\u0142e\u015B na ka\u017Cdym treningu, otworzy\u0142 firm\u0119 z oknami. Chce ci\u0119 wesprze\u0107 przed najbli\u017Csz\u0105 walk\u0105: ${zl(cash(s, 0.08, 600, 25e3))} za logo na banerze.`,
-      `Stary znajomy z maty prowadzi teraz warsztat. Dzwoni: \u201ES\u0142uchaj, mam ${zl(cash(s, 0.08, 600, 25e3))}, wrzuc\u0119 ci\u0119 na naklejki i jedziemy\u201D.`
+      `Kumpel, z kt\xF3rym kiedy\u015B rolowa\u0142e\u015B na ka\u017Cdym treningu, otworzy\u0142 firm\u0119 z oknami. Chce ci\u0119 wesprze\u0107 przed najbli\u017Csz\u0105 walk\u0105: ${zl3(cash(s, 0.08, 600, 25e3))} za logo na banerze.`,
+      `Stary znajomy z maty prowadzi teraz warsztat. Dzwoni: \u201ES\u0142uchaj, mam ${zl3(cash(s, 0.08, 600, 25e3))}, wrzuc\u0119 ci\u0119 na naklejki i jedziemy\u201D.`
     ]),
     choices: (s) => [
       { label: "Bierzesz i dzi\u0119kujesz", desc: "Logo na banerze, zdj\u0119cie z ekip\u0105.", effects: { money: cash(s, 0.08, 600, 25e3), relations: 1 } },
@@ -2155,7 +3483,7 @@ var MONEY_EVENTS = [
     title: "List z fotoradaru",
     weight: 2,
     cond: (s) => s.age >= 19,
-    text: (s) => `W skrzynce koperta: zdj\u0119cie twojego auta, 82 km/h w terenie zabudowanym, w drodze na sparing. Do zap\u0142aty ${zl(cash(s, 0.02, 200, 1500))}.`,
+    text: (s) => `W skrzynce koperta: zdj\u0119cie twojego auta, 82 km/h w terenie zabudowanym, w drodze na sparing. Do zap\u0142aty ${zl3(cash(s, 0.02, 200, 1500))}.`,
     choices: (s) => [
       { label: "P\u0142acisz", desc: "Lekcja kosztuje.", effects: { money: -cash(s, 0.02, 200, 1500) } },
       { label: "Odwo\u0142ujesz si\u0119", desc: "Piszesz pismo, \u017Ce to nie ty prowadzi\u0142e\u015B.", chance: 30, success: { note: "umorzone" }, fail: { money: -cash(s, 0.03, 300, 2500), note: "z odsetkami" }, successText: "Sprawa umorzona. Nie pytaj, jak.", failText: "Odwo\u0142anie odrzucone. P\u0142acisz wi\u0119cej, z kosztami." }
@@ -2166,7 +3494,7 @@ var MONEY_EVENTS = [
     title: "Zwrot podatku",
     weight: 4,
     cond: (s) => s.tier >= 1,
-    text: (s) => `Ksi\u0119gowa dzwoni z dobr\u0105 wiadomo\u015Bci\u0105: z rozliczenia wychodzi zwrot ${zl(cash(s, 0.06, 400))}. Pierwszy raz w \u017Cyciu urz\u0105d co\u015B ci oddaje.`,
+    text: (s) => `Ksi\u0119gowa dzwoni z dobr\u0105 wiadomo\u015Bci\u0105: z rozliczenia wychodzi zwrot ${zl3(cash(s, 0.06, 400))}. Pierwszy raz w \u017Cyciu urz\u0105d co\u015B ci oddaje.`,
     choices: (s) => [
       { label: "Odk\u0142adasz", desc: "Na gorsze czasy.", effects: { money: cash(s, 0.06, 400) } },
       { label: "Nowy sprz\u0119t dla klubu", desc: "Worki dla dzieciak\xF3w z sekcji.", effects: { money: Math.round(cash(s, 0.06, 400) / 3), rep: 2, relations: 1 } }
@@ -2177,7 +3505,7 @@ var MONEY_EVENTS = [
     title: "Pismo z urz\u0119du",
     weight: 2,
     cond: (s) => s.tier >= 2,
-    text: (s) => `Urz\u0105d skarbowy znalaz\u0142 b\u0142\u0105d w twoim zeznaniu sprzed dw\xF3ch lat. Dop\u0142ata z odsetkami: ${zl(cash(s, 0.05, 1e3))}.`,
+    text: (s) => `Urz\u0105d skarbowy znalaz\u0142 b\u0142\u0105d w twoim zeznaniu sprzed dw\xF3ch lat. Dop\u0142ata z odsetkami: ${zl3(cash(s, 0.05, 1e3))}.`,
     choices: (s) => [
       { label: "P\u0142acisz od razu", desc: "\u015Awi\u0119ty spok\xF3j.", effects: { money: -cash(s, 0.05, 1e3) } },
       { label: "Bierzesz doradc\u0119", desc: "Kosztuje, ale mo\u017Ce co\u015B wywalczy.", chance: 50, success: { money: -cash(s, 0.02, 500), note: "cz\u0119\u015B\u0107 umorzona" }, fail: { money: -cash(s, 0.07, 1500), note: "doradca te\u017C chce zap\u0142aty" }, successText: "Doradca znajduje ulg\u0119, o kt\xF3rej nie mia\u0142e\u015B poj\u0119cia. P\u0142acisz mniej ni\u017C po\u0142ow\u0119.", failText: "Urz\u0105d si\u0119 nie ugina, a doradca wystawia faktur\u0119." }
@@ -2199,7 +3527,7 @@ var MONEY_EVENTS = [
     title: "Seminarium w klubie",
     weight: 4,
     cond: (s) => s.tier >= 1 && s.media >= 12,
-    text: (s) => `Klub z twojego wojew\xF3dztwa zaprasza ci\u0119 na seminarium. Dwie godziny techniki i zdj\u0119cia z dzieciakami, ${zl(cash(s, 0.07, 500, 35e3))} do r\u0119ki.`,
+    text: (s) => `Klub z twojego wojew\xF3dztwa zaprasza ci\u0119 na seminarium. Dwie godziny techniki i zdj\u0119cia z dzieciakami, ${zl3(cash(s, 0.07, 500, 35e3))} do r\u0119ki.`,
     choices: (s) => [
       { label: "Jedziesz", desc: "Pokazujesz swoje ulubione techniki.", effects: { money: cash(s, 0.07, 500, 35e3), rep: 1, stats: { iq: 1 } } },
       { label: "Odpuszczasz", desc: "Weekend na regeneracj\u0119.", effects: { wear: -2 } }
@@ -2223,7 +3551,7 @@ var MONEY_EVENTS = [
     once: true,
     weight: 4,
     cond: (s) => s.tier >= 1 && s.media >= 30,
-    text: (s) => `Kibice z twojego miasta za\u0142o\u017Cyli zrzutk\u0119 \u201Ena ob\xF3z dla naszego ch\u0142opaka\u201D. Zebrali ${zl(cash(s, 0.08, 800, 5e4))}.`,
+    text: (s) => `Kibice z twojego miasta za\u0142o\u017Cyli zrzutk\u0119 \u201Ena ob\xF3z dla naszego ch\u0142opaka\u201D. Zebrali ${zl3(cash(s, 0.08, 800, 5e4))}.`,
     choices: (s) => [
       { label: "Przyjmujesz", desc: "Dzi\u0119kujesz w filmiku i obiecujesz walk\u0119 na ca\u0142ego.", effects: { money: cash(s, 0.08, 800, 5e4), media: 2, form: 1 } },
       { label: "Przekazujesz na sekcj\u0119 dzieci", desc: "Niech m\u0142odzi maj\u0105 r\u0119kawice.", effects: { rep: 4, media: 3, relations: 1 } }
@@ -2291,7 +3619,7 @@ var MONEY_EVENTS = [
     title: "Pizzeria spod bloku",
     weight: 4,
     cond: (s) => s.tier >= 1 && s.tier <= 2,
-    text: (s) => `W\u0142a\u015Bciciel pizzerii spod bloku chce ci\u0119 na plakacie: \u201EPizza Mistrza\u201D z podw\xF3jnym salami. P\u0142aci ${zl(cash(s, 0.04, 400, 15e3))} i do\u017Cywotni\u0105 darmow\u0105 pizz\u0119.`,
+    text: (s) => `W\u0142a\u015Bciciel pizzerii spod bloku chce ci\u0119 na plakacie: \u201EPizza Mistrza\u201D z podw\xF3jnym salami. P\u0142aci ${zl3(cash(s, 0.04, 400, 15e3))} i do\u017Cywotni\u0105 darmow\u0105 pizz\u0119.`,
     choices: (s) => [
       { label: "Robisz zdj\u0119cie z pizz\u0105", desc: "Z min\u0105 zwyci\u0119zcy.", effects: { money: cash(s, 0.04, 400, 15e3), media: 1, rep: -1, form: -1 } },
       { label: "Tylko kasa, bez pizzy", desc: "Dieta przed walk\u0105.", effects: { money: cash(s, 0.04, 400, 15e3), rep: -1 } },
@@ -2304,7 +3632,7 @@ var MONEY_EVENTS = [
     once: true,
     weight: 4,
     cond: (s) => s.tier >= 1 && s.tier <= 3 && s.rep >= 20,
-    text: (s) => `Rada miasta przyznaje ci stypendium sportowe: ${zl(cash(s, 0.09, 1500, 25e3))}. Trzeba tylko przyj\u015B\u0107 na sesj\u0119 i potrzyma\u0107 czek.`,
+    text: (s) => `Rada miasta przyznaje ci stypendium sportowe: ${zl3(cash(s, 0.09, 1500, 25e3))}. Trzeba tylko przyj\u015B\u0107 na sesj\u0119 i potrzyma\u0107 czek.`,
     choices: (s) => [
       { label: "Idziesz na sesj\u0119", desc: "Garnitur, u\u015Bmiech, zdj\u0119cie z burmistrzem.", effects: { money: cash(s, 0.09, 1500, 25e3), rep: 2 } },
       { label: "Wysy\u0142asz trenera", desc: "Ty masz trening.", effects: { money: cash(s, 0.09, 1500, 25e3), relations: -1 } }
@@ -2326,7 +3654,7 @@ var MONEY_EVENTS = [
     title: "ZUS",
     weight: 2,
     cond: (s) => s.tier >= 1,
-    text: (s) => `Pierwszy raz widzisz na koncie, ile kosztuje ZUS za dzia\u0142alno\u015B\u0107. Ksi\u0119gowa m\xF3wi, \u017Ce ${zl(cash(s, 0.03, 400, 6e3))} zaleg\u0142o\u015Bci trzeba wp\u0142aci\u0107 do ko\u0144ca miesi\u0105ca.`,
+    text: (s) => `Pierwszy raz widzisz na koncie, ile kosztuje ZUS za dzia\u0142alno\u015B\u0107. Ksi\u0119gowa m\xF3wi, \u017Ce ${zl3(cash(s, 0.03, 400, 6e3))} zaleg\u0142o\u015Bci trzeba wp\u0142aci\u0107 do ko\u0144ca miesi\u0105ca.`,
     choices: (s) => [
       { label: "P\u0142acisz", desc: "Z ci\u0119\u017Ckim sercem.", effects: { money: -cash(s, 0.03, 400, 6e3) } },
       { label: "Negocjujesz z ZUS-em", desc: "Pismo o roz\u0142o\u017Cenie i umorzenie odsetek.", chance: 50, success: { money: -Math.round(cash(s, 0.03, 400, 6e3) * 0.7 / 10) * 10, note: "umorzone odsetki" }, fail: { money: -Math.round(cash(s, 0.03, 400, 6e3) * 1.2 / 10) * 10, note: "odsetki za zw\u0142ok\u0119" }, successText: "ZUS umarza odsetki. P\u0142acisz mniej, ni\u017C si\u0119 ba\u0142e\u015B.", failText: "Odmowa, a w mi\u0119dzyczasie naliczy\u0142y si\u0119 odsetki za zw\u0142ok\u0119." }
@@ -3194,7 +4522,7 @@ var REP_EVENTS = [
 
 // src/engine/events_stage.ts
 var vary5 = (s, arr) => arr[(s.season * 7 + s.age * 3) % arr.length];
-var zl2 = (n) => `${n.toLocaleString("pl-PL")} z\u0142`;
+var zl4 = (n) => `${n.toLocaleString("pl-PL")} z\u0142`;
 var mid = (s) => s.tier >= 1 && s.tier <= 3 && s.contract.kind !== "freak";
 var STAGE_EVENTS = [
   // ---------- Narodziny rywalizacji ----------
@@ -3268,7 +4596,7 @@ var STAGE_EVENTS = [
     title: "Zaproszenie na ob\xF3z",
     weight: 2,
     cond: (s) => s.tier >= 2 && s.rank !== null && s.rank <= 6,
-    text: (s) => `Najmocniejszy klub w kraju zaprasza ci\u0119 na dwa tygodnie obozu z ich czo\u0142\xF3wk\u0105. Koszty pobytu po twojej stronie: ${zl2(cash(s, 0.05, 2e3, 15e3))}. Tw\xF3j trener udaje, \u017Ce si\u0119 cieszy.`,
+    text: (s) => `Najmocniejszy klub w kraju zaprasza ci\u0119 na dwa tygodnie obozu z ich czo\u0142\xF3wk\u0105. Koszty pobytu po twojej stronie: ${zl4(cash(s, 0.05, 2e3, 15e3))}. Tw\xF3j trener udaje, \u017Ce si\u0119 cieszy.`,
     choices: (s) => [
       { label: "Jedziesz", desc: "Sparingi z najlepszymi w Polsce.", effects: { money: -cash(s, 0.05, 2e3, 15e3), stats: { wrest: 1, iq: 1 }, relations: -1 } },
       { label: "Zostajesz w swoim klubie", desc: "Lojalno\u015B\u0107 te\u017C co\u015B znaczy.", effects: { relations: 3 } }
@@ -3328,7 +4656,7 @@ var STAGE_EVENTS = [
     cond: (s) => s.age >= 32 && s.wear >= 30,
     text: () => "Rano schodzenie z \u0142\xF3\u017Cka zajmuje ci dwie minuty. Barki strzelaj\u0105, kolana trzeszcz\u0105, a po sparingu potrzebujesz trzech dni zamiast jednego.",
     choices: (s) => [
-      { label: "Fizjoterapia i joga", desc: `Dwa razy w tygodniu, ${zl2(cash(s, 0.03, 1e3, 12e3))} za rok.`, effects: { money: -cash(s, 0.03, 1e3, 12e3), wear: -6 } },
+      { label: "Fizjoterapia i joga", desc: `Dwa razy w tygodniu, ${zl4(cash(s, 0.03, 1e3, 12e3))} za rok.`, effects: { money: -cash(s, 0.03, 1e3, 12e3), wear: -6 } },
       { label: "Mniej sparing\xF3w", desc: "Wi\u0119cej techniki, mniej wojny.", effects: { wear: -3, form: -1 } },
       { label: "Zaciskasz z\u0119by", desc: "Odpoczniesz na emeryturze.", effects: { wear: 3, form: 1 } }
     ]
@@ -6304,6 +7632,7 @@ function startSeason(s0) {
     }
     for (const l of s.loans) l.left -= 1;
     s.loans = s.loans.filter((l) => l.left > 0);
+    s.gear = clamp((s.gear ?? 0) + 14, 0, 100);
     s.eventQueue = [];
     const n = rng.chance(s.quick ? 0.5 : 0.85) ? 1 : 0;
     const extra = !s.quick && rng.chance(0.18) ? 1 : 0;
@@ -6344,7 +7673,9 @@ function nextEventOrSeason(s) {
 }
 function choiceChance(s, idx) {
   const c = s.event?.choices[idx];
-  if (!c) return null;
+  return c ? chanceOf(s, c) : null;
+}
+function chanceOf(s, c) {
   if (c.test) return chanceFrom(s.stats[c.test], TIER_LEVEL[s.tier] + 6);
   if (c.chance !== void 0) return c.chance;
   return null;
@@ -6373,11 +7704,15 @@ function amplify(e, kind) {
 function chooseEvent(s0, idx) {
   const s = clone(s0);
   const ev = s.event;
-  if (!ev || ev.picked !== void 0) return s;
+  if (!ev || ev.picked !== void 0 || !ev.choices[idx]) return s;
+  resolveChoice(s, ev, idx);
+  return s;
+}
+function resolveChoice(s, ev, idx) {
   const c = ev.choices[idx];
   ev.picked = idx;
   withRng(s, (rng) => {
-    const ch = choiceChance(s, idx);
+    const ch = chanceOf(s, c);
     if (ch !== null && (c.success || c.fail)) {
       const out = rollOutcome(rng, ch);
       const ok = out !== "fail";
@@ -6392,6 +7727,111 @@ function chooseEvent(s0, idx) {
     }
     applyEffects(s, ev.resultEffects, rng);
   });
+}
+function ensurePhone(s) {
+  if (!s.phone) s.phone = { tick: 0, inbox: [], due: [], started: [], log: [] };
+  return s.phone;
+}
+var threadOf = (stepId) => stepId.split(".")[0];
+function deliverStep(s, st) {
+  const ph = ensurePhone(s);
+  const from = typeof st.from === "function" ? st.from(s) : st.from;
+  if (ph.inbox.some((m) => m.picked === void 0 && m.id.startsWith(`${st.id}#`))) return;
+  const msg = {
+    id: `${st.id}#${ph.tick}.${ph.inbox.length}`,
+    app: st.app,
+    from,
+    title: st.title,
+    text: st.text(s),
+    choices: shuffleChoices(st.choices(s), `${st.id}:${ph.tick}:${s.season}`),
+    tick: ph.tick
+  };
+  ph.inbox.push(msg);
+  if (!ph.started.includes(threadOf(st.id))) ph.started.push(threadOf(st.id));
+  if (st.start) ph.lastAt = { ...ph.lastAt ?? {}, [threadOf(st.id)]: ph.tick };
+}
+function phoneCheck(rng, s, pre) {
+  if (s.quick && isAmateurRun(s)) return;
+  const ph = ensurePhone(s);
+  for (const m of ph.inbox) {
+    if (m.picked === void 0) continue;
+    ph.log.push({ app: m.app, from: m.from, title: m.title, text: m.text, answer: m.choices[m.picked]?.label ?? "", result: m.resultText, tick: m.tick });
+  }
+  ph.inbox = ph.inbox.filter((m) => m.picked === void 0);
+  ph.log = ph.log.slice(-40);
+  ph.tick += 1;
+  const ready = ph.due.filter((d) => d.at <= ph.tick).slice(0, 2);
+  ph.due = ph.due.filter((d) => !ready.includes(d));
+  for (const d of ready) {
+    const st = findStep(d.step);
+    if (st && (!st.cond || st.cond(s))) deliverStep(s, st);
+  }
+  const tries = [s.quick ? 0.35 : 0.8, s.quick ? 0 : 0.35];
+  for (const p of tries) {
+    if (ph.inbox.filter((m) => m.picked === void 0).length >= 2 || !rng.chance(p)) return;
+    const busy = /* @__PURE__ */ new Set([...ph.inbox.map((m) => threadOf(m.id)), ...ph.due.map((d) => threadOf(d.step))]);
+    const pool = THREADS.filter(
+      (t) => t.start && !busy.has(threadOf(t.id)) && (t.start.repeat ? ph.tick - (ph.lastAt?.[threadOf(t.id)] ?? -99) >= 8 : !ph.started.includes(threadOf(t.id))) && t.start.cond(s, { pre })
+    ).map((t) => ({ item: t, w: t.start.weight }));
+    if (!pool.length) return;
+    deliverStep(s, rng.weighted(pool));
+  }
+}
+function phoneUnread(s) {
+  return (s.phone?.inbox ?? []).filter((m) => m.picked === void 0);
+}
+function msgChance(s, id, idx) {
+  const c = s.phone?.inbox.find((m) => m.id === id)?.choices[idx];
+  return c ? chanceOf(s, c) : null;
+}
+function errandsLeft(s) {
+  return Math.max(0, ERRANDS_PER_YEAR - (s.flags[`errands:${s.season}`] ?? 0));
+}
+function errandOptions(s) {
+  return ERRANDS.filter((e) => !e.cond || e.cond(s)).map((e) => ({ def: e, cost: e.cost?.(s) ?? 0, ok: (e.cost?.(s) ?? 0) <= Math.max(0, s.money) }));
+}
+function errandMs(s, id) {
+  const d = findErrand(id);
+  return s.mode === "ranked" && d ? d.hours * 36e5 : 0;
+}
+function startErrand(s0, id, now) {
+  const d = findErrand(id);
+  if (!d || s0.errand || s0.phase === "ended" || errandsLeft(s0) <= 0) return s0;
+  if (d.cond && !d.cond(s0)) return s0;
+  const cost = d.cost?.(s0) ?? 0;
+  if (cost > Math.max(0, s0.money)) return s0;
+  const s = clone(s0);
+  s.money -= cost;
+  s.flags[`errands:${s.season}`] = (s.flags[`errands:${s.season}`] ?? 0) + 1;
+  s.errand = { id, endsAt: Math.round(now) + errandMs(s, id), season: s.season };
+  s.errandResult = null;
+  return s;
+}
+function claimErrand(s0, now) {
+  const e = s0.errand;
+  if (!e || now < e.endsAt) return s0;
+  const d = findErrand(e.id);
+  const s = clone(s0);
+  s.errand = null;
+  if (!d) return s;
+  withRng(s, (rng) => {
+    const o = rng.weighted(d.outcomes(s).map((x) => ({ item: x, w: x.w })));
+    applyEffects(s, o.effects, rng);
+    s.errandResult = { id: d.id, text: o.text, effects: o.effects };
+  });
+  return s;
+}
+function answerPhoneAll(s, pick = () => 0) {
+  let out = s;
+  for (const m of phoneUnread(s)) out = answerMessage(out, m.id, Math.min(m.choices.length - 1, Math.max(0, pick(m))));
+  return out;
+}
+function answerMessage(s0, id, idx) {
+  const m0 = s0.phone?.inbox.find((m2) => m2.id === id);
+  if (!m0 || m0.picked !== void 0 || !m0.choices[idx]) return s0;
+  const s = clone(s0);
+  const m = s.phone.inbox.find((x) => x.id === id);
+  resolveChoice(s, m, idx);
   return s;
 }
 function continueAfterEvent(s0) {
@@ -6444,6 +7884,12 @@ function applyEffects(s, e, rng) {
     s.flags.tryout = e.flag === "amTalent" ? 2 : 1;
   }
   if (e.form) s.flags.formBonus = (s.flags.formBonus ?? 0) + e.form;
+  if (e.nextFight) s.flags.nextFightMod = clamp((s.flags.nextFightMod ?? 0) + e.nextFight, -8, 8);
+  if (e.gear) s.gear = clamp((s.gear ?? 0) + e.gear, 0, 100);
+  if (e.follow) {
+    const ph = ensurePhone(s);
+    if (!ph.due.some((d) => d.step === e.follow.step)) ph.due.push({ step: e.follow.step, at: ph.tick + Math.max(1, e.follow.after ?? 1) });
+  }
   if (e.loan) {
     s.money += e.loan.amount;
     s.loans.push({ installment: e.loan.installment, left: e.loan.count });
@@ -6478,6 +7924,8 @@ function effectChips(e, s) {
   if (e.sponsor) out.push({ text: `sponsor ${fmtMoney(e.sponsor.perSeason).slice(1)} na rok`, tone: "good", icon: "briefcase" });
   if (e.promise) out.push({ text: `obietnica do roku ${e.promise.untilSeason}`, tone: "neutral", icon: "pen" });
   if (e.loan && e.loan.installment) out.push({ text: `raty ${e.loan.count} \xD7 ${fmtMoney(e.loan.installment).slice(1)}`, tone: "bad", icon: "card" });
+  if (e.nextFight) out.push({ text: `najbli\u017Csza walka ${sg(e.nextFight)}`, tone: e.nextFight > 0 ? "good" : "bad", icon: "target" });
+  if (e.gear) out.push({ text: e.gear < 0 ? `sprz\u0119t odnowiony ${Math.abs(e.gear)}%` : `zu\u017Cycie sprz\u0119tu +${e.gear}%`, tone: e.gear < 0 ? "good" : "bad", icon: "glove" });
   if (e.note) out.push({ text: e.note, tone: "neutral" });
   void s;
   return out;
@@ -6660,7 +8108,15 @@ function pickOpponent(rng, s, idx) {
   if (s.rank === null && rng.chance(0.5 - q * 0.1)) r = null;
   return { opp: r === null ? generateOpponent(rng, tier, r, hard) : rosterOpp(rng, s, r, metThisSeason), title: false, defense: false, peer: null };
 }
+function gearMod(s) {
+  const g = s.gear ?? 0;
+  return g >= 80 ? -3 : g >= 60 ? -1 : 0;
+}
 function fightMods(s) {
+  const cur = s.run?.fights[s.run.fights.length - 1];
+  return (cur?.phoneMod ?? 0) + gearMod(s) + proFightMods(s);
+}
+function proFightMods(s) {
   const cur = s.run?.fights[s.run.fights.length - 1];
   if (!cur || cur.amateur) return 0;
   const sh = weightShift(s);
@@ -7064,6 +8520,11 @@ function seasonNext(s0) {
   const cur = run.fights[run.fights.length - 1];
   if (cur && !cur.sim.finished) return s;
   if (run.offer || run.press || run.weigh || run.post || run.invite) return s;
+  if (run.phoneAt !== run.fights.length) {
+    run.phoneAt = run.fights.length;
+    withRng(s, (rng) => phoneCheck(rng, s, run.fights.length === 0));
+  }
+  if (phoneUnread(s).length) return s;
   withRng(s, (rng) => {
     const idx = run.fights.length;
     if (!isAmateurRun(s)) {
@@ -7235,6 +8696,19 @@ function startFight(rng, s, o) {
         earned: 0
       };
       if (o.tuneup || o.abroad) rep.fed = o.gala.split(" \xB7 ")[0];
+      const pm = s.flags.nextFightMod ?? 0;
+      if (pm) {
+        rep.phoneMod = pm;
+        s.flags.nextFightMod = 0;
+        rep.moments.push({
+          round: 0,
+          title: "Sprawy poza klatk\u0105",
+          text: pm > 0 ? `To, co dzia\u0142o si\u0119 przed walk\u0105, dzia\u0142a na twoj\u0105 korzy\u015B\u0107: szanse +${pm} pkt.` : `To, co dzia\u0142o si\u0119 przed walk\u0105, siedzi ci w g\u0142owie: szanse \u2212${Math.abs(pm)} pkt.`,
+          tone: pm > 0 ? "good" : "bad"
+        });
+      }
+      if (gearMod(s) < 0)
+        rep.moments.push({ round: 0, title: "Zu\u017Cyty sprz\u0119t", text: `Sprz\u0119t zu\u017Cyty w ${Math.round(s.gear ?? 0)}%. R\u0119kawice sparingowe trzyma ju\u017C tylko ta\u015Bma, a ochraniacz pami\u0119ta poprzedni sezon: szanse ${gearMod(s)} pkt.`, tone: "bad" });
       if (!amateur && !freak && (s.flags.sideTired ?? 0) > 0) {
         s.flags.sideTired = 0;
         rep.tired = true;
@@ -7408,6 +8882,7 @@ function seasonSkip(s0) {
     if (cur && cur.sim.pending) break;
     if (run.offer || run.press || run.weigh || run.post || run.invite) break;
     s = seasonNext(s);
+    if (phoneUnread(s).length) break;
     if (s.run?.offer) break;
   }
   return s;
@@ -9106,9 +10581,9 @@ function quickAmateur(s0) {
   if (s.money < 1e3) s.money = 1e3;
   s.wear = Math.min(s.wear, 10);
   if (s.market) {
-    const pro = s.market.contracts.filter((c) => c.available && c.kind === "promotion");
-    if (pro.length) {
-      s.market.contracts = pro;
+    const pro2 = s.market.contracts.filter((c) => c.available && c.kind === "promotion");
+    if (pro2.length) {
+      s.market.contracts = pro2;
       s.market.pickedContract = 0;
     }
   }
@@ -9495,7 +10970,10 @@ var ALLOWED = /* @__PURE__ */ new Set([
   "setSocial",
   "confirmMarket",
   "retire",
-  "chooseAfter"
+  "chooseAfter",
+  "answerMessage",
+  "startErrand",
+  "claimErrand"
 ]);
 var YEAR_COST = {
   startSeason: () => 1,
@@ -9619,7 +11097,9 @@ Deno.serve(async (req) => {
         const seasonBefore = s.season;
         for (const o of ops) {
           if (!ALLOWED.has(o?.name)) return json({ error: `Niedozwolona akcja: ${o?.name}` }, 400);
-          const args = Array.isArray(o.args) ? o.args : [];
+          const args = Array.isArray(o.args) ? [...o.args] : [];
+          if (o.name === "startErrand") args[1] = Date.now();
+          if (o.name === "claimErrand") args[0] = Date.now();
           const cost = YEAR_COST[o.name]?.(s, args) ?? 0;
           if (cost > 0 && c.bank < cost) return json({ error: "limit", bank: c.bank, nextRefillAt: nextRefillAt(season, c), state: forClient(s) }, 429);
           const next = game_exports[o.name](s, ...args);
