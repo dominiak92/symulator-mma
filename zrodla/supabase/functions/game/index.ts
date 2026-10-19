@@ -353,6 +353,7 @@ var THREADS = [
   },
   {
     id: "torba.tasma",
+    note: true,
     app: "tasma",
     from: "Sporty walki \u2014 kupi\u0119/sprzedam",
     title: "Ta torba wygl\u0105da znajomo",
@@ -385,6 +386,7 @@ var THREADS = [
   // ---------- Okazja na Taśmie ----------
   {
     id: "okazja.start",
+    note: true,
     app: "tasma",
     from: "Sporty walki \u2014 kupi\u0119/sprzedam",
     title: "R\u0119kawice za p\xF3\u0142 ceny",
@@ -414,6 +416,7 @@ var THREADS = [
   },
   {
     id: "okazja.scam",
+    note: true,
     app: "bank",
     from: "Bankoteka",
     title: "Reklamacja odrzucona",
@@ -429,7 +432,7 @@ var THREADS = [
     app: "gym",
     from: "Mietek",
     title: "Z r\u0119kawicy wysz\u0142a g\u0105bka",
-    text: () => "Na sparingu z twojej nowej r\u0119kawicy wychodzi \u017C\xF3\u0142ta g\u0105bka. Mietek podnosi j\u0105 z maty i pyta, czy to \u201Enowy model\u201D.",
+    text: () => "Stary, z twojej nowej r\u0119kawicy wysz\u0142a \u017C\xF3\u0142ta g\u0105bka. Le\u017Cy na macie. To jaki\u015B nowy model, \u017Ce si\u0119 sam rozbiera? \u{1F602}",
     choices: (s) => [
       { label: "Kupujesz porz\u0105dne", desc: "Tym razem w sklepie.", effects: { money: -zl(s, 900), gear: -40 } },
       {
@@ -446,6 +449,7 @@ var THREADS = [
   // ---------- Dojazd na galę ----------
   {
     id: "dojazd.start",
+    note: true,
     app: "mapka",
     from: "Mapka",
     title: "Jak dojedziesz na gal\u0119?",
@@ -498,7 +502,7 @@ var THREADS = [
     app: "sms",
     from: "Seba",
     title: "Fotoradar",
-    text: () => "Seba przysy\u0142a zdj\u0119cie z fotoradaru: 87 km/h w terenie zabudowanym. Ty \u015Bpisz na fotelu pasa\u017Cera z otwart\u0105 buzi\u0105. \u201EMandat 500 z\u0142 przyszed\u0142 na mnie, ale jechali\u015Bmy na twoj\u0105 gal\u0119.\u201D",
+    text: () => "Mordo, przysz\u0142o zdj\u0119cie z fotoradaru. 87 na godzin\u0119 w terenie zabudowanym, a ty na fotelu pasa\u017Cera \u015Bpisz z otwart\u0105 buzi\u0105 \u{1F602} Mandat 500 z\u0142 na mnie, ale jechali\u015Bmy na TWOJ\u0104 gal\u0119. Dorzucisz si\u0119?",
     choices: (s) => [
       { label: "Oddajesz ca\u0142o\u015B\u0107", desc: "Bez dyskusji.", effects: { money: -zl(s, 500) } },
       { label: "Oddajesz po\u0142ow\u0119", desc: "To on trzyma\u0142 nog\u0119 na gazie.", effects: { money: -zl(s, 250) } },
@@ -510,7 +514,7 @@ var THREADS = [
     app: "gym",
     from: "Seba",
     title: "Niekt\xF3rzy zapominaj\u0105",
-    text: () => "Seba na grupie: \u201Eniekt\xF3rzy zapominaj\u0105, kto ich wozi\u0142 na gale\u201D. Pod spodem 14 reakcji z p\u0142acz\u0105c\u0105 bu\u017Ak\u0105.",
+    text: () => "niekt\xF3rzy zapominaj\u0105 kto ich wozi\u0142 na gale \u{1F642}",
     choices: (s) => [
       { label: "Przepraszasz i oddajesz kas\u0119", desc: "Kumpel jest jeden.", effects: { money: -zl(s, 400), rep: 1 } },
       { label: "Ignorujesz", desc: "Przejdzie mu.", effects: { rep: -1, note: "Seba nie przyjdzie na nast\u0119pn\u0105 gal\u0119" } }
@@ -519,6 +523,7 @@ var THREADS = [
   // ---------- Auto pod halą ----------
   {
     id: "parking.start",
+    note: true,
     app: "mapka",
     from: "Mapka",
     title: "Parking pod hal\u0105",
@@ -564,7 +569,7 @@ var THREADS = [
     from: "Na Macie u Zdzicha",
     title: "Zaproszenie do podcastu",
     start: { weight: 5, cond: (s) => pro(s) && s.media >= 5 },
-    text: () => "Zdzichu zaprasza ci\u0119 do studia: piwnica, dwa mikrofony, lampka z marketu. Nagrywacie dwie godziny. Na koniec pada pytanie: \u201ENo to jaki masz plan na najbli\u017Csz\u0105 walk\u0119?\u201D",
+    text: () => "Siema, tu Zdzichu z \u201ENa Macie\u201D. Nagrywamy w czwartek u mnie w piwnicy, dwa mikrofony, lampka jest, pe\u0142en profesjonalizm. Na koniec i tak ci\u0119 zapytam, jaki masz plan na najbli\u017Csz\u0105 walk\u0119, wi\u0119c przygotuj co\u015B dobrego \u{1F399}\uFE0F",
     choices: (s) => [
       { label: "Opowiadasz plan ze szczeg\xF3\u0142ami", desc: "Ludzie lubi\u0105 konkrety.", effects: { media: 3, nextFight: -3, note: "rywal ogl\u0105da odcinek dwa razy" } },
       { label: "Jedziesz po organizatorze gali", desc: "\u201EP\u0142ac\u0105 grosze i robi\u0105 cyrk.\u201D", effects: { media: 5, rep: -2, follow: { step: "podkast.gala", after: 1 } } },
@@ -598,6 +603,7 @@ var THREADS = [
   // ---------- Wpis po wygranej ----------
   {
     id: "wpis.start",
+    note: true,
     app: "fotogram",
     from: "Fotogram",
     title: "Wpis po wygranej",
@@ -623,6 +629,7 @@ var THREADS = [
   // ---------- Ważka ----------
   {
     id: "wazka.start",
+    note: true,
     app: "wazka",
     from: "Wa\u017Cka",
     title: "Za du\u017Co na wadze",
@@ -653,6 +660,7 @@ var THREADS = [
   // ---------- Kebab o północy ----------
   {
     id: "kebab.start",
+    note: true,
     app: "klatka",
     from: "KlatkaNews",
     title: "Nagranie z kebaba",
@@ -695,7 +703,7 @@ var THREADS = [
     from: "Mietek",
     title: "Pomo\u017Cesz przed walk\u0105?",
     start: { weight: 6, cond: () => true },
-    text: () => "Mietek walczy za dwa tygodnie z ma\u0144kutem, zapa\u015Bnikiem. Prosi o sparingi \u201Epod rywala\u201D: masz go obala\u0107 i dociska\u0107 przez pi\u0119\u0107 rund.",
+    text: () => "Ej, za dwa tygodnie walcz\u0119 z ma\u0144kutem, zapa\u015Bnikiem. Porobisz ze mn\u0105 sparingi pod niego? Obalasz i dociskasz, pi\u0119\u0107 rund. Wiem, \u017Ce to katorga, postawi\u0119 kebaba.",
     choices: () => [
       { label: "Pomagasz", desc: "Twoje plecy b\u0119d\u0105 to pami\u0119ta\u0107.", effects: { wear: 2, follow: { step: "mietek.cynk", after: 2 } } },
       { label: "Odmawiasz, masz sw\xF3j ob\xF3z", desc: "Ka\u017Cdy ma swoje sprawy.", effects: { follow: { step: "mietek.foch", after: 1 } } }
@@ -717,7 +725,7 @@ var THREADS = [
     app: "gym",
     from: "Mietek",
     title: "Ka\u017Cdy sobie",
-    text: () => "Mietek nie przychodzi na twoje sparingi. Na grupie pisze tylko: \u201Eka\u017Cdy sobie\u201D.",
+    text: () => "ka\u017Cdy sobie.",
     choices: (s) => [
       { label: "Stawiasz piwo i przepraszasz", desc: "Bezalkoholowe, ob\xF3z trwa.", effects: { money: -zl(s, 60) } },
       { label: "Szukasz innego partnera", desc: "Nowy jest o 20 kg ci\u0119\u017Cszy.", effects: { nextFight: -2 } }
@@ -807,6 +815,7 @@ var THREADS = [
   },
   {
     id: "bramka.film",
+    note: true,
     app: "klatka",
     from: "KlatkaNews",
     title: "Wideo z bramki",
@@ -880,6 +889,7 @@ var THREADS = [
   // ---------- Gala nie płaci ----------
   {
     id: "przelew.start",
+    note: true,
     app: "bank",
     from: "Bankoteka",
     title: "Ga\u017Ca nie wp\u0142yn\u0119\u0142a",
@@ -909,6 +919,7 @@ var THREADS = [
   },
   {
     id: "przelew.upada",
+    note: true,
     app: "klatka",
     from: "KlatkaNews",
     title: "Gala og\u0142asza upad\u0142o\u015B\u0107",
@@ -933,7 +944,7 @@ var THREADS = [
     from: "Ksi\u0119gowa kuzyna",
     title: "Premia w kopercie",
     start: { weight: 3, cond: (s) => pro(s) && s.tier >= 1 && s.totalEarned > 2e4 },
-    text: () => "Ksi\u0119gowa kuzyna robi ci rozliczenie. Pyta, czy premi\u0119 za nokaut wpisa\u0107, \u201Ebo to w kopercie by\u0142o, prawda?\u201D.",
+    text: () => "Dzie\u0144 dobry, robi\u0119 panu rozliczenie. Premi\u0119 za nokaut wpisa\u0107? Bo to w kopercie by\u0142o, prawda? \u{1F609}",
     choices: (s) => [
       { label: "Wpisujesz wszystko", desc: "Spokojny sen jest bezcenny.", effects: { money: -zl(s, 400), rep: 1 } },
       {
@@ -973,7 +984,7 @@ var THREADS = [
     from: "Trener",
     title: "Ob\xF3z w g\xF3rach",
     start: { weight: 6, cond: (_s, c) => c.pre },
-    text: () => "Trener chce ob\xF3z w g\xF3rach przed sezonem. Mapka: pok\xF3j u g\xF3rala po 60 z\u0142 za dob\u0119 albo hotel ze spa po 300 z\u0142.",
+    text: () => "Przed sezonem jedziemy na ob\xF3z w g\xF3ry. Znalaz\u0142em pok\xF3j u g\xF3rala po 60 z\u0142 za dob\u0119 albo hotel ze spa po 300. Ty wybierasz, ty p\u0142acisz.",
     choices: (s) => [
       {
         label: "U g\xF3rala",
@@ -1014,7 +1025,7 @@ var THREADS = [
     from: "Mietek",
     title: "Co\u015B ci wysz\u0142o na \u0142ydce",
     start: { weight: 4, cond: () => true },
-    text: () => "Na \u0142ydce wyskoczy\u0142a ci czerwona plama w k\xF3\u0142ko. Mietek ogl\u0105da i m\xF3wi: \u201EGrzybica. Maty nie myte od Wielkanocy.\u201D",
+    text: () => "Pokaza\u0142e\u015B mi t\u0119 plam\u0119 na \u0142ydce, nie? Czerwona, w k\xF3\u0142ko? Stary, to grzybica. Maty nie myte od Wielkanocy. Nie przychod\u017A na parter, b\u0142agam.",
     choices: (s) => [
       { label: "Ma\u015B\u0107 i w\u0142asne kimono", desc: "Apteka i sklep sportowy.", effects: { money: -zl(s, 250) } },
       {
@@ -1034,7 +1045,7 @@ var THREADS = [
     app: "gym",
     from: "Mietek",
     title: "Kto mi to przyni\xF3s\u0142???",
-    text: () => "Na grupie zdj\u0119cie \u0142ydki Mietka i podpis: \u201EKto mi to przyni\xF3s\u0142???\u201D. Wszyscy wiedz\u0105 kto.",
+    text: () => "[zdj\u0119cie \u0142ydki] KTO MI TO PRZYNI\xD3S\u0141???",
     choices: (s) => [
       { label: "Przyznajesz si\u0119 i kupujesz ma\u015B\u0107 dla wszystkich", desc: "Hurtowo.", effects: { money: -zl(s, 400), rep: 1 } },
       { label: "Milczysz", desc: "Mo\u017Ce nie skojarz\u0105.", effects: { nextFight: -1, note: "nikt nie chce z tob\u0105 sparowa\u0107" } }
@@ -1047,7 +1058,7 @@ var THREADS = [
     from: "Nieznany numer",
     title: "Kto\u015B ukrad\u0142 telefon",
     start: { weight: 3, cond: (s, c) => pro(s) && !c.pre },
-    text: () => "Piszesz z telefonu brata. Tw\xF3j znikn\u0105\u0142 z szatni w czasie walki. Kontakty, zdj\u0119cia, Fotogram, wszystko.",
+    text: () => "To ja, pisz\u0119 od brata. M\xF3j telefon znikn\u0105\u0142 z szatni w czasie walki. Kontakty, zdj\u0119cia, Fotogram, wszystko. Co teraz?",
     choices: (s) => [
       { label: "Kupujesz nowy telefon", desc: "I przywracasz kopi\u0119 zapasow\u0105.", effects: { money: -zl(s, 1200) } },
       { label: "Stary telefon brata", desc: "P\u0119kni\u0119ty ekran i 12 GB pami\u0119ci.", effects: { follow: { step: "telefon.menedzer", after: 1 } } }
@@ -1071,7 +1082,7 @@ var THREADS = [
     from: "@motywacja_kamil",
     title: "Rewan\u017C z podstaw\xF3wki",
     start: { weight: 3, cond: (s) => pro(s) && s.media >= 10 },
-    text: () => "Kolega z podstaw\xF3wki, dzi\u015B \u201Einfluencer motywacyjny\u201D, wrzuca film: \u201EKiedy\u015B go la\u0142em na przerwach. Rewan\u017C na gali freak? Kasa jest.\u201D",
+    text: () => "Pami\u0119tasz mnie? Podstaw\xF3wka, przerwy, ja ci\u0119 la\u0142em \u{1F60E} Teraz mam 300 tysi\u0119cy obserwuj\u0105cych. Rewan\u017C na gali freak? Kasa jest, i to du\u017Ca. Wrzucam film, czekam na odpowied\u017A.",
     choices: (s) => [
       { label: "Przyjmujesz wyzwanie", desc: "Kasa jest. Kamil te\u017C.", effects: { money: zl(s, 2500), media: 3, rep: -2, follow: { step: "kolega.konferencja", after: 1 } } },
       { label: "Wy\u015Bmiewasz go w komentarzu", desc: "\u201ELa\u0142e\u015B mnie? Pami\u0119tam inaczej.\u201D", effects: { media: 2 } },
@@ -1080,6 +1091,7 @@ var THREADS = [
   },
   {
     id: "kolega.konferencja",
+    note: true,
     app: "klatka",
     from: "KlatkaNews",
     title: "Konferencja freak",
@@ -1093,6 +1105,7 @@ var THREADS = [
   // ---------- Gazeta powiatowa ----------
   {
     id: "gazeta.start",
+    note: true,
     app: "klatka",
     from: "Gazeta Powiatowa",
     title: "Pisz\u0105 o tobie!",
@@ -1109,7 +1122,7 @@ var THREADS = [
     app: "gym",
     from: "Trener",
     title: "Nowa ksywka",
-    text: (s) => `Na sali wszyscy m\xF3wi\u0105 na ciebie \u201E${twistName(s.profile.lastName)}\u201D. Nawet trener. Nawet na plakacie gali kto\u015B tak napisa\u0142.`,
+    text: (s) => `S\u0142uchaj, \u201E${twistName(s.profile.lastName)}\u201D, bo tak ju\u017C na ciebie wszyscy m\xF3wi\u0105 na sali, nawet ja. Organizator wpisa\u0142 to na plakat. Poprawiamy czy zostaje?`,
     choices: () => [
       { label: "Przyjmujesz ksywk\u0119", desc: "Lepiej si\u0119 nie da.", effects: { media: 2, note: "nowa ksywka" } },
       { label: "Walczysz z tym", desc: "Bez szans, ale walczysz.", effects: { rep: 1 } }
@@ -1122,7 +1135,7 @@ var THREADS = [
     from: "Trener",
     title: "Twoje r\u0119kawice",
     start: { weight: 14, cond: (s) => (s.gear ?? 0) >= 55, repeat: true },
-    text: (s) => `Twoje r\u0119kawice \u015Bmierdz\u0105 tak, \u017Ce Mietek trenuje w masce. Sprz\u0119t zu\u017Cyty w ${Math.round(s.gear ?? 0)}%. Kup nowe, zanim co\u015B p\u0119knie na sparingu.`,
+    text: (s) => `Twoje r\u0119kawice \u015Bmierdz\u0105 tak, \u017Ce Mietek trenuje w masce. Na oko s\u0105 zajechane w ${Math.round(s.gear ?? 0)}%. Kup nowe, zanim co\u015B p\u0119knie na sparingu.`,
     choices: (s) => [
       { label: "Kupujesz nowy komplet", desc: "R\u0119kawice, ochraniacze, kask.", effects: { money: -zl(s, 700), gear: -55 } },
       {
@@ -1144,7 +1157,7 @@ var THREADS = [
     from: "Salon u Gra\u017Cyny",
     title: "Wzorek przed gal\u0105",
     start: { weight: 3, cond: (s, c) => pro(s) && !c.pre },
-    text: () => "Pani Gra\u017Cyna proponuje wzorek na boku g\u0142owy przed gal\u0105: b\u0142yskawica albo twoje inicja\u0142y. \u201ERobi\u0142am ju\u017C dla pi\u0142karzy z czwartej ligi.\u201D",
+    text: () => "Dzie\u0144 dobry, tu Gra\u017Cyna z salonu \u{1F487} Przed gal\u0105 zrobi\u0119 panu wzorek na boku g\u0142owy: b\u0142yskawica albo inicja\u0142y. Robi\u0142am ju\u017C dla pi\u0142karzy z czwartej ligi!",
     choices: () => [
       {
         label: "B\u0142yskawica",
@@ -1181,6 +1194,7 @@ var THREADS = [
   },
   {
     id: "bialko.piwnica",
+    note: true,
     app: "tasma",
     from: "Sporty walki \u2014 kupi\u0119/sprzedam",
     title: "34 puszki w piwnicy",
@@ -1237,7 +1251,7 @@ var THREADS = [
     from: "Trener",
     title: "Godzina do walki",
     start: { weight: 4, cond: (s, c) => pro(s) && !c.pre },
-    text: () => "Godzina do wej\u015Bcia. Trener grzebie w twojej torbie: \u201EGdzie jest suspensor?\u201D Suspensor jest w domu, na kaloryferze.",
+    text: () => "Godzina do wej\u015Bcia. Grzebi\u0119 ci w torbie. GDZIE JEST SUSPENSOR?",
     choices: (s) => [
       {
         label: "Po\u017Cyczasz od kogo\u015B z karty",
@@ -1267,7 +1281,7 @@ var THREADS = [
     from: "Mietek",
     title: "Ochraniacz zgin\u0105\u0142",
     start: { weight: 3, cond: (s, c) => pro(s) && !c.pre },
-    text: () => "Dwie godziny przed walk\u0105: ochraniacz z\u0119b\xF3w znikn\u0105\u0142. Ostatnio widziany w kieszeni bluzy, kt\xF3r\u0105 mama wypra\u0142a.",
+    text: () => "Masz sw\xF3j ochraniacz na z\u0119by? Bo w torbie nie ma. Dwie godziny do walki. Ostatnio by\u0142 chyba w kieszeni bluzy, a bluz\u0119 twoja mama wczoraj pra\u0142a\u2026",
     choices: (s) => [
       {
         label: "Formujesz nowy w czajniku",
@@ -1347,6 +1361,7 @@ var THREADS = [
   },
   {
     id: "festyn.ciasto",
+    note: true,
     app: "wazka",
     from: "Wa\u017Cka",
     title: "Ciasto od Ko\u0142a Gospody\u0144",
@@ -1384,7 +1399,7 @@ var THREADS = [
     from: "Kawa z Mlekiem TV",
     title: "Telewizja \u015Bniadaniowa",
     start: { weight: 3, cond: (s) => pro(s) && s.media >= 15 },
-    text: () => "Telewizja \u015Bniadaniowa zaprasza: pi\u0119\u0107 minut o samoobronie dla kobiet, z prezenterk\u0105 jako \u201Enapastnikiem\u201D. Na \u017Cywo, o 8:15.",
+    text: () => "Dzie\u0144 dobry, redakcja \u201EKawy z Mlekiem\u201D! Zapraszamy na pi\u0119\u0107 minut o samoobronie dla kobiet, prezenterka zagra napastnika \u{1F604} Na \u017Cywo, o 8:15. B\u0119dzie pan?",
     choices: () => [
       {
         label: "Jedziesz do studia",
@@ -1405,7 +1420,7 @@ var THREADS = [
     from: "@fan_nr1",
     title: "Mam ci\u0119 na \u0142ydce!",
     start: { weight: 3, cond: (s) => pro(s) && s.media >= 12 },
-    text: () => "Fan wrzuca zdj\u0119cie: wytatuowa\u0142 sobie twoj\u0105 twarz na \u0142ydce. Podobie\u0144stwo umiarkowane. Bardziej przypomina twojego trenera.",
+    text: () => "[zdj\u0119cie \u0142ydki] ZROBI\u0141EM TO!!! Twoja twarz na ca\u0142e \u017Cycie \u{1F525} Oznaczysz mnie?",
     choices: () => [
       { label: "Repost z podzi\u0119kowaniem", desc: "Szacunek dla kibica.", effects: { media: 3, rep: 1, follow: { step: "tatuaz.gala", after: 1 } } },
       { label: "\u201ETo nie ja\u201D", desc: "Bo troch\u0119 nie ty.", effects: { media: 2, rep: -1 } }
@@ -1416,7 +1431,7 @@ var THREADS = [
     app: "fotogram",
     from: "@fan_nr1",
     title: "B\u0119d\u0119 na gali!",
-    text: () => "Fan z tatua\u017Cem kupi\u0142 bilet. Ma transparent, tr\u0105bk\u0119 i koleg\xF3w z ca\u0142ej klasy maturalnej z 2009 roku.",
+    text: () => "Mam bilet!!! Bior\u0119 transparent, tr\u0105bk\u0119 i ca\u0142\u0105 klas\u0119 maturaln\u0105 z 2009. Pomachasz nam po walce? \u{1F4E3}",
     choices: () => [
       { label: "Za\u0142atwiasz im wej\u015Bcie do szatni", desc: "Zdj\u0119cie po walce.", effects: { nextFight: 1, media: 1 } },
       { label: "Dzi\u0119kujesz i tyle", desc: "Skupienie przed walk\u0105.", effects: { nextFight: 1 } }
@@ -1440,7 +1455,7 @@ var THREADS = [
     app: "sms",
     from: "Darek z podstaw\xF3wki",
     title: "Ten pi\u0105tek",
-    text: () => "Min\u0119\u0142y trzy pi\u0105tki. Darek wrzuca na Fotogram zdj\u0119cia z Egiptu.",
+    text: () => "[zdj\u0119cie z basenu] Egipt \u{1F334}\u2600\uFE0F zas\u0142u\u017Cony odpoczynek!",
     choices: (s) => [
       {
         label: "Przypominasz si\u0119",
@@ -1461,7 +1476,7 @@ var THREADS = [
     from: "Trener",
     title: "Kto zamyka\u0142 sal\u0119?",
     start: { weight: 3, cond: (s) => s.clubSeasons >= 1 },
-    text: () => "Rano sala otwarta, klucze w zamku, nie ma dw\xF3ch work\xF3w i czajnika. Na grupie trener pyta: \u201EKto wczoraj zamyka\u0142?\u201D. Zamyka\u0142e\u015B ty.",
+    text: () => "Rano sala otwarta, klucze w zamku, nie ma dw\xF3ch work\xF3w i czajnika. Kto wczoraj zamyka\u0142?",
     choices: (s) => [
       { label: "Przyznajesz si\u0119 i odkupujesz", desc: "Worki i czajnik.", effects: { money: -zl(s, 700), rep: 1 } },
       {
@@ -1527,6 +1542,7 @@ var THREADS = [
   // ---------- Dwie wagi ----------
   {
     id: "waga.start",
+    note: true,
     app: "wazka",
     from: "Wa\u017Cka",
     title: "Kt\xF3ra waga k\u0142amie?",
@@ -1561,6 +1577,7 @@ var THREADS = [
   },
   {
     id: "ustawka.przeciek",
+    note: true,
     app: "klatka",
     from: "KlatkaNews",
     title: "Dziwne zak\u0142ady na twoj\u0105 walk\u0119",
@@ -1647,6 +1664,7 @@ var THREADS = [
   // ---------- Dieta pudełkowa ----------
   {
     id: "pudelka.start",
+    note: true,
     app: "wazka",
     from: "Wa\u017Cka",
     title: "Dieta pude\u0142kowa?",
@@ -1672,7 +1690,7 @@ var THREADS = [
     from: "Fundacja \u201EMa\u0142y Wojownik\u201D",
     title: "Odwiedzisz dzieci?",
     start: { weight: 3, cond: (s) => s.media >= 10 },
-    text: () => "Na oddziale dzieci\u0119cym le\u017Cy Franek, osiem lat. Ogl\u0105da wszystkie twoje walki i ma tw\xF3j plakat nad \u0142\xF3\u017Ckiem. Czy znalaz\u0142by pan godzin\u0119?",
+    text: () => "Dzie\u0144 dobry, pisz\u0119 z fundacji. Na oddziale dzieci\u0119cym le\u017Cy Franek, osiem lat. Ogl\u0105da wszystkie pana walki i ma pana plakat nad \u0142\xF3\u017Ckiem. Czy znalaz\u0142by pan godzin\u0119?",
     choices: () => [
       { label: "Jedziesz z pasem i r\u0119kawicami", desc: "Godzina, kt\xF3ra zostaje na zawsze.", effects: { rep: 3, relations: 1, nextFight: 1, note: "Franek da\u0142 ci rysunek na szcz\u0119\u015Bcie" } },
       { label: "Nagrywasz filmik dla Franka", desc: "Ob\xF3z trwa, ale filmik to co\u015B.", effects: { rep: 1 } }
@@ -1681,6 +1699,7 @@ var THREADS = [
   // ---------- Kibice rywala ----------
   {
     id: "hejt.start",
+    note: true,
     app: "fotogram",
     from: "Komentarze",
     title: "Kibice rywala",
@@ -1695,6 +1714,7 @@ var THREADS = [
   // ---------- Fałszywe konto ----------
   {
     id: "fake.start",
+    note: true,
     app: "fotogram",
     from: "Fotogram",
     title: "Kto\u015B si\u0119 pod ciebie podszywa",
@@ -1731,7 +1751,7 @@ var THREADS = [
     from: "Trener",
     title: "Wyprowadzisz Bruna?",
     start: { weight: 3, cond: () => true },
-    text: () => "Trener wyje\u017Cd\u017Ca na weekend. Prosi, \u017Ceby\u015B wyprowadza\u0142 Bruna, jego amstafa. W zamian dwa treningi indywidualne.",
+    text: () => "Wyje\u017Cd\u017Cam na weekend. Wyprowadzisz Bruna? To spokojny pies, tylko ci\u0105gnie jak ci\u0119\u017Car\xF3wka. W zamian dwa treningi indywidualne.",
     choices: () => [
       {
         label: "Bierzesz Bruna",
@@ -1752,7 +1772,7 @@ var THREADS = [
     from: "Organizator gali",
     title: "Plakat gali gotowy",
     start: { weight: 3, cond: (s, c) => pro(s) && !c.pre },
-    text: () => "Organizator wrzuca plakat gali. Na twoim miejscu zdj\u0119cie z pierwszej walki amatorskiej: grzywka, w\u0105sik, koszulka szkolnego klubu.",
+    text: () => "Plakat gali gotowy! [plakat] Wzi\u0119li\u015Bmy zdj\u0119cie z internetu, wysz\u0142o super, prawda? (grzywka, w\u0105sik, koszulka szkolnego klubu)",
     choices: () => [
       { label: "Prosisz o zmian\u0119 zdj\u0119cia", desc: "Wysy\u0142asz nowe.", effects: { note: "nowy plakat po dw\xF3ch dniach" } },
       { label: "Udost\u0119pniasz z dopiskiem", desc: "\u201EW\u0105sik wraca na t\u0119 walk\u0119\u201D.", effects: { media: 3 } }
@@ -8062,6 +8082,7 @@ function deliverStep(s, st) {
     id: `${st.id}#${ph.tick}.${ph.inbox.length}`,
     app: st.app,
     from,
+    ...st.note ? { note: true } : {},
     title: st.title,
     text: st.text(s),
     choices: shuffleChoices(st.choices(s), `${st.id}:${ph.tick}:${s.season}`),
@@ -8076,7 +8097,7 @@ function phoneCheck(rng, s, pre) {
   const ph = ensurePhone(s);
   for (const m of ph.inbox) {
     if (m.picked === void 0) continue;
-    ph.log.push({ app: m.app, from: m.from, title: m.title, text: m.text, answer: m.choices[m.picked]?.label ?? "", result: m.resultText, tick: m.tick });
+    ph.log.push({ app: m.app, from: m.from, title: m.title, text: m.text, answer: m.choices[m.picked]?.label ?? "", result: m.resultText, tick: m.tick, ...m.note ? { note: true } : {} });
   }
   ph.inbox = ph.inbox.filter((m) => m.picked === void 0);
   ph.log = ph.log.slice(-40);
