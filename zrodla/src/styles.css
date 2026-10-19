@@ -7225,31 +7225,93 @@ p, .offer-note, .frow-ctx, .pst-text { text-wrap: pretty; }
 .ev-head h2 { font-size: 1.7rem; text-shadow: 0 2px 12px rgba(0, 0, 0, 0.6); }
 @media (min-width: 641px) { .ev-head { margin: -22px -22px 6px; padding: 70px 22px 14px; } }
 /* walka na żywo: paski zdrowia i kondycji */
-/* paski zdrowia jak w bijatyce: metalowa rama ze ściętymi rogami, żółte zdrowie przechodzące w czerwień,
-   czerwony ślad obrażeń doganiający pasek, biały błysk przy każdym trafieniu, niebieska kondycja pod spodem */
-.hpbars { --cut: 10px; display: grid; gap: 3px; width: 100%; max-width: 168px; margin-top: 7px; }
-.hb-frame { position: relative; display: block; height: 15px; padding: 2px; background: linear-gradient(180deg, #e9eef5 0%, #8b95a5 45%, #3c4452 100%); clip-path: polygon(0 0, 100% 0, calc(100% - var(--cut)) 100%, 0 100%); filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.6)); }
-.hb-frame::before { content: ''; position: absolute; inset: 2px; background: linear-gradient(180deg, #120d0d, #1d1416); clip-path: polygon(0 0, 100% 0, calc(100% - var(--cut) + 2px) 100%, 0 100%); }
-.hb-trail, .hb-fill, .hb-hit, .hb-ticks { position: absolute; top: 2px; bottom: 2px; left: 2px; }
-.hb-trail { width: calc((100% - 4px) * var(--v) / 100); background: linear-gradient(180deg, #ff6a5a, #c4141c); transition: width 1.1s cubic-bezier(0.6, 0, 0.3, 1) 0.5s; }
-.hb-fill { width: calc((100% - 4px) * var(--v) / 100); background: linear-gradient(180deg, #fff6a8 0%, #ffd400 30%, #ffae00 70%, #e07a00 100%); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7); transition: width 0.25s cubic-bezier(0.3, 0.9, 0.3, 1); }
-.hpbars.mid .hb-fill { background: linear-gradient(180deg, #ffe0a0 0%, #ff9d1a 35%, #f06a00 100%); }
-.hpbars.low .hb-fill { background: linear-gradient(180deg, #ffb3a8 0%, #ff3b2e 35%, #b00010 100%); animation: hbLow 0.8s ease-in-out infinite; }
-.hb-hit { right: 2px; background: #fff; opacity: 0; mix-blend-mode: screen; animation: hbHit 0.45s ease-out; pointer-events: none; }
-.hb-ticks { right: 2px; background: repeating-linear-gradient(90deg, transparent 0 calc(10% - 1px), rgba(0, 0, 0, 0.45) calc(10% - 1px) 10%); pointer-events: none; }
-.hb-st { position: relative; display: block; height: 5px; margin-right: 6px; background: #0b1220; clip-path: polygon(0 0, 100% 0, calc(100% - 4px) 100%, 0 100%); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12); }
-.hb-st i { position: absolute; inset: 0 auto 0 0; width: calc(var(--s) * 1%); background: linear-gradient(180deg, #9be7ff, #1aa3ff 60%, #0a6fd6); transition: width 0.5s ease; }
-.hpbars.ko .hb-frame { filter: drop-shadow(0 0 6px rgba(255, 30, 30, 0.8)); }
-.hpbars.ko .hb-frame::after { content: 'K.O.'; position: absolute; inset: 0; display: grid; place-items: center; font-family: var(--display); font-size: 0.7rem; letter-spacing: 0.15em; color: #ff3b2e; text-shadow: 0 0 6px rgba(255, 59, 46, 0.8); }
-@keyframes hbHit { 0% { opacity: 0.9; } 100% { opacity: 0; } }
-@keyframes hbLow { 50% { filter: brightness(1.45); } }
+/* paski zdrowia jak w bijatyce: ścięta metalowa rama, w środku ciemna studzienka, zdrowie z połyskiem,
+   czerwony ślad doganiający pasek, świecący odłamek przy trafieniu, liczba obrażeń i wstrząs ramy */
+.hpbars { --cut: 12px; --h: 18px; position: relative; display: grid; gap: 3px; width: 100%; max-width: 172px; margin-top: 8px; }
+.hb-frame {
+  position: relative; display: block; height: var(--h); padding: 2px;
+  background: linear-gradient(180deg, #fdfdfd 0%, #c7ced9 30%, #6b7484 62%, #2a303b 100%);
+  clip-path: polygon(0 0, 100% 0, calc(100% - var(--cut)) 100%, 0 100%);
+  filter: drop-shadow(0 3px 5px rgba(0, 0, 0, 0.7));
+}
+.hb-well {
+  position: absolute; inset: 2px; overflow: hidden;
+  background: linear-gradient(180deg, #050608 0%, #1a1012 55%, #2a1416 100%);
+  clip-path: polygon(0 0, 100% 0, calc(100% - var(--cut) + 2px) 100%, 0 100%);
+  box-shadow: inset 0 2px 3px rgba(0, 0, 0, 0.9);
+}
+.hb-trail, .hb-fill, .hb-chip, .hb-ticks { position: absolute; top: 0; bottom: 0; left: 0; }
+.hb-trail { width: calc(var(--v) * 1%); background: linear-gradient(180deg, #ff9a7a, #e3261b 50%, #8c0c10); transition: width 0.9s cubic-bezier(0.6, 0, 0.3, 1) 0.55s; }
+.hb-fill {
+  width: calc(var(--v) * 1%); overflow: hidden;
+  background: linear-gradient(180deg, #fffbd0 0%, #ffe23d 22%, #ffc400 55%, #f08c00 100%);
+  box-shadow: inset 0 -2px 0 rgba(120, 50, 0, 0.35), 2px 0 0 rgba(255, 255, 255, 0.85);
+  transition: width 0.22s cubic-bezier(0.3, 0.9, 0.3, 1), filter 0.3s;
+}
+/* połysk: jasna górna połówka i przelatujący błysk */
+.hb-fill::before { content: ''; position: absolute; inset: 0 0 50% 0; background: linear-gradient(180deg, rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0.12)); }
+.hb-fill::after { content: ''; position: absolute; top: 0; bottom: 0; width: 40%; left: -50%; background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.65), transparent); animation: hbShine 3.2s ease-in-out 1s infinite; }
+.hpbars.mid .hb-fill { background: linear-gradient(180deg, #ffe4b0 0%, #ffab2e 30%, #f06a00 100%); }
+.hpbars.low .hb-fill { background: linear-gradient(180deg, #ffc2b8 0%, #ff4a30 30%, #b30012 100%); animation: hbLow 0.7s ease-in-out infinite; }
+.hpbars.low .hb-frame { filter: drop-shadow(0 3px 5px rgba(0, 0, 0, 0.7)) drop-shadow(0 0 5px rgba(255, 50, 30, 0.55)); }
+/* odłamek: kawałek zbitego zdrowia rozbłyskuje na biało i odpada */
+.hb-chip { left: calc(var(--t) * 1%); width: calc((var(--f) - var(--t)) * 1%); background: #fff; box-shadow: 0 0 10px #fff, 0 0 18px #ffd84a; animation: hbChip 0.55s ease-out forwards; pointer-events: none; }
+/* podziałka co ćwierć, delikatna */
+.hb-ticks { right: 0; background: linear-gradient(90deg, transparent calc(25% - 1px), rgba(0, 0, 0, 0.5) calc(25% - 1px) 25%, transparent 25% calc(50% - 1px), rgba(0, 0, 0, 0.5) calc(50% - 1px) 50%, transparent 50% calc(75% - 1px), rgba(0, 0, 0, 0.5) calc(75% - 1px) 75%, transparent 75%); pointer-events: none; }
+/* liczba obrażeń nad paskiem */
+.hb-dmg {
+  position: absolute; top: 0; left: calc(var(--t) * 1%); z-index: 4; transform: translate(-50%, 0);
+  font-family: var(--display); font-size: 0.95rem; line-height: 1; color: #fff; pointer-events: none;
+  -webkit-text-stroke: 3px #b3001b; paint-order: stroke fill; text-shadow: 0 2px 6px rgba(0, 0, 0, 0.8);
+  animation: hbDmg 0.95s cubic-bezier(0.2, 1.4, 0.4, 1) forwards;
+}
+.hb-dmg.big { font-size: 1.25rem; color: #ffe23d; }
+/* wstrząs ramy: dwie identyczne animacje na zmianę, żeby każde trafienie odpalało od nowa */
+.hb-sh-sm0 { animation: hbShakeA 0.28s linear; }
+.hb-sh-sm1 { animation: hbShakeB 0.28s linear; }
+.hb-sh-big0 { animation: hbBigA 0.45s linear; }
+.hb-sh-big1 { animation: hbBigB 0.45s linear; }
+/* kondycja: cienka niebieska belka, przy zmęczeniu blednie */
+.hb-st { position: relative; display: block; height: 6px; margin-right: 8px; background: #070b14; clip-path: polygon(0 0, 100% 0, calc(100% - 5px) 100%, 0 100%); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14); }
+.hb-st i { position: absolute; inset: 1px auto 1px 1px; width: calc(var(--s) * 1% - 2px); background: linear-gradient(180deg, #b8f0ff, #2bb0ff 55%, #0a64c8); box-shadow: 0 0 6px rgba(43, 176, 255, 0.55); transition: width 0.5s ease, filter 0.5s; }
+/* nokaut: rama płonie na czerwono, pieczątka K.O. wpada w pasek */
+.hpbars.ko .hb-frame { background: linear-gradient(180deg, #ffd1c9, #ff3b2e 40%, #6e0008); filter: drop-shadow(0 0 8px rgba(255, 40, 30, 0.9)); }
+.hpbars.ko .hb-st i { filter: grayscale(1) brightness(0.6); }
+.hb-ko {
+  position: absolute; inset: 0; display: grid; place-items: center; z-index: 3;
+  font-family: var(--display); font-size: 1.05rem; letter-spacing: 0.14em; line-height: 1; color: #fff;
+  -webkit-text-stroke: 3px #9e0010; paint-order: stroke fill; text-shadow: 0 0 10px rgba(255, 40, 30, 0.9);
+  animation: hbKo 0.5s cubic-bezier(0.2, 1.6, 0.4, 1) both;
+}
+/* zwycięzca: złoty połysk ramy */
+.hpbars.win .hb-frame { background: linear-gradient(180deg, #fff7d1 0%, #ffd34d 35%, #b77900 70%, #4a3000 100%); filter: drop-shadow(0 0 7px rgba(255, 200, 40, 0.75)); }
+.hpbars.win .hb-fill::after { animation-duration: 1.4s; animation-delay: 0s; }
+@keyframes hbShine { 0%, 55% { left: -50%; } 100% { left: 130%; } }
+@keyframes hbLow { 50% { filter: brightness(1.5) saturate(1.2); } }
+@keyframes hbChip { 0% { opacity: 1; transform: none; } 35% { opacity: 1; background: #ffe7a0; } 100% { opacity: 0; transform: translateY(5px) scaleY(0.4); } }
+@keyframes hbDmg { 0% { opacity: 0; transform: translate(-50%, 2px) scale(0.4); } 20% { opacity: 1; transform: translate(-50%, -6px) scale(1.3); } 70% { opacity: 1; transform: translate(-50%, -9px) scale(1); } 100% { opacity: 0; transform: translate(-50%, -14px) scale(0.95); } }
+@keyframes hbShakeA { 20% { transform: translate(-2px, 1px); } 40% { transform: translate(2px, -1px); } 60% { transform: translate(-1px, 0); } 80% { transform: translate(1px, 0); } }
+@keyframes hbShakeB { 20% { transform: translate(-2px, 1px); } 40% { transform: translate(2px, -1px); } 60% { transform: translate(-1px, 0); } 80% { transform: translate(1px, 0); } }
+@keyframes hbBigA { 10% { transform: translate(-4px, 2px) rotate(-1deg); } 25% { transform: translate(4px, -2px) rotate(1deg); } 40% { transform: translate(-3px, 1px); } 60% { transform: translate(3px, -1px); } 80% { transform: translate(-1px, 0); } }
+@keyframes hbBigB { 10% { transform: translate(-4px, 2px) rotate(-1deg); } 25% { transform: translate(4px, -2px) rotate(1deg); } 40% { transform: translate(-3px, 1px); } 60% { transform: translate(3px, -1px); } 80% { transform: translate(-1px, 0); } }
+@keyframes hbKo { 0% { opacity: 0; transform: scale(2.4); } 100% { opacity: 1; transform: none; } }
 /* rywal: lustrzane odbicie, pasek ubywa od środka ekranu do krawędzi */
 .vh-side.opp .hb-frame { clip-path: polygon(0 0, 100% 0, 100% 100%, var(--cut) 100%); }
-.vh-side.opp .hb-frame::before { clip-path: polygon(0 0, 100% 0, 100% 100%, calc(var(--cut) - 2px) 100%); }
-.vh-side.opp .hb-trail, .vh-side.opp .hb-fill { left: auto; right: 2px; }
-.vh-side.opp .hb-st { margin-right: 0; margin-left: 6px; clip-path: polygon(0 0, 100% 0, 100% 100%, 4px 100%); }
-.vh-side.opp .hb-st i { inset: 0 0 0 auto; }
-@media (prefers-reduced-motion: reduce) { .hb-trail, .hb-fill, .hb-st i { transition: none; } .hb-hit, .hpbars.low .hb-fill { animation: none; } }
+.vh-side.opp .hb-well { clip-path: polygon(0 0, 100% 0, 100% 100%, calc(var(--cut) - 2px) 100%); }
+.vh-side.opp .hb-trail, .vh-side.opp .hb-fill { left: auto; right: 0; }
+.vh-side.opp .hb-fill { box-shadow: inset 0 -2px 0 rgba(120, 50, 0, 0.35), -2px 0 0 rgba(255, 255, 255, 0.85); }
+.vh-side.opp .hb-chip { left: auto; right: calc(var(--t) * 1%); }
+.vh-side.opp .hb-dmg { left: auto; right: calc(var(--t) * 1%); transform: translate(50%, 0); }
+.vh-side.opp .hb-dmg { animation-name: hbDmgR; }
+@keyframes hbDmgR { 0% { opacity: 0; transform: translate(50%, 2px) scale(0.4); } 20% { opacity: 1; transform: translate(50%, -6px) scale(1.3); } 70% { opacity: 1; transform: translate(50%, -9px) scale(1); } 100% { opacity: 0; transform: translate(50%, -14px) scale(0.95); } }
+.vh-side.opp .hb-st { margin-right: 0; margin-left: 8px; clip-path: polygon(0 0, 100% 0, 100% 100%, 5px 100%); }
+.vh-side.opp .hb-st i { inset: 1px 1px 1px auto; }
+.vh-side.opp .hb-fill::after { animation-direction: reverse; }
+@media (prefers-reduced-motion: reduce) {
+  .hb-trail, .hb-fill, .hb-st i { transition: none; }
+  .hb-fill::after, .hb-chip, .hb-dmg, .hpbars.low .hb-fill, .hb-ko, [class*='hb-sh-'] { animation: none; }
+  .hb-chip, .hb-dmg { display: none; }
+}
 .live-vs .vh-plate span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
 .live-vs .vh-side { align-content: start; }
 .live-vs .vh-plate { min-height: 66px; align-content: center; }
@@ -7522,3 +7584,7 @@ p, .offer-note, .frow-ctx, .pst-text { text-wrap: pretty; }
 /* Mistrzostwa Polski: wstążka czerwona z białym paskiem u góry (barwy flagi), biały napis zamiast czarnego na pół-białym tle */
 .poster.th-am-mp { --p-rb: linear-gradient(180deg, #ffffff 0 4px, #c8102e 4px 100%); --p-rf: #fff; }
 .poster.th-am-mp .pst-ribbon, .poster.th-am-mp .ph-label { padding-top: 7px; text-shadow: 0 1px 2px rgba(60, 0, 10, 0.55); box-shadow: 0 6px 18px -6px rgba(220, 20, 60, 0.6), inset 0 -2px 0 rgba(0, 0, 0, 0.18); }
+/* tytuł w zestawieniu (tale of the tape): złoty, może się zawinąć zamiast ucinać */
+.tot .tot-belt dd { color: var(--gold); font-weight: 700; white-space: normal; line-height: 1.2; text-wrap: balance; }
+.tot .tot-belt dd svg { vertical-align: -1px; }
+.tot .tot-belt dd.none { color: var(--faint); font-weight: 400; }
