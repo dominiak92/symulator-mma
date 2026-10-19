@@ -121,3 +121,20 @@ export function sfxCash() {
 export function sfxClick() {
   tone(660, 0.05, 'triangle', 0.12);
 }
+
+/** Tyknięcie wskazówki w losowaniu (bardzo ciche, wysokość rośnie przy zwalnianiu). */
+export function sfxTick(pitch = 1) {
+  tone(1500 * pitch, 0.018, 'square', 0.035);
+}
+
+/** Wynik losowania: góra (pełen sukces), środek (udało się), dół (nie wyszło). */
+export function sfxDraw(kind: 'super' | 'success' | 'fail') {
+  if (kind === 'super') {
+    tone(784, 0.12, 'triangle', 0.16);
+    tone(988, 0.12, 'triangle', 0.16, 0.08);
+    tone(1318, 0.35, 'triangle', 0.16, 0.16);
+  } else if (kind === 'success') {
+    tone(659, 0.1, 'triangle', 0.14);
+    tone(988, 0.25, 'triangle', 0.14, 0.08);
+  } else tone(262, 0.3, 'triangle', 0.16, 0, 196);
+}
