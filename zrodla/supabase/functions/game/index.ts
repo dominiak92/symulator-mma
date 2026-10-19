@@ -16,6 +16,7 @@ __export(game_exports, {
   CAMPS: () => CAMPS,
   CONTRACT_ASKS: () => CONTRACT_ASKS,
   DAGESTAN_GAINS: () => DAGESTAN_GAINS,
+  DIET: () => DIET,
   DONATIONS: () => DONATIONS,
   EXPEDITIONS: () => EXPEDITIONS,
   LABS_SPONSOR: () => LABS_SPONSOR,
@@ -79,6 +80,8 @@ __export(game_exports, {
   declineBlocked: () => declineBlocked,
   declineInvite: () => declineInvite,
   declineOffer: () => declineOffer,
+  dietCost: () => dietCost,
+  dietForm: () => dietForm,
   displayName: () => displayName,
   divisionKey: () => divisionKey,
   divisionOptions: () => divisionOptions,
@@ -141,6 +144,8 @@ __export(game_exports, {
   pl: () => pl,
   plannedFights: () => plannedFights,
   playerOvr: () => playerOvr,
+  podcastListen: () => podcastListen,
+  podcastRival: () => podcastRival,
   pointEffects: () => pointEffects,
   postAnswer: () => postAnswer,
   prepCost: () => prepCost,
@@ -165,6 +170,7 @@ __export(game_exports, {
   seasonSkip: () => seasonSkip,
   setBackroom: () => setBackroom,
   setCoach: () => setCoach,
+  setDiet: () => setDiet,
   setFarewell: () => setFarewell,
   setJob: () => setJob,
   setManager: () => setManager,
@@ -6893,7 +6899,34 @@ function divisionOptions(s) {
 }
 function weightMissChance(s) {
   if (weightShift(s) >= 0) return 0;
-  return Math.round(clamp(7 + Math.max(0, s.age - 28) * 1.2 + (s.stats.cardio < 35 ? 4 : 0), 5, 25));
+  return Math.round(clamp(7 + Math.max(0, s.age - 28) * 1.2 + (s.stats.cardio < 35 ? 4 : 0) + DIET[s.diet ?? "norma"].miss, 2, 30));
+}
+var DIET = {
+  luz: { label: "Jem, co chc\u0119", desc: "Pierogi babci, kebab po treningu. G\u0142owa wypocz\u0119ta, ale waga ucieka.", miss: 6, cut: -8, form: 1, formCut: -1, cost: 0 },
+  norma: { label: "Rozs\u0105dnie", desc: "Ry\u017C, kurczak, czasem pizza w niedziel\u0119. Bez szale\u0144stw w \u017Cadn\u0105 stron\u0119.", miss: 0, cut: 0, form: 0, formCut: 0, cost: 0 },
+  strict: { label: "Ostra dieta", desc: "Liczysz ka\u017Cdy gram. Wag\u0119 robisz \u0142atwiej, ale na treningu brakuje paliwa.", miss: -4, cut: 6, form: -1, formCut: 0, cost: 0 },
+  catering: { label: "Catering FitFighter", desc: "Pi\u0119\u0107 pude\u0142ek dziennie od dietetyka. Waga pod kontrol\u0105 i si\u0142y na treningu. P\u0142atne za ca\u0142y rok z g\xF3ry.", miss: -6, cut: 10, form: 1, formCut: 1, cost: 1200 }
+};
+function dietCost(s) {
+  return Math.round(DIET.catering.cost * ([1, 1.5, 3, 5, 8][Math.min(4, Math.max(0, s.tier))] ?? 1) / 50) * 50;
+}
+function dietForm(s) {
+  const d = DIET[s.diet ?? "norma"];
+  return weightShift(s) < 0 ? d.formCut : d.form;
+}
+function setDiet(s0, mode) {
+  if (!DIET[mode] || s0.phase === "ended" || (s0.diet ?? "norma") === mode) return s0;
+  const midYear = s0.phase !== "budget" && s0.phase !== "training";
+  const paid = !!s0.flags[`dietPaid:${s0.season}`];
+  if (mode === "catering" && midYear && !paid && s0.money < dietCost(s0)) return s0;
+  const s = clone(s0);
+  if (mode === "catering" && midYear && !paid) {
+    s.money -= dietCost(s);
+    s.flags[`dietPaid:${s.season}`] = 1;
+    log(s, `Wa\u017Cka: catering FitFighter na ca\u0142y rok (${dietCost(s)} z\u0142).`);
+  }
+  s.diet = mode;
+  return s;
 }
 function changeDivision(s0, key) {
   if (!divisionOptions(s0).includes(key) || key === divisionKey(s0) || s0.tier < 1) return s0;
@@ -7256,6 +7289,7 @@ function budgetLines(s) {
     lines.push(
       s.tier === 0 ? { label: "Op\u0142aty startowe i dojazdy", sub: amLevel(s) === 0 ? "zawody wojew\xF3dzkie" : "Amatorski Puchar i Mistrzostwa Polski", amount: -s.contract.entryCost, icon: "receipt" } : { label: "Badania, licencja, dojazdy", sub: s.contract.fed, amount: -s.contract.entryCost, icon: "receipt" }
     );
+  if (s.diet === "catering") lines.push({ label: "Catering FitFighter", sub: "dieta z Wa\u017Cki, ca\u0142y rok", amount: -dietCost(s), icon: "receipt" });
   const staff = [0, 0, 2500, 6e3, 3e4][s.tier];
   if (staff > 0 && s.contract.kind !== "freak")
     lines.push({ label: "Sztab", sub: "trener przygotowania, dietetyk", amount: -staff, icon: "users" });
@@ -7968,6 +8002,7 @@ function startSeason(s0) {
   withRng(s, (rng) => {
     ensureRoster(rng, s);
     s.money += budgetBalance(s);
+    if (s.diet === "catering") s.flags[`dietPaid:${s.season}`] = 1;
     if (followersOf(s) >= 2e3 && (s.social === "self" || s.social === "pro")) s.media = clamp(s.media + 2, 0, 100);
     const jm = jobDef(s);
     s.flags.jobYear = jm ? s.season * 10 + ["full", "half", "none"].indexOf(jm.id) + 1 : 0;
@@ -8601,6 +8636,20 @@ function fotoPost(s0, kind) {
   });
   return s;
 }
+function podcastRival(s) {
+  if (s.phase !== "season" || !s.run) return null;
+  const opp = s.run.offer?.opp ?? s.run.camp?.o.opp ?? null;
+  if (!opp || opp.freak || s.flags[`pod:${opp.id}`]) return null;
+  return opp;
+}
+function podcastListen(s0) {
+  const opp = podcastRival(s0);
+  if (!opp) return s0;
+  const s = clone(s0);
+  s.flags[`pod:${opp.id}`] = 1;
+  withRng(s, (rng) => applyEffects(s, { nextFight: 1 }, rng));
+  return s;
+}
 function buyGear(s0) {
   if (s0.phase !== "budget" || (s0.gear ?? 0) < 20 || s0.money < gearCost(s0)) return s0;
   const s = clone(s0);
@@ -8622,6 +8671,7 @@ function proFightMods(s) {
   if (!cur || cur.amateur) return 0;
   const sh = weightShift(s);
   let m = sh < 0 ? 4 : sh > 0 ? -2 : 0;
+  m += dietForm(s);
   m += cur.weighMod ?? 0;
   if (cur.short) m -= 5;
   if (cur.superfight) m -= 3;
@@ -9556,7 +9606,7 @@ function pressAnswer(s0, key) {
 }
 function cutChance(s) {
   const o = s.run?.weigh;
-  let c = 62 + (hasBackroom(s, "doctor") ? 10 : 0) - (s.age >= 32 ? 10 : 0) - (o?.short ? 15 : 0) - (weightShift(s) < -1 ? 10 : 0) - Math.round(s.wear / 10);
+  let c = 62 + DIET[s.diet ?? "norma"].cut + (hasBackroom(s, "doctor") ? 10 : 0) - (s.age >= 32 ? 10 : 0) - (o?.short ? 15 : 0) - (weightShift(s) < -1 ? 10 : 0) - Math.round(s.wear / 10);
   return Math.round(clamp(c, 20, 85));
 }
 function weighIn(s0, choice) {
@@ -11498,7 +11548,9 @@ var ALLOWED = /* @__PURE__ */ new Set([
   "campGo",
   "buyGear",
   "tasmaDeal",
-  "fotoPost"
+  "fotoPost",
+  "setDiet",
+  "podcastListen"
 ]);
 var YEAR_COST = {
   startSeason: () => 1,
