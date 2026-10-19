@@ -23,6 +23,8 @@ with sync_playwright() as p:
     for step in range(600):
         if season >= SEASONS: break
         main = pg.locator('.main').inner_text() if pg.locator('.main').count() else ''
+        if pg.locator('.roul, .drum').count():
+            shot(pg, 'losowanie'); pg.locator('.roul, .drum').first.click(force=True); pg.wait_for_timeout(900); continue
         if pg.locator('.wo').count():
             shot(pg, 'wejscie'); pg.locator('.wo').click(force=True); pg.wait_for_timeout(300); continue
         if pg.locator('.notice-modal .btn-primary').count():
