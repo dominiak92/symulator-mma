@@ -37,7 +37,6 @@ import {
   BAD_FORMS,
   GOOD_FORMS,
   STAGE_LABELS,
-  STYLE_LABELS,
   TIER_SHORT,
   TOURNEY_CITIES,
   WEIGHTS,
@@ -1479,6 +1478,28 @@ export function choiceChance(s: GameState, idx: number): number | null {
   return null;
 }
 
+// --- Losowanie w wydarzeniach: pełen sukces i katastrofa ---
+const SUPER_TAIL = ['I to z nawiązką.', 'Wyszło lepiej, niż ktokolwiek zakładał.', 'Lepiej się nie dało.', 'Ludzie jeszcze długo o tym gadają.'];
+const DISASTER_TAIL = ['A do tego wszystko, co mogło pójść źle, poszło jeszcze gorzej.', 'Gorzej już się nie dało.', 'Ta historia będzie wracać przy każdej wigilii.', 'Trener tylko kręci głową.'];
+const LOSS_KEYS = ['money', 'media', 'rep', 'relations', 'form'] as const;
+function hasLoss(e?: Effects): boolean {
+  if (!e) return false;
+  return LOSS_KEYS.some((k) => (e[k] ?? 0) < 0) || (e.wear ?? 0) > 0 || Object.values(e.stats ?? {}).some((v) => (v ?? 0) < 0);
+}
+/** Te same skutki razy 1,5: przy „gain” tylko zyski, przy „loss” tylko straty. Kontuzje, flagi i sponsorzy bez zmian. */
+function amplify(e: Effects, kind: 'gain' | 'loss'): Effects {
+  const out: Effects = { ...e, stats: e.stats ? { ...e.stats } : undefined };
+  const up = (v: number) => (Math.abs(v) >= 1000 ? Math.round((v * 1.5) / 500) * 500 : Math.round(v * 1.5));
+  for (const k of LOSS_KEYS) {
+    const v = e[k];
+    if (v === undefined) continue;
+    if ((kind === 'gain' && v > 0) || (kind === 'loss' && v < 0)) out[k] = up(v);
+  }
+  if (e.wear !== undefined && ((kind === 'gain' && e.wear < 0) || (kind === 'loss' && e.wear > 0))) out.wear = up(e.wear);
+  if (out.stats) for (const [k, v] of Object.entries(out.stats)) if (v !== undefined && ((kind === 'gain' && v > 0) || (kind === 'loss' && v < 0))) (out.stats as Record<string, number>)[k] = up(v);
+  return out;
+}
+
 export function chooseEvent(s0: GameState, idx: number): GameState {
   const s = clone(s0);
   const ev = s.event;
@@ -1490,9 +1511,18 @@ export function chooseEvent(s0: GameState, idx: number): GameState {
     if (ch !== null && (c.success || c.fail)) {
       const out: Outcome = rollOutcome(rng, ch);
       const ok = out !== 'fail';
-      ev.rolled = out;
-      ev.resultText = ok ? c.successText : c.failText;
-      ev.resultEffects = (ok ? c.success : c.fail) ?? {};
+      // co piąta porażka to katastrofa: te same straty razy 1,5 (bez nowych kontuzji)
+      const disaster = !ok && rng.chance(0.2) && hasLoss(c.fail);
+      ev.rolled = disaster ? 'disaster' : out;
+      const base = (ok ? c.success : c.fail) ?? {};
+      ev.resultEffects = out === 'super' ? amplify(base, 'gain') : disaster ? amplify(base, 'loss') : base;
+      const txt = ok ? c.successText : c.failText;
+      ev.resultText =
+        out === 'super'
+          ? `${txt ?? ''} ${rng.pick(SUPER_TAIL)}`.trim()
+          : disaster
+            ? `${txt ?? ''} ${rng.pick(DISASTER_TAIL)}`.trim()
+            : txt;
     } else {
       ev.resultEffects = c.effects ?? {};
     }
@@ -2758,8 +2788,17 @@ export function pressContext(s: GameState, o: FightOffer, rng?: Rng): PressCtx {
     brawler: `Nie będę biegał. Staniemy na środku i zobaczymy, kto ma twardszą szczękę.`,
     allround: `Jestem lepszy wszędzie: w stójce, w parterze i w głowie.`,
   };
+  // drwina z tego, czym się chwali (nie z nazwy stylu: „wyśmiewasz jego bokser” nie ma sensu)
+  const STYLE_MOCK: Partial<Record<Style, string>> = {
+    wrestler: '„Leżeć na kimś to jeszcze nie walka”',
+    grappler: '„Przytulanie zostaw na randki”',
+    boxer: '„To MMA, nie gala boksu w remizie”',
+    kickboxer: '„Kopnij mnie, to zobaczysz sufit”',
+    brawler: '„Machanie cepami to nie technika”',
+    allround: '„Wszystko trochę, nic porządnie”',
+  };
   if (style && STYLE_Q[style])
-    opts.push({ id: 'style', question: `${n}: „${STYLE_Q[style]}”`, labels: L(['„Zobaczymy w klatce”', 'Nie dajesz się wciągnąć w gierki.'], [`Wyśmiewasz jego ${STYLE_LABELS[style].toLowerCase()}`, 'Trafiasz w jego dumę. Może zacząć walczyć na złość.'], ['Zapraszasz go na środek sceny', 'Face to face nos w nos. Sekundanci muszą was rozdzielać.']), provoke: 0.6, insult: 0.42 });
+    opts.push({ id: 'style', question: `${n}: „${STYLE_Q[style]}”`, labels: L(['„Zobaczymy w klatce”', 'Nie dajesz się wciągnąć w gierki.'], [STYLE_MOCK[style] ?? 'Wyśmiewasz jego styl', 'Trafiasz w jego dumę. Może zacząć walczyć na złość.'], ['Zapraszasz go na środek sceny', 'Face to face nos w nos. Sekundanci muszą was rozdzielać.']), provoke: 0.6, insult: 0.42 });
   if (o.opp.country && o.opp.country !== 'Polska')
     opts.push({ id: 'foreign', question: `${n}: „Przyjechałem do Polski zabrać to zwycięstwo do domu. ${me} to tylko przystanek.”`, labels: L(['Witasz go w Polsce', 'Gościnnie, ale stanowczo. Kibice to lubią.'], ['„Bilet powrotny kupiłeś?”', 'Riposta pod polską publikę.'], ['Podgrzewasz kibiców przeciw niemu', 'Hala będzie gwizdać przez całą walkę. Albo go to złamie, albo nakręci.']), provoke: 0.62, insult: 0.45 });
   if (o.opp.age >= 33 && s.age <= 26)

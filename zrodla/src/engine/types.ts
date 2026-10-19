@@ -8,6 +8,7 @@ export type TourneyStage = 'qf' | 'sf' | 'f' | 'b';
 export type StartProfile = 'osiedle' | 'biznes' | 'junior' | 'wybraniec';
 export type Difficulty = 'normal' | 'hard';
 export type Outcome = 'super' | 'success' | 'fail';
+export type EventRoll = Outcome | 'disaster';
 export type TicketPlan = 'none' | 'std' | 'push';
 export type JobMode = 'full' | 'half' | 'none';
 export type SocialMode = 'off' | 'self' | 'pro';
@@ -208,7 +209,8 @@ export interface PendingEvent {
   picked?: number;
   resultText?: string;
   resultEffects?: Effects;
-  rolled?: Outcome;
+  /** wynik losowania; „katastrofa” to rzadka, gorsza wersja porażki (tylko w wydarzeniach) */
+  rolled?: EventRoll;
 }
 
 // --- Walka ---
