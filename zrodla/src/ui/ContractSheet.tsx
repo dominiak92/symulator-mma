@@ -1,4 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
+import '@fontsource/herr-von-muellerhoff/latin-400.css';
+import '@fontsource/herr-von-muellerhoff/latin-ext-400.css';
+import '@fontsource/caveat/latin-700.css';
+import '@fontsource/caveat/latin-ext-700.css';
 import { fedLogo } from './logos';
 import { createPortal } from 'react-dom';
 import type { Club, Contract, GameState } from '../engine/types';
@@ -84,21 +88,29 @@ export default function ContractSheet({
     sfxClick();
     toSign();
     setSigned(true);
-    window.setTimeout(onSign, 1300);
+    window.setTimeout(onSign, 2100);
   };
 
   const fedShort = c.fed.split(' – ')[0];
   const lat = c.seasons === 1 ? 'rok' : `${c.seasons} lata`;
   const date = new Date(g.year, 0, 15).toLocaleDateString('pl-PL', { day: 'numeric', month: 'long', year: 'numeric' });
   const name = `${g.profile.firstName} ${g.profile.lastName}`;
+  // podpis: pełne imię, a przy długich nazwiskach inicjał; litery zmniejszamy, żeby zmieścić się na linii
+  const sigText = name.length > 16 ? `${g.profile.firstName[0]}. ${g.profile.lastName}` : name;
+  const sigSize = Math.max(1.5, Math.min(2.5, (2.5 * 13) / sigText.length));
 
   return createPortal(
     <div className="contract-veil" role="dialog" aria-modal="true" aria-label={`Kontrakt: ${c.fed}`}>
       <div ref={paperRef} className={`contract-paper ${signed ? 'signed' : ''}`}>
+        {fedLogo(c.fed) && <img className="cp-wm" src={fedLogo(c.fed)!} alt="" aria-hidden="true" />}
         <div className="cp-head">
+          <div className="cp-meta">
+            <span>Umowa nr {g.season}/{g.year}/{fedShort.slice(0, 3).toUpperCase()}</span>
+            <span>egz. dla Zawodnika</span>
+          </div>
           {fedLogo(c.fed) && <img className="cp-logo" src={fedLogo(c.fed)!} alt="" aria-hidden="true" />}
-          <span className="cp-kicker">Umowa o walki zawodowe nr {g.season}/{g.year}</span>
           <h2>Kontrakt zawodniczy</h2>
+          <i className="cp-rule" aria-hidden="true" />
           <p className="cp-parties">
             zawarty w dniu {date} pomiędzy <b>{c.fed}</b>, zwaną dalej Organizatorem, a <b>{name}</b>
             {g.profile.nickname ? ` „${g.profile.nickname}”` : ''}, zwanym dalej Zawodnikiem.
@@ -146,12 +158,27 @@ export default function ContractSheet({
         </p>
         <div className="cp-sign">
           <div className="cp-sign-org">
-            <span className="cp-stamp">{fedShort}</span>
+            <div className="cp-sigline org">
+              <span className="cp-sig-org" aria-hidden="true">{fedShort}</span>
+              <Stamp text={fedShort} />
+            </div>
             <small>Organizator</small>
           </div>
           <div className="cp-sign-me">
             <div className="cp-sigline" aria-live="polite">
-              {signed ? <span className="cp-sig">{g.profile.firstName[0]}. {g.profile.lastName}</span> : <span className="cp-hint">miejsce na podpis</span>}
+              {signed ? (
+                <span className="cp-sig-wrap">
+                  <span className="cp-sig" style={{ fontSize: `${sigSize}rem` }}>{sigText}</span>
+                  <svg className="cp-flourish" viewBox="0 0 200 24" preserveAspectRatio="none" aria-hidden="true">
+                    <path d="M4 16 C 40 6, 70 22, 110 13 S 170 4, 196 10" pathLength={1} />
+                  </svg>
+                </span>
+              ) : (
+                <>
+                  <span className="cp-x" aria-hidden="true">×</span>
+                  <span className="cp-flag" aria-hidden="true">podpis</span>
+                </>
+              )}
             </div>
             <small>Zawodnik</small>
           </div>
@@ -222,5 +249,35 @@ export default function ContractSheet({
       </div>
     </div>,
     document.body,
+  );
+}
+
+/** Okrągła pieczątka organizatora z napisem w otoku i lekko poszarpanym tuszem. */
+function Stamp({ text }: { text: string }) {
+  const ring = `${text.toUpperCase()} · ORGANIZATOR GAL MMA · `;
+  const id = `st-${text.replace(/[^a-z0-9]/gi, '')}`;
+  return (
+    <svg className="cp-stamp" viewBox="0 0 100 100" aria-label={`Pieczątka: ${text}`} role="img">
+      <defs>
+        <path id={`${id}-p`} d="M50 50 m-36 0 a36 36 0 1 1 72 0 a36 36 0 1 1 -72 0" />
+        <filter id={`${id}-f`} x="-10%" y="-10%" width="120%" height="120%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="3" result="n" />
+          <feDisplacementMap in="SourceGraphic" in2="n" scale="2.2" result="d" />
+          <feColorMatrix in="n" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -1.4 1.25" result="holes" />
+          <feComposite in="d" in2="holes" operator="in" />
+        </filter>
+      </defs>
+      <g filter={`url(#${id}-f)`} fill="none" stroke="currentColor">
+        <circle cx="50" cy="50" r="46" strokeWidth="3" />
+        <circle cx="50" cy="50" r="27" strokeWidth="1.5" />
+        <text fontSize="9.5" fontWeight="700" letterSpacing="1.2" fill="currentColor" stroke="none" style={{ fontFamily: 'Oswald, Impact, sans-serif' }}>
+          <textPath href={`#${id}-p`} textLength="222" lengthAdjust="spacingAndGlyphs">{ring}</textPath>
+        </text>
+        <text x="50" y="44" textAnchor="middle" fontSize="6" fill="currentColor" stroke="none" style={{ fontFamily: 'Oswald, Impact, sans-serif' }}>★ ★ ★</text>
+        <text x="50" y="59" textAnchor="middle" fontSize={text.length > 8 ? 8 : 11} fontWeight="700" fill="currentColor" stroke="none" style={{ fontFamily: 'Oswald, Impact, sans-serif' }}>
+          {text.toUpperCase().slice(0, 12)}
+        </text>
+      </g>
+    </svg>
   );
 }
