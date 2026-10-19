@@ -1,5 +1,8 @@
 import hallBg from '../../assets/bg/menu.webp';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { Drum } from '../Drum';
+import { loadSettings } from '../../storage';
+import type { GameState } from '../../engine/types';
 import { choiceChance, chooseEvent, continueAfterEvent, effectChips, type Chip } from '../../engine/game';
 import { STAT_LABELS } from '../../engine/data';
 import type { StepProps } from '../Game';
@@ -54,6 +57,7 @@ export default function EventStep({ game, setGame }: StepProps) {
   const g = game;
   const ev = g.event!;
   const picked = ev.picked;
+  const [drum, setDrum] = useState<{ next: GameState; chance: number; outcome: NonNullable<NonNullable<GameState['event']>['rolled']>; label: string } | null>(null);
 
   useEffect(() => {
     if (picked === undefined) return;
@@ -79,13 +83,35 @@ export default function EventStep({ game, setGame }: StepProps) {
         Wybór z kropkami to ryzyko: ✓ zyskasz, ✗ stracisz. Wybór bez kropek działa na pewno.
       </CoachTip>
       )}
+      {drum && (
+        <Drum
+          chance={drum.chance}
+          outcome={drum.outcome}
+          label={drum.label}
+          onDone={() => {
+            const n = drum.next;
+            setDrum(null);
+            setGame(n);
+          }}
+        />
+      )}
       {picked === undefined ? (
-        <div className="choice-list" style={{ marginTop: 16 }}>
+        <div className="choice-list" style={{ marginTop: 16 }} hidden={!!drum}>
           {ev.choices.map((c, i) => {
             const ch = choiceChance(g, i);
             const risky = ch !== null && (c.success || c.fail);
             return (
-              <button key={i} className="choice" onClick={() => setGame(chooseEvent(g, i))}>
+              <button
+                key={i}
+                className="choice"
+                onClick={() => {
+                  if (drum) return;
+                  const next = chooseEvent(g, i);
+                  const rolled = next.event?.rolled;
+                  if (!risky || !rolled || !loadSettings().animations) return setGame(next);
+                  setDrum({ next, chance: ch!, outcome: rolled, label: c.label });
+                }}
+              >
                 <span className="opt-top">
                   <span className="opt-label">{c.label}</span>
                   {risky && <ChanceTag p={ch!} />}

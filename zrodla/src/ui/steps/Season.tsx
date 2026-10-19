@@ -1,12 +1,13 @@
 import { Fragment, useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
 import hallBg from '../../assets/bg/menu.webp';
 import { createPortal } from 'react-dom';
-import type { CardSpot, DecisionOption, DecisionPoint, FightOffer, FightReport, GameState, Moment, NewsItem, Stats } from '../../engine/types';
+import type { CardSpot, DecisionOption, DecisionPoint, FightOffer, FightReport, GameState, Moment, NewsItem, Outcome, Stats } from '../../engine/types';
 import { galaPrefix, SEASON_FORMS, STAGE_LABELS, STAT_LABELS, STYLE_LABELS } from '../../engine/data';
 import { currentYearGoal, acceptInvite, declineInvite, inviteChance, cutChance, postAnswer, weighIn, divisionKey, effectiveStats, weightMissChance, PRESS_OPTIONS, pressAnswer, prepCost, acceptAllOffers, acceptOffer, declineBlocked, declineOffer, decide, negotiateChance, negotiateOffer, recStr, seasonNext, seasonSkip, toSummary } from '../../engine/game';
 import { activeManager, currentManager } from '../../engine/managers';
 import { sfxCash, sfxClick, sfxCrowd, sfxGong, sfxLoss, sfxThud } from '../sound';
-import { OUTCOME_LABEL } from '../../engine/fight';
+import { OUTCOME_LABEL, distFrom } from '../../engine/fight';
+import { Roulette } from '../Roulette';
 import { lat, money } from '../../format';
 import { loadSettings } from '../../storage';
 import { ChanceTag } from '../Chance';
@@ -578,6 +579,7 @@ function LiveCard({ g, f, start, animate, setGame }: { g: GameState; f: FightRep
       : null;
 
   const sheetMode = typeof window !== 'undefined' && window.innerWidth < 900;
+  const [rolling, setRolling] = useState<{ next: GameState; outcome: Outcome; dist: [number, number, number]; label: string } | null>(null);
   const decision = pending ? (
     <div className="decision" id="decision">
       <div className="decision-head">
@@ -604,14 +606,32 @@ function LiveCard({ g, f, start, animate, setGame }: { g: GameState; f: FightRep
       ) : (
         <CoachTip id="decision">Prowadzisz? Graj spokojnie. Przegrywasz albo rywal słabnie? Zaryzykuj. Obity? Odpocznij.</CoachTip>
       )}
-      <div className="choice-list">
+      {rolling && (
+        <Roulette
+          dist={rolling.dist}
+          outcome={rolling.outcome}
+          label={rolling.label}
+          onDone={() => {
+            const n = rolling.next;
+            setRolling(null);
+            setGame(n);
+          }}
+        />
+      )}
+      <div className="choice-list" hidden={!!rolling}>
         {pending.options.map((o) => (
           <OptionButton
             key={o.key}
             o={o}
             onPick={() => {
+              if (rolling) return;
               sfxClick();
-              setGame(decide(g, o.key));
+              const next = decide(g, o.key);
+              // losowanie na pasie szans: wynik jest już policzony, pas tylko go pokazuje
+              const nf = next.run?.fights.find((x) => x.idx === f.idx);
+              const dm = nf?.moments.slice(f.moments.length).find((m) => m.decision && m.outcome);
+              if (!animate || !dm?.outcome || o.chance >= 100) return setGame(next);
+              setRolling({ next, outcome: dm.outcome, dist: dm.dist ?? distFrom(o.chance), label: o.label });
             }}
           />
         ))}

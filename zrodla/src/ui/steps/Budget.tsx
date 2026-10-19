@@ -286,7 +286,7 @@ export default function Budget({ game, setGame }: StepProps) {
             <div>
               <strong>Rok przerwy: idziesz do pracy</strong>
               <span>
-                Zarobisz {money(brk.salary)}
+                Zarobisz {money(brk.salary)}{brk.sponsors ? `, sponsorzy dorzucą połowę umów (${money(brk.sponsors)})` : ''}
                 {brk.installments ? `, spłacisz raty (${money(brk.installments)})` : ''} i zostanie ci {money(brk.after)}. Ale obóz przepada, umiejętności spadną
                 (kondycja najbardziej){g.tier > 0 ? ', a z rankingu wypadniesz' : ''}.
               </span>

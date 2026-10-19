@@ -25,6 +25,9 @@ export default function Summary({ game, setGame, onPeers }: StepProps & { onPeer
     s.beltWon || s.grade === 'Rok wybitny' || s.grade === 'Sezon wybitny' ? 'gold' : s.grade === 'Udany rok' || s.grade === 'Udany sezon' ? 'good' : s.grade === 'Katastrofa' || s.grade === 'Rok do zapomnienia' || s.grade === 'Sezon do zapomnienia' ? 'bad' : '';
   const activePeers = g.peers.filter((p) => !p.retired);
   const amateur = s.tier === 0;
+  // dwuletni wyjazd: pierwszy rok ma własne podsumowanie, pokazane nad drugim
+  const prevYear = g.seasons[g.seasons.length - 2];
+  const expPrev = prevYear && / · rok \d+ z \d+$/.test(s.grade) && prevYear.form === s.form && prevYear.season === s.season - 1 ? prevYear : null;
   // rok freak fightów: logo federacji z kontraktu, nie sportowej
   const sumFed = g.contract.kind === 'freak' && s.season === g.season ? g.contract.fed : s.fed;
   const medals = amateur ? (g.run?.tourneys ?? []).map((t) => t.medal).filter((m): m is 'gold' | 'silver' | 'bronze' => !!m) : [];
@@ -129,6 +132,19 @@ export default function Summary({ game, setGame, onPeers }: StepProps & { onPeer
       <CoachTip id="summary">
         Tak poszedł rok. Dotknij sekcji na dole, żeby zobaczyć szczegóły.
       </CoachTip>
+      {expPrev && (
+        <div className="exp-prev">
+          <div className="exp-prev-head">
+            <b>{expPrev.grade.split(' · ').pop()}</b>
+            <span>
+              {expPrev.year} · OVR {expPrev.ovrFrom} → {expPrev.ovrTo} · {expPrev.moneyDelta >= 0 ? '+' : '−'}
+              {moneyShort(Math.abs(expPrev.moneyDelta))}
+            </span>
+          </div>
+          <p>{expPrev.story}</p>
+        </div>
+      )}
+      {expPrev && <div className="exp-prev-label">{s.grade.split(' · ').pop()}</div>}
       <p className="story">{s.story}</p>
 
       <div className="grade-bars">
