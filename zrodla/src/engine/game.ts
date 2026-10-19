@@ -851,11 +851,18 @@ export function jobSalary(age: number) {
 }
 
 /** Co da rok przerwy (podgląd do budżetu). */
+/** Rok bez walk (przerwa, rehabilitacja, wyjazd): sponsorzy płacą połowę umowy. */
+export function sponsorHalf(s: GameState): number {
+  return Math.round(s.sponsors.reduce((a, b) => a + b.perSeason, 0) * 0.5 / 500) * 500;
+}
+
 export function breakPreview(s: GameState) {
   const installments = s.loans.filter((l) => l.left > 0).reduce((a, l) => a + l.installment, 0);
   const living = livingCost(s.age) + (s.flags.kid ? 10000 : 0);
   const salary = jobSalary(s.age);
-  return { salary, living, installments, net: salary - living - installments, after: s.money + salary - living - installments };
+  const sponsors = sponsorHalf(s);
+  const net = salary + sponsors - living - installments;
+  return { salary, sponsors, living, installments, net, after: s.money + net };
 }
 
 /**
@@ -921,7 +928,7 @@ export function takeBreakYear(s0: GameState): GameState {
         { label: 'Pieniądze', value: Math.round(clamp(50 + (pv.net / 30000) * 40, 5, 100)), note: fmtK(s.money - moneyFrom) },
         { label: 'Forma fizyczna', value: 15, note: 'umiejętności spadły' },
       ],
-      story: `${job} Długi są mniejsze, ale treningi przepadły.${wasRanked ? ' Wypadasz z rankingu.' : ''}`,
+      story: `${job} Długi są mniejsze, ale treningi przepadły.${pv.sponsors ? ` Sponsorzy płacą połowę umów: ${pv.sponsors.toLocaleString('pl-PL')} zł.` : ''}${wasRanked ? ' Wypadasz z rankingu.' : ''}`,
     };
     s.seasons.push(summary);
     s.lastSummary = summary;
@@ -956,6 +963,9 @@ export function rehabYear(s0: GameState): GameState {
     const installments = s.loans.reduce((a, l) => a + l.installment, 0);
     // bez pieniędzy leczysz się na NFZ: taniej, ale wolniej
     const full = rehabCost(s) + installments;
+    const half = sponsorHalf(s);
+    s.money += half;
+    s.totalEarned += half;
     let avail = Math.max(0, s.money + OVERDRAFT);
     const nfz = avail < full;
     // najpierw leczenie, potem raty: niespłacona rata nie znika, tylko czeka
@@ -1002,7 +1012,7 @@ export function rehabYear(s0: GameState): GameState {
         { label: 'Zdrowie', value: 60, note: 'zużycie organizmu spadło' },
         { label: 'Forma fizyczna', value: 20, note: 'umiejętności spadły' },
       ],
-      story: `${name.charAt(0).toUpperCase() + name.slice(1)}. ${nfz ? 'Na prywatną klinikę cię nie stać, więc kolejka na NFZ i ćwiczenia z filmików. ' : ''}${story}${wasChamp ? ' Federacja nie może czekać rok: odbiera ci pas i robi walkę o wakat. Wracasz jako numer 2 w rankingu, z prawem do walki o tytuł.' : wasRanked ? ' Wypadasz z rankingu.' : ''}`,
+      story: `${name.charAt(0).toUpperCase() + name.slice(1)}. ${half ? `Sponsorzy płacą połowę umów (${half.toLocaleString('pl-PL')} zł), bo nie pokazujesz się w klatce. ` : ''}${nfz ? 'Na prywatną klinikę cię nie stać, więc kolejka na NFZ i ćwiczenia z filmików. ' : ''}${story}${wasChamp ? ' Federacja nie może czekać rok: odbiera ci pas i robi walkę o wakat. Wracasz jako numer 2 w rankingu, z prawem do walki o tytuł.' : wasRanked ? ' Wypadasz z rankingu.' : ''}`,
     };
     s.seasons.push(summary);
     s.lastSummary = summary;
@@ -1137,20 +1147,49 @@ export function goExpedition(s0: GameState, id: Expedition['id']): GameState {
     // wszystkie lata poza ostatnim mijają tutaj, ostatni przy przejściu na rynek
     // życie za granicą też kosztuje: za każdy rok poza ostatnim (ten liczy się przy rynku)
     const livingAbroad = Math.round(livingCost(s.age) / 500) * 500;
+    const ovrTo = ovr(s.stats);
+    const lata = e.years === 1 ? 'rok' : `${e.years} lata`;
+    const stories = [...e.stories];
+    // podsumowanie za każdy rok wyjazdu; ostatni rok mija przy przejściu na rynek
+    const yearSummary = (i: number, mFrom: number): SeasonSummary => {
+      const half = sponsorHalf(s);
+      s.money += half;
+      s.totalEarned += half;
+      const last = i === e.years - 1;
+      const oFrom = i === 0 ? ovrFrom : Math.round(ovrFrom + (ovrTo - ovrFrom) * (i / e.years));
+      const oTo = last ? ovrTo : Math.round(ovrFrom + (ovrTo - ovrFrom) * ((i + 1) / e.years));
+      const st = stories.length ? stories.splice(rng.int(0, stories.length - 1), 1)[0] : e.stories[0];
+      return {
+        season: s.season, year: s.year, age: s.age, tier: s.tier, fed: s.fed, club: s.club.name,
+        w: 0, l: 0, d: 0, rank: s.rank, champion: false, beltWon: false,
+        moneyDelta: s.money - mFrom, ovrFrom: oFrom, ovrTo: oTo,
+        form: e.id === 'dagestan' ? 'Dagestan' : e.name,
+        grade: e.years > 1 ? `${e.name} · rok ${i + 1} z ${e.years}` : e.name,
+        bars: [
+          { label: 'Forma fizyczna', value: 95, note: `OVR ${oFrom} → ${oTo}` },
+          { label: 'Rozpoznawalność', value: Math.max(10, 60 + e.media * 3), note: e.media <= -10 ? 'kibice o tobie zapomnieli' : `${lata} poza klatką` },
+        ],
+        story: `${st.replace('{from}', String(ageFrom))}${half ? ` Sponsorzy płacą połowę umów: ${half.toLocaleString('pl-PL')} zł.` : ''}`,
+      };
+    };
+    let yearFrom = moneyFrom;
     for (let i = 0; i < e.years - 1; i++) {
+      const sm = yearSummary(i, yearFrom);
+      s.seasons.push(sm);
       ageOneYear(rng, s);
       s.money -= livingAbroad;
+      yearFrom = s.money;
     }
     for (let i = 0; i < e.years; i++) for (const p of s.peers) progressPeer(rng, p);
     s.media = clamp(s.media + e.media, 0, 100);
     s.rep = clamp(s.rep + e.rep, 0, 100);
     s.wear = clamp(s.wear + e.wear, 0, 100);
-    // ranking nie przepada całkiem: spadasz o kilka miejsc, organizatorzy pamiętają nazwisko
     if (s.tier > 0 && s.rank === 0) {
       s.titleDefenses = 0;
       s.flags.doubleActive = 0;
       log(s, `Wyjazd mistrza: ${galaPrefix(s.fed)} ogłasza wakat, pas trafia do kogoś innego.`);
     }
+    // ranking nie przepada całkiem: spadasz o kilka miejsc, organizatorzy pamiętają nazwisko
     if (s.tier > 0 && s.rank !== null) s.rank = s.rank === 0 ? 2 : Math.min(RANK_SIZE[s.tier], s.rank + 3 + e.years);
     clearCallFlags(s);
     s.contractSeasonsLeft = 0;
@@ -1158,18 +1197,9 @@ export function goExpedition(s0: GameState, id: Expedition['id']): GameState {
     if (e.id === 'dagestan') s.flags.dagestan = 1;
     else s.flags[`exp_${e.id}`] = 1;
     s.peakOvr = Math.max(s.peakOvr, ovr(s.stats));
-    const lata = e.years === 1 ? 'rok' : `${e.years} lata`;
-    const summary: SeasonSummary = {
-      season: s.season, year: s.year, age: s.age, tier: s.tier, fed: s.fed, club: s.club.name,
-      w: 0, l: 0, d: 0, rank: s.rank, champion: false, beltWon: false,
-      moneyDelta: s.money - moneyFrom, ovrFrom, ovrTo: ovr(s.stats),
-      form: e.id === 'dagestan' ? 'Dagestan' : e.name, grade: e.name,
-      bars: [
-        { label: 'Forma fizyczna', value: 95, note: `OVR ${ovrFrom} → ${ovr(s.stats)}` },
-        { label: 'Rozpoznawalność', value: Math.max(10, 60 + e.media * 3), note: e.media <= -10 ? 'kibice o tobie zapomnieli' : `${lata} poza klatką` },
-      ],
-      story: rng.pick(e.stories).replace('{from}', String(ageFrom)),
-    };
+    const summary = yearSummary(e.years - 1, yearFrom);
+    // pierwszy rok widać w podsumowaniu ostatniego (zmiana kasy i forma od początku wyjazdu)
+    if (e.years > 1) summary.moneyDelta = s.money - yearFrom;
     s.seasons.push(summary);
     s.lastSummary = summary;
     s.run = null;
