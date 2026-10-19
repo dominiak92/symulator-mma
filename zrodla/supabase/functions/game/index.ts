@@ -98,6 +98,8 @@ __export(game_exports, {
   downgradeClub: () => downgradeClub,
   effectChips: () => effectChips,
   effectiveStats: () => effectiveStats,
+  entryAnswer: () => entryAnswer,
+  entryGo: () => entryGo,
   errandMs: () => errandMs,
   errandOptions: () => errandOptions,
   errandsLeft: () => errandsLeft,
@@ -2333,6 +2335,123 @@ function buildWeek(rng, s, o) {
   s.flags[`wk:${pick.id}`] = (s.flags[`wk:${pick.id}`] ?? 0) + 1;
   return pick;
 }
+
+// src/engine/prolog.ts
+var COACH_NAMES = ["Mirek", "Waldek", "Heniek", "Zbyszek", "Rafa\u0142", "Grzesiek"];
+var STREETS = ["Przemys\u0142owa 4, wej\u015Bcie od gara\u017Cy", "Kolejowa 12, piwnica pod si\u0142owni\u0105", "Polna 3, za Biedronk\u0105", "Sportowa 1, hala po starym PGR-ze", "Fabryczna 8, drugie pi\u0119tro, bez windy"];
+function hash(t) {
+  let h = 7;
+  for (const c of t) h = h * 31 + c.charCodeAt(0) >>> 0;
+  return h;
+}
+function clubCoachName(club) {
+  return `Trener ${COACH_NAMES[hash(club.name) % COACH_NAMES.length]}`;
+}
+function clubStreet(club) {
+  return `ul. ${STREETS[hash(club.city + club.name) % STREETS.length]}`;
+}
+var monthly = (c) => Math.max(100, Math.round(c.cost / 12 / 10) * 10);
+var PROLOG_EVENTS = [
+  {
+    id: "prolog_ekipa",
+    title: "Grupa",
+    once: true,
+    weight: 0,
+    cond: () => false,
+    text: (s) => {
+      const me = s.profile.firstName;
+      const c = s.club.name;
+      switch (s.profile.start) {
+        case "biznes":
+          return [
+            `Tata: Zapisa\u0142em ci\u0119 na MMA. ${c}. Prezes klubu kupuje u nas panele, wi\u0119c traktuj to powa\u017Cnie.`,
+            "Mama: Andrzej, on ma szesna\u015Bcie lat!",
+            "Tata: No w\u0142a\u015Bnie. Ja w jego wieku mia\u0142em ju\u017C pierwsz\u0105 hurtowni\u0119.",
+            "Ola: a mog\u0119 przyj\u015B\u0107 popatrze\u0107 jak mu lej\u0105? \u{1F37F}",
+            `Tata: ${me}, kierowca b\u0119dzie o 17:30. Nie przynie\u015B wstydu.`
+          ].join("\n");
+        case "junior":
+          return [
+            `Bartek: s\u0142yszeli\u015Bcie? w ${c} szukaj\u0105 zapa\u015Bnik\xF3w do MMA. m\xF3wi\u0105 \u017Ce w klatce zapa\u015Bnik to kr\xF3l`,
+            `Trener Zenek: Bartek, nie m\u0105\u0107 mu w g\u0142owie. ${me} w marcu jedzie na mistrzostwa.`,
+            "Bartek: trenerze, w MMA p\u0142ac\u0105",
+            "Trener Zenek: W MMA bij\u0105 po g\u0142owie. Dlatego p\u0142ac\u0105.",
+            `Bartek: ${me} idziesz ze mn\u0105 na pr\xF3bny? wtorek 18:00`
+          ].join("\n");
+        case "wybraniec":
+          return [
+            `Nieznany numer: Dzie\u0144 dobry. M\xF3wi ${clubCoachName(s.club)}, ${c}.`,
+            "Nieznany numer: Kto\u015B mi podes\u0142a\u0142 nagranie z WF-u, jak po\u0142o\u017Cy\u0142e\u015B wuefist\u0119 na materac. Trzy razy.",
+            "Nieznany numer: Pan Andrzej twierdzi, \u017Ce si\u0119 po\u015Blizgn\u0105\u0142. Obejrza\u0142em to dziesi\u0119\u0107 razy. Nie po\u015Blizgn\u0105\u0142 si\u0119.",
+            "Nieznany numer: Mam dla ciebie miejsce w grupie zawodniczej. Za darmo. Wtorek 18:00."
+          ].join("\n");
+        default:
+          return [
+            `Seba: widzieli\u015Bcie? w ${c} ruszy\u0142 nab\xF3r na MMA. pierwszy trening gratis \u{1F94A}`,
+            "Dawid: seba ty by\u015B si\u0119 bi\u0142 z kim? z go\u0142\u0119biem?",
+            `Seba: nie ja. ${me} idzie. ci\u0105gle gada \u017Ce by ka\u017Cdego po\u0142o\u017Cy\u0142`,
+            "Krzychu: \u{1F602}\u{1F602} nagrywamy",
+            `Seba: ${me}? wtorek 18:00. idziesz czy p\u0119kasz`
+          ].join("\n");
+      }
+    },
+    choices: (s) => {
+      switch (s.profile.start) {
+        case "biznes":
+          return [
+            { label: "B\u0119d\u0119 gotowy o 17:20.", desc: "Tata: Tak si\u0119 rozmawia.\nMama: We\u017A chocia\u017C kanapki.\nOla: wys\u0142a\u0142am ci link do ochraniaczy na z\u0119by, r\xF3\u017Cowe", effects: { rep: 1 } },
+            { label: "Mo\u017Ce pojad\u0119 rowerem? \u017Beby nie by\u0142o gadania.", desc: "Tata: Rowerem? Ludzie pomy\u015Bl\u0105, \u017Ce zbankrutowali\u015Bmy.\nMama: Ja tam uwa\u017Cam, \u017Ce to \u0142adnie.\nTata: Kierowca. 17:30.", effects: { relations: 1 } },
+            { label: "Ola, nie przychod\u017A.", desc: "Ola: ju\u017C wrzuci\u0142am na story \u017Ce idziesz \u{1F607}\nOla: 48 wy\u015Bwietle\u0144\nTata: Ola, skasuj to. Natychmiast.\nOla: 112 wy\u015Bwietle\u0144", effects: { media: 1 } }
+          ];
+        case "junior":
+          return [
+            { label: "Id\u0119. Zobacz\u0119, co to za klatka.", desc: "Bartek: TAK\nTrener Zenek: Zobaczysz. I wr\xF3cisz.\nBartek: trenerze to brzmi jak gro\u017Aba\nTrener Zenek: Bo to jest gro\u017Aba.", effects: { rep: 1 } },
+            { label: "Id\u0119, ale z mistrzostw nie rezygnuj\u0119, trenerze.", desc: "Trener Zenek: Trzymam za s\u0142owo.\nTrener Zenek: I \u017Cadnych kopni\u0119\u0107 w kolana. Kolana masz zapa\u015Bnicze, nie do kopania.\nBartek: \u{1F44D}", effects: { relations: 1 } },
+            { label: "Zapa\u015Bnik w klatce to kr\xF3l. Id\u0119.", desc: "Trener Zenek: Kr\xF3l. Do pierwszego kopni\u0119cia w g\u0142ow\u0119.\nBartek: kr\xF3l i jego wierny giermek \u{1F451}\nTrener Zenek: Bartek, ty te\u017C jedziesz w marcu. Pami\u0119taj.", effects: { media: 1 } }
+          ];
+        case "wybraniec":
+          return [
+            { label: "B\u0119d\u0119.", desc: "Nieznany numer: Kr\xF3tko. Lubi\u0119.\nNieznany numer: We\u017A ochraniacz na z\u0119by. I nie m\xF3w nikomu, \u017Ce za darmo, bo reszta p\u0142aci.", effects: { rep: 1 } },
+            { label: "Sk\u0105d pan ma m\xF3j numer?", desc: "Nieznany numer: Od twojej babci. Bardzo mi\u0142a pani.\nNieznany numer: Powiedzia\u0142a, \u017Ce jeste\u015B grzeczny ch\u0142opak i \u017Cebym ci\u0119 za mocno nie bi\u0142.\nNieznany numer: Nie obieca\u0142em.", effects: { relations: 1 } },
+            { label: "To on si\u0119 naprawd\u0119 po\u015Blizgn\u0105\u0142.", desc: "Nieznany numer: Trzy razy?\nNieznany numer: Wtorek, 18:00. Przynie\u015B te po\u015Blizgi.", effects: { media: 1 } }
+          ];
+        default:
+          return [
+            { label: "Id\u0119. Wtorek 18:00.", desc: "Dawid: o kurde, serio\nSeba: bior\u0119 popcorn\nKrzychu: jak ci\u0119 po\u0142o\u017C\u0105 to nie p\u0142acz w grupie", effects: { rep: 1 } },
+            { label: "Id\u0119, ale jak mnie po\u0142o\u017C\u0105, stawiacie kebaba.", desc: "Seba: deal \u{1F32F}\nDawid: du\u017Cy, podw\xF3jne mi\u0119so, zapisuj\u0119\nKrzychu: ju\u017C wiemy kto p\u0142aci \u{1F602}", effects: { media: 1 } },
+            { label: "P\xF3jd\u0119, jak kto\u015B p\xF3jdzie ze mn\u0105.", desc: "Seba: dobra id\u0119 z tob\u0105. na rozgrzewk\u0119\nDawid: Seba na MMA. to b\u0119dzie film\nSeba: zamknij si\u0119", effects: { relations: 1 } }
+          ];
+      }
+    }
+  },
+  {
+    id: "prolog_trener",
+    title: "Trener",
+    once: true,
+    weight: 0,
+    cond: () => false,
+    text: (s) => {
+      const t = clubCoachName(s.club).replace("Trener ", "");
+      const lines = s.profile.start === "wybraniec" ? [`${clubCoachName(s.club)}: To ja jeszcze raz. Zapisz sobie numer: ${t}, trener.`] : [`${clubCoachName(s.club)}: Cze\u015B\u0107, tu ${t}, trener z ${s.club.name}. Dosta\u0142em tw\xF3j numer, \u017Ce chcesz przyj\u015B\u0107.`];
+      lines.push(
+        `${clubCoachName(s.club)}: Wtorek 18:00, ${clubStreet(s.club)}.`,
+        `${clubCoachName(s.club)}: We\u017A wod\u0119, r\u0119cznik i ochraniacz na z\u0119by. Pierwszy trening gratis, potem ${monthly(s.club)} z\u0142 miesi\u0119cznie.`,
+        `${clubCoachName(s.club)}: Jak prze\u017Cyjesz rozgrzewk\u0119, to po kilku tygodniach zrobimy sparing kontrolny. Zobacz\u0119, gdzie ci\u0119 wys\u0142a\u0107.`
+      );
+      return lines.join("\n");
+    },
+    choices: (s) => {
+      const t = clubCoachName(s.club);
+      return [
+        { label: "B\u0119d\u0119 17:45.", desc: `${t}: Dobrze. Sp\xF3\u017Anialscy robi\u0105 burpees. Du\u017Co burpees.`, effects: { rep: 1 } },
+        { label: "A ochraniacz na z\u0119by to jaki?", desc: `${t}: Taki, \u017Ceby z\u0119by zosta\u0142y w buzi.
+${t}: Za 30 z\u0142 w Decathlonie. Wrzucasz do wrz\u0105tku i gryziesz. Nie odwrotnie.`, effects: { media: 1 } },
+        { label: "Trenerze, a da si\u0119 bez biegania?", desc: `${t}: \u{1F602}
+${t}: Nie.`, effects: { relations: 1 } }
+      ];
+    }
+  }
+];
 
 // src/engine/data.ts
 var STAT_LABELS = {
@@ -5389,123 +5508,6 @@ var STAGE_EVENTS = [
       { label: "\u201ESko\u0144cz\u0119, kiedy przestan\u0119 wygrywa\u0107\u201D", desc: "Pewnie i bez wahania.", effects: { media: 2, form: 1 } },
       { label: "\u201EMy\u015Bl\u0119 o tym codziennie\u201D", desc: "Szczerze, jak nigdy.", effects: { rep: 2, note: "kibice doceniaj\u0105 szczero\u015B\u0107" } }
     ]
-  }
-];
-
-// src/engine/prolog.ts
-var COACH_NAMES = ["Mirek", "Waldek", "Heniek", "Zbyszek", "Rafa\u0142", "Grzesiek"];
-var STREETS = ["Przemys\u0142owa 4, wej\u015Bcie od gara\u017Cy", "Kolejowa 12, piwnica pod si\u0142owni\u0105", "Polna 3, za Biedronk\u0105", "Sportowa 1, hala po starym PGR-ze", "Fabryczna 8, drugie pi\u0119tro, bez windy"];
-function hash(t) {
-  let h = 7;
-  for (const c of t) h = h * 31 + c.charCodeAt(0) >>> 0;
-  return h;
-}
-function clubCoachName(club) {
-  return `Trener ${COACH_NAMES[hash(club.name) % COACH_NAMES.length]}`;
-}
-function clubStreet(club) {
-  return `ul. ${STREETS[hash(club.city + club.name) % STREETS.length]}`;
-}
-var monthly = (c) => Math.max(100, Math.round(c.cost / 12 / 10) * 10);
-var PROLOG_EVENTS = [
-  {
-    id: "prolog_ekipa",
-    title: "Grupa",
-    once: true,
-    weight: 0,
-    cond: () => false,
-    text: (s) => {
-      const me = s.profile.firstName;
-      const c = s.club.name;
-      switch (s.profile.start) {
-        case "biznes":
-          return [
-            `Tata: Zapisa\u0142em ci\u0119 na MMA. ${c}. Prezes klubu kupuje u nas panele, wi\u0119c traktuj to powa\u017Cnie.`,
-            "Mama: Andrzej, on ma szesna\u015Bcie lat!",
-            "Tata: No w\u0142a\u015Bnie. Ja w jego wieku mia\u0142em ju\u017C pierwsz\u0105 hurtowni\u0119.",
-            "Ola: a mog\u0119 przyj\u015B\u0107 popatrze\u0107 jak mu lej\u0105? \u{1F37F}",
-            `Tata: ${me}, kierowca b\u0119dzie o 17:30. Nie przynie\u015B wstydu.`
-          ].join("\n");
-        case "junior":
-          return [
-            `Bartek: s\u0142yszeli\u015Bcie? w ${c} szukaj\u0105 zapa\u015Bnik\xF3w do MMA. m\xF3wi\u0105 \u017Ce w klatce zapa\u015Bnik to kr\xF3l`,
-            `Trener Zenek: Bartek, nie m\u0105\u0107 mu w g\u0142owie. ${me} w marcu jedzie na mistrzostwa.`,
-            "Bartek: trenerze, w MMA p\u0142ac\u0105",
-            "Trener Zenek: W MMA bij\u0105 po g\u0142owie. Dlatego p\u0142ac\u0105.",
-            `Bartek: ${me} idziesz ze mn\u0105 na pr\xF3bny? wtorek 18:00`
-          ].join("\n");
-        case "wybraniec":
-          return [
-            `Nieznany numer: Dzie\u0144 dobry. M\xF3wi ${clubCoachName(s.club)}, ${c}.`,
-            "Nieznany numer: Kto\u015B mi podes\u0142a\u0142 nagranie z WF-u, jak po\u0142o\u017Cy\u0142e\u015B wuefist\u0119 na materac. Trzy razy.",
-            "Nieznany numer: Pan Andrzej twierdzi, \u017Ce si\u0119 po\u015Blizgn\u0105\u0142. Obejrza\u0142em to dziesi\u0119\u0107 razy. Nie po\u015Blizgn\u0105\u0142 si\u0119.",
-            "Nieznany numer: Mam dla ciebie miejsce w grupie zawodniczej. Za darmo. Wtorek 18:00."
-          ].join("\n");
-        default:
-          return [
-            `Seba: widzieli\u015Bcie? w ${c} ruszy\u0142 nab\xF3r na MMA. pierwszy trening gratis \u{1F94A}`,
-            "Dawid: seba ty by\u015B si\u0119 bi\u0142 z kim? z go\u0142\u0119biem?",
-            `Seba: nie ja. ${me} idzie. ci\u0105gle gada \u017Ce by ka\u017Cdego po\u0142o\u017Cy\u0142`,
-            "Krzychu: \u{1F602}\u{1F602} nagrywamy",
-            `Seba: ${me}? wtorek 18:00. idziesz czy p\u0119kasz`
-          ].join("\n");
-      }
-    },
-    choices: (s) => {
-      switch (s.profile.start) {
-        case "biznes":
-          return [
-            { label: "B\u0119d\u0119 gotowy o 17:20.", desc: "Tata: Tak si\u0119 rozmawia.\nMama: We\u017A chocia\u017C kanapki.\nOla: wys\u0142a\u0142am ci link do ochraniaczy na z\u0119by, r\xF3\u017Cowe", effects: { rep: 1 } },
-            { label: "Mo\u017Ce pojad\u0119 rowerem? \u017Beby nie by\u0142o gadania.", desc: "Tata: Rowerem? Ludzie pomy\u015Bl\u0105, \u017Ce zbankrutowali\u015Bmy.\nMama: Ja tam uwa\u017Cam, \u017Ce to \u0142adnie.\nTata: Kierowca. 17:30.", effects: { relations: 1 } },
-            { label: "Ola, nie przychod\u017A.", desc: "Ola: ju\u017C wrzuci\u0142am na story \u017Ce idziesz \u{1F607}\nOla: 48 wy\u015Bwietle\u0144\nTata: Ola, skasuj to. Natychmiast.\nOla: 112 wy\u015Bwietle\u0144", effects: { media: 1 } }
-          ];
-        case "junior":
-          return [
-            { label: "Id\u0119. Zobacz\u0119, co to za klatka.", desc: "Bartek: TAK\nTrener Zenek: Zobaczysz. I wr\xF3cisz.\nBartek: trenerze to brzmi jak gro\u017Aba\nTrener Zenek: Bo to jest gro\u017Aba.", effects: { rep: 1 } },
-            { label: "Id\u0119, ale z mistrzostw nie rezygnuj\u0119, trenerze.", desc: "Trener Zenek: Trzymam za s\u0142owo.\nTrener Zenek: I \u017Cadnych kopni\u0119\u0107 w kolana. Kolana masz zapa\u015Bnicze, nie do kopania.\nBartek: \u{1F44D}", effects: { relations: 1 } },
-            { label: "Zapa\u015Bnik w klatce to kr\xF3l. Id\u0119.", desc: "Trener Zenek: Kr\xF3l. Do pierwszego kopni\u0119cia w g\u0142ow\u0119.\nBartek: kr\xF3l i jego wierny giermek \u{1F451}\nTrener Zenek: Bartek, ty te\u017C jedziesz w marcu. Pami\u0119taj.", effects: { media: 1 } }
-          ];
-        case "wybraniec":
-          return [
-            { label: "B\u0119d\u0119.", desc: "Nieznany numer: Kr\xF3tko. Lubi\u0119.\nNieznany numer: We\u017A ochraniacz na z\u0119by. I nie m\xF3w nikomu, \u017Ce za darmo, bo reszta p\u0142aci.", effects: { rep: 1 } },
-            { label: "Sk\u0105d pan ma m\xF3j numer?", desc: "Nieznany numer: Od twojej babci. Bardzo mi\u0142a pani.\nNieznany numer: Powiedzia\u0142a, \u017Ce jeste\u015B grzeczny ch\u0142opak i \u017Cebym ci\u0119 za mocno nie bi\u0142.\nNieznany numer: Nie obieca\u0142em.", effects: { relations: 1 } },
-            { label: "To on si\u0119 naprawd\u0119 po\u015Blizgn\u0105\u0142.", desc: "Nieznany numer: Trzy razy?\nNieznany numer: Wtorek, 18:00. Przynie\u015B te po\u015Blizgi.", effects: { media: 1 } }
-          ];
-        default:
-          return [
-            { label: "Id\u0119. Wtorek 18:00.", desc: "Dawid: o kurde, serio\nSeba: bior\u0119 popcorn\nKrzychu: jak ci\u0119 po\u0142o\u017C\u0105 to nie p\u0142acz w grupie", effects: { rep: 1 } },
-            { label: "Id\u0119, ale jak mnie po\u0142o\u017C\u0105, stawiacie kebaba.", desc: "Seba: deal \u{1F32F}\nDawid: du\u017Cy, podw\xF3jne mi\u0119so, zapisuj\u0119\nKrzychu: ju\u017C wiemy kto p\u0142aci \u{1F602}", effects: { media: 1 } },
-            { label: "P\xF3jd\u0119, jak kto\u015B p\xF3jdzie ze mn\u0105.", desc: "Seba: dobra id\u0119 z tob\u0105. na rozgrzewk\u0119\nDawid: Seba na MMA. to b\u0119dzie film\nSeba: zamknij si\u0119", effects: { relations: 1 } }
-          ];
-      }
-    }
-  },
-  {
-    id: "prolog_trener",
-    title: "Trener",
-    once: true,
-    weight: 0,
-    cond: () => false,
-    text: (s) => {
-      const t = clubCoachName(s.club).replace("Trener ", "");
-      const lines = s.profile.start === "wybraniec" ? [`${clubCoachName(s.club)}: To ja jeszcze raz. Zapisz sobie numer: ${t}, trener.`] : [`${clubCoachName(s.club)}: Cze\u015B\u0107, tu ${t}, trener z ${s.club.name}. Dosta\u0142em tw\xF3j numer, \u017Ce chcesz przyj\u015B\u0107.`];
-      lines.push(
-        `${clubCoachName(s.club)}: Wtorek 18:00, ${clubStreet(s.club)}.`,
-        `${clubCoachName(s.club)}: We\u017A wod\u0119, r\u0119cznik i ochraniacz na z\u0119by. Pierwszy trening gratis, potem ${monthly(s.club)} z\u0142 miesi\u0119cznie.`,
-        `${clubCoachName(s.club)}: Jak prze\u017Cyjesz rozgrzewk\u0119, to po kilku tygodniach zrobimy sparing kontrolny. Zobacz\u0119, gdzie ci\u0119 wys\u0142a\u0107.`
-      );
-      return lines.join("\n");
-    },
-    choices: (s) => {
-      const t = clubCoachName(s.club);
-      return [
-        { label: "B\u0119d\u0119 17:45.", desc: `${t}: Dobrze. Sp\xF3\u017Anialscy robi\u0105 burpees. Du\u017Co burpees.`, effects: { rep: 1 } },
-        { label: "A ochraniacz na z\u0119by to jaki?", desc: `${t}: Taki, \u017Ceby z\u0119by zosta\u0142y w buzi.
-${t}: Za 30 z\u0142 w Decathlonie. Wrzucasz do wrz\u0105tku i gryziesz. Nie odwrotnie.`, effects: { media: 1 } },
-        { label: "Trenerze, a da si\u0119 bez biegania?", desc: `${t}: \u{1F602}
-${t}: Nie.`, effects: { relations: 1 } }
-      ];
-    }
   }
 ];
 
@@ -8775,6 +8777,60 @@ function weekGo(s0) {
   withRng(s, (rng) => startFight(rng, s, o));
   return s;
 }
+function tourneyEntry(s, t, ti) {
+  const coach = clubCoachName(s.club);
+  const fee = [60, 80, 120][Math.min(2, amLevel(s) + (t.championship ? 1 : 0))];
+  const first = s.history.filter((h) => h.amateur).length === 0;
+  const k = s.season * 3 + ti;
+  const open = t.championship ? `To s\u0105 Mistrzostwa Polski, ${t.city}. Tu nie ma przypadkowych ludzi: ka\u017Cdy w drabince wygra\u0142 ju\u017C swoje wojew\xF3dztwo.` : first ? `Zapisa\u0142em ci\u0119 na ${t.name} w ${t.city}. Twoje pierwsze zawody. Spokojnie, ka\u017Cdy kiedy\u015B debiutowa\u0142.` : [`Zapisa\u0142em ci\u0119 na ${t.name}, ${t.city}.`, `Lista startowa na ${t.name} posz\u0142a. Jeste\u015B na niej. ${t.city}.`, `Nast\u0119pne zawody: ${t.name} w ${t.city}. Ju\u017C ci\u0119 zg\u0142osi\u0142em.`][k % 3];
+  const body = `Kategoria: ${t.division}. O\u015Bmiu w drabince, trzy wygrane walki dziel\u0105 ci\u0119 od z\u0142ota. Wa\u017Cenie o 7:00, wpisowe ${fee} z\u0142 p\u0142aci klub.`;
+  const tail = ["Jak jedziemy?", "Pisz, jak doje\u017Cd\u017Casz.", "Bus odje\u017Cd\u017Ca o 4:30. Albo radzisz sobie sam."][k % 3];
+  const local = amLevel(s) === 0;
+  const lodging = Math.round((local ? 150 : 300) / 50) * 50;
+  return {
+    id: `entry_${ti}`,
+    title: t.championship ? "Mistrzostwa Polski" : t.name,
+    text: `${coach}: ${open}
+${coach}: ${body}
+${coach}: ${tail}`,
+    choices: [
+      { label: "Jad\u0119 dzie\u0144 wcze\u015Bniej, \u015Bpi\u0119 przy hali", desc: "Hotel kosztuje, ale rano jeste\u015B wyspany.", effects: { money: -lodging, nextFight: 1, note: "wyspany na wa\u017Ceniu" } },
+      {
+        label: "Klubowy bus o 4:30",
+        desc: "Za darmo. \u015Apiewy, kanapki z jajkiem i drzemka na torbie.",
+        chance: 65,
+        success: { relations: 0, rep: 1, note: "ekipa w busie trzyma kciuki" },
+        successText: "Bus doje\u017Cd\u017Ca na czas. Ca\u0142a dru\u017Cyna \u015Bpiewa ci przed rozgrzewk\u0105. Zbijasz pi\u0105tki z ka\u017Cdym.",
+        fail: { nextFight: -1 },
+        failText: "Bus \u0142apie gum\u0119 pod Koninem. Na wa\u017Cenie wpadasz w ostatniej minucie, rozgrzewka trwa trzy minuty."
+      },
+      {
+        label: t.city === s.profile.hometown ? "\u015Api\u0119 w domu, mama robi \u015Bniadanie" : `\u015Api\u0119 u cioci w ${t.city}`,
+        desc: t.city === s.profile.hometown ? "W\u0142asne \u0142\xF3\u017Cko. Mamina jajecznica." : "Ciocia obiecuje, \u017Ce \u201Enie b\u0119dzie zamieszania\u201D.",
+        chance: 55,
+        success: { relations: 1, nextFight: 1 },
+        successText: "Ros\xF3\u0142, cisza, osiem godzin snu. Ciocia odwozi ci\u0119 pod hal\u0119 i macha z parkingu.",
+        fail: { relations: 1, nextFight: -1 },
+        failText: "Ciocia zaprosi\u0142a s\u0105siadki \u201Ena chwil\u0119\u201D. Do p\xF3\u0142nocy ogl\u0105dasz zdj\u0119cia z komunii kuzyna."
+      }
+    ]
+  };
+}
+function entryAnswer(s0, idx) {
+  const e0 = s0.run?.entry;
+  if (!e0 || e0.ev.picked !== void 0 || !e0.ev.choices[idx]) return s0;
+  const s = clone(s0);
+  resolveChoice(s, s.run.entry.ev, idx);
+  return s;
+}
+function entryGo(s0) {
+  const e0 = s0.run?.entry;
+  if (!e0 || e0.ev.picked === void 0) return s0;
+  const s = clone(s0);
+  s.run.entryDone = e0.tIdx;
+  s.run.entry = null;
+  return seasonNext(s);
+}
 function answerPhoneAll(s, pick = () => 0) {
   let out = s;
   for (const m of phoneUnread(s)) out = answerMessage(out, m.id, Math.min(m.choices.length - 1, Math.max(0, pick(m))));
@@ -8785,6 +8841,7 @@ function answerPhoneAll(s, pick = () => 0) {
     out = campGo(out);
   }
   if (out.run?.week) out = weekGo(weekAnswer(out, 0));
+  if (out.run?.entry) out = entryGo(entryAnswer(out, 1));
   return out;
 }
 function answerMessage(s0, id, idx) {
@@ -9639,13 +9696,21 @@ function seasonNext(s0) {
   if (!run || run.done) return s;
   const cur = run.fights[run.fights.length - 1];
   if (cur && !cur.sim.finished) return s;
-  if (run.offer || run.press || run.weigh || run.post || run.invite || run.camp || run.announce || run.week) return s;
+  if (run.offer || run.press || run.weigh || run.post || run.invite || run.camp || run.announce || run.week || run.entry) return s;
   if (afterPending(s) !== null) return s;
   if (run.phoneAt !== run.fights.length) {
     run.phoneAt = run.fights.length;
     withRng(s, (rng) => phoneCheck(rng, s, run.fights.length === 0));
   }
   if (phoneUnread(s).length) return s;
+  if (isAmateurRun(s) && !s.quick) {
+    const ti = run.tIdx ?? 0;
+    const t = run.tourneys?.[ti];
+    if (t && t.stage === "qf" && (run.entryDone ?? -1) < ti) {
+      run.entry = { tIdx: ti, ev: tourneyEntry(s, t, ti) };
+      return s;
+    }
+  }
   withRng(s, (rng) => {
     const idx = run.fights.length;
     if (!isAmateurRun(s)) {
@@ -10030,7 +10095,7 @@ function seasonSkip(s0) {
     if (!run || run.done) break;
     const cur = run.fights[run.fights.length - 1];
     if (cur && cur.sim.pending) break;
-    if (run.offer || run.press || run.weigh || run.post || run.invite || run.camp || run.announce || run.week) break;
+    if (run.offer || run.press || run.weigh || run.post || run.invite || run.camp || run.announce || run.week || run.entry) break;
     if (afterPending(s) !== null) s = afterNext(s);
     s = seasonNext(s);
     if (phoneUnread(s).length) break;
@@ -12263,7 +12328,9 @@ var ALLOWED = /* @__PURE__ */ new Set([
   "afterNext",
   "weekAnswer",
   "weekGo",
-  "setTickets"
+  "setTickets",
+  "entryAnswer",
+  "entryGo"
 ]);
 var YEAR_COST = {
   startSeason: () => 1,
