@@ -16,6 +16,7 @@ __export(game_exports, {
   CAMPS: () => CAMPS,
   CONTRACT_ASKS: () => CONTRACT_ASKS,
   DAGESTAN_GAINS: () => DAGESTAN_GAINS,
+  DEPOSIT_RATE: () => DEPOSIT_RATE,
   DIET: () => DIET,
   DONATIONS: () => DONATIONS,
   EXPEDITIONS: () => EXPEDITIONS,
@@ -42,6 +43,7 @@ __export(game_exports, {
   backroomAvailable: () => backroomAvailable,
   backroomCost: () => backroomCost,
   backroomOpen: () => backroomOpen,
+  breakDeposit: () => breakDeposit,
   breakPreview: () => breakPreview,
   budgetBalance: () => budgetBalance,
   budgetLines: () => budgetLines,
@@ -80,6 +82,8 @@ __export(game_exports, {
   declineBlocked: () => declineBlocked,
   declineInvite: () => declineInvite,
   declineOffer: () => declineOffer,
+  depositOptions: () => depositOptions,
+  depositPayout: () => depositPayout,
   dietCost: () => dietCost,
   dietForm: () => dietForm,
   displayName: () => displayName,
@@ -134,6 +138,7 @@ __export(game_exports, {
   negotiateOffer: () => negotiateOffer,
   nemesisFighter: () => nemesisFighter,
   newGame: () => newGame,
+  openDeposit: () => openDeposit,
   phoneUnread: () => phoneUnread,
   pickClub: () => pickClub,
   pickContract: () => pickContract,
@@ -7289,6 +7294,8 @@ function budgetLines(s) {
     lines.push(
       s.tier === 0 ? { label: "Op\u0142aty startowe i dojazdy", sub: amLevel(s) === 0 ? "zawody wojew\xF3dzkie" : "Amatorski Puchar i Mistrzostwa Polski", amount: -s.contract.entryCost, icon: "receipt" } : { label: "Badania, licencja, dojazdy", sub: s.contract.fed, amount: -s.contract.entryCost, icon: "receipt" }
     );
+  const dep = depositPayout(s);
+  if (dep) lines.push({ label: "Lokata Wojownik: zwrot z odsetkami", sub: `${s.deposit.amount.toLocaleString("pl-PL")} z\u0142 + ${Math.round(DEPOSIT_RATE * 100)}%`, amount: dep, icon: "trend" });
   if (s.diet === "catering") lines.push({ label: "Catering FitFighter", sub: "dieta z Wa\u017Cki, ca\u0142y rok", amount: -dietCost(s), icon: "receipt" });
   const staff = [0, 0, 2500, 6e3, 3e4][s.tier];
   if (staff > 0 && s.contract.kind !== "freak")
@@ -8002,6 +8009,10 @@ function startSeason(s0) {
   withRng(s, (rng) => {
     ensureRoster(rng, s);
     s.money += budgetBalance(s);
+    if (depositPayout(s)) {
+      log(s, `Lokata wr\xF3ci\u0142a z odsetkami: ${depositPayout(s)} z\u0142.`);
+      s.deposit = null;
+    }
     if (s.diet === "catering") s.flags[`dietPaid:${s.season}`] = 1;
     if (followersOf(s) >= 2e3 && (s.social === "self" || s.social === "pro")) s.media = clamp(s.media + 2, 0, 100);
     const jm = jobDef(s);
@@ -8648,6 +8659,33 @@ function podcastListen(s0) {
   const s = clone(s0);
   s.flags[`pod:${opp.id}`] = 1;
   withRng(s, (rng) => applyEffects(s, { nextFight: 1 }, rng));
+  return s;
+}
+var DEPOSIT_RATE = 0.06;
+function depositOptions(s) {
+  if (s.phase !== "budget" || s.deposit) return [];
+  const free = s.money + budgetBalance(s);
+  return [0.25, 0.5, 0.75].map((k) => Math.floor(free * k / 1e3) * 1e3).filter((a, i, arr) => a >= 1e3 && arr.indexOf(a) === i);
+}
+function depositPayout(s) {
+  const d = s.deposit;
+  if (!d || s.season <= d.season) return 0;
+  return Math.round(d.amount * (1 + DEPOSIT_RATE));
+}
+function openDeposit(s0, amount) {
+  if (!depositOptions(s0).includes(amount)) return s0;
+  const s = clone(s0);
+  s.money -= amount;
+  s.deposit = { amount, season: s.season };
+  log(s, `Lokata Wojownik: ${amount} z\u0142 na rok.`);
+  return s;
+}
+function breakDeposit(s0) {
+  if (!s0.deposit || s0.phase === "ended") return s0;
+  const s = clone(s0);
+  s.money += s.deposit.amount;
+  log(s, `Zerwana lokata: ${s.deposit.amount} z\u0142 wraca bez odsetek.`);
+  s.deposit = null;
   return s;
 }
 function buyGear(s0) {
@@ -11550,7 +11588,9 @@ var ALLOWED = /* @__PURE__ */ new Set([
   "tasmaDeal",
   "fotoPost",
   "setDiet",
-  "podcastListen"
+  "podcastListen",
+  "openDeposit",
+  "breakDeposit"
 ]);
 var YEAR_COST = {
   startSeason: () => 1,
