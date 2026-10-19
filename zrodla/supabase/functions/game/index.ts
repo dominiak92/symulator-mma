@@ -9511,7 +9511,17 @@ var cors = {
 };
 var json = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: { ...cors, "Content-Type": "application/json" } });
 var DAY = 864e5;
-var dayIndex = (season) => Math.floor((Date.now() - new Date(season.starts_at).getTime()) / DAY);
+var WAW = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Warsaw", year: "numeric", month: "2-digit", day: "2-digit" });
+var wawDay = (t) => Math.floor(Date.parse(WAW.format(new Date(t)) + "T00:00:00Z") / DAY);
+var dayIndex = (season, t = Date.now()) => wawDay(t) - wawDay(new Date(season.starts_at).getTime());
+function dayStart(season, d) {
+  const target = wawDay(new Date(season.starts_at).getTime()) + d;
+  for (const off of [2, 1]) {
+    const t = target * DAY - off * 36e5;
+    if (wawDay(t) === target && wawDay(t - 1) === target - 1) return t;
+  }
+  return target * DAY;
+}
 function forClient(s) {
   return { ...s, rngState: Math.random() * 4294967296 >>> 0 };
 }
@@ -9519,28 +9529,48 @@ function legacyOf(s) {
   return Math.max(0, Math.round(s.ending?.legacy ?? legacyScore(s)));
 }
 function refill(c, season) {
-  const d = Math.min(dayIndex(season), Math.floor((new Date(season.ends_at).getTime() - new Date(season.starts_at).getTime()) / DAY));
+  const d = Math.min(dayIndex(season), dayIndex(season, new Date(season.ends_at).getTime() - 1));
   if (d > c.refill_day) {
     c.bank = Math.min(season.bank_cap, c.bank + (d - c.refill_day) * season.years_per_day);
     c.refill_day = d;
   }
 }
 function nextRefillAt(season, c) {
-  return new Date(new Date(season.starts_at).getTime() + (c.refill_day + 1) * DAY).toISOString();
+  return new Date(dayStart(season, c.refill_day + 1)).toISOString();
 }
+var db = createClient(Deno.env.get("SUPABASE_URL"), Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"), { auth: { persistSession: false, autoRefreshToken: false } });
+async function userId(jwt) {
+  if (!jwt) return null;
+  try {
+    if (typeof db.auth.getClaims === "function") {
+      const { data: data2, error: error2 } = await db.auth.getClaims(jwt);
+      const sub = data2?.claims?.sub;
+      if (!error2 && typeof sub === "string" && (data2.claims.exp ?? 0) * 1e3 > Date.now()) return sub;
+    }
+  } catch {
+  }
+  const { data, error } = await db.auth.getUser(jwt);
+  return error || !data?.user ? null : data.user.id;
+}
+var later = (p) => {
+  const rt = globalThis.EdgeRuntime;
+  if (rt?.waitUntil) rt.waitUntil(Promise.resolve(p));
+  else return p;
+};
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
   try {
-    const db = createClient(Deno.env.get("SUPABASE_URL"), Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"), { auth: { persistSession: false } });
     const jwt = (req.headers.get("Authorization") ?? "").replace("Bearer ", "");
-    const { data: u, error: ue } = await db.auth.getUser(jwt);
-    if (ue || !u?.user) return json({ error: "Brak sesji gracza." }, 401);
-    const uid2 = u.user.id;
-    const body = await req.json();
+    const [uid2, body] = await Promise.all([userId(jwt), req.json().catch(() => ({}))]);
+    if (!uid2) return json({ error: "Brak sesji gracza." }, 401);
     const op = body.op;
     const now = (/* @__PURE__ */ new Date()).toISOString();
-    const { data: season } = await db.from("seasons").select("*").lte("starts_at", now).order("starts_at", { ascending: false }).limit(1).maybeSingle();
-    const { data: player } = await db.from("players").select("*").eq("id", uid2).maybeSingle();
+    const needCareer = (op === "load" || op === "act") && typeof body.careerId === "string";
+    const [{ data: season }, { data: player }, careerRes] = await Promise.all([
+      db.from("seasons").select("*").lte("starts_at", now).order("starts_at", { ascending: false }).limit(1).maybeSingle(),
+      db.from("players").select("*").eq("id", uid2).maybeSingle(),
+      needCareer ? db.from("careers").select("*").eq("id", body.careerId).eq("player_id", uid2).maybeSingle() : Promise.resolve({ data: null })
+    ]);
     const leaderboard = async () => {
       if (!season) return [];
       const { data } = await db.from("careers").select("player_id, legacy, finished, players(nick)").eq("season_id", season.id).order("legacy", { ascending: false }).limit(400);
@@ -9579,8 +9609,8 @@ Deno.serve(async (req) => {
       return json({ careerId: data.id, state: forClient(s), bank: data.bank, nextRefillAt: nextRefillAt(season, data) });
     }
     if (op === "load" || op === "act") {
-      const { data: c } = await db.from("careers").select("*").eq("id", body.careerId).eq("player_id", uid2).maybeSingle();
-      if (!c) return json({ error: "Nie ma takiej kariery." }, 404);
+      const c = careerRes.data;
+      if (!c || c.season_id !== season.id) return json({ error: "Nie ma takiej kariery." }, 404);
       const bank0 = c.bank;
       refill(c, season);
       let s = c.state;
@@ -9597,9 +9627,9 @@ Deno.serve(async (req) => {
           s = next;
         }
         const legacy = legacyOf(s);
-        const { error } = await db.from("careers").update({ state: s, bank: c.bank, refill_day: c.refill_day, legacy, finished: s.phase === "ended", version: c.version + 1, updated_at: now }).eq("id", c.id).eq("version", c.version);
-        if (error) return json({ error: "Zapis si\u0119 nie uda\u0142, spr\xF3buj jeszcze raz." }, 409);
-        await db.from("career_log").insert({ career_id: c.id, ops, season_before: seasonBefore, season_after: s.season });
+        const { data: saved, error } = await db.from("careers").update({ state: s, bank: c.bank, refill_day: c.refill_day, legacy, finished: s.phase === "ended", version: c.version + 1, updated_at: now }).eq("id", c.id).eq("version", c.version).select("id");
+        if (error || !saved?.length) return json({ error: "Kariera zmieni\u0142a si\u0119 w innym oknie. Wczytaj j\u0105 jeszcze raz.", stale: true }, 409);
+        await later(db.from("career_log").insert({ career_id: c.id, ops, season_before: seasonBefore, season_after: s.season }));
       } else if (c.bank !== bank0) await db.from("careers").update({ bank: c.bank, refill_day: c.refill_day }).eq("id", c.id);
       return json({ state: forClient(s), bank: c.bank, nextRefillAt: nextRefillAt(season, c) });
     }
