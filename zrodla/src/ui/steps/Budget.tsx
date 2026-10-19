@@ -9,7 +9,9 @@ import brFoundation from '../../assets/backroom/foundation.webp';
 const BR_IMG: Record<string, string> = { physio: brPhysio, doctor: brDoctor, supps: brSupps, sparring: brSparring, clinic: brClinic };
 import { DONATIONS, donate, foundationLegacy, foundationOpen, setYearGoal, yearGoalOptions, yearGoalReward, currentYearGoal, setJob, setSocial, acceptShadyDeal, refuseShadyDeal, acceptSponsorOffer, sponsorPoolOf, sponsorCap, BACKROOM, backroomAvailable, backroomCost, backroomOpen, hasLabs, setBackroom, cheaperClub, downgradeClub, fightRange, plannedFights, setWantFights, ACADEMY_LEVELS, academyName, academyNext, investAcademy, OVERDRAFT, PITCH_SLOTS, pitchBlocked, pitchChance, pitchPay, pitchSponsor, breakPreview, budgetBalance, budgetLines, canStartSeason, expectedPurses, loanOffer, loanRefusal, familyHelpOffer, takeFamilyHelp, startSeason, takeBreakYear, takeLoan } from '../../engine/game';
 import { useState, type CSSProperties } from 'react';
-import type { StatKey } from '../../engine/types';
+import type { GameState, StatKey } from '../../engine/types';
+import { Drum } from '../Drum';
+import { loadSettings } from '../../storage';
 import { money, plural } from '../../format';
 import type { StepProps } from '../Game';
 import { ClubEmblem, SponsorLogo } from '../Emblem';
@@ -33,6 +35,7 @@ export default function Budget({ game, setGame }: StepProps) {
   const cheap = after < 0 ? cheaperClub(g) : null;
   const [confirmBreak, setConfirmBreak] = useState(false);
   const [pitchOpen, setPitchOpen] = useState(false);
+  const [pitchDrum, setPitchDrum] = useState<{ next: GameState; chance: number; ok: boolean; label: string } | null>(null);
   const [confirmAcad, setConfirmAcad] = useState(false);
   const acad = g.academy ?? 0;
   const acadNext = academyNext(g);
@@ -455,15 +458,33 @@ export default function Budget({ game, setGame }: StepProps) {
           <p className="muted small" style={{ margin: 0 }}>
             {blocked}
           </p>
+        ) : pitchDrum ? (
+          <Drum
+            chance={pitchDrum.chance}
+            outcome={pitchDrum.ok ? 'success' : 'fail'}
+            label={pitchDrum.label}
+            binary
+            rows={{ success: { icon: '✓', text: 'Podpisują' }, fail: { icon: '✗', text: 'Odmawiają' } }}
+            onDone={() => {
+              const n = pitchDrum.next;
+              setPitchDrum(null);
+              if (n.pitch?.ok) sfxCash();
+              setGame(n);
+            }}
+          />
         ) : pitchOpen ? (
           <div className="pitch-opts">
             {PITCH_SLOTS.map((sl) => {
               const ch = pitchChance(g, sl.id);
               return (
                 <button key={sl.id} className="choice pitch-opt" onClick={() => {
+                    if (pitchDrum) return;
                     const n = pitchSponsor(g, sl.id);
-                    if (n.pitch?.ok) sfxCash();
-                    setGame(n);
+                    if (!loadSettings().animations) {
+                      if (n.pitch?.ok) sfxCash();
+                      return setGame(n);
+                    }
+                    setPitchDrum({ next: n, chance: ch, ok: !!n.pitch?.ok, label: `${sl.label}: czekasz na odpowiedź` });
                   }}>
                   <span className="opt-top">
                     <span className="opt-label">{sl.label}</span>
