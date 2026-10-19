@@ -1238,7 +1238,7 @@ var THREADS = [
       { label: "Rozdajesz w klubie", desc: "Niech wszyscy cierpi\u0105 razem.", effects: { rep: 2 } }
     ]
   },
-  // ---------- Sparing z YouTuberem ----------
+  // ---------- Sparing z JuTuberem ----------
   {
     id: "youtuber.start",
     app: "fotogram",
@@ -1252,7 +1252,7 @@ var THREADS = [
         desc: "Co mo\u017Ce p\xF3j\u015B\u0107 nie tak?",
         chance: 50,
         success: { media: 3, follow: { step: "youtuber.collab", after: 2 } },
-        successText: "YouTuber naprawd\u0119 idzie na lajcie. Film ma milion wy\u015Bwietle\u0144, a ty wygl\u0105dasz jak profesor.",
+        successText: "JuTuber naprawd\u0119 idzie na lajcie. Film ma milion wy\u015Bwietle\u0144, a ty wygl\u0105dasz jak profesor.",
         fail: { media: 2, rep: -2 },
         failText: "Po 30 sekundach \u201Elajtu\u201D go\u015B\u0107 wali z ca\u0142ej si\u0142y. Do filmu wchodzi tylko moment, w kt\xF3rym trafia ciebie."
       },
@@ -2073,7 +2073,7 @@ var WEEK_EVENTS = [
     text: () => "Dwa dni przed walk\u0105 budzisz si\u0119 o drugiej w nocy. Kebab z dworca okaza\u0142 si\u0119 b\u0142\u0119dem. \u017Bo\u0142\u0105dek robi salta, a wa\u017Cenie jutro rano.",
     choices: (s) => [
       { label: "Lekarz gali i kropl\xF3wka", desc: "Pewne, ale kosztuje i troch\u0119 os\u0142abia.", effects: { money: -zl4(s, 300), nextFight: -1 } },
-      { label: "Przetrzymujesz na wodzie z sol\u0105", desc: "Domowy spos\xF3b babci.", chance: 60, success: { nextFight: 0, note: "babcia mia\u0142a racj\u0119" }, successText: "Rano jak nowy. Babcia na Messengerze pisze \u201Ea nie m\xF3wi\u0142am\u201D.", fail: { nextFight: -3 }, failText: "Do walki wchodzisz blady jak \u015Bciana. Naro\u017Cnik pyta, czy na pewno dasz rad\u0119." }
+      { label: "Przetrzymujesz na wodzie z sol\u0105", desc: "Domowy spos\xF3b babci.", chance: 60, success: { nextFight: 0, note: "babcia mia\u0142a racj\u0119" }, successText: "Rano jak nowy. Babcia na Mesend\u017Cerze pisze \u201Ea nie m\xF3wi\u0142am\u201D.", fail: { nextFight: -3 }, failText: "Do walki wchodzisz blady jak \u015Bciana. Naro\u017Cnik pyta, czy na pewno dasz rad\u0119." }
     ]
   },
   {
@@ -3062,7 +3062,7 @@ var FREAK_TYPES = [
   { title: "pose\u0142 na urlopie", nick: "Immunitet" },
   { title: "kulturysta po czterdziestce", nick: "Pompka" },
   { title: "uczestnik randkowego reality show", nick: "Amant" },
-  { title: "cukiernik z TikToka", nick: "Babeczka" },
+  { title: "cukiernik z TikTaka", nick: "Babeczka" },
   { title: "trener personalny celebryt\xF3w", nick: "Coach" },
   { title: "youtuber od survivalu", nick: "Przetrwaniec" },
   { title: "prezenter pogody", nick: "Ni\u017C" },
@@ -3072,7 +3072,7 @@ var FREAK_TYPES = [
   { title: "m\xF3wca motywacyjny", nick: "Mindset" },
   { title: "mistrz w jedzeniu pierog\xF3w", nick: "Farsz" },
   { title: "by\u0142y cz\u0142onek boysbandu", nick: "Falset" },
-  { title: "kierowca tira z TikToka", nick: "Kabina" },
+  { title: "kierowca tira z TikTaka", nick: "Kabina" },
   { title: "radny gminy", nick: "Uchwa\u0142a" },
   { title: "barber gwiazd", nick: "Fade" },
   { title: "zawodowy gracz komputerowy", nick: "Kamper" }
@@ -4368,7 +4368,7 @@ var MONEY_EVENTS = [
     choices: (s) => [
       { label: "Gruba koperta", desc: "Rodzina pami\u0119ta takie rzeczy.", effects: { money: -cash(s, 0.04, 400, 15e3), relations: 3 } },
       { label: "Skromna koperta", desc: "Ciocia zrobi min\u0119.", effects: { money: -cash(s, 0.015, 150, 3e3), relations: -1 } },
-      { label: "Nie jedziesz, ob\xF3z", desc: "Wysy\u0142asz \u017Cyczenia na Messengerze.", effects: { relations: -3, form: 1 } }
+      { label: "Nie jedziesz, ob\xF3z", desc: "Wysy\u0142asz \u017Cyczenia na Mesend\u017Cerze.", effects: { relations: -3, form: 1 } }
     ]
   },
   {
@@ -4622,7 +4622,7 @@ var EXTRA_EVENTS = [
   },
   {
     id: "trener_youtube",
-    title: "Kr\u0119cio\u0142ek z YouTube",
+    title: "Kr\u0119cio\u0142ek z JuTub",
     once: true,
     weight: 4,
     cond: (s) => s.tier >= 1 && s.tier <= 2,
@@ -4673,7 +4673,7 @@ var EXTRA_EVENTS = [
   },
   {
     id: "kanal_youtube",
-    title: "Kana\u0142 na YouTube",
+    title: "Kana\u0142 na JuTub",
     once: true,
     weight: 4,
     cond: (s) => s.tier >= 2 && s.media >= 15,
@@ -4846,12 +4846,12 @@ var EXTRA_EVENTS = [
   },
   {
     id: "mama_facebook",
-    title: "Mama na Facebooku",
+    title: "Mama na Fejsbuku",
     weight: 3,
     cond: (s) => s.media >= 10,
     text: (s) => vary2(s, [
       "Mama komentuje ka\u017Cdy post o tobie. Pod zapowiedzi\u0105 walki napisa\u0142a: \u201ESynku, uwa\u017Caj na buzi\u0119, ubierz si\u0119 ciep\u0142o\u201D.",
-      "Mama za\u0142o\u017Cy\u0142a na Facebooku fanpage \u201EMama zawodnika\u201D. Ma wi\u0119cej obserwuj\u0105cych ni\u017C ty.",
+      "Mama za\u0142o\u017Cy\u0142a na Fejsbuku fanpage \u201EMama zawodnika\u201D. Ma wi\u0119cej obserwuj\u0105cych ni\u017C ty.",
       "Mama wda\u0142a si\u0119 w k\u0142\xF3tni\u0119 w komentarzach z hejterem. Hejter przeprosi\u0142."
     ]),
     choices: () => [
@@ -5038,7 +5038,7 @@ var FUN_EVENTS = [
   },
   {
     id: "tiktok_trend",
-    title: "Trend na TikToku",
+    title: "Trend na TikTaku",
     weight: 4,
     cond: (s) => s.tier >= 1,
     text: (s) => vary3(s, [
@@ -5805,7 +5805,7 @@ ${t}: I przy\u0142\xF3\u017C l\xF3d na to oko.`;
   },
   {
     id: "dieta_influencer",
-    title: "Dieta z Instagrama",
+    title: "Dieta z Instagryma",
     once: true,
     weight: 4,
     cond: (s) => s.tier >= 1 && s.media >= 10,
@@ -5813,7 +5813,7 @@ ${t}: I przy\u0142\xF3\u017C l\xF3d na to oko.`;
     choices: () => [
       {
         label: "Wchodzisz w to",
-        desc: "Dieta z Instagrama, co mo\u017Ce p\xF3j\u015B\u0107 nie tak.",
+        desc: "Dieta z Instagryma, co mo\u017Ce p\xF3j\u015B\u0107 nie tak.",
         chance: 55,
         success: { money: 3e3, form: 2, media: 2 },
         fail: { money: 3e3, form: -5, note: "wa\u017Cenie na granicy omdlenia" },
@@ -5879,7 +5879,7 @@ ${t}: I przy\u0142\xF3\u017C l\xF3d na to oko.`;
     text: () => "Siostra bierze \u015Blub. Termin? Dok\u0142adnie w dniu wa\u017Cenia przed wa\u017Cn\u0105 walk\u0105. Rodzina m\xF3wi, \u017Ce nie wybaczy.",
     choices: () => [
       { label: "Idziesz na wesele", desc: "Woda zamiast w\xF3dki, ale i tak ta\u0144czysz do 4 rano.", effects: { relations: 4, form: -4 } },
-      { label: "Jedziesz na wa\u017Cenie", desc: "Siostra wysy\u0142a ci tort na Messengerze.", effects: { relations: -4, rep: 1 } }
+      { label: "Jedziesz na wa\u017Cenie", desc: "Siostra wysy\u0142a ci tort na Mesend\u017Cerze.", effects: { relations: -4, rep: 1 } }
     ]
   },
   {
@@ -6015,7 +6015,7 @@ ${t}: I przy\u0142\xF3\u017C l\xF3d na to oko.`;
     title: "Wpis o trzeciej w nocy",
     weight: 4,
     cond: (s) => s.media >= 10,
-    text: () => "O trzeciej w nocy wrzuci\u0142e\u015B na Instagrama d\u0142ugi wpis o tym, \u017Ce \u201Ewszyscy w polskim MMA to leszcze\u201D. Rano ma 4 tys. komentarzy.",
+    text: () => "O trzeciej w nocy wrzuci\u0142e\u015B na Instagryma d\u0142ugi wpis o tym, \u017Ce \u201Ewszyscy w polskim MMA to leszcze\u201D. Rano ma 4 tys. komentarzy.",
     choices: () => [
       { label: "Przepraszasz", desc: "\u201ETo nie ja, to emocje\u201D.", effects: { rep: 1, media: -1 } },
       { label: "Brniesz dalej", desc: "Nagrywasz drug\u0105 cz\u0119\u015B\u0107.", effects: { media: 6, rep: -4 } }
@@ -6329,7 +6329,7 @@ ${t}: I przy\u0142\xF3\u017C l\xF3d na to oko.`;
     once: true,
     weight: 9,
     cond: (s) => s.tier >= 1 && s.media >= 12 && !s.sponsors.some((x) => x.name === "Ground Game"),
-    text: () => "Na Instagramie odzywa si\u0119 Ground Game. Widzieli twoj\u0105 ostatni\u0105 walk\u0119 i chc\u0105 ci\u0119 w ekipie: rashguardy, spodenki na walki i kod rabatowy z twoim nazwiskiem.",
+    text: () => "Na Instagrymie odzywa si\u0119 Ground Game. Widzieli twoj\u0105 ostatni\u0105 walk\u0119 i chc\u0105 ci\u0119 w ekipie: rashguardy, spodenki na walki i kod rabatowy z twoim nazwiskiem.",
     choices: (s) => [
       {
         label: "Do\u0142\u0105czasz do Bandy",
@@ -8446,7 +8446,7 @@ function maybeAutoSponsor(rng, s) {
 var PITCH_SLOTS = [
   { id: "spodenki", label: "Logo na spodenkach", desc: "Najlepiej wida\u0107 w klatce, firmy p\u0142ac\u0105 najwi\u0119cej, ale trudno przekona\u0107.", base: 0.28, pay: 1, clause: "logo na spodenkach" },
   { id: "plecy", label: "Plecy rashguarda na wa\u017Ceniu", desc: "\u0141atwiej si\u0119 zgodz\u0105, ale zap\u0142ac\u0105 mniej.", base: 0.45, pay: 0.55, clause: "logo na plecach na wa\u017Ceniu i face to face" },
-  { id: "social", label: "Posty na Instagramie", desc: "Licz\u0105 si\u0119 zasi\u0119gi. Im wi\u0119cej medi\xF3w, tym wi\u0119ksza szansa.", base: 0.15, pay: 0.75, clause: "trzy posty w roku z kodem rabatowym" }
+  { id: "social", label: "Posty na Instagrymie", desc: "Licz\u0105 si\u0119 zasi\u0119gi. Im wi\u0119cej medi\xF3w, tym wi\u0119ksza szansa.", base: 0.15, pay: 0.75, clause: "trzy posty w roku z kodem rabatowym" }
 ];
 var PITCH_FAIL = [
   "odpisuje, \u017Ce w tym roku ca\u0142y bud\u017Cet poszed\u0142 na festyn gminny.",
@@ -8626,7 +8626,8 @@ function ensurePhone(s) {
 var threadOf = (stepId) => stepId.split(".")[0];
 function deliverStep(s, st) {
   const ph = ensurePhone(s);
-  const from = typeof st.from === "function" ? st.from(s) : st.from;
+  const raw = typeof st.from === "function" ? st.from(s) : st.from;
+  const from = raw === "Trener" || raw === "Trener klubowy" ? coachOf(s).id === "club" ? clubCoachName(s.club) : coachOf(s).name : raw;
   if (ph.inbox.some((m) => m.picked === void 0 && m.id.startsWith(`${st.id}#`))) return;
   const msg = {
     id: `${st.id}#${ph.tick}.${ph.inbox.length}`,
