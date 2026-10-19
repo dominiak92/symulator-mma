@@ -15,7 +15,7 @@ const ALLOWED = new Set([
   'startSeason', 'chooseEvent', 'continueAfterEvent', 'setFarewell', 'acceptInvite', 'declineInvite', 'seasonNext', 'decide',
   'seasonSkip', 'acceptAllOffers', 'pressAnswer', 'weighIn', 'postAnswer', 'acceptOffer', 'negotiateOffer', 'declineOffer',
   'setWantFights', 'setManager', 'setYearGoal', 'toSummary', 'toMarket', 'pickContract', 'pickClub', 'negotiateContract',
-  'setJob', 'donate', 'setCoach', 'setPerks', 'setSocial', 'confirmMarket', 'retire', 'chooseAfter', 'answerMessage', 'startErrand', 'claimErrand',
+  'setJob', 'donate', 'setCoach', 'setPerks', 'setSocial', 'confirmMarket', 'retire', 'chooseAfter', 'answerMessage', 'startErrand', 'claimErrand', 'campWeek', 'campGo',
 ]);
 // akcje, które otwierają nowy rok kariery: zużywają lata z dziennego limitu
 const YEAR_COST: Record<string, (s: GameState, args: unknown[]) => number> = {
