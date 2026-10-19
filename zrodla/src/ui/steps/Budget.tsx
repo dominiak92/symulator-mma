@@ -7,7 +7,7 @@ import brClinic from '../../assets/backroom/clinic.webp';
 import brFoundation from '../../assets/backroom/foundation.webp';
 
 const BR_IMG: Record<string, string> = { physio: brPhysio, doctor: brDoctor, supps: brSupps, sparring: brSparring, clinic: brClinic };
-import { DONATIONS, donate, foundationLegacy, foundationOpen, setYearGoal, yearGoalOptions, yearGoalReward, currentYearGoal, setJob, setSocial, acceptShadyDeal, refuseShadyDeal, BACKROOM, backroomAvailable, backroomCost, backroomOpen, hasLabs, setBackroom, cheaperClub, downgradeClub, fightRange, plannedFights, setWantFights, ACADEMY_LEVELS, academyName, academyNext, investAcademy, OVERDRAFT, PITCH_SLOTS, pitchBlocked, pitchChance, pitchPay, pitchSponsor, breakPreview, budgetBalance, budgetLines, canStartSeason, expectedPurses, loanOffer, loanRefusal, startSeason, takeBreakYear, takeLoan } from '../../engine/game';
+import { DONATIONS, donate, foundationLegacy, foundationOpen, setYearGoal, yearGoalOptions, yearGoalReward, currentYearGoal, setJob, setSocial, acceptShadyDeal, refuseShadyDeal, acceptSponsorOffer, sponsorPoolOf, sponsorCap, BACKROOM, backroomAvailable, backroomCost, backroomOpen, hasLabs, setBackroom, cheaperClub, downgradeClub, fightRange, plannedFights, setWantFights, ACADEMY_LEVELS, academyName, academyNext, investAcademy, OVERDRAFT, PITCH_SLOTS, pitchBlocked, pitchChance, pitchPay, pitchSponsor, breakPreview, budgetBalance, budgetLines, canStartSeason, expectedPurses, loanOffer, loanRefusal, familyHelpOffer, takeFamilyHelp, startSeason, takeBreakYear, takeLoan } from '../../engine/game';
 import { useState, type CSSProperties } from 'react';
 import type { StatKey } from '../../engine/types';
 import { money, plural } from '../../format';
@@ -26,6 +26,7 @@ export default function Budget({ game, setGame }: StepProps) {
   const bal = budgetBalance(g);
   const after = g.money + bal;
   const loan = loanOffer(g);
+  const fam = familyHelpOffer(g);
   const refusal = loanRefusal(g);
   const brk = breakPreview(g);
   const canStart = canStartSeason(g);
@@ -48,7 +49,7 @@ export default function Budget({ game, setGame }: StepProps) {
     { id: 'bill', label: 'Rachunek', icon: 'receipt', dot: after < 0 },
     ...(showLife ? [{ id: 'life' as Tab, label: 'Życie', icon: 'home' }] : []),
     ...(showBack ? [{ id: 'back' as Tab, label: 'Zaplecze', icon: 'users' }] : []),
-    ...(showSpons ? [{ id: 'spons' as Tab, label: 'Sponsorzy', icon: 'briefcase', dot: shadyOpen || (!pitchDone && !blocked) }] : []),
+    ...(showSpons ? [{ id: 'spons' as Tab, label: 'Sponsorzy', icon: 'briefcase', dot: shadyOpen || (!pitchDone && !blocked) || (!!g.sponsorOffers && g.sponsorOffers.season === g.season && !g.sponsorOffers.picked && g.sponsorOffers.list.length > 0) }] : []),
   ];
   const [tab, setTab] = useState<Tab>('bill');
   const purses = expectedPurses(g);
@@ -90,7 +91,7 @@ export default function Budget({ game, setGame }: StepProps) {
       {tabs.length > 1 && (
         <div className="bud-tabs" role="tablist" aria-label="Budżet">
           {tabs.map((x) => (
-            <button key={x.id} role="tab" aria-selected={tab === x.id} className={tab === x.id ? 'on' : ''} onClick={() => setTab(x.id)}>
+            <button key={x.id} role="tab" aria-selected={tab === x.id} className={tab === x.id ? 'on' : ''} onClick={(e) => { setTab(x.id); const bar = (e.currentTarget.parentElement as HTMLElement | null); if (bar && bar.getBoundingClientRect().top < 0) bar.scrollIntoView({ block: 'start', behavior: 'smooth' }); }}>
               <Icon name={x.icon} size={14} />
               {x.label}
               {x.dot && <i className="bud-dot" aria-label="wymaga uwagi" />}
@@ -251,6 +252,20 @@ export default function Budget({ game, setGame }: StepProps) {
               </button>
             </div>
           )}
+          {fam && (
+            <div className="mt-opt">
+              <div>
+                <strong>{fam.who}</strong>
+                <span>
+                  {fam.text} Koszt: {fam.cost}.
+                </span>
+              </div>
+              <button className="btn btn-small btn-ghost btn-ico" onClick={() => setGame(takeFamilyHelp(g))}>
+                <Icon name="phone" size={15} />
+                {g.profile.start === 'biznes' ? 'Dzwonię do taty' : 'Proszę rodziców'}
+              </button>
+            </div>
+          )}
           {loan ? (
             <div className="mt-opt">
               <div>
@@ -358,6 +373,68 @@ export default function Budget({ game, setGame }: StepProps) {
         </section>
       )}
 
+      {tab === 'spons' && g.sponsorOffers && g.sponsorOffers.season === g.season && g.sponsorOffers.list.length > 0 && (
+        <section className="sp-offers">
+          <div className="sp-head">
+            <b>Dzwonią marki</b>
+            <small>{g.sponsorOffers.picked ? 'Umowa podpisana. Reszta poczeka do przyszłego roku.' : 'Możesz podpisać jedną z tych ofert.'}</small>
+          </div>
+          {g.sponsorOffers.list.map((o) => {
+            const taken = g.sponsorOffers!.picked === o.id;
+            const off = !!g.sponsorOffers!.picked && !taken;
+            return (
+              <div key={o.id} className={`sp-offer ${taken ? 'taken' : ''} ${off ? 'off' : ''}`}>
+                <SponsorLogo name={o.name} size={40} />
+                <div className="sp-body">
+                  <span className={`sp-pool ${o.pool}`}>{o.pool === 'global' ? 'marka światowa' : o.pool === 'national' ? 'marka krajowa' : 'firma lokalna'} · {o.title.toLowerCase()}</span>
+                  <strong>{o.name}</strong>
+                  <small>{o.clause}</small>
+                  <span className="sp-tags">
+                    <span className="tag gold">+{money(o.perSeason)} / rok</span>
+                    <span className="tag">{o.seasons === 1 ? '1 rok' : `${o.seasons} lata`}</span>
+                    {o.media ? <span className="tag blue">media +{o.media}</span> : null}
+                    {o.rep ? <span className="tag good">reputacja +{o.rep}</span> : null}
+                    {o.form ? <span className="tag bad">forma {o.form}</span> : null}
+                  </span>
+                </div>
+                {taken ? (
+                  <span className="sp-done">
+                    <Icon name="check" size={14} /> podpisane
+                  </span>
+                ) : (
+                  <button className="btn btn-small btn-ghost" disabled={off || g.sponsors.length >= sponsorCap(g)} onClick={() => setGame(acceptSponsorOffer(g, o.id))}>
+                    Podpisuję
+                  </button>
+                )}
+              </div>
+            );
+          })}
+        </section>
+      )}
+
+      {tab === 'spons' && g.sponsors.length > 0 && (
+        <section className="sp-mine">
+          <div className="sp-head">
+            <b>Twoi sponsorzy</b>
+            <small>
+              {g.sponsors.length} z {sponsorCap(g)} miejsc na stroju · razem +{money(g.sponsors.reduce((a, b) => a + b.perSeason, 0))} na rok
+            </small>
+          </div>
+          {g.sponsors.map((sp) => (
+            <div key={sp.id} className="sp-row">
+              <SponsorLogo name={sp.name} size={30} />
+              <span className="sp-row-txt">
+                <b>{sp.name}</b>
+                <small>
+                  {sponsorPoolOf(sp.name) === 'global' ? 'światowa' : sponsorPoolOf(sp.name) === 'national' ? 'krajowa' : 'lokalna'} · {sp.clause} · {sp.seasonsLeft === 1 ? 'ostatni rok' : `jeszcze ${sp.seasonsLeft} lata`}
+                </small>
+              </span>
+              <b className="sp-row-amt">+{money(sp.perSeason)}</b>
+            </div>
+          ))}
+        </section>
+      )}
+
       {tab === 'spons' && (
       <section className="pitch">
         <div className="pitch-head">
@@ -366,7 +443,7 @@ export default function Budget({ game, setGame }: StepProps) {
           </span>
           <div>
             <b>Poszukaj sponsora</b>
-            <small>Raz na rok możesz sam napisać do firm z okolicy.</small>
+            <small>Raz na rok możesz sam napisać do {g.tier <= 1 ? 'firm z okolicy' : g.tier <= 3 ? 'krajowych marek' : 'światowych marek'}.</small>
           </div>
         </div>
         {pitchDone ? (
@@ -423,7 +500,7 @@ export default function Budget({ game, setGame }: StepProps) {
               <small>
                 {acad
                   ? `Poziom ${acad} z ${ACADEMY_LEVELS.length}: ${ACADEMY_LEVELS[acad - 1].name}. Zarabia co roku i zostaje po karierze.`
-                  : 'Inwestycja na lata: przychód co roku i punkty legacy po karierze.'}
+                  : 'Inwestycja na lata: przychód co roku i punkty dorobku po karierze.'}
               </small>
             </div>
           </div>
@@ -570,7 +647,7 @@ function YearGoalPick({ g, setGame }: { g: StepProps['game']; setGame: StepProps
   );
 }
 
-/** Duże wydatki pod koniec kariery: fundacja (reputacja i LEGACY). */
+/** Duże wydatki pod koniec kariery: fundacja (reputacja i dorobek). */
 function BigSpend({ g, setGame }: { g: StepProps['game']; setGame: StepProps['setGame'] }) {
   if (!foundationOpen(g)) return null;
   const done = g.flags.donatedYear === g.season;
@@ -582,8 +659,8 @@ function BigSpend({ g, setGame }: { g: StepProps['game']; setGame: StepProps['se
         <div>
           <b>Fundacja twojego imienia</b>
           <small>
-            Sale treningowe dla dzieci z małych miast. Raz na rok wpłata zamienia pieniądze na reputację i punkty LEGACY.
-            {total > 0 ? ` Do tej pory: ${money(total)}, +${foundationLegacy(g)} LEGACY.` : ''}
+            Sale treningowe dla dzieci z małych miast. Raz na rok wpłata zamienia pieniądze na reputację i punkty dorobku.
+            {total > 0 ? ` Do tej pory: ${money(total)}, +${foundationLegacy(g)} pkt dorobku.` : ''}
           </small>
         </div>
       </div>

@@ -377,7 +377,7 @@ export default function Market({ game, setGame }: StepProps) {
                   <div className="top-exit-head">
                     <Icon name="trophy" size={16} />
                     <b>{topExit.title}</b>
-                    <span>+{topExit.pts} LEGACY</span>
+                    <span>+{topExit.pts} pkt dorobku</span>
                   </div>
                   <ul>
                     {topExit.lines.map((l) => (
@@ -397,7 +397,7 @@ export default function Market({ game, setGame }: StepProps) {
           ) : (
             <button className={`btn btn-small btn-ico ${topExit ? 'btn-gold' : 'btn-ghost'}`} onClick={() => setConfirmRetire(true)}>
               <Icon name={topExit ? 'trophy' : 'door'} size={15} />
-              {topExit ? `Odejdź na szczycie · +${topExit.pts} LEGACY` : 'Zakończ karierę'}
+              {topExit ? `Odejdź na szczycie · +${topExit.pts} pkt dorobku` : 'Zakończ karierę'}
             </button>
           )}
         </div>

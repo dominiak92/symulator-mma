@@ -1,5 +1,6 @@
 import { careerMarks, champTitle } from '../titles';
-import { toMarket, divisionKey } from '../../engine/game';
+import { toMarket, divisionKey, isDoubleChamp } from '../../engine/game';
+import { START_PROFILES } from '../../engine/data';
 import { fmtFans, followersOf } from '../../engine/extras';
 import { moneyShort, signed } from '../../format';
 import type { StepProps } from '../Game';
@@ -14,6 +15,8 @@ import { CoachTip } from '../Tutorial';
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { drawPhoto, photoInfo } from '../photo';
+
+const signedMoney = (n: number) => `${n >= 0 ? '+' : '−'}${moneyShort(Math.abs(n))}`;
 
 export default function Summary({ game, setGame, onPeers }: StepProps & { onPeers: () => void }) {
   const g = game;
@@ -37,7 +40,7 @@ export default function Summary({ game, setGame, onPeers }: StepProps & { onPeer
           <Fighter weight={divisionKey(g)} age={g.age} country={g.profile.origin} marks={careerMarks(g)} seed={`${g.profile.firstName}${g.profile.lastName}`} corner="blue" shorts={clubCrest(g.club).bg} size={112} belt={s.champion && !amateur ? s.tier : false} hurt={gradeTone === 'bad'} />
           {(s.beltWon || medals.length > 0) && (
             <div className="sum-trophies">
-              {s.beltWon && !amateur ? <Belt size={96} tier={s.tier} /> : medals.map((m, i) => <Medal key={i} kind={m} size={34} />)}
+              {s.beltWon && !amateur ? (isDoubleChamp(g) ? <><Belt size={78} tier={s.tier} /><Belt size={78} tier={s.tier} /></> : <Belt size={96} tier={s.tier} />) : medals.map((m, i) => <Medal key={i} kind={m} size={34} />)}
             </div>
           )}
         </div>
@@ -47,7 +50,7 @@ export default function Summary({ game, setGame, onPeers }: StepProps & { onPeer
             Rok {s.season} kariery · {s.year}
           </div>
           {champTitle(g) && <em className="champ-tag" style={{ justifySelf: 'start' }}>{champTitle(g)}</em>}
-          <div className={`grade ${gradeTone}`}>{s.beltWon ? (amateur ? 'Mistrz Polski amatorów!' : 'Rok z pasem!') : s.grade}</div>
+          <div className={`grade ${gradeTone}`}>{s.beltWon ? (amateur ? 'Mistrz Polski amatorów!' : isDoubleChamp(g) ? 'Podwójny mistrz!' : 'Rok z pasem!') : s.grade}</div>
           <div className="sum-rec">
             {s.w}-{s.l}
             {s.d ? `-${s.d}` : ''}
@@ -85,7 +88,7 @@ export default function Summary({ game, setGame, onPeers }: StepProps & { onPeer
         <div className="tile">
           <small>
             <Icon name="coins" size={11} />
-            Kasa
+            Zysk roku
           </small>
           <b className={s.moneyDelta >= 0 ? 'pos' : 'neg'}>
             {(() => {
@@ -110,6 +113,16 @@ export default function Summary({ game, setGame, onPeers }: StepProps & { onPeer
           </b>
         </div>
       </div>
+
+      {s.legacyTo !== undefined && START_PROFILES[g.profile.start].mult !== null && (
+        <div className="legacy-strip">
+          <Icon name="museum" size={16} />
+          <span>
+            Dorobek kariery: <b>{s.legacyTo.toLocaleString('pl-PL')} pkt</b>
+          </span>
+          {s.legacyTo - (s.legacyFrom ?? 0) !== 0 && <em className={s.legacyTo - (s.legacyFrom ?? 0) > 0 ? 'pos' : 'neg'}>{s.legacyTo - (s.legacyFrom ?? 0) > 0 ? '+' : '−'}{Math.abs(s.legacyTo - (s.legacyFrom ?? 0)).toLocaleString('pl-PL')} w tym roku</em>}
+        </div>
+      )}
 
       <CoachTip id="summary">
         Tak poszedł rok. Dotknij sekcji na dole, żeby zobaczyć szczegóły.
@@ -148,6 +161,31 @@ export default function Summary({ game, setGame, onPeers }: StepProps & { onPeer
             {g.seasons.length >= 2 && <CareerChart g={g} />}
           </div>
         </details>
+        {!amateur && s.moneyFights !== undefined && (
+          <details className="acc">
+            <summary>
+              <span>
+                <Icon name="coins" size={15} />
+                Pieniądze
+              </span>
+              <b className={s.moneyDelta >= 0 ? 'pos' : 'neg'}>{signedMoney(s.moneyDelta)}</b>
+            </summary>
+            <div className="acc-body money-rows">
+              <div>
+                <span>Gaże i premie za walki</span>
+                <b className="pos">{signedMoney(s.moneyFights)}</b>
+              </div>
+              <div>
+                <span>Sponsorzy i social media minus koszty (klub, sztab, zaplecze, życie)</span>
+                <b className={s.moneyDelta - s.moneyFights >= 0 ? 'pos' : 'neg'}>{signedMoney(s.moneyDelta - s.moneyFights)}</b>
+              </div>
+              <div className="sum">
+                <span>Bilans roku</span>
+                <b className={s.moneyDelta >= 0 ? 'pos' : 'neg'}>{signedMoney(s.moneyDelta)}</b>
+              </div>
+            </div>
+          </details>
+        )}
         {s.outside && s.outside.length > 0 && (
           <details className="acc" open>
             <summary>

@@ -909,13 +909,18 @@ function PosterHero({ g, opp, label, title, interim, fed, medal, abroad, farewel
   const champ = !!title && g.rank === 0;
   // poprzednie spotkania z tym rywalem (bez bieżącej walki)
   const oppName = `${opp.firstName} ${opp.lastName}`;
-  const met = g.history.filter((h) => h.opponent === oppName);
+  // walka na plakacie bywa już rozegrana w stanie gry (wynik czeka na odsłonięcie): nie liczymy jej jako „poprzedniej”
+  const lastF = g.run?.fights[g.run.fights.length - 1];
+  const curDone = !!lastF?.result && `${lastF.opp.firstName} ${lastF.opp.lastName}` === oppName;
+  void hold;
+  const allMet = g.history.filter((h) => h.opponent === oppName);
+  const met = curDone ? allMet.slice(0, -1) : allMet;
   const h2h = { w: met.filter((h) => h.result === 'W').length, l: met.filter((h) => h.result === 'L').length };
   const isPeer = g.peers.some((p) => `${p.firstName} ${p.lastName}` === oppName);
   const isNemesis = !!g.nemesis && g.nemesis.name === oppName;
   // flagi na obu plakietkach albo na żadnej
   const intl = !opp.freak && (abroad || (!!opp.country && opp.country !== 'Polska'));
-  const story = farewell ? 'walka pożegnalna' : isNemesis ? 'zadra' : met.length ? `rewanż · walka nr ${met.length + 1}` : isPeer ? 'chłopak z twojego rocznika' : '';
+  const story = farewell ? 'walka pożegnalna' : isNemesis ? 'zadra' : met.length ? `rewanż · ${met.length === 1 ? (h2h.w ? 'wtedy wygrałeś' : h2h.l ? 'wtedy przegrałeś' : 'wtedy remis') : `ty ${h2h.w} ${h2h.w === 1 ? 'wygrana' : 'wygrane'}, on ${h2h.l}`}` : isPeer ? 'chłopak z twojego rocznika' : '';
   return (
     <div className="ph-wrap">
       <div className={`ph ${title ? 'ph-title' : ''}`}>
@@ -966,13 +971,6 @@ function PosterHero({ g, opp, label, title, interim, fed, medal, abroad, farewel
           <dt>Rekord</dt>
           <dd>{opp.freak ? '—' : recStr(opp.record)}</dd>
         </div>
-        {met.length > 0 && (
-          <div className="tot-h2h">
-            <dd>{h2h.w}</dd>
-            <dt>Bilans</dt>
-            <dd>{h2h.l}</dd>
-          </div>
-        )}
         <div>
           <dd>{g.age} lat</dd>
           <dt>Wiek</dt>
@@ -1196,6 +1194,24 @@ function TourneyPoster({ g, f, onGo, paused }: { g: GameState; f: FightReport; o
 
 /** Konferencja przed dużą galą: rywal rzuca tekst, ty wybierasz odpowiedź. */
 function PressCard({ g, o, setGame }: { g: GameState; o: FightOffer; setGame: (s: GameState) => void }) {
+  // po odpowiedzi zostajemy na karcie: reakcja rywala i skutki, dopiero potem walka
+  const [res, setRes] = useState<{ next: GameState; key: string } | null>(null);
+  const HINT: Record<string, string> = { calm: 'reputacja w górę, bez ryzyka', provoke: 'media w górę; riposta trafi: forma +3, nie trafi: −3', insult: 'dużo mediów, reputacja w dół; uda się: forma +4, nie: kara i −4' };
+  const outcome = (() => {
+    if (!res) return null;
+    const f = res.next.run?.fights[res.next.run.fights.length - 1];
+    const m = f?.moments.find((x) => x.title === 'Konferencja');
+    const chips: { t: string; tone: 'good' | 'bad' }[] = [];
+    const dm = res.next.media - g.media;
+    const dr = res.next.rep - g.rep;
+    const dmo = res.next.money - g.money;
+    const pm = f?.pressMod ?? 0;
+    if (pm) chips.push({ t: `forma w walce ${pm > 0 ? '+' : ''}${pm}`, tone: pm > 0 ? 'good' : 'bad' });
+    if (dm) chips.push({ t: `media ${dm > 0 ? '+' : ''}${dm}`, tone: dm > 0 ? 'good' : 'bad' });
+    if (dr) chips.push({ t: `reputacja ${dr > 0 ? '+' : ''}${dr}`, tone: dr > 0 ? 'good' : 'bad' });
+    if (dmo < 0) chips.push({ t: `kara −${money(-dmo)}`, tone: 'bad' });
+    return { text: m?.text ?? '', tone: m?.tone ?? 'neutral', chips };
+  })();
   return (
     <div className="fight-intro offer-modal press-modal" role="dialog" aria-modal="true" aria-label="Konferencja przed galą">
       <div className="fi-card">
@@ -1204,41 +1220,50 @@ function PressCard({ g, o, setGame }: { g: GameState; o: FightOffer; setGame: (s
           <span className="fi-ctx">{o.gala} · face to face</span>
         </div>
         <VsHero g={g} opp={o.opp} label="przed galą" size={64} />
-        {o.pressCtx && o.pressCtx.id !== 'default' ? (
-          <blockquote className="press-quote">
-            <Icon name="megaphone" size={14} />
-            <span>{o.pressCtx.question}</span>
-          </blockquote>
-        ) : (
-          <blockquote className="press-quote">
-            <Icon name="megaphone" size={14} />
-            <span>
-              „{o.pressQuote}”<small> {o.opp.lastName}</small>
-            </span>
-          </blockquote>
-        )}
-        <div className="choice-list press-opts">
-          {PRESS_OPTIONS.map((p) => {
-            const lab = o.pressCtx?.labels[p.key];
-            const odds = p.key === 'provoke' ? o.pressCtx?.provoke : p.key === 'insult' ? o.pressCtx?.insult : null;
-            return (
-              <button
-                key={p.key}
-                className={`choice press-opt press-${p.key}`}
-                onClick={() => {
-                  sfxClick();
-                  setGame(pressAnswer(g, p.key));
-                }}
-              >
-                <span className="opt-top">
-                  <span className="title">{lab ? lab[0] : p.label}</span>
-                  {odds != null && <ChanceTag p={Math.round(odds * 100)} />}
+        <blockquote className="press-quote">
+          <Icon name="megaphone" size={14} />
+          <span>{o.pressCtx ? o.pressCtx.question : `„${o.pressQuote}”`}</span>
+        </blockquote>
+        {outcome ? (
+          <div className={`press-result tone-${outcome.tone}`} role="status">
+            <p>{outcome.text}</p>
+            <span className="press-chips">
+              {outcome.chips.map((c) => (
+                <span key={c.t} className={`tag ${c.tone === 'good' ? 'good' : 'bad'}`}>
+                  {c.t}
                 </span>
-                <span className="desc">{lab ? lab[1] : p.desc}</span>
-              </button>
-            );
-          })}
-        </div>
+              ))}
+            </span>
+            <button className="btn btn-primary btn-block btn-ico" autoFocus onClick={() => setGame(res!.next)}>
+              <Icon name="glove" />
+              Do walki
+            </button>
+          </div>
+        ) : (
+          <div className="choice-list press-opts">
+            {PRESS_OPTIONS.map((p) => {
+              const lab = o.pressCtx?.labels[p.key];
+              const odds = p.key === 'provoke' ? o.pressCtx?.provoke : p.key === 'insult' ? o.pressCtx?.insult : null;
+              return (
+                <button
+                  key={p.key}
+                  className={`choice press-opt press-${p.key}`}
+                  onClick={() => {
+                    sfxClick();
+                    setRes({ next: pressAnswer(g, p.key), key: p.key });
+                  }}
+                >
+                  <span className="opt-top">
+                    <span className="title">{lab ? lab[0] : p.label}</span>
+                    {odds != null && <ChanceTag p={Math.round(odds * 100)} />}
+                  </span>
+                  <span className="desc">{lab ? lab[1] : p.desc}</span>
+                  <span className="press-hint">{HINT[p.key]}</span>
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -1299,8 +1324,8 @@ function WeighCard({ g, o, setGame }: { g: GameState; o: FightOffer; setGame: (s
   );
 }
 
-const INVITE_ICON: Record<SideInvite['kind'], string> = { grappling: 'knot', boxing: 'glove', seminar: 'users', grapple1: 'knot', kick: 'glove', film: 'star' };
-const INVITE_HEAD: Record<SideInvite['kind'], string> = { grappling: 'Turniej grapplingowy', boxing: 'Walka bokserska', seminar: 'Seminarium', grapple1: 'Superfight grapplingowy', kick: 'Walka kickbokserska', film: 'Propozycja z show-biznesu' };
+const INVITE_ICON: Record<SideInvite['kind'], string> = { grappling: 'knot', boxing: 'glove', seminar: 'users', grapple1: 'knot', kick: 'glove', film: 'star', camp: 'dumbbell', charity: 'heart', podcast: 'mic', celebrity: 'sparkle' };
+const INVITE_HEAD: Record<SideInvite['kind'], string> = { grappling: 'Turniej grapplingowy', boxing: 'Walka bokserska', seminar: 'Seminarium', grapple1: 'Superfight grapplingowy', kick: 'Walka kickbokserska', film: 'Propozycja z show-biznesu', camp: 'Obóz za granicą', charity: 'Akcja charytatywna', podcast: 'Podcast', celebrity: 'Trener gwiazdy' };
 const INVITE_GOOD: Record<SideInvite['kind'], (inv: SideInvite) => string> = {
   grappling: (inv) => `złoto: parter +2, zapasy +1 i ${money(inv.prize)}; srebro: parter +1`,
   boxing: (inv) => `wygrana: stójka +1, ${money(inv.prize)}, media +2`,
@@ -1308,6 +1333,10 @@ const INVITE_GOOD: Record<SideInvite['kind'], (inv: SideInvite) => string> = {
   grapple1: (inv) => `połowa stawki za wyjście; wygrana: cała ${money(inv.prize)}, parter +1, media i reputacja +2`,
   kick: (inv) => `wygrana: stójka lub kondycja +1, ${money(inv.prize)}, media +2`,
   film: (inv) => `${money(inv.prize)} i media +3, bez walki`,
+  camp: () => 'umiejętność +2 i potencjał +1, bez ryzyka walki',
+  charity: () => 'reputacja +4, media +2',
+  podcast: (inv) => `media +2, ${money(inv.prize)}`,
+  celebrity: (inv) => `${money(inv.prize)}, media +3`,
 };
 const INVITE_BAD: Record<SideInvite['kind'], (inv: SideInvite) => string> = {
   grappling: (inv) => `wpisowe ${money(inv.fee)}, małe ryzyko urazu, w najbliższej walce forma −2`,
@@ -1316,6 +1345,10 @@ const INVITE_BAD: Record<SideInvite['kind'], (inv: SideInvite) => string> = {
   grapple1: () => 'specjalista na swojej macie, małe ryzyko urazu, w najbliższej walce forma −2',
   kick: () => 'porażka: połowa gaży, zużycie, ryzyko nokautu kopnięciem; w najbliższej walce forma −2',
   film: () => 'reputacja −1 (środowisko się podśmiewa), w najbliższej walce forma −2',
+  camp: (inv) => `koszt ${money(inv.fee)}, zużycie +1, w najbliższej walce forma −2`,
+  charity: () => 'bez pieniędzy, weekend bez treningu: w najbliższej walce forma −2',
+  podcast: () => 'jedno nieostrożne zdanie może kosztować reputację; forma −2',
+  celebrity: () => 'reputacja −2 (środowisko kręci nosem), w najbliższej walce forma −2',
 };
 
 /** Zaproszenie na wydarzenie poza MMA: grappling, boks, seminarium. */
@@ -1428,7 +1461,7 @@ function InviteCard({ g, inv, onDone }: { g: GameState; inv: SideInvite; onDone:
             }}
           >
             <Icon name="check" />
-            {inv.kind === 'seminar' ? 'Jadę' : inv.kind === 'film' ? 'Biorę rolę' : 'Startuję'}
+            {inv.kind === 'seminar' || inv.kind === 'camp' ? 'Jadę' : inv.kind === 'film' ? 'Biorę rolę' : inv.kind === 'charity' ? 'Pomagam' : inv.kind === 'podcast' ? 'Idę do studia' : inv.kind === 'celebrity' ? 'Biorę to' : 'Startuję'}
           </button>
           <button className="btn btn-ghost btn-block btn-ico btn-decline" onClick={() => onDone(declineInvite(g), null)}>
             <Icon name="x" size={15} />

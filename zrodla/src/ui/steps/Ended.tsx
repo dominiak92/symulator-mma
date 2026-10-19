@@ -26,6 +26,7 @@ export default function Ended({ game, setGame, onNewCareer, onMenu }: { game: Ga
   const [url, setUrl] = useState<string | null>(null);
   const [blob, setBlob] = useState<Blob | null>(null);
   const [shareMsg, setShareMsg] = useState<string | null>(null);
+  const [allAch, setAllAch] = useState(false);
   const [themeId, setThemeId] = useState(loadSettings().cardTheme);
   const have = loadAchievements();
   const theme = CARD_THEMES.find((t) => t.id === themeId && (!t.unlock || have[t.unlock])) ?? CARD_THEMES[0];
@@ -55,7 +56,7 @@ export default function Ended({ game, setGame, onNewCareer, onMenu }: { game: Ga
   }, [g, theme]);
 
   const fileName = `kariera-${g.profile.lastName.toLowerCase().replace(/[^a-ząćęłńóśźż0-9]+/gi, '-')}.png`;
-  const shareText = `${displayName(g)}: ${recStr(mainRecord(g))}${g.proDebut ? '' : ' w amatorce'}, ${e.verdict}. ${e.legacy} pkt LEGACY${g.quick ? ' (szybka kariera)' : ''} w Symulatorze Polskiego Zawodnika MMA.`;
+  const shareText = `${displayName(g)}: ${recStr(mainRecord(g))}${g.proDebut ? '' : ' w amatorce'}, ${e.verdict}. ${e.legacy} pkt dorobku${g.quick ? ' (szybka kariera)' : ''} w Symulatorze Polskiego Zawodnika MMA.`;
 
   const share = async () => {
     if (!blob) return;
@@ -102,7 +103,7 @@ export default function Ended({ game, setGame, onNewCareer, onMenu }: { game: Ga
             <div className="top-exit-head">
               <Icon name="trophy" size={16} />
               <b>{e.top.title}</b>
-              <span>+{e.top.pts} LEGACY</span>
+              <span>+{e.top.pts} pkt dorobku</span>
             </div>
             <ul>
               {e.top.lines.map((l) => (
@@ -132,7 +133,7 @@ export default function Ended({ game, setGame, onNewCareer, onMenu }: { game: Ga
             </b>
           </div>
           <div>
-            <small>LEGACY</small>
+            <small>Dorobek</small>
             <b style={{ color: 'var(--gold)' }}>{unranked ? 'nie liczy się' : e.legacy}</b>
           </div>
         </div>
@@ -250,12 +251,17 @@ export default function Ended({ game, setGame, onNewCareer, onMenu }: { game: Ga
           <section className="step">
             <h3>Osiągnięcia tej kariery</h3>
             <div className="chips">
-              {got.map((a) => (
+              {(allAch ? got : got.slice(0, 12)).map((a) => (
                 <span key={a.id} className={`tag ach-chip tone-${achIcon(a.id).tone}`} title={a.desc}>
                   <Icon name={achIcon(a.id).icon} size={13} />
                   {a.title}
                 </span>
               ))}
+              {!allAch && got.length > 12 && (
+                <button className="tag more-chip" onClick={() => setAllAch(true)}>
+                  +{got.length - 12} więcej
+                </button>
+              )}
             </div>
           </section>
         );
@@ -273,14 +279,7 @@ export default function Ended({ game, setGame, onNewCareer, onMenu }: { game: Ga
 
       <section className="step">
         <h3>Najważniejsze chwile</h3>
-        <ul className="timeline" style={{ marginTop: 10 }}>
-          {g.timeline.filter((t) => !/^(Zmiana klubu|Obóz:|Rywal \S+: (awans|spadek))/.test(t.text)).map((t, i) => (
-            <li key={i}>
-              <span>{lat(t.age)}</span>
-              <div>{t.text}</div>
-            </li>
-          ))}
-        </ul>
+        <Timeline g={g} />
       </section>
 
       <section className="step">
@@ -422,7 +421,7 @@ function AfterCareer({ g, setGame }: { g: GameState; setGame?: (s: GameState) =>
       <h3>Co dalej?</h3>
       <p className="muted" style={{ marginTop: 4 }}>Rękawice zostają na macie. Wybierz, czym zajmiesz się po karierze. Tego wyboru nie da się cofnąć.</p>
       <div className="after-grid">
-        {paths.map((p) => (
+        {paths.filter((p) => !p.locked).map((p) => (
           <button key={p.key} className="after-opt" disabled={!!p.locked} onClick={() => setGame(chooseAfter(g, p.key))}>
             <span className="after-ico" aria-hidden="true">
               <Icon name={p.icon} size={20} />
@@ -434,6 +433,41 @@ function AfterCareer({ g, setGame }: { g: GameState; setGame?: (s: GameState) =>
           </button>
         ))}
       </div>
+      {paths.some((p) => p.locked) && (
+        <div className="after-locked">
+          <small>Zamknięte drogi</small>
+          {paths.filter((p) => p.locked).map((p) => (
+            <span key={p.key}>
+              <Icon name={p.icon} size={13} /> {p.title}: {p.locked}
+            </span>
+          ))}
+        </div>
+      )}
     </section>
+  );
+}
+
+/** Najważniejsze chwile: rutynowe obrony pasa zwijamy, pokazujemy kamienie milowe. */
+function Timeline({ g }: { g: GameState }) {
+  const [all, setAll] = useState(false);
+  const items = g.timeline.filter((t) => !/^(Zmiana klubu|Obóz:|Rywal \S+: (awans|spadek))/.test(t.text));
+  const key = items.filter((t) => !/^Obrona pasa nr [2-9]/.test(t.text) && !/^Kredyt na/.test(t.text));
+  const shown = all ? items : key.slice(0, 14);
+  return (
+    <>
+      <ul className="timeline" style={{ marginTop: 10 }}>
+        {shown.map((t, i) => (
+          <li key={i}>
+            <span>{lat(t.age)}</span>
+            <div>{t.text}</div>
+          </li>
+        ))}
+      </ul>
+      {!all && items.length > shown.length && (
+        <button className="btn btn-ghost btn-small" style={{ marginTop: 8 }} onClick={() => setAll(true)}>
+          Pokaż całą historię ({items.length})
+        </button>
+      )}
+    </>
   );
 }
