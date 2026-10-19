@@ -1980,7 +1980,7 @@ var CAMP_ACTS = [
     roll: (s, rng) => {
       const k = weakest(s);
       if (rng.chance(0.22)) return { text: `Tydzie\u0144 d\u0142ubania w detalach. Trener w ko\u0144cu przestaje poprawia\u0107 ci ${STAT_NAME[k]}.`, effects: { stats: { [k]: 1 } }, mod: 1 };
-      return { text: rng.pick(["Sto powt\xF3rze\u0144 tego samego wej\u015Bcia. Na sto pierwszym trener m\xF3wi \u201Eno\u201D.", "Godziny przy tarczach i nagraniach. Mniej efektowne ni\u017C sparingi, ale wchodzi w nawyk.", "Trener rozrysowuje plan na tablicy. Tym razem rozumiesz ka\u017Cd\u0105 strza\u0142k\u0119."]), effects: {}, mod: 2 };
+      return { text: rng.pick(["Sto powt\xF3rze\u0144 tego samego wej\u015Bcia. Na sto pierwszym trener m\xF3wi \u201Eno\u201D.", "Godziny przy tarczach i nagraniach. Mniej efektowne ni\u017C sparingi, ale wchodzi w nawyk.", "Trener rozrysowuje plan na tablicy. Tym razem rozumiesz ka\u017Cd\u0105 strza\u0142k\u0119.", "Lustro, cie\u0144 i trener, kt\xF3ry powtarza \u201E\u0142okie\u0107\u201D czterdzie\u015Bci razy dziennie.", "Ca\u0142y tydzie\u0144 jednej kombinacji. W pi\u0105tek robisz j\u0105 przez sen.", "Trener przynosi stare kasety VHS z walk z lat dziewi\u0119\u0107dziesi\u0105tych. Dzia\u0142a."]), effects: {}, mod: 2 };
     }
   },
   {
@@ -1990,7 +1990,7 @@ var CAMP_ACTS = [
     hint: "forma, czasem kondycja",
     roll: (_s, rng) => {
       if (rng.chance(0.2)) return { text: "Schody na stadionie, sto razy w g\xF3r\u0119. W trzeciej rundzie b\u0119dziesz \u015Bwie\u017Cy.", effects: { stats: { cardio: 1 } }, mod: 1 };
-      return { text: rng.pick(["Interwa\u0142y na bie\u017Cni, a\u017C ci si\u0119 czarno przed oczami robi. Trener m\xF3wi, \u017Ce to dopiero rozgrzewka.", "Bieganie po lesie z kamizelk\u0105 obci\u0105\u017Ceniow\u0105. Grzybiarze patrz\u0105 dziwnie.", "P\u0142ywalnia o sz\xF3stej rano. Ratownik ju\u017C ci\u0119 zna."]), effects: {}, mod: 2 };
+      return { text: rng.pick(["Interwa\u0142y na bie\u017Cni, a\u017C ci si\u0119 czarno przed oczami robi. Trener m\xF3wi, \u017Ce to dopiero rozgrzewka.", "Bieganie po lesie z kamizelk\u0105 obci\u0105\u017Ceniow\u0105. Grzybiarze patrz\u0105 dziwnie.", "P\u0142ywalnia o sz\xF3stej rano. Ratownik ju\u017C ci\u0119 zna.", "Rower stacjonarny w piwnicy klubu. Sto minut, zero widok\xF3w, jeden plakat Rocky\u2019ego.", "Sprinty pod g\xF3r\u0119 za klubem. S\u0105siad z dzia\u0142ki dopinguje z le\u017Caka.", "Skakanka, pi\u0119\u0107 rund po pi\u0119\u0107 minut. Sufit w szatni ma now\u0105 plam\u0119 po twoim pocie."]), effects: {}, mod: 2 };
     }
   },
   {
@@ -2019,8 +2019,8 @@ var CAMP_ACTS = [
     desc: "Fizjo, sauna, sen. Mniej treningu, wi\u0119cej cia\u0142a.",
     hint: "mniej zu\u017Cycia",
     roll: (s, rng) => {
-      if (s.wear < 10) return { text: "Regenerujesz si\u0119, cho\u0107 nie by\u0142o z czego. Nudzisz si\u0119 i ogl\u0105dasz seriale.", effects: { wear: -1 }, mod: 0 };
-      return { text: rng.pick(["Pani Ewa z fizjoterapii robi z twoich plec\xF3w nowe plecy.", "Tydzie\u0144 snu, sauny i lekkiego ruchu. Pierwszy raz od miesi\u0119cy nic nie boli."]), effects: { wear: -2 }, mod: 1 };
+      if (s.wear < 10) return { text: rng.pick(["Regenerujesz si\u0119, cho\u0107 nie by\u0142o z czego. Nudzisz si\u0119 i ogl\u0105dasz seriale.", "Tydzie\u0144 odpoczynku od niczego. Obejrza\u0142e\u015B trzy sezony serialu o mafii.", "Le\u017Cysz i odpoczywasz. Cia\u0142o nie wie, od czego, ale si\u0119 zgadza."]), effects: { wear: -1 }, mod: 0 };
+      return { text: rng.pick(["Pani Ewa z fizjoterapii robi z twoich plec\xF3w nowe plecy.", "Tydzie\u0144 snu, sauny i lekkiego ruchu. Pierwszy raz od miesi\u0119cy nic nie boli.", "Krioterapia w Spale. Trzy minuty w minus stu dziesi\u0119ciu i nagle wszystko jest prostsze.", "Masa\u017C, joga z dziewczyn\u0105 trenera i dziesi\u0119\u0107 godzin snu. Cia\u0142o dzi\u0119kuje.", "Basen, rozci\u0105ganie i drzemki. Trener m\xF3wi, \u017Ce to te\u017C trening. Wierzysz mu na s\u0142owo."]), effects: { wear: -2 }, mod: 1 };
     }
   },
   {
@@ -2030,7 +2030,7 @@ var CAMP_ACTS = [
     hint: "pieni\u0105dze, mniej formy",
     cond: (s) => s.tier <= 2,
     roll: (s, rng) => ({
-      text: rng.pick(["Trzy nocki na bramce w \u201EPresti\u017Cu\u201D. Kasa jest, snu brak.", "Kuzyn potrzebowa\u0142 r\u0105k na budowie. Plecy bol\u0105, portfel pe\u0142niejszy.", "Kurier po treningach. Znasz ju\u017C ka\u017Cdy domofon na osiedlu."]),
+      text: rng.pick(["Trzy nocki na bramce w \u201EPresti\u017Cu\u201D. Kasa jest, snu brak.", "Kuzyn potrzebowa\u0142 r\u0105k na budowie. Plecy bol\u0105, portfel pe\u0142niejszy.", "Kurier po treningach. Znasz ju\u017C ka\u017Cdy domofon na osiedlu.", "Wnoszenie mebli z koleg\u0105. Szafa trzydrzwiowa na czwarte pi\u0119tro to te\u017C trening.", "Ochrona na festynie w gminie. Najgro\u017Aniejszy by\u0142 pan z wat\u0105 cukrow\u0105.", "Roz\u0142adunek w hurtowni. Kierownik pyta, czy nie chcesz etatu."]),
       effects: { money: zl3(s, 400) },
       mod: 0
     })
@@ -2041,7 +2041,7 @@ var CAMP_ACTS = [
     desc: "Wywiady, nagrania, zdj\u0119cia z produktem.",
     hint: "media, mniej formy",
     roll: (s, rng) => ({
-      text: rng.pick(["Trzy wywiady, dwa podcasty i sesja zdj\u0119ciowa. Trening wciskasz mi\u0119dzy nagrania.", "Tydzie\u0144 jak w telewizji: kamera wsz\u0119dzie, nawet na rozci\u0105ganiu.", "Spotkanie ze sponsorem i rolka na Instagrym. Telefon \u0142adujesz cz\u0119\u015Bciej ni\u017C siebie."]),
+      text: rng.pick(["Trzy wywiady, dwa podcasty i sesja zdj\u0119ciowa. Trening wciskasz mi\u0119dzy nagrania.", "Tydzie\u0144 jak w telewizji: kamera wsz\u0119dzie, nawet na rozci\u0105ganiu.", "Spotkanie ze sponsorem i rolka na Instagrym. Telefon \u0142adujesz cz\u0119\u015Bciej ni\u017C siebie.", "Nagranie reklamy suplementu. Dwadzie\u015Bcia dubli, w ka\u017Cdym udajesz, \u017Ce smakuje.", "Wywiad do lokalnej gazety. Dziennikarz pyta g\u0142\xF3wnie o twoj\u0105 mam\u0119.", "Sesja zdj\u0119ciowa w hali. Fotograf ka\u017Ce ci \u201Epatrze\u0107 gro\u017Anie, ale przyja\u017Anie\u201D."]),
       effects: { media: 2, money: s.sponsors.length ? zl3(s, 200) : 0 },
       mod: 0
     })
@@ -8785,7 +8785,7 @@ function tourneyEntry(s, t, ti) {
   const k = s.season * 3 + ti;
   const open = t.championship ? `To s\u0105 Mistrzostwa Polski, ${t.city}. Tu nie ma przypadkowych ludzi: ka\u017Cdy w drabince wygra\u0142 ju\u017C swoje wojew\xF3dztwo.` : first ? `Zapisa\u0142em ci\u0119 na ${t.name} w ${t.city}. Twoje pierwsze zawody. Spokojnie, ka\u017Cdy kiedy\u015B debiutowa\u0142.` : [`Zapisa\u0142em ci\u0119 na ${t.name}, ${t.city}.`, `Lista startowa na ${t.name} posz\u0142a. Jeste\u015B na niej. ${t.city}.`, `Nast\u0119pne zawody: ${t.name} w ${t.city}. Ju\u017C ci\u0119 zg\u0142osi\u0142em.`][k % 3];
   const body = `Kategoria: ${t.division}. O\u015Bmiu w drabince, trzy wygrane walki dziel\u0105 ci\u0119 od z\u0142ota. Wa\u017Cenie o 7:00, wpisowe ${fee} z\u0142 p\u0142aci klub.`;
-  const tail = ["Jak jedziemy?", "Pisz, jak doje\u017Cd\u017Casz.", "Bus odje\u017Cd\u017Ca o 4:30. Albo radzisz sobie sam."][k % 3];
+  const tail = ["Jak jedziemy?", "Pisz, jak doje\u017Cd\u017Casz.", "Wyjazd wcze\u015Bnie rano. Albo radzisz sobie sam."][k % 3];
   const local = amLevel(s) === 0;
   const lodging = Math.round((local ? 150 : 300) / 50) * 50;
   return {
@@ -8795,25 +8795,69 @@ function tourneyEntry(s, t, ti) {
 ${coach}: ${body}
 ${coach}: ${tail}`,
     choices: [
-      { label: "Jad\u0119 dzie\u0144 wcze\u015Bniej, \u015Bpi\u0119 przy hali", desc: "Hotel kosztuje, ale rano jeste\u015B wyspany.", effects: { money: -lodging, nextFight: 1, note: "wyspany na wa\u017Ceniu" } },
-      {
-        label: "Klubowy bus o 4:30",
-        desc: "Za darmo. \u015Apiewy, kanapki z jajkiem i drzemka na torbie.",
-        chance: 65,
-        success: { relations: 0, rep: 1, note: "ekipa w busie trzyma kciuki" },
-        successText: "Bus doje\u017Cd\u017Ca na czas. Ca\u0142a dru\u017Cyna \u015Bpiewa ci przed rozgrzewk\u0105. Zbijasz pi\u0105tki z ka\u017Cdym.",
-        fail: { nextFight: -1 },
-        failText: "Bus \u0142apie gum\u0119 pod Koninem. Na wa\u017Cenie wpadasz w ostatniej minucie, rozgrzewka trwa trzy minuty."
-      },
-      {
-        label: t.city === s.profile.hometown ? "\u015Api\u0119 w domu, mama robi \u015Bniadanie" : `\u015Api\u0119 u cioci w ${t.city}`,
-        desc: t.city === s.profile.hometown ? "W\u0142asne \u0142\xF3\u017Cko. Mamina jajecznica." : "Ciocia obiecuje, \u017Ce \u201Enie b\u0119dzie zamieszania\u201D.",
-        chance: 55,
-        success: { relations: 1, nextFight: 1 },
-        successText: "Ros\xF3\u0142, cisza, osiem godzin snu. Ciocia odwozi ci\u0119 pod hal\u0119 i macha z parkingu.",
-        fail: { relations: 1, nextFight: -1 },
-        failText: "Ciocia zaprosi\u0142a s\u0105siadki \u201Ena chwil\u0119\u201D. Do p\xF3\u0142nocy ogl\u0105dasz zdj\u0119cia z komunii kuzyna."
-      }
+      [
+        { label: "Jad\u0119 dzie\u0144 wcze\u015Bniej, \u015Bpi\u0119 przy hali", desc: "Hotel kosztuje, ale rano jeste\u015B wyspany.", effects: { money: -lodging, nextFight: 1, note: "wyspany na wa\u017Ceniu" } },
+        { label: "Hostel przy hali, pok\xF3j z trzema judokami", desc: "Tanio, blisko. Judocy chrapi\u0105 w kimonach.", effects: { money: -Math.round(lodging / 2 / 50) * 50, nextFight: 1, note: "judocy po\u017Cyczaj\u0105 ci klapki" } },
+        { label: "Pensjonat \u201EPod D\u0119bem\u201D, dwa kilometry od hali", desc: "W\u0142a\u015Bcicielka obiecuje \u015Bniadanie \u201Edla sportowca\u201D.", effects: { money: -lodging, nextFight: 1, note: "jajecznica z sze\u015Bciu jaj" } }
+      ][k % 3],
+      [
+        {
+          label: "Klubowy bus o 4:30",
+          desc: "Za darmo. \u015Apiewy, kanapki z jajkiem i drzemka na torbie.",
+          chance: 65,
+          success: { rep: 1, note: "ekipa w busie trzyma kciuki" },
+          successText: "Bus doje\u017Cd\u017Ca na czas. Ca\u0142a dru\u017Cyna \u015Bpiewa ci przed rozgrzewk\u0105. Zbijasz pi\u0105tki z ka\u017Cdym.",
+          fail: { nextFight: -1 },
+          failText: "Bus \u0142apie gum\u0119 pod Koninem. Na wa\u017Cenie wpadasz w ostatniej minucie, rozgrzewka trwa trzy minuty."
+        },
+        {
+          label: "Mietek bierze ci\u0119 swoim Passatem",
+          desc: "Za darmo. Passat ma 400 tys. km i w\u0142asne zdanie.",
+          chance: 60,
+          success: { relations: 1, note: "Mietek zostaje na trybunach" },
+          successText: "Passat doje\u017Cd\u017Ca. Mietek zostaje na ca\u0142e zawody i drze si\u0119 z trybun jak tw\xF3j ojciec.",
+          fail: { nextFight: -1 },
+          failText: "Passat staje na stacji pod \u0141odzi\u0105. Mietek \u201Ezna go\u015Bcia\u201D. Go\u015B\u0107 przyje\u017Cd\u017Ca po godzinie."
+        },
+        {
+          label: "Poci\u0105g o 5:12 z przesiadk\u0105 w Kutnie",
+          desc: "Tanio. Dworzec w Kutnie o sz\xF3stej rano to prze\u017Cycie.",
+          chance: 55,
+          success: { money: -40, note: "poci\u0105g o dziwo punktualny" },
+          successText: "Poci\u0105g punktualny, przesiadka g\u0142adka. Na hali jeste\u015B pierwszy, jeszcze przed s\u0119dziami.",
+          fail: { money: -40, nextFight: -1 },
+          failText: "Op\xF3\u017Anienie 70 minut \u201Ez przyczyn technicznych\u201D. Wa\u017Cysz si\u0119, ledwo \u0142api\u0105c oddech."
+        }
+      ][(k + 1) % 3],
+      [
+        {
+          label: t.city === s.profile.hometown ? "\u015Api\u0119 w domu, mama robi \u015Bniadanie" : `\u015Api\u0119 u cioci w ${t.city}`,
+          desc: t.city === s.profile.hometown ? "W\u0142asne \u0142\xF3\u017Cko. Mamina jajecznica." : "Ciocia obiecuje, \u017Ce \u201Enie b\u0119dzie zamieszania\u201D.",
+          chance: 55,
+          success: { relations: 1, nextFight: 1 },
+          successText: "Ros\xF3\u0142, cisza, osiem godzin snu. Kto\u015B z rodziny odwozi ci\u0119 pod hal\u0119 i macha z parkingu.",
+          fail: { relations: 1, nextFight: -1 },
+          failText: "Na \u201Echwil\u0119\u201D wpad\u0142y s\u0105siadki. Do p\xF3\u0142nocy ogl\u0105dasz zdj\u0119cia z komunii kuzyna."
+        },
+        {
+          label: "Nocleg u kolegi z kadry",
+          desc: "Za darmo. On te\u017C startuje, wi\u0119c b\u0119dzie spok\xF3j. Chyba.",
+          chance: 60,
+          success: { rep: 1, nextFight: 1 },
+          successText: "Rano wsp\xF3lna rozgrzewka i \u015Bniadanie z owsianki. Jedziecie na hal\u0119 jak dru\u017Cyna.",
+          fail: { nextFight: -1 },
+          failText: "Kolega gra do trzeciej na konsoli. \u201EOstatnia runda\u201D trwa trzy godziny."
+        },
+        {
+          label: "\u015Api\u0119 w samochodzie trenera pod hal\u0105",
+          desc: "Za darmo, za to blisko. Trener ma koc i termos.",
+          chance: 45,
+          success: { rep: 1, note: "trener: \u201Etwardziel\u201D" },
+          successText: "\u015Apisz zaskakuj\u0105co dobrze. Trener m\xF3wi, \u017Ce \u201Eprawdziwi zawodnicy tak zaczynali\u201D.",
+          fail: { nextFight: -2 },
+          failText: "O trzeciej budzi ci\u0119 ochroniarz parkingu. O czwartej znowu. Plecy pami\u0119taj\u0105 skrzyni\u0119 bieg\xF3w."
+        }
+      ][(k + 2) % 3]
     ]
   };
 }
@@ -9914,7 +9958,7 @@ function startFight(rng, s, o) {
         });
       }
       if (gearMod(s) < 0)
-        rep.moments.push({ round: 0, title: "Zu\u017Cyty sprz\u0119t", text: `Sprz\u0119t zu\u017Cyty w ${Math.round(s.gear ?? 0)}%. R\u0119kawice sparingowe trzyma ju\u017C tylko ta\u015Bma, a ochraniacz pami\u0119ta poprzedni sezon: szanse ${gearMod(s)} pkt.`, tone: "bad" });
+        rep.moments.push({ round: 0, title: "Zu\u017Cyty sprz\u0119t", text: `Sprz\u0119t zu\u017Cyty w ${Math.round(s.gear ?? 0)}%. ${vary6(s, ["R\u0119kawice sparingowe trzyma ju\u017C tylko ta\u015Bma, a ochraniacz pami\u0119ta poprzedni sezon.", "Ochraniacz na z\u0119by pami\u0119ta czasy amatorki. R\u0119kawice pachn\u0105 jak piwnica.", "Nakolanniki z dziur\u0105, tejpy z odzysku. Nowy sprz\u0119t kupisz na Oliksie albo w zapleczu.", "Sprz\u0119t si\u0119 sypie. Trener patrzy na twoje r\u0119kawice i kr\u0119ci g\u0142ow\u0105."])} Szanse ${gearMod(s)} pkt.`, tone: "bad" });
       if (!amateur && !freak && (s.flags.sideTired ?? 0) > 0) {
         s.flags.sideTired = 0;
         rep.tired = true;
@@ -9943,7 +9987,7 @@ function startFight(rng, s, o) {
             tone: "neutral"
           });
         }
-        if (rep.tired) rep.moments.push({ round: 0, title: "Weekend poza sal\u0105", text: "Wydarzenie poza federacj\u0105 zjad\u0142o kilka dni treningu. Czujesz to w nogach.", tone: "neutral" });
+        if (rep.tired) rep.moments.push({ round: 0, title: "Weekend poza sal\u0105", text: vary6(s, ["Wydarzenie poza federacj\u0105 zjad\u0142o kilka dni treningu. Czujesz to w nogach.", "Weekend poza sal\u0105 odbija si\u0119 teraz w nogach.", "Przez ten wyjazd zabrak\u0142o kilku trening\xF3w. W drugiej rundzie to wyjdzie."]), tone: "neutral" });
         if (o.abroad)
           rep.moments.push({ round: 0, title: `Gala w mie\u015Bcie ${o.abroad}`, text: "Lot w biznes klasie, hotel z basenem na dachu i hala pe\u0142na ludzi, kt\xF3rzy nigdy o tobie nie s\u0142yszeli. Dzi\u015B maj\u0105 us\u0142ysze\u0107.", tone: "purple" });
         if (o.short)
@@ -9978,7 +10022,7 @@ function startFight(rng, s, o) {
           if (o.tickets === "push") addFans(s, sale.sold * 3);
           s.flags.ticketsSold = (s.flags.ticketsSold ?? 0) + sale.sold;
           rep.moments.push(
-            o.tickets === "none" ? { round: 0, title: "Bilety", text: "Nie sprzedajesz ani jednego biletu. Organizator nic nie m\xF3wi, ale przy nast\u0119pnej gali o tym pami\u0119ta.", tone: "neutral" } : {
+            o.tickets === "none" ? { round: 0, title: "Bilety", text: vary6(s, ["Nie sprzedajesz ani jednego biletu. Organizator nic nie m\xF3wi, ale przy nast\u0119pnej gali o tym pami\u0119ta.", "Zero bilet\xF3w. Organizator patrzy na pusty sektor i co\u015B notuje.", "Tw\xF3j sektor \u015Bwieci pustkami. Organizator ju\u017C wie, kogo przesunie w karcie."]), tone: "neutral" } : {
               round: 0,
               title: "Bilety",
               text: `Sprzedajesz ${sale.sold} ${pl(sale.sold, "bilet", "bilety", "bilet\xF3w")}${o.tickets === "push" ? " po tygodniu objazdu po si\u0142owniach" : ""}. Prowizja: ${sale.cut.toLocaleString("pl-PL")} z\u0142. ${sale.sold >= 100 ? "P\xF3\u0142 hali przysz\u0142o dla ciebie, organizator ju\u017C dzwoni z kolejn\u0105 dat\u0105." : sale.sold >= 55 ? "Organizator zadowolony, b\u0119dzie lepsze miejsce w karcie." : "Mog\u0142o by\u0107 lepiej, ale sektor z twoimi lud\u017Ami s\u0142ycha\u0107."}`,
@@ -10000,8 +10044,8 @@ function startFight(rng, s, o) {
         rep.sim.big = true;
         rep.moments.push({
           round: 0,
-          title: title ? "Wiecz\xF3r, na kt\xF3ry pracowa\u0142e\u015B" : "To nie jest zwyk\u0142a walka",
-          text: `${rounds === 5 ? "Pi\u0119\u0107 rund" : "Trzy rundy"}. W tej walce naro\u017Cnik pyta ci\u0119 o decyzj\u0119 w ka\u017Cdej przerwie. ${title ? "Ka\u017Cda minuta mo\u017Ce zmieni\u0107 ca\u0142\u0105 karier\u0119." : "Wszyscy wiedz\u0105, \u017Ce tu chodzi o co\u015B wi\u0119cej ni\u017C ranking."}`,
+          title: title ? vary6(s, ["Wiecz\xF3r, na kt\xF3ry pracowa\u0142e\u015B", "Pas le\u017Cy na stoliku", "Najwa\u017Cniejsze 25 minut roku", "Tu si\u0119 pisze histori\u0119"]) : vary6(s, ["To nie jest zwyk\u0142a walka", "Osobiste porachunki", "Ca\u0142a hala wie, o co chodzi"]),
+          text: `${rounds === 5 ? "Pi\u0119\u0107 rund" : "Trzy rundy"}. W tej walce naro\u017Cnik pyta ci\u0119 o decyzj\u0119 w ka\u017Cdej przerwie. ${title ? vary6(s, ["Ka\u017Cda minuta mo\u017Ce zmieni\u0107 ca\u0142\u0105 karier\u0119.", "Jeden b\u0142\u0105d i zaczynasz od nowa. Jedna dobra decyzja i jeste\u015B mistrzem.", "Komentatorzy ju\u017C m\xF3wi\u0105 o \u201Ewalce roku\u201D. Teraz trzeba j\u0105 wygra\u0107."], 1) : vary6(s, ["Wszyscy wiedz\u0105, \u017Ce tu chodzi o co\u015B wi\u0119cej ni\u017C ranking.", "Ranking nie ma tu nic do rzeczy. Liczy si\u0119, kto wyjdzie z klatki z podniesion\u0105 g\u0142ow\u0105."], 1)}`,
           tone: "purple"
         });
       }
