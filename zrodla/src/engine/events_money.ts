@@ -200,8 +200,8 @@ export const MONEY_EVENTS: EventDef[] = [
     cond: (s) => s.tier >= 1,
     text: (s) =>
       inBanda(s)
-        ? 'Na ostatnim sparingu rozdarłeś rashguard od szyi do pasa. Ground Game wysyła nowy komplet przed walką, z twoim nazwiskiem na rękawie.'
-        : 'Na ostatnim sparingu rozdarłeś rashguard od szyi do pasa. Tydzień przed walką. Ten na wagę też już pamięta lepsze czasy.',
+        ? 'Na ostatnim sparingu rozdarłeś rashguard od szyi do pasa. Ground Game wysyła nowy komplet przed obozem, z twoim nazwiskiem na rękawie.'
+        : 'Na ostatnim sparingu rozdarłeś rashguard od szyi do pasa. Drugi, ten na wagę, też już pamięta lepsze czasy.',
     choices: (s) =>
       inBanda(s)
         ? [{ label: 'Odbierasz paczkę', desc: 'Komplet na walkę od sponsora.', effects: { form: 1, media: 1, note: 'sprzęt od Ground Game' } }]

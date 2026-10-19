@@ -56,7 +56,7 @@ export const EVENTS: EventDef[] = [
     once: true,
     weight: 5,
     cond: (s) => s.age >= 17 && s.age <= 23,
-    text: () => 'Sobota, dyskoteka w sąsiedniej gminie. Trzech gości zaczepia twoją dziewczynę. Patrzą na ciebie, bo „ty niby od tego MMA”.',
+    text: () => 'Sobota, dyskoteka w sąsiedniej gminie. Trzech gości zaczepia koleżankę z twojej paczki. Patrzą na ciebie, bo „ty niby od tego MMA”.',
     choices: () => [
       { label: 'Zabierasz ją i wychodzicie', desc: 'Trener zawsze powtarza, że prawdziwa walka jest w klatce.', effects: { rep: 2, relations: 1 } },
       {
@@ -1027,10 +1027,10 @@ export const EVENTS: EventDef[] = [
     title: 'Skradziona walka?',
     weight: 3,
     cond: (s) => s.tier >= 2 && s.history.slice(-3).some((h) => h.result === 'L' && h.method === 'Decyzja niejednogłośna'),
-    text: () => 'Po ostatniej niejednogłośnej decyzji internet huczy, że cię okradli. Federacja proponuje szybki rewanż albo możesz złożyć oficjalny protest.',
+    text: () => 'Po ostatniej niejednogłośnej decyzji internet huczy, że cię okradli. Możesz złożyć oficjalny protest albo odpuścić i odpowiedzieć w klatce.',
     choices: () => [
       { label: 'Składasz protest', desc: 'Sprawiedliwość musi być.', chance: 30, success: { rep: 3, media: 3, note: 'komisja przyznaje, że sędziowie się pomylili' }, fail: { rep: -1, note: 'protest odrzucony' } },
-      { label: 'Wygrasz to w klatce', desc: 'Prosisz o rewanż.', effects: { media: 4, form: 2 } },
+      { label: 'Wygrasz to w klatce', desc: 'Bez protestów. Odpowiesz wynikami w kolejnych walkach.', effects: { media: 4, form: 2 } },
     ],
   },
   {

@@ -1,3 +1,4 @@
+import { plural } from '../format';
 // Mechaniki „z życia”: etat obok treningów, social media (obserwujący), sprzedaż biletów.
 // Czyste funkcje bez losowania stanu gry (rng przekazuje game.ts).
 import type { FightOffer, GameState, JobMode, SocialMode, TicketPlan } from './types';
@@ -169,11 +170,11 @@ export function honours(s: GameState): { icon: string; emoji: string; text: stri
   if (f('doubleChamp')) out.push({ icon: 'trophy', emoji: '👑', text: 'Podwójny mistrz' });
   if (f('interimBelts')) out.push({ icon: 'trophy', emoji: '🥈', text: f('interimBelts') > 1 ? `${f('interimBelts')}× pas tymczasowy` : 'Pas tymczasowy' });
   if (f('grapplingGold')) out.push({ icon: 'knot', emoji: '🥋', text: f('grapplingGold') > 1 ? `${f('grapplingGold')}× złoto w grapplingu` : 'Złoto w grapplingu' });
-  if (f('boxingWins')) out.push({ icon: 'glove', emoji: '🥊', text: f('boxingWins') > 1 ? `${f('boxingWins')} wygrane w boksie` : 'Wygrana w boksie' });
-  if (f('kickWins')) out.push({ icon: 'glove', emoji: '🦵', text: f('kickWins') > 1 ? `${f('kickWins')} wygrane w kickboxingu` : 'Wygrana w kickboxingu' });
-  if (f('abroadWins')) out.push({ icon: 'pin', emoji: '🌍', text: f('abroadWins') > 1 ? `${f('abroadWins')} wygrane za granicą` : 'Wygrana za granicą' });
-  if (f('shortWins')) out.push({ icon: 'clock', emoji: '🚒', text: f('shortWins') > 1 ? `${f('shortWins')} uratowane gale` : 'Uratowana gala' });
-  if (f('bonuses') >= 3) out.push({ icon: 'star', emoji: '⭐', text: `${f('bonuses')} bonusy wieczoru` });
+  if (f('boxingWins')) out.push({ icon: 'glove', emoji: '🥊', text: f('boxingWins') > 1 ? `${f('boxingWins')} ${plural(f('boxingWins'), 'wygrana', 'wygrane', 'wygranych')} w boksie` : 'Wygrana w boksie' });
+  if (f('kickWins')) out.push({ icon: 'glove', emoji: '🦵', text: f('kickWins') > 1 ? `${f('kickWins')} ${plural(f('kickWins'), 'wygrana', 'wygrane', 'wygranych')} w kickboxingu` : 'Wygrana w kickboxingu' });
+  if (f('abroadWins')) out.push({ icon: 'pin', emoji: '🌍', text: f('abroadWins') > 1 ? `${f('abroadWins')} ${plural(f('abroadWins'), 'wygrana', 'wygrane', 'wygranych')} za granicą` : 'Wygrana za granicą' });
+  if (f('shortWins')) out.push({ icon: 'clock', emoji: '🚒', text: f('shortWins') > 1 ? `${f('shortWins')} ${plural(f('shortWins'), 'uratowana gala', 'uratowane gale', 'uratowanych gal')}` : 'Uratowana gala' });
+  if (f('bonuses') >= 3) out.push({ icon: 'star', emoji: '⭐', text: `${f('bonuses')} ${plural(f('bonuses'), 'bonus', 'bonusy', 'bonusów')} wieczoru` });
   const fans = followersOf(s);
   if (fans >= 1000) out.push({ icon: 'phone', emoji: '📱', text: `${fmtFans(fans)} obserwujących` });
   if (f('nemesisSettled')) out.push({ icon: 'scale', emoji: '⚖️', text: 'Wyrównane rachunki z zadrą' });

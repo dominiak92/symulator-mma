@@ -120,6 +120,8 @@ export interface Contract {
   tier: number;
   fed: string;
   kind: 'stay' | 'promotion' | 'demotion' | 'freak' | 'side';
+  /** przedłużenie z urzędu: trwający kontrakt, bez negocjacji i bonusu za podpis */
+  underContract?: boolean;
   seasons: number;
   fights: number; // walk w roku
   purse: number; // gaża za walkę

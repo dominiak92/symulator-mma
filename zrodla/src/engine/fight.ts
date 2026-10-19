@@ -530,7 +530,18 @@ function simulateRoundInner(rng: Rng, ctx: FightCtx, sim: FightSim, rep: FightRe
 
   if (sim.finished) return;
 
-  if (sim.me.dmg >= 85 && rng.chance(0.4)) {
+  // lekarz przerywa tylko między rundami: po ostatnim gongu decydują sędziowie
+  if (r < sim.maxRounds && sim.opp.dmg >= 85 && sim.opp.dmg > sim.me.dmg && rng.chance(0.4)) {
+    addMoment(rep, {
+      round: r,
+      title: 'Lekarz przerywa',
+      text: `${shortName(opp)} ma rozcięty łuk, krew zalewa mu oko. Lekarz ogląda ranę i macha rękami. Wygrywasz.`,
+      tone: 'good',
+    });
+    finishFight(rep, sim, 'me', 'Lekarz', 'rozcięcie');
+    return;
+  }
+  if (r < sim.maxRounds && sim.me.dmg >= 85 && rng.chance(0.4)) {
     addMoment(rep, {
       round: r,
       title: 'Lekarz przerywa',
@@ -898,8 +909,9 @@ export function applyDecision(rng: Rng, ctx: FightCtx, sim: FightSim, rep: Fight
   let tone: Moment['tone'] = out === 'super' ? 'purple' : out === 'success' ? 'good' : 'bad';
 
   // ryzyko może skończyć walkę także przy zwykłym sukcesie (rywal jest już obity albo zmęczony)
-  const finishTry = kind === 'risk' && out === 'success' && rng.chance(0.28 + Math.min(0.35, sim.opp.dmg / 120));
-  if ((out === 'super' || finishTry) && kind === 'risk') {
+  const finishTry = dp.id !== 'plan' && kind === 'risk' && out === 'success' && rng.chance(0.28 + Math.min(0.35, sim.opp.dmg / 120));
+  // plan przed walką nie kończy jej przed pierwszym gongiem: daje tylko rozpęd
+  if ((out === 'super' || finishTry) && kind === 'risk' && dp.id !== 'plan') {
     sim.round = Math.max(sim.round, dp.round);
     let method: 'KO/TKO' | 'Poddanie' = 'KO/TKO';
     let detail: string;

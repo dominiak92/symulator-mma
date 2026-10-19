@@ -327,7 +327,7 @@ export const EXTRA_EVENTS: EventDef[] = [
     title: 'Telefon w środku nocy',
     weight: 3,
     cond: (s) => s.tier >= 3,
-    text: () => 'Druga w nocy, dzwoni menedżer: rywal z main eventu wypadł, organizator pyta, czy wejdziesz za niego na wyższej wadze za dziesięć dni.',
+    text: () => 'Druga w nocy, dzwoni matchmaker federacji: rywal z main eventu wypadł, organizator pyta, czy wejdziesz za niego na wyższej wadze za dziesięć dni.',
     choices: (s) => [
       { label: 'Wchodzisz', desc: 'Takie szanse się nie powtarzają.', chance: 55, success: { money: cash(s, 0.12, 25000), media: 6, rep: 2, note: 'bohater wieczoru' }, fail: { money: cash(s, 0.05, 10000), wear: 4, form: -2, note: 'za ciężki rywal' }, successText: 'Wchodzisz na dziesięć dni przed galą i robisz najlepszą walkę wieczoru. Prezes federacji osobiście ściska ci rękę.', failText: 'Rywal jest o klasę cięższy. Przetrwałeś do końca, ale ciało pamięta każdą rundę.' },
       { label: 'Odmawiasz', desc: 'Zostajesz przy swoim planie.', effects: { form: 1 } },

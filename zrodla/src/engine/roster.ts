@@ -91,14 +91,18 @@ export function rosterOpp(rng: Rng, s: GameState, rank: number, exclude: Set<str
   if (r) {
     const size = RANK_SIZE[s.tier];
     const want = clamp(rank, 0, size);
-    const cands = r.list.filter((f) => !exclude.has(f.id));
+    // mistrz trafia się tylko wtedy, gdy szukamy mistrza (inaczej walka „bez pasa” z mistrzem)
+    const cands = r.list.filter((f) => !exclude.has(f.id) && (want === 0 || f.rank !== 0));
     const exact = cands.find((f) => f.rank === want);
     const near = exact ?? [...cands].sort((a, b) => Math.abs(a.rank - want) - Math.abs(b.rank - want))[0];
     if (near && (want !== 0 || near.rank === 0)) {
       const { h2h: _h, champSince: _c, ...f } = near;
       void _h;
       void _c;
-      return { ...f, stats: { ...near.stats }, record: { ...near.record } };
+      // w tabeli gracz zajmuje swoje miejsce, a skład za nim przesuwa się o jedno: oferta pokazuje to samo miejsce co tabela
+      const mine = s.rank;
+      const shown = mine !== null && mine > 0 && f.rank >= mine ? f.rank + 1 : f.rank;
+      return { ...f, rank: shown, stats: { ...near.stats }, record: { ...near.record } };
     }
   }
   return generateOpponent(rng, s.tier, rank, s.profile.difficulty === 'hard');
@@ -119,6 +123,7 @@ export function rosterAfterFight(s: GameState, oppId: string, res: 'W' | 'L' | '
     f.h2h.w++;
     f.record.l++;
     if (title && !defense) f.rank = 1; // były mistrz zostaje w czołówce
+    else if (defense) f.rank = Math.min(size, Math.max(f.rank, 1) + 3); // pokonany pretendent spada, bez natychmiastowego rewanżu
     else f.rank = rankBefore === null ? Math.min(size, f.rank + 3) : Math.max(f.rank, rankBefore);
   } else if (res === 'L') {
     f.h2h.l++;
@@ -211,7 +216,7 @@ function pruneNemesis(s: GameState, r: Roster) {
 const METHODS = [
   (w: string, l: string, r: number) => `${w} kontra ${l}: nokaut w ${r}. rundzie, górą ${w.split(' ').pop()}`,
   (w: string, l: string, r: number) => `${w} kontra ${l}: duszenie w ${r}. rundzie, wygrywa ${w.split(' ').pop()}`,
-  (w: string, l: string) => `${w} kontra ${l}: wojna na trzy rundy, na punkty wygrywa ${w.split(' ').pop()}`,
+  (w: string, l: string) => `${w} kontra ${l}: wojna do ostatniego gongu, na punkty wygrywa ${w.split(' ').pop()}`,
   (w: string, l: string, r: number) => `${w} kontra ${l}: sędzia przerywa w ${r}. rundzie, wygrywa ${w.split(' ').pop()}`,
   (w: string, l: string) => `${w} kontra ${l}: niejednogłośna decyzja, wygrywa ${w.split(' ').pop()}, hala gwiżdże`,
 ];
@@ -241,7 +246,8 @@ export function rosterNews(rng: Rng, s: GameState, after: number): NewsItem | nu
   const champ = r.list.find((f) => f.rank === 0);
   // obrona pasa w federacji
   const r2 = rng.next();
-  if (champ && s.rank !== 0 && r2 < 0.25) {
+  // kontuzjowany mistrz (gracz trzyma pas tymczasowy) nie broni pasa
+  if (champ && s.rank !== 0 && !(s.flags.interim ?? 0) && !s.run?.fights.some((f) => f.interim) && r2 < 0.25) {
     const ch = r.list.filter((f) => f.rank >= 1 && f.rank <= 3);
     const c = rng.pick(ch.length ? ch : r.list.filter((f) => f !== champ));
     if (!c) return null;

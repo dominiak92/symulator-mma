@@ -59,7 +59,7 @@ export const STAGE_EVENTS: EventDef[] = [
     title: 'Kontrola antydopingowa',
     weight: 2,
     cond: (s) => s.tier >= 2,
-    text: () => 'Szósta rano, dzwonek do drzwi. Dwóch panów z walizeczką: kontrola antydopingowa poza zawodami. Twoja dziewczyna pyta zza drzwi, czy to kurier.',
+    text: () => 'Szósta rano, dzwonek do drzwi. Dwóch panów z walizeczką: kontrola antydopingowa poza zawodami. Sąsiadka wygląda przez wizjer i pyta, czy to kurier, bo ona też czeka na paczkę.',
     choices: () => [
       { label: 'Otwierasz i oddajesz próbkę', desc: 'Nie masz nic do ukrycia.', effects: { rep: 1, note: 'wynik czysty' } },
       { label: 'Prosisz o dziesięć minut', desc: 'Musisz się ogarnąć.', chance: 65, success: { note: 'kontrolerzy czekają, wynik czysty' }, fail: { rep: -4, media: 2, note: 'portal pisze o „unikaniu kontroli”' }, successText: 'Kontrolerzy czekają na klatce schodowej. Wynik jest czysty i nikt o tym nie słyszy.', failText: 'Dziesięć minut wystarcza, żeby ktoś z sąsiadów zrobił zdjęcie. Tydzień później portal pisze o „unikaniu kontroli”.' },

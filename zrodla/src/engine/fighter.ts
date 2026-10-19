@@ -214,9 +214,10 @@ export function progressPeer(rng: Rng, p: Peer) {
     p.rank = clamp(cur - (w - l) * rng.int(1, 3), 0, size + 2);
     if (p.rank > size) p.rank = null;
   }
+  // pas w tej federacji ma mistrz ze składu: kolega z rocznika zdobywa pasy gdzie indziej i zostaje w czołówce
   if (p.rank === 0) {
     if (rng.chance(0.6)) p.belts++;
-    else p.rank = 1;
+    p.rank = 1;
   }
   if (p.age >= 30 && rng.chance((p.age - 29) * 0.07 + (o < level ? 0.08 : 0))) p.retired = true;
   if (p.age < 24 && o < 30 && rng.chance(0.12)) p.retired = true; // rzucił MMA dla pracy w Niemczech

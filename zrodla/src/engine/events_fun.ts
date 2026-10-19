@@ -27,9 +27,9 @@ export const FUN_EVENTS: EventDef[] = [
     title: 'Sąsiad z wiertarką',
     weight: 3,
     cond: (s) => s.age >= 18,
-    text: () => 'Noc przed ważeniem sąsiad zza ściany zaczyna remont. O 23:40 wiertarka udarowa, o 0:15 młotek. „Muszę skończyć półkę przed weekendem”.',
+    text: () => 'Środek ciężkiego obozu, rano masz sparingi, a sąsiad zza ściany zaczyna remont. O 23:40 wiertarka udarowa, o 0:15 młotek. „Muszę skończyć półkę przed weekendem”.',
     choices: () => [
-      { label: 'Idziesz porozmawiać', desc: 'Grzecznie, ale stanowczo.', chance: 60, success: { form: 1, note: 'sąsiad przeprasza i przynosi ciasto' }, fail: { media: 1, rep: -1, note: 'sąsiad nagrywa cię telefonem' }, successText: 'Sąsiad poznaje cię z telewizji, przeprasza i zostawia pod drzwiami blachę szarlotki. Śpisz jak dziecko.', failText: 'Sąsiad nagrywa rozmowę i wrzuca do grupy osiedlowej z podpisem „zawodnik MMA grozi emerytowi”. Nikt nie grozi, ale komentarze są.' },
+      { label: 'Idziesz porozmawiać', desc: 'Grzecznie, ale stanowczo.', chance: 60, success: { form: 1, note: 'sąsiad przeprasza i przynosi ciasto' }, fail: { media: 1, rep: -1, note: 'sąsiad nagrywa cię telefonem' }, successText: 'Sąsiad okazuje się twoim kibicem, przeprasza i zostawia pod drzwiami blachę szarlotki. Śpisz jak dziecko.', failText: 'Sąsiad nagrywa rozmowę i wrzuca do grupy osiedlowej z podpisem „zawodnik MMA grozi emerytowi”. Nikt nie grozi, ale komentarze są.' },
       { label: 'Zatyczki i sen', desc: 'Nie dasz się wyprowadzić z równowagi.', effects: { form: -1, note: 'spałeś cztery godziny' } },
     ],
   },
@@ -99,10 +99,10 @@ export const FUN_EVENTS: EventDef[] = [
     title: 'Ochroniarz cię nie wpuszcza',
     weight: 3,
     cond: (s) => s.tier >= 1,
-    text: () => 'Dzień gali. Ochroniarz przy wejściu dla zawodników nie wierzy, że jesteś w karcie walk. „Każdy tak mówi. Bilet?”',
+    text: () => 'Federacja zaprasza cię na galę, żebyś pokazał się kibicom z klatki. Ochroniarz przy wejściu dla zawodników nie wierzy, że jesteś na liście. „Każdy tak mówi. Bilet?”',
     choices: () => [
       { label: 'Pokazujesz plakat na telefonie', desc: 'Twoja twarz, jego zdziwienie.', effects: { media: 1, note: 'ochroniarz prosi o autograf dla syna' } },
-      { label: 'Dzwonisz do organizatora', desc: 'Dwadzieścia minut czekania na zimnie.', effects: { form: -1, note: 'rozgrzewka w samochodzie' } },
+      { label: 'Dzwonisz do organizatora', desc: 'Dwadzieścia minut czekania na zimnie.', effects: { form: -1, note: 'katar po czekaniu na zimnie' } },
     ],
   },
   {
