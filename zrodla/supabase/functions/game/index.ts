@@ -99,6 +99,8 @@ __export(game_exports, {
   farewellAvailable: () => farewellAvailable,
   fightRange: () => fightRange,
   fighterName: () => fighterName,
+  fotoPost: () => fotoPost,
+  fotoPostOptions: () => fotoPostOptions,
   foundationLegacy: () => foundationLegacy,
   foundationOpen: () => foundationOpen,
   fullName: () => fullName,
@@ -180,6 +182,8 @@ __export(game_exports, {
   takeBreakYear: () => takeBreakYear,
   takeFamilyHelp: () => takeFamilyHelp,
   takeLoan: () => takeLoan,
+  tasmaDeal: () => tasmaDeal,
+  tasmaItems: () => tasmaItems,
   testPreview: () => testPreview,
   tierLabel: () => tierLabel,
   toMarket: () => toMarket,
@@ -8492,6 +8496,111 @@ function pickOpponent(rng, s, idx) {
 function gearCost(s) {
   return Math.round(700 * ([1, 1.5, 3, 5, 8][Math.min(4, s.tier)] ?? 1) / 50) * 50;
 }
+var tmScale = (s) => [1, 1.5, 3, 5, 8][Math.min(4, Math.max(0, s.tier))] ?? 1;
+var tmZl = (s, n) => Math.max(20, Math.round(n * tmScale(s) / 10) * 10);
+var tmKey = (s, id, career) => career ? `tm:${id}` : `tm:${s.season}:${id}`;
+function tasmaItems(s) {
+  if (s.phase === "ended") return [];
+  const out = [];
+  const gc = gearCost(s);
+  const gear = s.gear ?? 0;
+  const seed = s.season * 7 + s.profile.lastName.length;
+  if (gear >= 20) {
+    out.push({ id: "rekawice", kind: "buy", title: "R\u0119kawice sparingowe 16 oz, u\u017Cywane raz", desc: "Kupi\u0142em, poszed\u0142em na jeden trening, zrozumia\u0142em, \u017Ce to nie dla mnie. Stan idealny. Pachn\u0105 jak nowe (prawie).", seller: ["Sebastian_92", "Kris z Wroc\u0142awia", "janek.fit"][seed % 3], price: Math.round(gc * 0.35 / 10) * 10, risk: 25, effects: { gear: -35 }, hint: "sprz\u0119t \u221235%" });
+    if (gear >= 45) out.push({ id: "komplet", kind: "buy", title: "Komplet po bracie: kask, nagolenniki, suspensor", desc: "Brat sko\u0144czy\u0142 karier\u0119 po pierwszym sparingu. Suspensor nieu\u017Cywany, przysi\u0119gam.", seller: ["Pani Bo\u017Cena", "Marek_Gdynia", "Ania K."][seed % 3], price: Math.round(gc * 0.55 / 10) * 10, risk: 15, effects: { gear: -50 }, hint: "sprz\u0119t \u221250%" });
+    out.push({ id: "tasma", kind: "buy", title: "Ta\u015Bma bokserska, 30 rolek, z hurtowni", desc: "Hurt po likwidacji sklepu. Kolor: \u201Ecielisty\u201D. Na dwa lata owijania.", seller: "Hurtownia Banda\u017C-Pol", price: tmZl(s, 60), effects: { gear: -8 }, hint: "sprz\u0119t \u22128%" });
+  }
+  if (!s.flags[tmKey(s, "worek", true)])
+    out.push({ id: "worek", kind: "buy", title: "Worek bokserski 40 kg + \u0142a\u0144cuchy", desc: "Odbi\xF3r osobisty, 4 pi\u0119tro, bez windy. Znoszenie to dodatkowy trening gratis.", seller: "Ryszard (emeryt, by\u0142y tragarz)", price: tmZl(s, 250), effects: { stats: { stand: 1 }, wear: 1 }, hint: "st\xF3jka +1, zu\u017Cycie +1" });
+  if (!s.flags[tmKey(s, "rowerek", true)])
+    out.push({ id: "rowerek", kind: "buy", title: "Rower stacjonarny, stan idealny", desc: "S\u0142u\u017Cy\u0142 jako wieszak na ubrania przez pi\u0119\u0107 lat. Licznik pokazuje 3 km.", seller: "Gra\u017Cyna_z_Bloku", price: tmZl(s, 300), effects: { stats: { cardio: 1 } }, hint: "kondycja +1" });
+  const titles = s.history.filter((h) => h.title && h.result === "W");
+  for (const h of titles.slice(-3)) {
+    const id = `pas-${h.season}-${h.opponent.replace(/\s+/g, "")}`;
+    if (s.flags[tmKey(s, id, true)]) continue;
+    out.push({ id, kind: "sell", title: `R\u0119kawice z walki o pas vs ${h.opponent}`, desc: `Z autografem, z krwi\u0105 rywala (gratis). Rok ${s.seasons.find((x) => x.season === h.season)?.year ?? ""}.`, seller: "ty", price: Math.round(2500 * tmScale({ ...s, tier: h.tier }) / 50) * 50, effects: { media: 1 }, hint: "media +1" });
+  }
+  const medals = s.medals.gold + s.medals.silver + s.medals.bronze - (s.flags.medalsSold ?? 0);
+  if (medals > 0) out.push({ id: "medal", kind: "sell", title: "Medal z turnieju amatorskiego", desc: "Prawdziwy, wisia\u0142 w pokoju u mamy. Mama jeszcze nie wie.", seller: "ty", price: tmZl(s, 200), effects: { relations: -1 }, hint: "rodzina \u22121" });
+  if (s.proDebut && !s.flags[tmKey(s, "koszulka")])
+    out.push({ id: "koszulka", kind: "sell", title: "Koszulka z wyj\u015Bcia do klatki, z autografem", desc: "Prana raz. \u015Alady potu autentyczne, certyfikat wystawiony przez mam\u0119.", seller: "ty", price: tmZl(s, 120) + Math.round(Math.min(40, s.media) * 10 * tmScale(s)), effects: { media: 1 }, hint: "media +1" });
+  return out.filter((it) => !s.flags[tmKey(s, it.id, it.id === "worek" || it.id === "rowerek" || it.id.startsWith("pas-"))]);
+}
+function tasmaDeal(s0, id) {
+  const it = tasmaItems(s0).find((x) => x.id === id);
+  if (!it) return s0;
+  if (it.kind === "buy" && s0.money < it.price) return s0;
+  const s = clone(s0);
+  const career = id === "worek" || id === "rowerek" || id.startsWith("pas-");
+  s.flags[tmKey(s, id, career)] = 1;
+  withRng(s, (rng) => {
+    if (it.kind === "buy") {
+      s.money -= it.price;
+      const fake = !!it.risk && rng.chance(it.risk / 100);
+      if (fake) {
+        applyEffects(s, { gear: -10 }, rng);
+        s.flags.tasmaLast = 2;
+        log(s, `Ta\u015Bma: \u201E${it.title}\u201D okaza\u0142y si\u0119 podr\xF3bk\u0105. Logo krzywe, szwy puszczaj\u0105.`);
+      } else {
+        applyEffects(s, it.effects, rng);
+        s.flags.tasmaLast = 1;
+        log(s, `Ta\u015Bma: kupione \u201E${it.title}\u201D.`);
+      }
+    } else {
+      s.money += it.price;
+      s.totalEarned += it.price;
+      applyEffects(s, it.effects, rng);
+      if (id === "medal") s.flags.medalsSold = (s.flags.medalsSold ?? 0) + 1;
+      s.flags.tasmaLast = 3;
+      log(s, `Ta\u015Bma: sprzedane \u201E${it.title}\u201D.`);
+    }
+  });
+  return s;
+}
+function fotoPostOptions(s) {
+  const h = s.history[s.history.length - 1];
+  if (!h || s.phase === "ended" || !s.proDebut || s.flags[`fp:${s.history.length}`]) return null;
+  const opp = h.opponent.split(" ").pop();
+  const opts = [
+    { id: "respekt", label: "Zdj\u0119cie z rywalem", caption: h.result === "W" ? `${opp}, szacunek. Twarda walka, wielkie serce. \u{1F91D}` : `${opp}, gratulacje. Dzi\u015B by\u0142e\u015B lepszy. Wracam silniejszy. \u{1F91D}`, hint: "reputacja +1, obserwuj\u0105cy +" },
+    { id: "trash", label: "Wywo\u0142anie kolejnego rywala", caption: h.result === "W" ? `Nast\u0119pny. Kto chce by\u0107 kolejny? Czekam. \u{1F624}` : `S\u0119dziowie mnie okradli. Rewan\u017C albo nic. \u{1F624}`, hint: "media +2, reputacja \u22121, du\u017Co obserwuj\u0105cych, ryzyko kary" }
+  ];
+  if (s.sponsors.length) opts.push({ id: "sponsor", label: "Post z produktem sponsora", caption: `Regeneracja po walce tylko z ${s.sponsors[0].name}! Kod rabatowy w bio \u{1F4AA}`, hint: "pieni\u0105dze od sponsor\xF3w, media +1" });
+  if (h.result !== "W") opts.push({ id: "kulisy", label: "Szczera relacja z szatni", caption: "Nie b\u0119d\u0119 \u015Bciemnia\u0142. Boli. Ale tak wygl\u0105da ten sport. Dzi\u0119kuj\u0119, \u017Ce jeste\u015Bcie. \u2764\uFE0F", hint: "reputacja +2, obserwuj\u0105cy +" });
+  return { fight: h, opts };
+}
+function fotoPost(s0, kind) {
+  const o = fotoPostOptions(s0);
+  if (!o || !o.opts.some((x) => x.id === kind)) return s0;
+  const s = clone(s0);
+  s.flags[`fp:${s.history.length}`] = 1;
+  const fans = followersOf(s);
+  const win = o.fight.result === "W";
+  withRng(s, (rng) => {
+    let fine = 0;
+    if (kind === "respekt") {
+      applyEffects(s, { rep: 1 }, rng);
+      addFans(s, fans * (win ? 0.025 : 0.015) + 20);
+    } else if (kind === "trash") {
+      applyEffects(s, { media: 2, rep: -1 }, rng);
+      addFans(s, fans * (win ? 0.05 : 0.03) + 50);
+      if (rng.chance(0.25)) {
+        fine = Math.round(300 * ([1, 1.5, 3, 5, 8][Math.min(4, s.tier)] ?? 1) / 50) * 50;
+        s.money -= fine;
+      }
+    } else if (kind === "sponsor") {
+      const pay = s.sponsors.length * Math.round(150 * ([1, 1.5, 3, 5, 8][Math.min(4, s.tier)] ?? 1) / 50) * 50;
+      applyEffects(s, { money: pay, media: 1 }, rng);
+      addFans(s, fans * 0.01);
+    } else {
+      applyEffects(s, { rep: 2 }, rng);
+      addFans(s, fans * 0.03 + 30);
+    }
+    s.flags.fpLastFans = followersOf(s) - fans;
+    s.flags.fpLastFine = fine;
+  });
+  return s;
+}
 function buyGear(s0) {
   if (s0.phase !== "budget" || (s0.gear ?? 0) < 20 || s0.money < gearCost(s0)) return s0;
   const s = clone(s0);
@@ -11387,7 +11496,9 @@ var ALLOWED = /* @__PURE__ */ new Set([
   "claimErrand",
   "campWeek",
   "campGo",
-  "buyGear"
+  "buyGear",
+  "tasmaDeal",
+  "fotoPost"
 ]);
 var YEAR_COST = {
   startSeason: () => 1,
