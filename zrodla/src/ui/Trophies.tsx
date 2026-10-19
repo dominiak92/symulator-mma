@@ -6,6 +6,7 @@ import { SheetHead } from './Game';
 import { Medal } from './Art';
 import { FlagMark } from './Flag';
 import { Icon } from './Icon';
+import { lat } from '../format';
 import beltAm from '../assets/belts/amator.webp';
 import beltReg from '../assets/belts/regional.webp';
 import beltPl from '../assets/belts/polska.webp';
@@ -48,7 +49,7 @@ export function TrophySheet({ g, onClose }: { g: GameState; onClose: () => void 
                 <figcaption>
                   <b>{b.name}</b>
                   <small>
-                    rok {b.season} · {b.age} lat
+                    rok {b.season} · {lat(b.age)}
                   </small>
                 </figcaption>
               </figure>
@@ -93,7 +94,7 @@ export function TrophySheet({ g, onClose }: { g: GameState; onClose: () => void 
                   </b>
                   <small>
                     {METHOD_SHORT[h.method] ?? h.method}
-                    {h.method === 'KO/TKO' || h.method === 'Poddanie' ? ` · ${h.round}. runda` : ''} · {h.gala ?? h.fed} · {h.age} lat
+                    {h.method === 'KO/TKO' || h.method === 'Poddanie' ? ` · ${h.round}. runda` : ''} · {h.gala ?? h.fed} · {lat(h.age)}
                   </small>
                 </span>
                 {h.oppRank !== null && <span className="tc-rank">{h.oppRank === 0 ? 'mistrz' : `#${h.oppRank}`}</span>}

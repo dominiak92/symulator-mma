@@ -184,9 +184,10 @@ export async function drawCard(g: GameState, withLogo = true, theme: CardTheme =
 
   // statystyki
   y += 40;
+  const fs = finishSplit(g);
   const stats: [string, string][] = [
-    ['KO', String(g.finishes.ko)],
-    ['Poddania', String(g.finishes.sub)],
+    ['KO', String(fs.ko)],
+    ['Poddania', String(fs.sub)],
     g.belts.length ? ['Tytuły', String(g.belts.length)] : ['Medale', String(g.medals.gold + g.medals.silver + g.medals.bronze)],
     ['Najwyżej', g.peakRank === 0 ? `Mistrz ${['AMA', 'REG', 'PL', 'EU', 'ŚW'][g.peakTier]}` : g.peakRank ? `#${g.peakRank} ${['AMA', 'REG', 'PL', 'EU', 'ŚW'][g.peakTier]}` : TIER_NAMES[g.peakTier]],
   ];
@@ -222,14 +223,17 @@ export async function drawCard(g: GameState, withLogo = true, theme: CardTheme =
     y += 56;
     ctx.fillStyle = C.gold;
     ctx.font = body(30, 600);
-    const shown = g.belts.slice(-3).reverse();
-    shown.forEach((b, i) => ctx.fillText(`🏆 ${b.name.split(' (')[0]} · ${lat(b.age)}`, L, y + i * 44));
+    // tyle pasów, ile zmieści się nad stopką; resztę dopisujemy do ostatniej linii
+    const room = Math.max(1, Math.floor((footerTop - 40 - y) / 44) + 1);
+    const n = Math.min(3, g.belts.length, room);
+    const shown = g.belts.slice(-n).reverse();
+    shown.forEach((b, i) => {
+      const more = i === n - 1 && g.belts.length > n ? `  · i jeszcze ${g.belts.length - n}` : '';
+      const t = `🏆 ${b.name.split(' (')[0]} · ${lat(b.age)}${more}`;
+      fitText(ctx, t, (px: number) => body(px, 600), 30, R - L);
+      ctx.fillText(t, L, y + i * 44);
+    });
     y += (shown.length - 1) * 44;
-    if (g.belts.length > 3) {
-      y += 44;
-      ctx.fillStyle = C.muted;
-      ctx.fillText(`i jeszcze ${g.belts.length - 3}`, L, y);
-    }
   }
 
   // historia (tyle linii, ile się zmieści nad stopką)
@@ -293,4 +297,12 @@ function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: numbe
   ctx.arcTo(x, y + h, x, y, r);
   ctx.arcTo(x, y, x + w, y, r);
   ctx.closePath();
+}
+
+/** Skończenia przed czasem z tych samych walk co rekord na karcie: zawodowe, a bez debiutu amatorskie. */
+export function finishSplit(g: GameState): { ko: number; sub: number } {
+  const pro = g.history.filter((h) => !h.amateur);
+  const pool = g.proDebut ? pro : g.history;
+  const wins = pool.filter((h) => h.result === 'W');
+  return { ko: wins.filter((h) => h.method === 'KO/TKO' || h.method === 'Lekarz').length, sub: wins.filter((h) => h.method === 'Poddanie').length };
 }

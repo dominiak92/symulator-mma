@@ -4,7 +4,7 @@ import { useSyncExternalStore } from 'react';
 import type { GameState } from '../engine/types';
 import { mainRecord } from '../engine/game';
 
-export type Hold = { result: 'W' | 'L' | 'D' | null; amateur: boolean; earned: number } | null;
+export type Hold = { result: 'W' | 'L' | 'D' | null; amateur: boolean; earned: number; rankBefore?: number | null } | null;
 let hold: Hold = null;
 const subs = new Set<() => void>();
 
@@ -33,4 +33,10 @@ export function shownRecord(g: GameState, h: Hold) {
   else if (h.result === 'L') r.l = Math.max(0, r.l - 1);
   else r.d = Math.max(0, r.d - 1);
   return r;
+}
+
+/** Miejsce w rankingu do pokazania: sprzed walki, dopóki gracz nie zobaczy wyniku. */
+export function shownRank(g: GameState, h: Hold): number | null {
+  if (!h || !h.result || h.amateur || h.rankBefore === undefined) return g.rank;
+  return h.rankBefore;
 }

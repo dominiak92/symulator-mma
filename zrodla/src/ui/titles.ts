@@ -3,7 +3,14 @@ import { isDoubleChamp } from '../engine/game';
 import type { GameState } from '../engine/types';
 
 /** Tytuł przy nazwisku: „mistrz XSW”, „były mistrz Armady”, „mistrz Polski amatorów”. Pusty, gdy brak pasów. */
+/** Regionalne federacje skracamy do marki: „Armada Fight Night Opole” → „Armada”. */
+const shortFed = (t: string) => t.replace(/ (Fight Night|Fight League|MMA)( [^ ]+)*$/, '');
+
 export function champTitle(g: GameState): string {
+  return shortFed(champTitleFull(g));
+}
+
+function champTitleFull(g: GameState): string {
   if (isDoubleChamp(g)) return `podwójny mistrz ${galaPrefix(g.fed)}`;
   if (g.tier > 0 && g.rank === 0 && g.contract?.kind !== 'freak') return `mistrz ${galaPrefix(g.fed)}`;
   const pro = [...g.belts].reverse().find((b) => /\(([^)]+)\)$/.test(b.name) && !/superfight/.test(b.name));

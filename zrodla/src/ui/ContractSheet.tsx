@@ -88,7 +88,11 @@ export default function ContractSheet({
     sfxClick();
     toSign();
     setSigned(true);
-    window.setTimeout(onSign, 2100);
+    // następny ekran zaczyna się od góry
+    window.setTimeout(() => {
+      window.scrollTo(0, 0);
+      onSign();
+    }, 2100);
   };
 
   const fedShort = c.fed.split(' – ')[0];

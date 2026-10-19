@@ -7,7 +7,7 @@ import { Fighter } from './FighterArt';
 import TextSize from './TextSize';
 import { chinState, fmtFans, followersOf } from '../engine/extras';
 import { coachOf, coachOpen } from '../engine/coaches';
-import { shownRecord, useHudHold } from './hudHold';
+import { shownRank, shownRecord, useHudHold } from './hudHold';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { GameState, Phase } from '../engine/types';
 import { predictability } from '../engine/fight';
@@ -15,7 +15,7 @@ import { goalBlockedInQuick, goalMet, todaysGoals, weekEndsIn } from '../engine/
 import { STAT_KEYS, STAT_LABELS, STAT_DESC, START_PROFILES, STYLE_LABELS, TIER_NAMES, DIFFICULTY, WEIGHTS, amateurDivision } from '../engine/data';
 import { debutCheck, displayName, divisionKey, rankStr, rankingTable, recStr, tourneyResultText } from '../engine/game';
 import { ovr } from '../engine/fighter';
-import { money, moneyShort } from '../format';
+import { lat, money, moneyShort } from '../format';
 import Training from './steps/Training';
 import Budget from './steps/Budget';
 import EventStep from './steps/EventStep';
@@ -189,6 +189,7 @@ export default function Game({
     return () => clearTimeout(t);
   }, [shownMoney]);
   const rec = shownRecord(g, hold);
+  const rk = shownRank(g, hold);
   const amateur = !g.proDebut;
   const medals = g.medals.gold + g.medals.silver + g.medals.bronze;
 
@@ -249,7 +250,7 @@ export default function Game({
                 <small>Ranking</small>
                 <b>
                   <Icon name="trophy" size={14} />
-                  {g.rank === 0 ? (isDoubleChamp(g) ? '2 pasy' : 'pas') : g.rank === null ? '–' : `#${g.rank}`}
+                  {rk === 0 ? (isDoubleChamp(g) ? '2 pasy' : 'pas') : rk === null ? '–' : `#${rk}`}
                 </b>
               </button>
             )}
@@ -366,7 +367,7 @@ export default function Game({
                   <div className="sk-id">
                     <b>{g.profile.firstName} {g.profile.nickname ? <em>„{g.profile.nickname}”</em> : null} {g.profile.lastName}</b>
                     {champTitle(g) && <em className="champ-tag">{champTitle(g)}</em>}
-                    <span>{g.age} lat · {g.profile.hometown}</span>
+                    <span>{lat(g.age)} · {g.profile.hometown}</span>
                     <span className="sk-ovr">OVR {ovr(g.stats)}</span>
                   </div>
                 </div>
@@ -470,7 +471,7 @@ function SkillsPanel({ g, plain }: { g: GameState; plain?: boolean }) {
           </div>
         );
       })}
-      {g.injury && <p className="tag bad" style={{ marginTop: 10 }}><Icon name="bandage" size={13} />Kontuzja: {g.injury.name}, testy −{g.injury.penalty} pkt</p>}
+      {g.injury && <p className="tag bad inj-tag" style={{ marginTop: 10 }}><Icon name="bandage" size={13} />Kontuzja: {g.injury.name}, testy −{g.injury.penalty} pkt</p>}
       <PredictNote g={g} />
       <WearBar wear={g.wear} />
       <PointsPanel g={g} />
@@ -573,7 +574,11 @@ function ClubPanel({ g, plain }: { g: GameState; plain?: boolean }) {
   );
 }
 
-export function CareerPanel({ g, onRanking }: { g: GameState; onRanking?: () => void }) {
+export function CareerPanel({ g: g0, onRanking }: { g: GameState; onRanking?: () => void }) {
+  // miejsce w rankingu sprzed walki, dopóki wynik nie jest odsłonięty
+  const hold = useHudHold();
+  const hr = shownRank(g0, hold);
+  const g = hr === g0.rank ? g0 : { ...g0, rank: hr };
   if (g.tier === 0 && g.contract.kind !== 'freak') {
     const div = amateurDivision(g.age, g.amRecord.w + g.amRecord.l + g.amRecord.d);
     const d = debutCheck(g);
