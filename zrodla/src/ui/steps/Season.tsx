@@ -7,7 +7,7 @@ import { currentYearGoal, acceptInvite, declineInvite, inviteChance, cutChance, 
 import { activeManager, currentManager } from '../../engine/managers';
 import { sfxCash, sfxClick, sfxCrowd, sfxGong, sfxLoss, sfxThud } from '../sound';
 import { OUTCOME_LABEL } from '../../engine/fight';
-import { money } from '../../format';
+import { lat, money } from '../../format';
 import { loadSettings } from '../../storage';
 import { ChanceTag } from '../Chance';
 import type { StepProps } from '../Game';
@@ -227,7 +227,7 @@ export function methodShort(f: Pick<FightReport, 'method' | 'round'>) {
 
 function resWord(f: FightReport) {
   if (f.method === 'Walkower') return f.amateur ? 'Walkower' : 'Odwołana';
-  if (f.result === 'W') return f.method === 'KO/TKO' || f.method === 'Lekarz' ? 'Nokaut!' : f.method === 'Poddanie' ? 'Poddał się!' : 'Wygrana';
+  if (f.result === 'W') return f.method === 'KO/TKO' ? 'Nokaut!' : f.method === 'Lekarz' ? 'Lekarz przerywa!' : f.method === 'Poddanie' ? 'Poddał się!' : 'Wygrana';
   if (f.result === 'L') return 'Porażka';
   return 'Remis';
 }
@@ -700,8 +700,8 @@ function LiveCard({ g, f, start, animate, setGame }: { g: GameState; f: FightRep
             </small>
             <b>{f.opp.lastName}</b>
             <span>
-              {f.opp.freak ? f.opp.freak : `${recStr(f.opp.record)} · ${STYLE_LABELS[f.opp.style].toLowerCase()}`}
-              {!f.amateur && !f.opp.freak && rankLabel(f.opp.rank) ? ` · ${rankLabel(f.opp.rank)}` : ''}
+              {/* na wąskim ekranie mieści się rekord i jedna rzecz: miejsce w rankingu, a bez niego styl */}
+              {f.opp.freak ? f.opp.freak : !f.amateur && rankLabel(f.opp.rank) ? `${recStr(f.opp.record)} · ${rankLabel(f.opp.rank)}` : `${recStr(f.opp.record)} · ${STYLE_LABELS[f.opp.style].toLowerCase()}`}
             </span>
           </div>
           {bars(snap[2], snap[3], 'opp')}
@@ -1028,9 +1028,9 @@ function PosterHero({ g, opp, label, title, interim, fed, medal, abroad, farewel
           </div>
         )}
         <div>
-          <dd>{g.age} lat</dd>
+          <dd>{lat(g.age)}</dd>
           <dt>Wiek</dt>
-          <dd>{opp.age} lat</dd>
+          <dd>{lat(opp.age)}</dd>
         </div>
         <div>
           <dd>{STYLE_LABELS[g.profile.style]}</dd>
@@ -1804,10 +1804,10 @@ function OfferCard({ g, o, n, total, setGame }: { g: GameState; o: FightOffer; n
           {!opp.freak && opp.rank !== null && (
             <span className="tag">
               <Icon name="trophy" size={12} />
-              {opp.rank === 0 ? 'mistrz' : `#${opp.rank} w rankingu`}
+              {opp.rank === 0 ? 'rywal: mistrz' : `rywal: #${opp.rank} w rankingu`}
             </span>
           )}
-          {!opp.freak && opp.rank === null && !o.tuneup && <span className="tag">poza rankingiem</span>}
+          {!opp.freak && opp.rank === null && !o.tuneup && <span className="tag">rywal poza rankingiem</span>}
           {!opp.freak && (() => {
             // to samo porównanie co w planie na walkę: ty kontra rywal
             const me = effectiveStats(g);
@@ -1835,7 +1835,7 @@ function OfferCard({ g, o, n, total, setGame }: { g: GameState; o: FightOffer; n
             <>
               <span className="tag">
                 <FlagMark country={opp.country} flag={opp.flag} />
-                {opp.country}, {opp.age} lat
+                {opp.country}, {lat(opp.age)}
               </span>
               <span className="tag red">bilans {recStr(opp.record)}</span>
             </>
@@ -2264,7 +2264,7 @@ export default function Season({ game, setGame }: StepProps) {
   // dopóki wynik nie jest odsłonięty, belka i karty pokazują stan sprzed walki
   const hidden = last && last.sim.finished && !(revealedKey === lastKey && !introOpen) ? last : null;
   useLayoutEffect(() => {
-    setHudHold(hidden ? { result: hidden.result, amateur: !!hidden.amateur, earned: hidden.earned ?? 0 } : null);
+    setHudHold(hidden ? { result: hidden.result, amateur: !!hidden.amateur, earned: hidden.earned ?? 0, rankBefore: hidden.rankBefore } : null);
   }, [hidden?.idx, !!hidden]);
   useEffect(() => () => setHudHold(null), []);
 

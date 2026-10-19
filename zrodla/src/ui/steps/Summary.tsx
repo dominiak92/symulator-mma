@@ -25,6 +25,8 @@ export default function Summary({ game, setGame, onPeers }: StepProps & { onPeer
     s.beltWon || s.grade === 'Rok wybitny' || s.grade === 'Sezon wybitny' ? 'gold' : s.grade === 'Udany rok' || s.grade === 'Udany sezon' ? 'good' : s.grade === 'Katastrofa' || s.grade === 'Rok do zapomnienia' || s.grade === 'Sezon do zapomnienia' ? 'bad' : '';
   const activePeers = g.peers.filter((p) => !p.retired);
   const amateur = s.tier === 0;
+  // rok freak fightów: logo federacji z kontraktu, nie sportowej
+  const sumFed = g.contract.kind === 'freak' && s.season === g.season ? g.contract.fed : s.fed;
   const medals = amateur ? (g.run?.tourneys ?? []).map((t) => t.medal).filter((m): m is 'gold' | 'silver' | 'bronze' => !!m) : [];
   const party = s.beltWon || medals.includes('gold') || s.grade === 'Rok wybitny' || s.grade === 'Sezon wybitny';
   const artRef = useRef<HTMLDivElement>(null);
@@ -46,7 +48,7 @@ export default function Summary({ game, setGame, onPeers }: StepProps & { onPeer
         </div>
         <div className="sum-head">
           <div className="kicker sum-kicker">
-            {!amateur && fedLogo(s.fed) && <img className="sum-fed" src={fedLogo(s.fed)!} alt="" aria-hidden="true" />}
+            {!amateur && fedLogo(sumFed) && <img className="sum-fed" src={fedLogo(sumFed)!} alt="" aria-hidden="true" />}
             Rok {s.season} kariery · {s.year}
           </div>
           {champTitle(g) && !s.beltWon && <em className="champ-tag" style={{ justifySelf: 'start' }}>{champTitle(g)}</em>}
@@ -120,7 +122,7 @@ export default function Summary({ game, setGame, onPeers }: StepProps & { onPeer
           <span>
             Dorobek kariery: <b>{s.legacyTo.toLocaleString('pl-PL')} pkt</b>
           </span>
-          {s.legacyTo - (s.legacyFrom ?? 0) !== 0 && <em className={s.legacyTo - (s.legacyFrom ?? 0) > 0 ? 'pos' : 'neg'}>{s.legacyTo - (s.legacyFrom ?? 0) > 0 ? '+' : '−'}{Math.abs(s.legacyTo - (s.legacyFrom ?? 0)).toLocaleString('pl-PL')} w tym roku</em>}
+          {s.legacyFrom !== undefined && s.legacyTo - s.legacyFrom !== 0 && <em className={s.legacyTo - (s.legacyFrom ?? 0) > 0 ? 'pos' : 'neg'}>{s.legacyTo - (s.legacyFrom ?? 0) > 0 ? '+' : '−'}{Math.abs(s.legacyTo - (s.legacyFrom ?? 0)).toLocaleString('pl-PL')} w tym roku</em>}
         </div>
       )}
 

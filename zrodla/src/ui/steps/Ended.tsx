@@ -6,11 +6,11 @@ import { honours } from '../../engine/extras';
 import type { GameState, HistoryEntry } from '../../engine/types';
 import { displayName, mainRecord, medalCount, recStr, divisionKey } from '../../engine/game';
 import { START_PROFILES } from '../../engine/data';
-import { CARD_THEMES, drawCard } from '../card';
+import { CARD_THEMES, drawCard, finishSplit } from '../card';
 import { loadAchievements, loadSettings, saveSettings } from '../../storage';
 import { HistoryList, PeersTable } from '../Sheets';
 import CareerChart from '../CareerChart';
-import { lat, money } from '../../format';
+import { lat, money, plural } from '../../format';
 import { SHOP_URL } from '../Logo';
 import { GG } from '../brand';
 import { ACHIEVEMENTS, achIcon } from '../../engine/achievements';
@@ -123,7 +123,7 @@ export default function Ended({ game, setGame, onNewCareer, onMenu }: { game: Ga
           <div>
             <small>Przed czasem</small>
             <b>
-              {g.finishes.ko} KO · {g.finishes.sub} pod.
+              {finishSplit(g).ko} KO · {finishSplit(g).sub} pod.
             </b>
           </div>
           <div>
@@ -154,7 +154,7 @@ export default function Ended({ game, setGame, onNewCareer, onMenu }: { game: Ga
             {g.finishes.koLosses >= 3 && (
               <span className="tag bad">
                 <Icon name="bandage" size={12} />
-                {g.finishes.koLosses} przyjęte nokauty
+                {g.finishes.koLosses} {plural(g.finishes.koLosses, 'przyjęty nokaut', 'przyjęte nokauty', 'przyjętych nokautów')}
               </span>
             )}
           </div>
@@ -309,10 +309,10 @@ export default function Ended({ game, setGame, onNewCareer, onMenu }: { game: Ga
 /** Kariera w liczbach: najlepsza i najgorsza walka, rekordy i podział zwycięstw. */
 function CareerNumbers({ g }: { g: GameState }) {
   const pro = g.history.filter((h) => !h.amateur);
-  const pool = pro.length >= 3 ? pro : g.history;
+  const pool = g.proDebut ? pro : g.history;
   if (pool.length < 2) return null;
   const rankPts = (h: HistoryEntry) => (h.oppRank === null ? 0 : h.oppRank === 0 ? 14 : Math.max(0, 12 - h.oppRank));
-  const fin = (h: HistoryEntry) => h.method === 'KO/TKO' || h.method === 'Poddanie';
+  const fin = (h: HistoryEntry) => h.method === 'KO/TKO' || h.method === 'Lekarz' || h.method === 'Poddanie';
   const best = pool
     .filter((h) => h.result === 'W')
     .map((h) => ({ h, sc: (h.title ? 40 : 0) + h.tier * 12 + rankPts(h) + (fin(h) ? 6 : 0) + (fin(h) && h.round === 1 ? 3 : 0) + (h.freak ? -15 : 0) }))
@@ -322,7 +322,7 @@ function CareerNumbers({ g }: { g: GameState }) {
     .map((h) => ({ h, sc: (h.oppRank === null ? 14 : 12 - Math.min(12, h.oppRank)) + (h.method === 'KO/TKO' ? 8 : fin(h) ? 5 : 0) + h.tier * 3 + (h.freak ? 10 : 0) + (h.title ? -6 : 0) }))
     .sort((a, b) => b.sc - a.sc)[0]?.h;
   const wins = pool.filter((h) => h.result === 'W');
-  const ko = wins.filter((h) => h.method === 'KO/TKO').length;
+  const ko = wins.filter((h) => h.method === 'KO/TKO' || h.method === 'Lekarz').length;
   const sub = wins.filter((h) => h.method === 'Poddanie').length;
   const dec = wins.length - ko - sub;
   const bySeason = new Map<number, number>();
@@ -337,7 +337,7 @@ function CareerNumbers({ g }: { g: GameState }) {
         {kind === 'best' ? 'Najlepsza walka' : 'Najgorsza wpadka'}
       </span>
       <b>
-        {kind === 'best' ? 'Wygrana z ' : 'Porażka z '}
+        {kind === 'best' ? 'Wygrana: ' : 'Porażka: '}
         <FlagMark flag={h.oppFlag} />
           {h.opponent}
       </b>
