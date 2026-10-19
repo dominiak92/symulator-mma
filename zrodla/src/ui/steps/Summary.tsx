@@ -11,6 +11,9 @@ import { clubLogo, fedLogo } from '../logos';
 import hallBg from '../../assets/bg/menu.webp';
 import { Icon } from '../Icon';
 import { CoachTip } from '../Tutorial';
+import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { drawPhoto, photoInfo } from '../photo';
 
 export default function Summary({ game, setGame, onPeers }: StepProps & { onPeers: () => void }) {
   const g = game;
@@ -21,6 +24,8 @@ export default function Summary({ game, setGame, onPeers }: StepProps & { onPeer
   const amateur = s.tier === 0;
   const medals = amateur ? (g.run?.tourneys ?? []).map((t) => t.medal).filter((m): m is 'gold' | 'silver' | 'bronze' => !!m) : [];
   const party = s.beltWon || medals.includes('gold') || s.grade === 'Rok wybitny' || s.grade === 'Sezon wybitny';
+  const artRef = useRef<HTMLDivElement>(null);
+  const [photo, setPhoto] = useState(false);
 
   return (
     <section className="step summary-step">
@@ -28,7 +33,7 @@ export default function Summary({ game, setGame, onPeers }: StepProps & { onPeer
         <img className="sum-bg" src={hallBg} alt="" aria-hidden="true" />
         {clubLogo(g.club?.name) && <img className="sum-crest" src={clubLogo(g.club?.name)!} alt="" aria-hidden="true" />}
         {party && <Confetti />}
-        <div className="sum-art">
+        <div className="sum-art" ref={artRef}>
           <Fighter weight={divisionKey(g)} age={g.age} country={g.profile.origin} marks={careerMarks(g)} seed={`${g.profile.firstName}${g.profile.lastName}`} corner="blue" shorts={clubCrest(g.club).bg} size={112} belt={s.champion && !amateur ? s.tier : false} hurt={gradeTone === 'bad'} />
           {(s.beltWon || medals.length > 0) && (
             <div className="sum-trophies">
@@ -50,6 +55,12 @@ export default function Summary({ game, setGame, onPeers }: StepProps & { onPeer
           </div>
         </div>
       </div>
+
+      <button className={`btn btn-small btn-ico photo-btn ${s.beltWon ? 'btn-gold' : 'btn-ghost'}`} onClick={() => setPhoto(true)}>
+        <Icon name={s.beltWon ? 'trophy' : 'share'} size={15} />
+        {photoInfo(g, s).kind === 'belt' ? 'Zdjęcie z pasem do udostępnienia' : 'Karta roku do udostępnienia'}
+      </button>
+      {photo && createPortal(<PhotoModal g={g} onClose={() => setPhoto(false)} svg={artRef.current?.querySelector('svg') ?? null} />, document.body)}
 
       <div className="tiles">
         <div className="tile">
@@ -183,5 +194,77 @@ export default function Summary({ game, setGame, onPeers }: StepProps & { onPeer
         </button>
       </div>
     </section>
+  );
+}
+
+function PhotoModal({ g, svg, onClose }: { g: StepProps['game']; svg: SVGSVGElement | null; onClose: () => void }) {
+  const s = g.lastSummary!;
+  const [url, setUrl] = useState<string | null>(null);
+  const [blob, setBlob] = useState<Blob | null>(null);
+  const [msg, setMsg] = useState<string | null>(null);
+  useEffect(() => {
+    let alive = true;
+    let obj: string | null = null;
+    drawPhoto(g, s, svg).then((cv) =>
+      cv.toBlob((b) => {
+        if (!alive || !b) return;
+        obj = URL.createObjectURL(b);
+        setBlob(b);
+        setUrl(obj);
+      }, 'image/png'),
+    );
+    return () => {
+      alive = false;
+      if (obj) URL.revokeObjectURL(obj);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const info = photoInfo(g, s);
+  const name = `${info.kind === 'belt' ? 'pas' : 'rok'}-${s.year}-${g.profile.lastName.toLowerCase().replace(/[^a-ząćęłńóśźż0-9]+/gi, '-')}.png`;
+  const text = `${g.profile.firstName} ${g.profile.lastName}: ${info.title}, rok ${s.year} w Symulatorze Polskiego Zawodnika MMA.`;
+  const share = async () => {
+    if (!blob) return;
+    const file = new File([blob], name, { type: 'image/png' });
+    const nav = navigator as Navigator & { canShare?: (d: ShareData) => boolean };
+    try {
+      if (nav.share && nav.canShare?.({ files: [file] })) {
+        await nav.share({ files: [file], text });
+        return;
+      }
+      setMsg('Ta przeglądarka nie udostępnia obrazków. Pobierz kartę przyciskiem obok.');
+    } catch {
+      /* zamknięte okno udostępniania */
+    }
+  };
+  return (
+    <div className="fight-intro photo-modal" role="dialog" aria-modal="true" aria-label="Karta do udostępnienia" onClick={onClose}>
+      <div className="fi-card" onClick={(e) => e.stopPropagation()}>
+        <div className="fi-top">
+          <span className="fi-num">{info.kind === 'belt' ? 'Zdjęcie z pasem' : 'Karta roku'}</span>
+          <span className="fi-ctx">rok {s.year}</span>
+        </div>
+        <div className="photo-frame">{url ? <img src={url} alt={text} /> : <span className="muted">Robię zdjęcie…</span>}</div>
+        {msg && <p className="muted small">{msg}</p>}
+        <div className="photo-actions">
+          <button className="btn btn-primary btn-ico" disabled={!blob} onClick={share}>
+            <Icon name="share" size={15} />
+            Udostępnij
+          </button>
+          {url ? (
+            <a className="btn btn-ghost btn-ico" href={url} download={name}>
+              <Icon name="download" size={15} />
+              Pobierz
+            </a>
+          ) : (
+            <button className="btn btn-ghost" disabled>
+              Pobierz
+            </button>
+          )}
+          <button className="btn btn-ghost" onClick={onClose}>
+            Zamknij
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }

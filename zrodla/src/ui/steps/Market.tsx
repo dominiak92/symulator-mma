@@ -13,7 +13,7 @@ import coachParter from '../../assets/coaches/parter.webp';
 import coachNaroznik from '../../assets/coaches/naroznik.webp';
 import coachKontakty from '../../assets/coaches/kontakty.webp';
 import { ovr } from '../../engine/fighter';
-import { negotiateContract, recStr, changeDivision, clubAvailability, clubLimits, confirmMarket, divisionKey, divisionOptions, marketWarnings, pickClub, pickContract, retire, retireBonus, setCoach, setManager, weightMissChance } from '../../engine/game';
+import { negotiateContract, recStr, changeDivision, clubAvailability, clubLimits, confirmMarket, divisionKey, divisionOptions, marketWarnings, pickClub, pickContract, retire, retireBonus, farewellAvailable, setFarewell, setCoach, setManager, weightMissChance } from '../../engine/game';
 import { WEIGHTS } from '../../engine/data';
 import { MANAGERS, currentManager, managerBlocked } from '../../engine/managers';
 import { COACHES, coachCostAt, coachOf, coachOpen } from '../../engine/coaches';
@@ -349,6 +349,25 @@ export default function Market({ game, setGame }: StepProps) {
             Podpisuję · rok {g.season}
           </button>
         </div>
+
+        {(farewellAvailable(g) || !!g.flags.farewell) && (
+          <div className={`farewell-card ${g.flags.farewell ? 'on' : ''}`}>
+            <div className="fw-ico" aria-hidden="true">
+              <Icon name="glove" size={22} />
+            </div>
+            <div className="fw-body">
+              <b>{g.flags.farewell ? 'Walka pożegnalna zaplanowana' : 'Walka pożegnalna'}</b>
+              <p>
+                {g.flags.farewell
+                  ? `Ten rok to jedna walka: wieczór gali w mieście ${g.profile.hometown}, podwójna gaża, a potem koniec kariery.`
+                  : `Organizm daje znać, że to już końcówka. Zamiast czekać, aż lekarze zdecydują za ciebie, możesz zakończyć karierę jedną walką przed własną publicznością w mieście ${g.profile.hometown}.`}
+              </p>
+            </div>
+            <button className={`btn btn-small ${g.flags.farewell ? 'btn-ghost' : 'btn-gold'}`} onClick={() => setGame(setFarewell(g, !g.flags.farewell))}>
+              {g.flags.farewell ? 'Jednak nie' : 'Ostatni rok'}
+            </button>
+          </div>
+        )}
 
         <div style={{ marginTop: 18, textAlign: 'center' }}>
           {confirmRetire ? (

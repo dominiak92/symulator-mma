@@ -16,7 +16,7 @@ import { Belt, Confetti, Fighter, Medal } from '../Art';
 import { FedEmblem, clubCrest } from '../Emblem';
 import { clubLogo, fedLogo, rivalClub } from '../logos';
 import { careerMarks, champTitle } from '../titles';
-import { Flag } from '../Flag';
+import { Flag, FlagMark } from '../Flag';
 import { Icon, STAT_ICON } from '../Icon';
 import { CoachTip } from '../Tutorial';
 import { chanceTone, chanceWord } from '../Chance';
@@ -510,7 +510,8 @@ function LiveCard({ g, f, start, animate, setGame }: { g: GameState; f: FightRep
     const tr = f.sim.track;
     let v = [100, 100, 100, 100];
     if (tr) for (let r = Math.min(barRound, tr.length - 1); r >= 1; r--) if (tr[r]) { v = [...tr[r]]; break; }
-    if (done && barRound >= played && f.method && /KO|Poddanie/.test(f.method)) {
+    // po werdykcie przegrany schodzi do zera (także na decyzji); remis zostawia stan po ostatniej rundzie
+    if (done && barRound >= played && f.result) {
       if (f.result === 'W') v[2] = 0;
       if (f.result === 'L') v[0] = 0;
     }
@@ -660,7 +661,8 @@ function LiveCard({ g, f, start, animate, setGame }: { g: GameState; f: FightRep
           </div>
           <div className="vh-plate">
             <small>
-              {f.opp.flag} {f.opp.nickname ? `„${f.opp.nickname}”` : f.opp.firstName}
+              <FlagMark country={f.opp.country} flag={f.opp.flag} />
+              {f.opp.nickname ? `„${f.opp.nickname}”` : f.opp.firstName}
             </small>
             <b>{f.opp.lastName}</b>
             <span>
@@ -805,7 +807,8 @@ function FightIntro({ g, f, n, total, onGo, paused }: { g: GameState; f: FightRe
             <Fighter weight={o.freak ? undefined : divisionKey(g)} age={o.age} country={o.country} seed={`${o.firstName}${o.lastName}`} corner="red" size={96} mirror />
             <b>{o.lastName}</b>
             <small>
-              {o.flag} {o.freak ? o.freak : `${recStr(o.record)} · ${STYLE_LABELS[o.style].toLowerCase()}`}
+              {!o.freak && <FlagMark country={o.country} flag={o.flag} />}
+              {o.freak ? o.freak : `${recStr(o.record)} · ${STYLE_LABELS[o.style].toLowerCase()}`}
             </small>
           </div>
         </div>
@@ -883,7 +886,8 @@ function VsHero({ g, opp, label, size = 84, belt }: { g: GameState; opp: FightRe
         </div>
         <div className="vh-plate">
           <small>
-            {opp.flag} {opp.nickname ? `„${opp.nickname}”` : opp.firstName}
+            <FlagMark country={opp.country} flag={opp.flag} />
+            {opp.nickname ? `„${opp.nickname}”` : opp.firstName}
           </small>
           <b>{opp.lastName}</b>
           <span>{opp.freak ? opp.freak : `${recStr(opp.record)} · ${STYLE_LABELS[opp.style].toLowerCase()}`}</span>
@@ -895,7 +899,7 @@ function VsHero({ g, opp, label, size = 84, belt }: { g: GameState; opp: FightRe
 
 /** Scena z plakatu: duzi zawodnicy twarzą w twarz, herby klubów za plecami, logo gali w tle,
  *  pas między nimi przy walce o tytuł, a pod spodem zestawienie jak w telewizji. */
-function PosterHero({ g, opp, label, title, interim, fed, medal, abroad }: { g: GameState; opp: FightReport['opp']; label?: string; title?: boolean; interim?: boolean; fed?: string; medal?: boolean; abroad?: boolean }) {
+function PosterHero({ g, opp, label, title, interim, fed, medal, abroad, farewell }: { g: GameState; opp: FightReport['opp']; label?: string; title?: boolean; interim?: boolean; fed?: string; medal?: boolean; abroad?: boolean; farewell?: boolean }) {
   const hold = useHudHold();
   const myClub = g.club?.name;
   const oppClub = opp.freak ? null : rivalClub(`${opp.firstName}${opp.lastName}`, opp.country, myClub);
@@ -909,7 +913,9 @@ function PosterHero({ g, opp, label, title, interim, fed, medal, abroad }: { g: 
   const h2h = { w: met.filter((h) => h.result === 'W').length, l: met.filter((h) => h.result === 'L').length };
   const isPeer = g.peers.some((p) => `${p.firstName} ${p.lastName}` === oppName);
   const isNemesis = !!g.nemesis && g.nemesis.name === oppName;
-  const story = isNemesis ? 'zadra' : met.length ? `rewanż · walka nr ${met.length + 1}` : isPeer ? 'chłopak z twojego rocznika' : '';
+  // flagi na obu plakietkach albo na żadnej
+  const intl = !opp.freak && (abroad || (!!opp.country && opp.country !== 'Polska'));
+  const story = farewell ? 'walka pożegnalna' : isNemesis ? 'zadra' : met.length ? `rewanż · walka nr ${met.length + 1}` : isPeer ? 'chłopak z twojego rocznika' : '';
   return (
     <div className="ph-wrap">
       <div className={`ph ${title ? 'ph-title' : ''}`}>
@@ -922,7 +928,7 @@ function PosterHero({ g, opp, label, title, interim, fed, medal, abroad }: { g: 
           <Fighter weight={divisionKey(g)} age={g.age} country={g.profile.origin} marks={careerMarks(g)} seed={`${g.profile.firstName}${g.profile.lastName}`} corner="blue" shorts={clubCrest(g.club).bg} size={150} belt={g.rank === 0 && !title && g.tier > 0 ? g.tier : false} />
         </div>
         <div className="ph-side opp">
-          {oppCrest ? <img className="ph-crest" src={oppCrest} alt="" aria-hidden="true" /> : !opp.freak && <span className="ph-crest ph-flag">{opp.flag}</span>}
+          {oppCrest ? <img className="ph-crest" src={oppCrest} alt="" aria-hidden="true" /> : null}
           <Fighter weight={opp.freak ? undefined : divisionKey(g)} age={opp.age} country={opp.country} seed={`${opp.firstName}${opp.lastName}`} corner="red" size={150} mirror />
         </div>
         {label && <span className="ph-label">{label}</span>}
@@ -940,15 +946,14 @@ function PosterHero({ g, opp, label, title, interim, fed, medal, abroad }: { g: 
         )}
         <div className="ph-plates">
           <div className={`vh-plate ph-plate me ${champ ? 'champ' : ''}`}>
-            {abroad && <Flag country="Polska" className="pl-flag" />}
+            {intl && <Flag country="Polska" className="pl-flag" />}
             {champTitle(g) && <em className="champ-tag">{champTitle(g)}</em>}
             <small>{g.profile.firstName}</small>
             <b>{g.profile.lastName}</b>
           </div>
           <div className="vh-plate ph-plate opp">
-            {!opp.freak && opp.country && (opp.country !== "Polska" || abroad) && <Flag country={opp.country} className="pl-flag" />}
+            {intl && <FlagMark country={opp.country} flag={opp.flag} className="pl-flag" />}
             <small>
-              {!opp.freak && opp.country && (opp.country !== "Polska" || abroad) ? '' : `${opp.flag} `}
               {opp.nickname ? `„${opp.nickname}”` : opp.firstName}
             </small>
             <b>{opp.lastName}</b>
@@ -1101,7 +1106,7 @@ function GalaPoster({ g, f, n, total, onGo, paused }: { g: GameState; f: FightRe
             </span>
           )}
         </div>
-        <PosterHero g={g} opp={f.opp} label={spotLabel} title={f.title || f.unify || !!f.interim} interim={!!f.interim} fed={f.abroad && f.gala ? f.gala : f.fed} abroad={!!f.abroad} />
+        <PosterHero g={g} opp={f.opp} label={spotLabel} title={f.title || f.unify || !!f.interim} interim={!!f.interim} fed={f.abroad && f.gala ? f.gala : f.fed} abroad={!!f.abroad} farewell={!!f.farewell} />
         {p && (
           <div className="pst-card-wrap">
             <div className="pst-card-title">Karta walk</div>
@@ -1258,6 +1263,7 @@ function WeighCard({ g, o, setGame }: { g: GameState; o: FightOffer; setGame: (s
         </div>
         <CoachTip id="weigh">Gdy zbijasz wagę, czasem jej nie zrobisz. Sauna daje szansę na całą gażę, ale nieudana kosztuje więcej. Szansa spada z wiekiem i zużyciem, rośnie z lekarzem w zapleczu.</CoachTip>
         <p className="weigh-txt">
+          {o.defense && <b className="weigh-warn">Mistrz bez wagi traci pas. </b>}
           Stajesz na wadze i w sali robi się cicho. Do limitu brakuje ponad kilograma, a do oficjalnego ważenia zostały dwie godziny. {o.opp.lastName} już zrobił wagę i patrzy na ciebie z uśmiechem.
         </p>
         <div className="choice-list press-opts">
@@ -1272,7 +1278,7 @@ function WeighCard({ g, o, setGame }: { g: GameState; o: FightOffer; setGame: (s
               <span className="title">Sauna i folie, zbijam do końca</span>
               <ChanceTag p={ch} />
             </span>
-            <span className="desc">Uda się: cała gaża, lekko osłabiony. Nie uda się: kara 30% i walka z pustym bakiem.</span>
+            <span className="desc">Uda się: cała gaża, lekko osłabiony. Nie uda się: kara 30% i walka z pustym bakiem{o.defense ? ', a do tego utrata pasa' : ''}.</span>
           </button>
           <button
             className="choice"
@@ -1285,7 +1291,7 @@ function WeighCard({ g, o, setGame }: { g: GameState; o: FightOffer; setGame: (s
               <span className="title">Odpuszczam, płacę karę</span>
               <span className="tag red">−{money(fine)}</span>
             </span>
-            <span className="desc">25% gaży idzie do rywala. Wchodzisz do klatki cięższy, ale wysuszony.</span>
+            <span className="desc">25% gaży idzie do rywala. Wchodzisz do klatki cięższy, ale wysuszony.{o.defense ? ' Pas tracisz od razu, nawet jeśli wygrasz.' : ''}</span>
           </button>
         </div>
       </div>
@@ -1739,7 +1745,8 @@ function OfferCard({ g, o, n, total, setGame }: { g: GameState; o: FightOffer; n
           {o.tuneup && (
             <>
               <span className="tag">
-                {opp.flag} {opp.country}, {opp.age} lat
+                <FlagMark country={opp.country} flag={opp.flag} />
+                {opp.country}, {opp.age} lat
               </span>
               <span className="tag red">bilans {recStr(opp.record)}</span>
             </>
@@ -1882,7 +1889,17 @@ function OfferCard({ g, o, n, total, setGame }: { g: GameState; o: FightOffer; n
             </button>
           ) : (
           <div className="ofr-row">
-            <button className={`btn btn-ghost btn-small btn-ico ${asking === 'neg' ? 'is-asking' : ''}`} disabled={o.negotiated || !!asking} onClick={() => call('neg', negotiateOffer)}>
+            {o.negotiated && asking !== 'neg' ? (
+              // po rozmowie zamiast wyszarzonego przycisku (na iPhonie potrafił zniknąć) zostaje czytelny stan
+              <div className="ofr-done" role="status">
+                <Icon name="check" size={15} />
+                <span className="ofr-opt">
+                  <b>Gaża ustalona</b>
+                  <small>drugi raz nie zadzwonisz</small>
+                </span>
+              </div>
+            ) : (
+            <button className={`btn btn-ghost btn-small btn-ico ${asking === 'neg' ? 'is-asking' : ''}`} disabled={!!asking} onClick={() => call('neg', negotiateOffer)}>
               <Icon name="coins" size={15} />
               {asking === 'neg' ? (
                 <span className="calling">
@@ -1902,6 +1919,7 @@ function OfferCard({ g, o, n, total, setGame }: { g: GameState; o: FightOffer; n
                 </span>
               )}
             </button>
+            )}
             <button className="btn btn-ghost btn-small btn-ico ofr-no" disabled={!!blocked || !!asking} title={blocked ?? undefined} onClick={() => call('decline', declineOffer)}>
               <Icon name="x" size={15} />
               {asking === 'decline' ? (
@@ -1994,7 +2012,7 @@ export default function Season({ game, setGame }: StepProps) {
   }, [last?.idx]);
   const introOpen = !!last && ((introIdx !== null && introIdx === last.idx) || needIntro);
   // wejście do klatki przed wielką walką (pas, superfight, zadra): raz na walkę, tylko z animacjami
-  const bigFight = !!last && !last.amateur && !!(last.title || last.superfight || last.unify || last.nemesis);
+  const bigFight = !!last && !last.amateur && !!(last.title || last.superfight || last.unify || last.nemesis || last.farewell);
   const [walkDone, setWalkDone] = useState(() => (last ? last.idx : -1));
   const walkOpen = introOpen && bigFight && anim && !!last && walkDone !== last.idx && introKind === 'gala';
 

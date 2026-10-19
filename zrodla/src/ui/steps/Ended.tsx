@@ -1,3 +1,5 @@
+import { FlagMark } from '../Flag';
+import { afterPaths, chooseAfter } from '../../engine/game';
 import { careerMarks } from '../titles';
 import { useEffect, useState } from 'react';
 import { honours } from '../../engine/extras';
@@ -18,7 +20,7 @@ import { clubLogo } from '../logos';
 import hallBg from '../../assets/bg/menu.webp';
 import { Icon } from '../Icon';
 
-export default function Ended({ game, onNewCareer, onMenu }: { game: GameState; onNewCareer: () => void; onMenu: () => void }) {
+export default function Ended({ game, setGame, onNewCareer, onMenu }: { game: GameState; setGame?: (s: GameState) => void; onNewCareer: () => void; onMenu: () => void }) {
   const g = game;
   const e = g.ending!;
   const [url, setUrl] = useState<string | null>(null);
@@ -157,6 +159,8 @@ export default function Ended({ game, onNewCareer, onMenu }: { game: GameState; 
           </div>
         )}
       </section>
+
+      <AfterCareer g={g} setGame={setGame} />
 
       {g.seasons.length >= 2 && (
         <section className="step">
@@ -335,7 +339,8 @@ function CareerNumbers({ g }: { g: GameState }) {
       </span>
       <b>
         {kind === 'best' ? 'Wygrana z ' : 'Porażka z '}
-        {h.oppFlag} {h.opponent}
+        <FlagMark flag={h.oppFlag} />
+          {h.opponent}
       </b>
       <small>
         {h.method}
@@ -388,6 +393,46 @@ function CareerNumbers({ g }: { g: GameState }) {
             <em>{fastest.opponent}</em>
           </div>
         )}
+      </div>
+    </section>
+  );
+}
+
+/** Co dalej po karierze: jeden wybór, potem epilog. Do klatki się nie wraca. */
+function AfterCareer({ g, setGame }: { g: GameState; setGame?: (s: GameState) => void }) {
+  const paths = afterPaths(g);
+  const chosen = paths.find((p) => p.key === g.ending?.after);
+  if (chosen)
+    return (
+      <section className="step after-step chosen">
+        <div className="after-epi">
+          <span className="after-ico" aria-hidden="true">
+            <Icon name={chosen.icon} size={22} />
+          </span>
+          <div>
+            <div className="kicker">Po karierze · {chosen.title.toLowerCase()}</div>
+            <p>{chosen.epilogue}</p>
+          </div>
+        </div>
+      </section>
+    );
+  if (!setGame) return null;
+  return (
+    <section className="step after-step">
+      <h3>Co dalej?</h3>
+      <p className="muted" style={{ marginTop: 4 }}>Rękawice zostają na macie. Wybierz, czym zajmiesz się po karierze. Tego wyboru nie da się cofnąć.</p>
+      <div className="after-grid">
+        {paths.map((p) => (
+          <button key={p.key} className="after-opt" disabled={!!p.locked} onClick={() => setGame(chooseAfter(g, p.key))}>
+            <span className="after-ico" aria-hidden="true">
+              <Icon name={p.icon} size={20} />
+            </span>
+            <span className="after-txt">
+              <b>{p.title}</b>
+              <small>{p.locked ? `Zamknięte: ${p.locked}` : p.desc}</small>
+            </span>
+          </button>
+        ))}
       </div>
     </section>
   );
