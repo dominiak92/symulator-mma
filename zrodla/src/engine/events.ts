@@ -3,6 +3,7 @@ import type { EventChoice, GameState } from './types';
 import { BELT_NAMES, START_PROFILES } from './data';
 import { EXTRA_EVENTS } from './events_extra';
 import { MONEY_EVENTS } from './events_money';
+import { FUN_EVENTS } from './events_fun';
 import { REP_EVENTS } from './events_rep';
 import { STAGE_EVENTS } from './events_stage';
 
@@ -1128,6 +1129,7 @@ export const EVENTS: EventDef[] = [
   },
   ...EXTRA_EVENTS,
   ...MONEY_EVENTS,
+  ...FUN_EVENTS,
   ...REP_EVENTS,
   ...STAGE_EVENTS,
 ];
