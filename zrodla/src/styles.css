@@ -6424,33 +6424,54 @@ details.intro-notes[open] summary::before { content: '▸'; transform: rotate(90
 /* kartka celowo zawsze jasna: to papier, niezależnie od motywu gry */
 .contract-veil { position: fixed; inset: 0; z-index: 80; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: max(12px, env(safe-area-inset-top, 0px)) max(14px, env(safe-area-inset-right, 0px)) max(12px, env(safe-area-inset-bottom, 0px)) max(14px, env(safe-area-inset-left, 0px)); background: rgba(5, 5, 8, 0.78); backdrop-filter: blur(4px); animation: veilIn 0.2s ease both; }
 @keyframes veilIn { from { opacity: 0; } }
-.contract-paper { position: relative; width: 100%; max-width: 440px; max-height: calc(100dvh - 120px); overflow-y: auto; padding: 22px 20px 16px; border-radius: 4px; color: #23201a; background:
-    repeating-linear-gradient(0deg, transparent 0 27px, rgba(80, 70, 50, 0.07) 27px 28px),
-    linear-gradient(180deg, #fbf7ec, #f2ead6);
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(0, 0, 0, 0.08); font-family: Georgia, 'Times New Roman', serif; transform: rotate(-0.6deg); animation: paperIn 0.35s cubic-bezier(0.2, 1.2, 0.4, 1) both; }
+.contract-paper { position: relative; isolation: isolate; width: 100%; max-width: 440px; max-height: calc(100dvh - 120px); overflow-y: auto; padding: 18px 22px 16px; border-radius: 3px; color: #2a251c; background:
+    radial-gradient(120% 90% at 50% 40%, transparent 60%, rgba(120, 95, 50, 0.16) 100%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.45 0 0 0 0 0.38 0 0 0 0 0.25 0 0 0 0.09 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E"),
+    linear-gradient(180deg, #fcf8ee, #f3ebd8);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6), 0 2px 0 #e6dcc4, 0 4px 0 #d9ceb3, 0 0 0 1px rgba(0, 0, 0, 0.1); font-family: Georgia, 'Times New Roman', serif; transform: rotate(-0.6deg); animation: paperIn 0.35s cubic-bezier(0.2, 1.2, 0.4, 1) both; }
 @keyframes paperIn { from { transform: translateY(40px) rotate(-3deg); opacity: 0; } }
-.cp-head { text-align: center; border-bottom: 2px double rgba(35, 32, 26, 0.35); padding-bottom: 10px; }
-.cp-kicker { font-size: 0.75rem; letter-spacing: 0.12em; text-transform: uppercase; color: #6b6150; }
-.contract-paper h2 { margin: 4px 0 6px; font-family: Georgia, 'Times New Roman', serif; font-size: 1.5rem; font-weight: 700; letter-spacing: 0.02em; color: #23201a; }
-.cp-parties { margin: 0; font-size: 0.88rem; line-height: 1.45; }
-.cp-terms { list-style: none; margin: 12px 0 8px; padding: 0; counter-reset: par; display: grid; gap: 4px; }
-.cp-terms li { counter-increment: par; display: flex; justify-content: space-between; gap: 10px; align-items: baseline; padding: 4px 0; border-bottom: 1px dotted rgba(35, 32, 26, 0.3); font-size: 0.9rem; }
+/* znak wodny federacji przez całą kartkę */
+.cp-wm { position: absolute; z-index: -1; left: 50%; top: 46%; width: 70%; max-width: 280px; transform: translate(-50%, -50%) rotate(-12deg); opacity: 0.06; filter: grayscale(1) contrast(1.4); pointer-events: none; }
+.cp-head { text-align: center; padding-bottom: 8px; }
+.cp-meta { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 8px; font-size: 0.66rem; letter-spacing: 0.08em; text-transform: uppercase; color: #8a7d63; border-bottom: 1px solid rgba(42, 37, 28, 0.18); padding-bottom: 5px; }
+.cp-logo { display: block; width: 52px; height: 52px; margin: 2px auto 0; object-fit: contain; filter: drop-shadow(0 1px 0 rgba(255, 255, 255, 0.6)); }
+.contract-paper h2 { margin: 4px 0 2px; font-family: Georgia, 'Times New Roman', serif; font-size: 1.55rem; font-weight: 700; font-variant: small-caps; letter-spacing: 0.06em; color: #2a251c; text-wrap: balance; }
+.cp-rule { display: block; height: 9px; margin: 0 auto 8px; width: 70%; background:
+    linear-gradient(#2a251c, #2a251c) left 50% / calc(50% - 10px) 1px no-repeat,
+    linear-gradient(#2a251c, #2a251c) right 50% / calc(50% - 10px) 1px no-repeat,
+    linear-gradient(45deg, transparent 35%, #8b1d2c 35% 65%, transparent 65%) center / 9px 9px no-repeat; opacity: 0.75; }
+.cp-parties { margin: 0; font-size: 0.86rem; line-height: 1.5; text-align: justify; hyphens: auto; }
+.cp-terms { list-style: none; margin: 10px 0 8px; padding: 0; counter-reset: par; display: grid; gap: 2px; }
+.cp-terms li { counter-increment: par; display: flex; justify-content: space-between; gap: 10px; align-items: baseline; padding: 5px 0 4px; border-bottom: 1px dotted rgba(42, 37, 28, 0.35); font-size: 0.88rem; }
 .cp-terms li span::before { content: '§ ' counter(par) '. '; color: #8a7d63; }
-.cp-terms li b { font-family: var(--display); font-weight: 600; font-size: 1rem; text-align: right; }
+.cp-terms li b { font-family: Georgia, 'Times New Roman', serif; font-weight: 700; font-size: 0.95rem; text-align: right; font-variant-numeric: lining-nums tabular-nums; }
 .cp-terms li.cp-excl b { color: #8b1d2c; }
-.cp-fine { margin: 6px 0 10px; font-size: 0.75rem; line-height: 1.4; color: #6b6150; font-style: italic; }
-.cp-sign { display: grid; grid-template-columns: 1fr 1.6fr; gap: 14px; align-items: end; }
-.cp-sign small { display: flex; justify-content: space-between; align-items: center; gap: 6px; border-top: 1px solid #23201a; padding-top: 3px; font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; color: #6b6150; }
-.cp-sign-org { display: flex; flex-direction: column; align-items: center; gap: 6px; }
-.cp-stamp { display: grid; place-items: center; width: 74px; height: 74px; border: 3px solid rgba(139, 29, 44, 0.75); border-radius: 50%; color: rgba(139, 29, 44, 0.85); font-family: var(--display); font-size: 0.76rem; font-weight: 700; text-align: center; line-height: 1.05; padding: 6px; text-transform: uppercase; transform: rotate(-14deg); box-shadow: inset 0 0 0 3px rgba(251, 247, 236, 1), inset 0 0 0 4px rgba(139, 29, 44, 0.5); }
-.cp-sign-me { position: relative; display: flex; flex-direction: column; }
-.cp-sigline { position: relative; height: 72px; display: flex; align-items: flex-end; padding: 0 6px 6px; border-bottom: 1.5px solid rgba(35, 32, 26, 0.6); }
-.cp-sig { font: italic 600 1.7rem/1 Georgia, 'Times New Roman', serif; color: #1b2a6b; white-space: nowrap; overflow: hidden; clip-path: inset(0 100% 0 0); animation: cpSigWrite 0.8s ease-out forwards; }
-@keyframes cpSigWrite { to { clip-path: inset(0 0 0 0); } }
-@media (prefers-reduced-motion: reduce) { .cp-sig { animation: none; clip-path: none; } }
-.cp-hint { position: absolute; left: 0; right: 0; bottom: 10px; text-align: center; font-size: 0.85rem; font-style: italic; color: #9a8f78; pointer-events: none; }
-.cp-initials { background: none; border: 0; padding: 0; font: inherit; font-size: 0.72rem; text-transform: none; letter-spacing: 0; color: #1b2a6b; text-decoration: underline; cursor: pointer; }
-.cp-approved { position: absolute; right: 18px; top: 42%; padding: 4px 14px; border: 4px solid rgba(26, 120, 70, 0.85); border-radius: 8px; color: rgba(26, 120, 70, 0.9); font-family: var(--display); font-size: 1.6rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; transform: rotate(-12deg); animation: stampIn 0.35s cubic-bezier(0.2, 1.6, 0.4, 1) both; pointer-events: none; }
+/* poprawki z negocjacji: dopisane ręcznie niebieskim tuszem */
+.cp-terms li.amended b, .cp-terms li.worse b { font-family: Caveat, 'Segoe Script', cursive; font-size: 1.3rem; line-height: 0.9; transform: rotate(-2deg); }
+.cp-terms li.amended b { color: #1d3a9e; text-decoration: none; }
+.cp-terms li.worse b { color: #8b1d2c; }
+.cp-fine { margin: 6px 0 12px; font-size: 0.72rem; line-height: 1.45; color: #6b6150; font-style: italic; text-align: justify; hyphens: auto; }
+.cp-sign { display: grid; grid-template-columns: 1fr 1.5fr; gap: 16px; align-items: end; }
+.cp-sign small { display: block; border-top: 1px solid rgba(42, 37, 28, 0.75); padding-top: 3px; font-size: 0.68rem; letter-spacing: 0.12em; text-transform: uppercase; color: #6b6150; text-align: center; }
+.cp-sign-org, .cp-sign-me { position: relative; display: flex; flex-direction: column; min-width: 0; }
+.cp-sigline { position: relative; height: 78px; display: flex; align-items: flex-end; justify-content: center; padding: 0 4px 2px; }
+/* podpis organizatora: zamaszysty, przybity pieczątką */
+.cp-sig-org { position: relative; z-index: 1; font: 400 2.1rem/1 'Herr Von Muellerhoff', 'Segoe Script', cursive; color: #2b2a5e; transform: rotate(-6deg) translateY(-2px); white-space: nowrap; }
+.cp-stamp { position: absolute; z-index: 2; right: -10px; top: -14px; width: 86px; height: 86px; color: rgba(160, 26, 44, 0.8); transform: rotate(-16deg); mix-blend-mode: multiply; }
+/* podpis zawodnika */
+.cp-sig-wrap { position: relative; display: block; width: 100%; text-align: center; }
+.cp-sig { display: inline-block; max-width: 100%; padding: 0 6px 0 2px; font: 400 2.5rem/1.1 'Herr Von Muellerhoff', 'Segoe Script', cursive; color: #1d3a9e; white-space: nowrap; transform: rotate(-4deg); text-shadow: 0 0 0.6px rgba(29, 58, 158, 0.6); clip-path: inset(-20% 100% -20% 0); animation: cpSigWrite 0.95s cubic-bezier(0.5, 0.1, 0.4, 1) 0.05s forwards; }
+.cp-flourish { position: absolute; left: 8%; right: 4%; bottom: -2px; width: 88%; height: 16px; overflow: visible; }
+.cp-flourish path { fill: none; stroke: #1d3a9e; stroke-width: 1.6; stroke-linecap: round; stroke-dasharray: 1; stroke-dashoffset: 1; animation: cpFlourish 0.35s ease-out 0.95s forwards; }
+@keyframes cpSigWrite { to { clip-path: inset(-20% 0 -20% 0); } }
+@keyframes cpFlourish { to { stroke-dashoffset: 0; } }
+/* przed podpisem: krzyżyk i żółta karteczka „podpis” jak w kancelarii */
+.cp-x { position: absolute; left: 4px; bottom: 4px; font: 400 1.6rem/1 Georgia, serif; color: #6b6150; }
+.cp-flag { position: absolute; right: -24px; bottom: 6px; padding: 3px 10px 3px 16px; font-family: var(--display); font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase; color: #3a2a00; background: linear-gradient(180deg, #ffe46b, #ffcc1f); clip-path: polygon(10px 0, 100% 0, 100% 100%, 10px 100%, 0 50%); box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); animation: cpFlag 1.4s ease-in-out infinite; }
+@keyframes cpFlag { 50% { transform: translateX(-4px); } }
+@media (prefers-reduced-motion: reduce) { .cp-sig { animation: none; clip-path: none; } .cp-flourish path { animation: none; stroke-dashoffset: 0; } .cp-flag { animation: none; } }
+.cp-hint { display: none; }
+.cp-approved { position: absolute; right: 18px; top: 40%; padding: 4px 14px; border: 4px solid rgba(26, 120, 70, 0.85); border-radius: 8px; color: rgba(26, 120, 70, 0.9); font-family: var(--display); font-size: 1.6rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; transform: rotate(-12deg); mix-blend-mode: multiply; animation: stampIn 0.35s cubic-bezier(0.2, 1.6, 0.4, 1) 1.15s both; pointer-events: none; }
 @keyframes stampIn { from { transform: rotate(-12deg) scale(2.2); opacity: 0; } }
 .contract-actions { display: flex; gap: 10px; width: 100%; max-width: 440px; justify-content: space-between; }
 .contract-actions .btn-primary { flex: 1; justify-content: center; }
@@ -6517,7 +6538,7 @@ details.intro-notes[open] summary::before { content: '▸'; transform: rotate(90
 .contract-veil:has(.contract-nego.open) .contract-paper { max-height: calc(100dvh - 380px); min-height: 160px; }
 .cp-terms li.amended b { color: #1a7846; text-decoration: underline wavy rgba(26, 120, 70, 0.5); text-underline-offset: 3px; }
 .cp-terms li.worse b { color: #8b1d2c; }
-.cp-note { margin: 4px 0 6px; padding: 6px 10px; font-family: 'Segoe Script', 'Bradley Hand', 'Comic Sans MS', cursive; font-size: 0.86rem; line-height: 1.35; color: #1b2a6b; background: rgba(255, 238, 140, 0.55); border-radius: 2px; transform: rotate(0.8deg); box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12); }
+.cp-note { margin: 4px 0 6px; padding: 6px 10px; font-family: Caveat, 'Segoe Script', cursive; font-weight: 700; font-size: 1.12rem; line-height: 1.35; color: #1b2a6b; background: rgba(255, 238, 140, 0.55); border-radius: 2px; transform: rotate(0.8deg); box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12); }
 .cp-note.ko { color: #8b1d2c; }
 .post-result { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 10px; align-items: start; margin: 10px 0 14px; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--panel-2); animation: alertIn 0.25s ease-out both; }
 .post-result p { margin: 0; font-size: 0.92rem; line-height: 1.45; }
@@ -6672,10 +6693,6 @@ details.intro-notes[open] summary::before { content: '▸'; transform: rotate(90
 @media (prefers-reduced-motion: reduce) { .pst-brand .fed-logo { animation: none; } }
 @media (max-height: 700px) { .pst-brand .fed-logo { width: 64px !important; height: 64px !important; } }
 .rank-fed { display: flex; align-items: center; gap: 10px; }
-.cp-head { position: relative; }
-.cp-logo { position: absolute; top: -6px; right: -6px; width: 50px; height: 50px; object-fit: contain; opacity: 0.9; filter: grayscale(0.15) contrast(1.05); }
-.cp-head .cp-kicker { display: block; padding-inline: 56px; }
-.cp-head h2 { padding-right: 40px; }
 
 /* Ikony osiągnięć: kolor według rodzaju */
 .tone-gold { --ach-c: var(--gold); --ach-bg: rgba(245, 183, 0, 0.16); }
