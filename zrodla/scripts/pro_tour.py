@@ -17,6 +17,18 @@ def shot(pg, name):
     total = pg.evaluate("document.documentElement.scrollHeight")
     sw = pg.evaluate("document.documentElement.scrollWidth")
     if sw > W + 1: print(f"{name}: strona szersza niż ekran ({sw})")
+    bad = pg.evaluate('''() => { const W = innerWidth; const out = [];
+      for (const el of document.querySelectorAll('body *')) {
+        const r = el.getBoundingClientRect(); if (!r.width) continue;
+        const cs = getComputedStyle(el);
+        if (r.right > W + 1 && cs.position !== 'fixed' && !el.closest('[aria-hidden=true]')) {
+          const p = el.parentElement && el.parentElement.getBoundingClientRect();
+          if (!p || p.right <= W + 1) out.push('wystaje: ' + (el.className && el.className.baseVal === undefined ? el.className : el.tagName) + ' ' + Math.round(r.right));
+        }
+        if (/(auto|scroll)/.test(cs.overflowX) && el.scrollWidth > el.clientWidth + 1) out.push('pasek poziomy: ' + el.className);
+      }
+      return [...new Set(out)].slice(0, 6); }''')
+    for b_ in bad: print(f"{name}: {b_}")
 with sync_playwright() as p:
     b, pg, errs = open_game(p, anim=True)
     season = 0

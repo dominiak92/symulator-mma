@@ -10,7 +10,9 @@ def open_game(p, anim=False):
     pg.on('pageerror', lambda e: errs.append(str(e)))
     pg.on('console', lambda m: errs.append(m.text) if m.type == 'error' else None)
     pg.goto(URL)
-    pg.evaluate("([d]) => { localStorage.setItem('spz-mma-slot-1', d); localStorage.setItem('spz-mma-settings', JSON.stringify({animations:true,cardTheme:'dark',tips:false,tipsSeen:[],tutorialSeen:true})); }", [data])
+    import os as _os
+    pg.evaluate(f"window.__FS={int(_os.environ.get('FONT', '100'))}")
+    pg.evaluate("([d]) => { localStorage.setItem('spz-mma-slot-1', d); localStorage.setItem('spz-mma-settings', JSON.stringify({animations:true,cardTheme:'dark',tips:false,tipsSeen:[],tutorialSeen:true,fontScale:Number(window.__FS||100)})); }", [data])
     pg.reload(); pg.wait_for_timeout(300)
     pg.get_by_role('button', name='Graj').first.click(); pg.wait_for_timeout(300)
     pg.locator('.slot button, button').filter(has_text=re.compile('Kontynuuj|Zobacz kartę')).first.click(); pg.wait_for_timeout(500)
