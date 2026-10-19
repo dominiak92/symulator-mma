@@ -484,6 +484,44 @@ function ResultReveal({ g, f, onClose }: { g: GameState; f: FightReport; onClose
   );
 }
 
+/** Pasek zdrowia jak w bijatyce. Przy trafieniu: odłamek, który zbija się z paska i świeci,
+ *  liczba obrażeń, wstrząs ramy (mocniejszy przy ciężkim ciosie), czerwony ślad doganiający
+ *  pasek. Przy nokaucie rama gaśnie na czerwono i wpada pieczątka K.O.; zwycięzca dostaje złoty połysk. */
+function HpBar({ hp, st, win }: { hp: number; st: number; win: boolean }) {
+  const v = Math.max(0, Math.min(100, Math.round(hp)));
+  const s = Math.max(0, Math.min(100, Math.round(st)));
+  const prev = useRef(v);
+  const [hit, setHit] = useState<{ from: number; to: number; n: number } | null>(null);
+  useEffect(() => {
+    if (v < prev.current) setHit((h) => ({ from: prev.current, to: v, n: (h?.n ?? 0) + 1 }));
+    prev.current = v;
+  }, [v]);
+  const dmg = hit ? hit.from - hit.to : 0;
+  const tone = v <= 0 ? 'ko' : v < 30 ? 'low' : v < 60 ? 'mid' : '';
+  const shake = hit ? `${dmg >= 18 || v <= 0 ? 'big' : 'sm'}${hit.n % 2}` : '';
+  return (
+    <span className={`hpbars ${tone} ${win ? 'win' : ''}`} aria-label={`zdrowie ${v}%, kondycja ${s}%`} style={{ ['--v' as string]: v, ['--s' as string]: s, ['--p' as string]: hit?.from ?? v } as CSSProperties}>
+      <span className={`hb-frame ${shake ? `hb-sh-${shake}` : ''}`}>
+        <span className="hb-well">
+          <i className="hb-trail" />
+          <i className="hb-fill" />
+          {hit && <i key={hit.n} className="hb-chip" style={{ ['--f' as string]: hit.from, ['--t' as string]: hit.to } as CSSProperties} />}
+          <i className="hb-ticks" />
+        </span>
+        {v <= 0 && <b className="hb-ko">K.O.</b>}
+      </span>
+      {hit && dmg > 0 && v > 0 && (
+        <b key={`d${hit.n}`} className={`hb-dmg ${dmg >= 18 ? 'big' : ''}`} style={{ ['--t' as string]: hit.to } as CSSProperties}>
+          −{dmg}
+        </b>
+      )}
+      <span className="hb-st">
+        <i />
+      </span>
+    </span>
+  );
+}
+
 /** Bieżąca walka: karta VS z rundami, pieczątką wyniku i decyzją. */
 function LiveCard({ g, f, start, animate, setGame }: { g: GameState; f: FightReport; start: number; animate: boolean; setGame: (s: GameState) => void }) {
   const hold = useHudHold();
@@ -517,20 +555,7 @@ function LiveCard({ g, f, start, animate, setGame }: { g: GameState; f: FightRep
     }
     return v;
   })();
-  // pasek jak w bijatyce: rama, żółte zdrowie, czerwony ślad obrażeń, błysk przy trafieniu, kondycja pod spodem
-  const bars = (hp: number, st: number) => (
-    <span className={`hpbars ${hp <= 0 ? 'ko' : hp < 30 ? 'low' : hp < 60 ? 'mid' : ''}`} aria-label={`zdrowie ${hp}%, kondycja ${st}%`} style={{ ['--v' as string]: Math.max(0, Math.min(100, hp)), ['--s' as string]: Math.max(0, Math.min(100, st)) } as CSSProperties}>
-      <span className="hb-frame">
-        <i className="hb-trail" />
-        <i className="hb-fill" />
-        {hp < 100 && <i key={hp} className="hb-hit" />}
-        <i className="hb-ticks" />
-      </span>
-      <span className="hb-st">
-        <i />
-      </span>
-    </span>
-  );
+  const bars = (hp: number, st: number, side: 'me' | 'opp') => <HpBar hp={hp} st={st} win={done && barRound >= played && (side === 'me' ? won : f.result === 'L')} />;
   const finish = f.method === 'KO/TKO' || f.method === 'Lekarz' || f.method === 'Poddanie';
   const won = f.result === 'W';
   const myShorts = clubCrest(g.club).bg;
@@ -637,12 +662,11 @@ function LiveCard({ g, f, start, animate, setGame }: { g: GameState; f: FightRep
             <Fighter weight={divisionKey(g)} age={g.age} country={g.profile.origin} marks={careerMarks(g)} seed={`${g.profile.firstName}${g.profile.lastName}`} corner="blue" shorts={myShorts} size={80} belt={g.rank === 0 && !f.amateur ? g.tier : false} hurt={done && f.result === 'L' && finish} />
           </div>
           <div className="vh-plate">
-            {champTitle(g) && <em className="champ-tag">{champTitle(g)}</em>}
             <small>{g.profile.firstName}</small>
             <b>{g.profile.lastName}</b>
             <span>{recStr(shownRecord(g, hold))}</span>
           </div>
-          {bars(snap[0], snap[1])}
+          {bars(snap[0], snap[1], 'me')}
         </div>
         <div className="vh-mid live-mid">
           <span className="vh-vs">VS</span>
@@ -678,7 +702,7 @@ function LiveCard({ g, f, start, animate, setGame }: { g: GameState; f: FightRep
               {!f.amateur && !f.opp.freak && rankLabel(f.opp.rank) ? ` · ${rankLabel(f.opp.rank)}` : ''}
             </span>
           </div>
-          {bars(snap[2], snap[3])}
+          {bars(snap[2], snap[3], 'opp')}
         </div>
       </div>
 
@@ -878,7 +902,6 @@ function VsHero({ g, opp, label, size = 84, belt }: { g: GameState; opp: FightRe
           <Fighter weight={divisionKey(g)} age={g.age} country={g.profile.origin} marks={careerMarks(g)} seed={`${g.profile.firstName}${g.profile.lastName}`} corner="blue" shorts={clubCrest(g.club).bg} size={size} belt={belt} />
         </div>
         <div className="vh-plate">
-          {champTitle(g) && <em className="champ-tag">{champTitle(g)}</em>}
           <small>{g.profile.firstName}</small>
           <b>{g.profile.lastName}</b>
           <span>{recStr(shownRecord(g, hold))}</span>
@@ -907,7 +930,7 @@ function VsHero({ g, opp, label, size = 84, belt }: { g: GameState; opp: FightRe
 
 /** Scena z plakatu: duzi zawodnicy twarzą w twarz, herby klubów za plecami, logo gali w tle,
  *  pas między nimi przy walce o tytuł, a pod spodem zestawienie jak w telewizji. */
-function PosterHero({ g, opp, label, title, interim, fed, medal, abroad, farewell }: { g: GameState; opp: FightReport['opp']; label?: string; title?: boolean; interim?: boolean; fed?: string; medal?: boolean; abroad?: boolean; farewell?: boolean }) {
+function PosterHero({ g, opp, label, title, interim, fed, medal, abroad, farewell, superfight }: { g: GameState; opp: FightReport['opp']; label?: string; title?: boolean; interim?: boolean; fed?: string; medal?: boolean; abroad?: boolean; farewell?: boolean; superfight?: string }) {
   const hold = useHudHold();
   const myClub = g.club?.name;
   const oppClub = opp.freak ? null : rivalClub(`${opp.firstName}${opp.lastName}`, opp.country, myClub);
@@ -929,6 +952,16 @@ function PosterHero({ g, opp, label, title, interim, fed, medal, abroad, farewel
   // flagi na obu plakietkach albo na żadnej
   const intl = !opp.freak && (abroad || (!!opp.country && opp.country !== 'Polska'));
   const story = farewell ? 'walka pożegnalna' : isNemesis ? 'zadra' : met.length ? `rewanż · ${met.length === 1 ? (h2h.w ? 'wtedy wygrałeś' : h2h.l ? 'wtedy przegrałeś' : 'wtedy remis') : `ty ${h2h.w} ${h2h.w === 1 ? 'wygrana' : 'wygrane'}, on ${h2h.l}`}` : isPeer ? 'chłopak z twojego rocznika' : '';
+  // tytuły i ranking w zestawieniu zamiast ucinanego znaczka na tabliczce
+  const showRank = g.tier > 0 && !opp.freak && !medal;
+  const myRank = rankLabel(g.rank);
+  const oppRank = rankLabel(opp.rank);
+  // regionalne federacje skracamy do marki: „Armada Fight Night Opole” → „Armada”
+  const short = (t: string) => t.replace(/ (Fight Night|Fight League|MMA)( [^ ]+)*$/, '');
+  const myTitle = short(champTitle(g));
+  const oppTitle = superfight ? `mistrz wagi ${superfight}` : opp.rank === 0 && !opp.freak && g.tier > 0 ? short(`mistrz ${galaPrefix(g.fed)}`) : '';
+  // dwóch mistrzów: „mistrz” w rankingu po obu stronach nic nie mówi, wystarczy wiersz tytułów
+  const rankRow = showRank && !(g.rank === 0 && opp.rank === 0) && !superfight && !!(myRank || oppRank);
   return (
     <div className="ph-wrap">
       <div className={`ph ${title ? 'ph-title' : ''}`}>
@@ -960,7 +993,6 @@ function PosterHero({ g, opp, label, title, interim, fed, medal, abroad, farewel
         <div className="ph-plates">
           <div className={`vh-plate ph-plate me ${champ ? 'champ' : ''}`}>
             {intl && <Flag country="Polska" className="pl-flag" />}
-            {champTitle(g) && <em className="champ-tag">{champTitle(g)}</em>}
             <small>{g.profile.firstName}</small>
             <b>{g.profile.lastName}</b>
           </div>
@@ -979,6 +1011,20 @@ function PosterHero({ g, opp, label, title, interim, fed, medal, abroad, farewel
           <dt>Rekord</dt>
           <dd>{opp.freak ? '—' : recStr(opp.record)}</dd>
         </div>
+        {rankRow && (
+          <div>
+            <dd>{myRank || '—'}</dd>
+            <dt>Ranking</dt>
+            <dd>{oppRank || '—'}</dd>
+          </div>
+        )}
+        {(myTitle || oppTitle) && (
+          <div className="tot-belt">
+            <dd className={myTitle ? '' : 'none'}>{myTitle ? <><Icon name="trophy" size={12} /> {myTitle}</> : '—'}</dd>
+            <dt>Tytuł</dt>
+            <dd className={oppTitle ? '' : 'none'}>{oppTitle ? <><Icon name="trophy" size={12} /> {oppTitle}</> : '—'}</dd>
+          </div>
+        )}
         <div>
           <dd>{g.age} lat</dd>
           <dt>Wiek</dt>
@@ -1112,7 +1158,7 @@ function GalaPoster({ g, f, n, total, onGo, paused }: { g: GameState; f: FightRe
             </span>
           )}
         </div>
-        <PosterHero g={g} opp={f.opp} label={spotLabel} title={f.title || f.unify || !!f.interim} interim={!!f.interim} fed={f.abroad && f.gala ? f.gala : f.fed} abroad={!!f.abroad} farewell={!!f.farewell} />
+        <PosterHero g={g} opp={f.opp} label={spotLabel} title={f.title || f.unify || !!f.interim} interim={!!f.interim} fed={f.abroad && f.gala ? f.gala : f.fed} abroad={!!f.abroad} farewell={!!f.farewell} superfight={f.superfight} />
         {p && (
           <div className="pst-card-wrap">
             <div className="pst-card-title">Karta walk</div>
