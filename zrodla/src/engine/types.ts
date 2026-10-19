@@ -11,7 +11,7 @@ export type Outcome = 'super' | 'success' | 'fail';
 export type TicketPlan = 'none' | 'std' | 'push';
 export type JobMode = 'full' | 'half' | 'none';
 export type SocialMode = 'off' | 'self' | 'pro';
-export type SideKind = 'grappling' | 'boxing' | 'seminar' | 'grapple1' | 'kick' | 'film';
+export type SideKind = 'grappling' | 'boxing' | 'seminar' | 'grapple1' | 'kick' | 'film' | 'camp' | 'charity' | 'podcast' | 'celebrity';
 
 /** Zaproszenie na wydarzenie poza MMA (dozwolone także przy wyłączności). */
 export interface SideInvite {
@@ -21,6 +21,8 @@ export interface SideInvite {
   fee: number;
   prize: number;
   text: string;
+  /** obóz: która umiejętność urośnie */
+  stat?: StatKey;
 }
 
 /** decyzja po walce: wywołanie przez mikrofon albo reakcja na kontrowersyjny werdykt */
@@ -473,6 +475,11 @@ export interface SeasonSummary {
   champion: boolean;
   beltWon: boolean;
   moneyDelta: number;
+  /** ile przyniosły same walki (gaże i premie, po prowizji menedżera) */
+  moneyFights?: number;
+  /** dorobek kariery (punkty do rankingu) przed i po tym roku */
+  legacyFrom?: number;
+  legacyTo?: number;
   ovrFrom: number;
   ovrTo: number;
   form: string;
@@ -585,6 +592,8 @@ export interface GameState {
   /** wynik ostatniego szukania sponsora na własną rękę */
   pitch?: { season: number; ok: boolean; text: string; name?: string; slot: string } | null;
   /** dziwny sponsor podsunięty przez menedżera (oferta na ten rok) */
+  /** oferty od marek na ten rok (wybierasz najwyżej jedną) */
+  sponsorOffers?: { season: number; picked?: string; list: SponsorOffer[] } | null;
   shadyDeal?: { season: number; name: string; product: string; perSeason: number; seasons: number; rep: number; media: number; pitch: string; from: string; status: 'open' | 'taken' | 'refused' } | null;
   loans: Loan[];
   /** kategoria, w której walczysz (domyślnie naturalna z profilu) */
@@ -637,4 +646,19 @@ export interface GameState {
   flags: Record<string, number>;
   seenEvents: string[];
   ending: Ending | null;
+}
+
+export interface SponsorOffer {
+  id: string;
+  name: string;
+  /** lokalna firma, marka krajowa albo światowa */
+  pool: 'local' | 'national' | 'global';
+  kind: 'image' | 'charity' | 'ambassador' | 'events';
+  title: string;
+  perSeason: number;
+  seasons: number;
+  clause: string;
+  media?: number;
+  rep?: number;
+  form?: number;
 }

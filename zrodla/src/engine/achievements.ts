@@ -50,7 +50,7 @@ export const ACHIEVEMENTS: Achievement[] = [
   { id: 'retire_champ', title: 'Odchodzi niepokonany', desc: 'Zakończ karierę jako panujący mistrz.', check: (s) => s.phase === 'ended' && s.rank === 0 && s.tier >= 2 },
   { id: 'wasted', title: 'Zmarnowany talent', desc: 'Jako Wybraniec nie wyjdź poza polską federację.', secret: true, check: (s) => s.phase === 'ended' && s.profile.start === 'wybraniec' && s.peakTier <= 2 },
   { id: 'daily', title: 'Codzienna dawka', desc: 'Ukończ Karierę dnia.', check: (s) => s.mode === 'daily' && s.phase === 'ended' },
-  { id: 'legacy3000', title: 'Legenda', desc: 'Zdobądź 4500 punktów LEGACY w jednej karierze.', check: (s) => (s.ending?.legacy ?? 0) >= 4500 },
+  { id: 'legacy3000', title: 'Legenda', desc: 'Zdobądź 4500 punktów dorobku w jednej karierze.', check: (s) => (s.ending?.legacy ?? 0) >= 4500 },
   { id: 'double_champ', title: 'Podwójny mistrz', desc: 'Wygraj superfight o pas drugiej kategorii.', check: (s) => f(s, 'doubleChamp') >= 1 },
   { id: 'interim', title: 'Tymczasowo najlepszy', desc: 'Zdobądź pas tymczasowy.', check: (s) => f(s, 'interimBelts') >= 1 },
   { id: 'short_win', title: 'Ratownik gali', desc: 'Wygraj walkę wziętą na zastępstwo.', check: (s) => f(s, 'shortWins') >= 1 },

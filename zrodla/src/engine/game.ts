@@ -1,6 +1,8 @@
 import { activeManager, currentManager, managerBlocked, managerById } from './managers';
 import { createRng, type Rng } from './rng';
 import type {
+  SponsorOffer,
+  Style,
   FightOffer,
   WeightKey,
   Club,
@@ -35,6 +37,7 @@ import {
   BAD_FORMS,
   GOOD_FORMS,
   STAGE_LABELS,
+  STYLE_LABELS,
   TIER_SHORT,
   TOURNEY_CITIES,
   WEIGHTS,
@@ -65,6 +68,8 @@ import {
   TIER_LEVEL,
   TIER_NAMES,
   TIER_PURSE,
+  fedPay,
+  winRatio,
   VOIVODESHIPS,
   livingCost,
   EXCLUSIVE_BONUS,
@@ -479,6 +484,7 @@ export function doTraining(s0: GameState, k: StatKey, campId?: string | null): G
     s.trainingPick = k;
     s.peakOvr = Math.max(s.peakOvr, ovr(s.stats));
     offerShadyDeal(rng, s);
+    makeSponsorOffers(rng, s);
   });
   s.phase = 'budget';
   if (s.quick && !quickNeedsBudget(s)) return startSeason(s);
@@ -492,9 +498,10 @@ function offerShadyDeal(rng: Rng, s: GameState) {
   if (s.tier < 1 || s.contract.kind === 'freak') return;
   if (s.sponsors.some((x) => SHADY_SPONSORS.some((d) => d.name === x.name))) return;
   if (s.sponsors.length >= sponsorCap(s)) return;
-  const tight = budgetBalance(s) + s.money < 15000 + s.tier * 10000;
+  // dziwny sponsor dzwoni tylko wtedy, gdy kasy brakuje: z pełnym kontem nikt by się nie zgodził
+  const tight = budgetBalance(s) + s.money < 5000 + s.tier * 8000;
   const mgr = currentManager(s);
-  if (!rng.chance(tight ? 0.6 : mgr ? 0.14 : 0.06)) return;
+  if (!tight || !rng.chance(0.65)) return;
   const d = rng.pick(SHADY_SPONSORS);
   const base = [0, 2800, 9000, 21000, 48000][s.tier];
   const perSeason = Math.round((base * (1 + s.media / 150) * (0.85 + rng.next() * 0.3)) / 500) * 500;
@@ -510,6 +517,55 @@ function offerShadyDeal(rng: Rng, s: GameState) {
     from: mgr ? mgr.name : 'Kolega z siłowni',
     status: 'open',
   };
+}
+
+// ---------------------------------------------------------------------------
+// Oferty od marek: co roku 0–3 propozycje różnego typu, bierzesz najwyżej jedną
+// ---------------------------------------------------------------------------
+
+const OFFER_KINDS: { kind: SponsorOffer['kind']; title: string; pay: number; seasons: [number, number]; clause: string[]; media?: number; rep?: number; form?: number }[] = [
+  { kind: 'image', title: 'Kontrakt wizerunkowy', pay: 1, seasons: [1, 2], clause: ['twoja twarz w kampanii', 'logo na spodenkach i na ważeniu', 'billboardy w twoim mieście'], media: 2 },
+  { kind: 'events', title: 'Eventy i sesje zdjęciowe', pay: 1.35, seasons: [1, 1], clause: ['sześć eventów firmowych w roku', 'sesje zdjęciowe w trakcie obozu', 'objazd po salonach firmy'], media: 3, form: -1 },
+  { kind: 'ambassador', title: 'Ambasador na lata', pay: 0.8, seasons: [3, 3], clause: ['ambasador marki przez trzy lata', 'twoja linia produktów', 'kod rabatowy z twoim nazwiskiem'] },
+  { kind: 'charity', title: 'Kampania społeczna', pay: 0.4, seasons: [1, 2], clause: ['treningi dla dzieciaków z domu dziecka', 'twarz kampanii „Nie hejtuj”', 'zbiórka na szpital dziecięcy'], rep: 3, media: 1 },
+];
+
+function makeSponsorOffers(rng: Rng, s: GameState) {
+  s.sponsorOffers = null;
+  if (s.tier < 1 || s.contract.kind === 'freak') return;
+  const room = sponsorCap(s) - s.sponsors.length;
+  if (room <= 0) return;
+  // im więcej mediów i wyżej w karierze, tym więcej telefonów od marek
+  const n = Math.min(3, rng.chance(clamp(0.25 + s.media / 120 + s.tier * 0.08, 0, 0.95)) ? 1 + (rng.chance(s.media / 110) ? 1 : 0) + (s.tier >= 3 && rng.chance(0.4) ? 1 : 0) : 0);
+  if (!n) return;
+  const kinds = [...OFFER_KINDS].sort(() => rng.next() - 0.5).slice(0, n);
+  const list: SponsorOffer[] = kinds.map((k) => {
+    const pool = sponsorPoolCapped(s, sponsorPool(rng, s));
+    const name = pickSponsorName(rng, s, pool);
+    const seasons = rng.int(k.seasons[0], k.seasons[1]);
+    const per = Math.max(500, Math.round((poolPay(s, pool) * k.pay * (0.85 + rng.next() * 0.3)) / 500) * 500);
+    return { id: uid(rng, 'o'), name, pool, kind: k.kind, title: k.title, perSeason: per, seasons, clause: rng.pick(k.clause), media: k.media, rep: k.rep, form: k.form };
+  });
+  // jedna marka nie składa dwóch ofert
+  s.sponsorOffers = { season: s.season, list: list.filter((o, i) => list.findIndex((x) => x.name === o.name) === i) };
+}
+
+export function acceptSponsorOffer(s0: GameState, id: string): GameState {
+  const so = s0.sponsorOffers;
+  if (!so || so.season !== s0.season || so.picked || s0.sponsors.length >= sponsorCap(s0)) return s0;
+  const o = so.list.find((x) => x.id === id);
+  if (!o) return s0;
+  const s = clone(s0);
+  s.sponsorOffers!.picked = id;
+  s.sponsors.push({ id: `of-${o.id}`, name: o.name, perSeason: o.perSeason, seasonsLeft: o.seasons, clause: o.clause });
+  if (o.media) s.media = clamp(s.media + o.media, 0, 100);
+  if (o.rep) s.rep = clamp(s.rep + o.rep, 0, 100);
+  if (o.form) s.flags.formBonus = (s.flags.formBonus ?? 0) + o.form;
+  log(s, `Nowy sponsor: ${o.name} (${o.title.toLowerCase()}).`);
+  return s;
+}
+export function sponsorPoolOf(name: string): 'local' | 'national' | 'global' {
+  return SPONSOR_GLOBAL.includes(name) ? 'global' : SPONSOR_NATIONAL.includes(name) ? 'national' : 'local';
 }
 
 export function acceptShadyDeal(s0: GameState): GameState {
@@ -591,7 +647,7 @@ export function budgetLines(s: GameState): BudgetLine[] {
   return lines;
 }
 
-// Własna akademia: inwestycja na późną karierę (przychód co roku i punkty legacy)
+// Własna akademia: inwestycja na późną karierę (przychód co roku i punkty dorobku)
 export const ACADEMY_LEVELS = [
   { cost: 150000, income: 10000, name: 'sala w wynajętej hali', note: 'grupy dzieci i amatorów' },
   { cost: 400000, income: 25000, name: 'własny klub z klatką', note: 'sekcja zawodnicza i obozy letnie' },
@@ -638,10 +694,10 @@ export function investAcademy(s0: GameState): GameState {
 export type BackroomId = 'physio' | 'doctor' | 'supps' | 'sparring' | 'clinic';
 export const BACKROOM: { id: BackroomId; name: string; short: string; effect: string; icon: string; cost: number[]; minTier?: number }[] = [
   { id: 'physio', name: 'Fizjoterapeuta', short: 'masaże, rozluźnianie, taping', effect: 'Organizm wolniej się zużywa, kariera trwa dłużej.', icon: 'heart', cost: [0, 1500, 3000, 7000, 20000] },
-  { id: 'doctor', name: 'Lekarz sportowy', short: 'badania i opieka przed walką', effect: 'Rzadsze kontuzje, a jeśli już, to lżejsze.', icon: 'bandage', cost: [0, 2500, 5000, 12000, 30000] },
-  { id: 'supps', name: 'Suplementacja', short: 'odżywki, witaminy, elektrolity', effect: 'Lekko lepsza forma w każdej walce.', icon: 'flame', cost: [0, 2000, 4000, 8000, 16000] },
-  { id: 'sparring', name: 'Elitarni sparingpartnerzy', short: 'sparingpartnerzy z czołówki, ściągani na obóz', effect: 'Wyraźnie lepsza forma w każdej walce. Drogo, ale na tym poziomie liczy się każdy procent.', icon: 'glove', cost: [0, 0, 0, 70000, 180000], minTier: 3 },
-  { id: 'clinic', name: 'Klinika regeneracyjna', short: 'kriokomora, osocze, prywatny ortopeda', effect: 'Co roku organizm regeneruje się wyraźnie bardziej (zużycie −4), kariera trwa dłużej. Dla tych, których stać.', icon: 'heart', cost: [0, 0, 0, 150000, 350000], minTier: 3 },
+  { id: 'doctor', name: 'Lekarz sportowy', short: 'badania i opieka przed walką', effect: 'Rzadsze kontuzje, a jeśli już, to lżejsze.', icon: 'bandage', cost: [0, 2000, 4000, 9000, 18000] },
+  { id: 'supps', name: 'Suplementacja', short: 'odżywki, witaminy, elektrolity', effect: 'Lekko lepsza forma w każdej walce.', icon: 'flame', cost: [0, 1500, 3000, 5000, 8000] },
+  { id: 'sparring', name: 'Elitarni sparingpartnerzy', short: 'sparingpartnerzy z czołówki, ściągani na obóz', effect: 'Wyraźnie lepsza forma w każdej walce. Drogo, ale na tym poziomie liczy się każdy procent.', icon: 'glove', cost: [0, 0, 0, 25000, 45000], minTier: 3 },
+  { id: 'clinic', name: 'Klinika regeneracyjna', short: 'kriokomora, osocze, prywatny ortopeda', effect: 'Co roku organizm regeneruje się wyraźnie bardziej (zużycie −4), kariera trwa dłużej. Dla tych, których stać.', icon: 'heart', cost: [0, 0, 0, 30000, 60000], minTier: 3 },
 ];
 export function backroomAvailable(s: GameState, id: BackroomId) {
   return s.tier >= (BACKROOM.find((b) => b.id === id)!.minTier ?? 1);
@@ -690,6 +746,43 @@ export function loanRefusal(s: GameState): string | null {
   }
   if (s.money < -30000) return 'Bank odmawia: masz za duże długi.';
   return null;
+}
+
+/** Pomoc rodziny przy braku kasy: syn biznesmena dzwoni do taty, reszta prosi rodziców o drobne. */
+export function familyHelpOffer(s: GameState): { amount: number; who: string; text: string; cost: string } | null {
+  const short = -(s.money + budgetBalance(s));
+  if (short <= 0) return null;
+  const used = s.flags.familyHelp ?? 0;
+  if ((s.flags.familyHelpSeason ?? -9) === s.season) return null;
+  if (s.profile.start === 'biznes') {
+    if (used >= 3) return null;
+    const amount = Math.ceil((short + 5000) / 1000) * 1000;
+    const cap = [20000, 40000, 120000, 250000, 400000][s.tier] ?? 40000;
+    if (amount > cap) return null;
+    const text = used === 0
+      ? `Tata przeleje ${amount.toLocaleString('pl-PL')} zł. Powie tylko, że „w hurtowni też by się przydał ktoś z charakterem”.`
+      : used === 1
+        ? `Tata przeleje ${amount.toLocaleString('pl-PL')} zł, ale przy obiedzie wszyscy usłyszą, ile cię kosztuje to „bicie się po klatkach”.`
+        : `Ostatni raz. Tata przeleje ${amount.toLocaleString('pl-PL')} zł i jasno mówi, że następnej pomocy nie będzie.`;
+    return { amount, who: 'Dzwonisz do taty', text, cost: used === 0 ? 'rodzina −1' : 'rodzina −2, reputacja −2 (syn tatusia)' };
+  }
+  // pozostali: rodzice pomogą raz, drobną kwotą, jeśli relacje są dobre
+  if (used >= 1 || s.relations < 3 || short > 8000) return null;
+  const amount = Math.ceil((short + 1000) / 500) * 500;
+  return { amount, who: 'Prosisz rodziców o pomoc', text: `Mama wyjmuje kopertę z szafy: ${amount.toLocaleString('pl-PL')} zł. Ojciec udaje, że nic nie widzi.`, cost: 'rodzina −1, tylko raz w karierze' };
+}
+export function takeFamilyHelp(s0: GameState): GameState {
+  const o = familyHelpOffer(s0);
+  if (!o) return s0;
+  const s = clone(s0);
+  const used = s.flags.familyHelp ?? 0;
+  s.money += o.amount;
+  s.flags.familyHelp = used + 1;
+  s.flags.familyHelpSeason = s.season;
+  s.relations -= s.profile.start === 'biznes' && used >= 1 ? 2 : 1;
+  if (s.profile.start === 'biznes' && used >= 1) s.rep = clamp(s.rep - 2, 0, 100);
+  log(s, `${o.who}: ${o.amount.toLocaleString('pl-PL')} zł.`);
+  return s;
 }
 
 export function loanOffer(s: GameState) {
@@ -1143,14 +1236,48 @@ const SPONSOR_CLAUSES = [
   'rabat dla fanów z twoim kodem',
 ];
 
+// Sponsorzy poza osiedlem: krajowe marki (od federacji krajowej) i światowe (Europa, świat). Wszystkie fikcyjne.
+const SPONSOR_NATIONAL = ['Telekom Vistula', 'Bank Orli', 'Energetyk Grom', 'FitFabryka siłownie', 'Budmax Hurtownie', 'Mleczarnia Krówka Mazurska', 'Kurier Strzała', 'Meble Kowal', 'Napój Turbo Dąb', 'Ubezpieczenia Tarcza', 'Market Bociek', 'Wody Kryniczanka Zdrój'];
+const SPONSOR_GLOBAL = ['Volt Rush Energy', 'Kaiju Fightwear', 'Nomad Chrono', 'Apex Fuel Nutrition', 'Stratos Airways', 'Ironclad Trucks', 'Raptor Audio', 'Monarch Motors', 'Helix Smartwatch', 'Titan Grip'];
+type SponsorPool = 'local' | 'national' | 'global';
+/** Roczna stawka bazowa (zanim dojdą media): pizzeria nie zapłaci jak światowa marka. */
+const POOL_BASE: Record<SponsorPool, number[]> = {
+  local: [1500, 3000, 6000, 9000, 12000],
+  national: [0, 0, 25000, 40000, 50000],
+  global: [0, 0, 0, 70000, 120000],
+};
+function sponsorPool(rng: Rng, s: GameState): SponsorPool {
+  const r = rng.next();
+  if (s.tier <= 1) return 'local';
+  if (s.tier === 2) return r < 0.65 ? 'local' : 'national';
+  if (s.tier === 3) return r < 0.15 ? 'local' : r < 0.7 ? 'national' : 'global';
+  return r < 0.4 ? 'national' : 'global';
+}
+function poolNames(pool: SponsorPool) {
+  return pool === 'global' ? SPONSOR_GLOBAL : pool === 'national' ? SPONSOR_NATIONAL : SPONSOR_NAMES;
+}
+function sponsorPoolCapped(s: GameState, pool: SponsorPool): SponsorPool {
+  // światowe marki to najwyżej dwie umowy naraz, resztę biorą krajowe
+  return pool === 'global' && s.sponsors.filter((x) => SPONSOR_GLOBAL.includes(x.name)).length >= 2 ? 'national' : pool;
+}
+function pickSponsorName(rng: Rng, s: GameState, pool: SponsorPool) {
+  const all = poolNames(pool);
+  const free = all.filter((n) => !s.sponsors.some((x) => x.name === n));
+  return rng.pick(free.length ? free : all);
+}
+/** Ile marka z danej puli zapłaci za rok (media podbijają stawkę najwyżej o 70%). */
+function poolPay(s: GameState, pool: SponsorPool) {
+  return (POOL_BASE[pool][s.tier] ?? 0) * (0.7 + s.media / 100);
+}
+
 function maybeAutoSponsor(rng: Rng, s: GameState): string | null {
   const cap = 1 + s.tier;
   if (s.sponsors.length >= cap) return null;
   const p = clamp((s.media * 0.8 + s.rep * 0.6) / 120 + (currentManager(s)?.sponsor ?? 0) / 100, 0.08, 0.75) * (s.profile.difficulty === 'hard' ? 0.6 : 1);
   if (!rng.chance(p)) return null;
-  const name = rng.pick(SPONSOR_NAMES.filter((n) => !s.sponsors.some((x) => x.name === n)));
-  const base = [1500, 4000, 12000, 30000, 80000][s.tier];
-  const per = Math.round((base * (0.6 + s.media / 60) * (0.8 + rng.next() * 0.5)) / 500) * 500;
+  const pool = sponsorPoolCapped(s, sponsorPool(rng, s));
+  const name = pickSponsorName(rng, s, pool);
+  const per = Math.max(500, Math.round((poolPay(s, pool) * (0.8 + rng.next() * 0.4)) / 500) * 500);
   s.sponsors.push({ id: uid(rng, 's'), name, perSeason: per, seasonsLeft: rng.int(1, 3), clause: rng.pick(SPONSOR_CLAUSES) });
   return name;
 }
@@ -1202,10 +1329,13 @@ export function pitchChance(s: GameState, slot: PitchSlot): number {
   return Math.round(clamp(c, 0.05, 0.85) * 100);
 }
 
+/** Sam piszesz do firm: na osiedlu lokalne biznesy, w kraju marki krajowe, na świecie globalne. */
+function pitchPool(s: GameState): SponsorPool {
+  return sponsorPoolCapped(s, s.tier <= 1 ? 'local' : s.tier <= 3 ? 'national' : 'global');
+}
 export function pitchPay(s: GameState, slot: PitchSlot): number {
   const sl = PITCH_SLOTS.find((x) => x.id === slot)!;
-  const base = [2000, 5000, 12000, 28000, 70000][s.tier];
-  return Math.round((base * sl.pay * (0.7 + s.media / 80)) / 500) * 500;
+  return Math.max(500, Math.round((poolPay(s, pitchPool(s)) * sl.pay * 0.8) / 500) * 500);
 }
 
 export function pitchSponsor(s0: GameState, slot: PitchSlot): GameState {
@@ -1214,8 +1344,7 @@ export function pitchSponsor(s0: GameState, slot: PitchSlot): GameState {
   withRng(s, (rng) => {
     const ch = pitchChance(s, slot) / 100;
     const sl = PITCH_SLOTS.find((x) => x.id === slot)!;
-    const free = SPONSOR_NAMES.filter((n) => !s.sponsors.some((x) => x.name === n));
-    const name = rng.pick(free.length ? free : SPONSOR_NAMES);
+    const name = pickSponsorName(rng, s, pitchPool(s));
     if (rng.chance(ch)) {
       const per = Math.round((pitchPay(s, slot) * (0.85 + rng.next() * 0.3)) / 500) * 500;
       s.sponsors.push({ id: uid(rng, 's'), name, perSeason: per, seasonsLeft: rng.int(1, 2), clause: sl.clause });
@@ -1464,10 +1593,13 @@ function plannedAmateur(run: NonNullable<GameState['run']>) {
 function beginRun(s: GameState) {
   withRng(s, (rng) => {
     const f = rng.weighted(SEASON_FORMS.map((x) => ({ item: x, w: x.w })));
-    const bonus = s.flags.formBonus ?? 0;
+    const fam = familyForm(s);
+    const bonus = (s.flags.formBonus ?? 0) + fam;
     s.flags.formBonus = 0;
     const mod = f.mod + bonus;
     const intro: string[] = [];
+    if (fam > 0) intro.push('Rodzina trzyma kciuki i pilnuje, żebyś się wysypiał: forma +1.');
+    if (fam < 0) intro.push('W domu ciche dni i kłótnie przy obiedzie. Głowa nie jest tam, gdzie powinna: forma −1.');
     let tourneys: Tourney[] | undefined;
     if (isAmateurRun(s)) {
       // awans z zawodów wojewódzkich: po medalu albo po dwóch latach (jedna walka nie przekreśla kariery)
@@ -1573,7 +1705,10 @@ function pickOpponent(rng: Rng, s: GameState, idx: number): { opp: Fighter; titl
   }
   // walka o pas
   const last = idx === run.planned - 1;
-  if (s.rank !== null && (s.rank === 1 || (s.rank === 2 && last) || (s.rank <= 3 && last && rng.chance(0.4)))) {
+  // długa seria wygranych otwiera drogę do pasa szybciej niż sam ranking
+  const streak = proStreak(s);
+  const streakShot = s.rank !== null && ((streak >= 5 && s.rank <= 4 && (last || rng.chance(0.35))) || (streak >= 8 && s.rank <= 7));
+  if (s.rank !== null && (s.rank === 1 || (s.rank === 2 && last) || (s.rank <= 3 && last && rng.chance(0.4)) || streakShot)) {
     if (rivalPeer && rivalPeer.rank === 0) return { opp: asRival(rivalPeer, 0), title: true, defense: false, peer: rivalPeer };
     const opp = rosterOpp(rng, s, 0, metThisSeason);
     return { opp, title: true, defense: false, peer: null };
@@ -1733,7 +1868,9 @@ function buildOffer(rng: Rng, s: GameState, idx: number): FightOffer {
     purse,
     winBonus: Math.round(s.contract.winBonus * (title2 ? 1.8 : 1)),
     negotiated: false,
-    hook: interim
+    hook: !interim && title2 && !defense && !rival && s.rank !== null && s.rank > 1 && proStreak(s) >= 5
+      ? `Seria ${proStreak(s)} wygranych z rzędu. Federacja nie może dłużej udawać, że cię nie widzi: dostajesz walkę o pas, choć w rankingu jesteś #${s.rank}.`
+      : interim
       ? `Mistrz ${fedShort(s)} jest kontuzjowany i nie wróci przed końcem roku. Federacja robi walkę o pas tymczasowy. Wygrany zmierzy się z mistrzem w walce unifikacyjnej.`
       : rival && peer
         ? rivalHook(peer, title, defense, trilogy)
@@ -1824,7 +1961,7 @@ function specialOffer(rng: Rng, s: GameState): FightOffer | null {
       title,
       defense,
       nemesis: true,
-      hook: `Zadra. ${opp.firstName} ${opp.lastName} od waszej walki nie daje ci spokoju w mediach. Bilans ${h2h.w}-${h2h.l}${h2h.d ? `-${h2h.d}` : ''}. Organizator dokłada 30% do gaży, bo bilety na tę walkę sprzedadzą się same.${title ? (defense ? ' I tym razem bronisz pasa.' : ' A on ma pas.') : ''}`,
+      hook: `Zadra. ${opp.firstName} ${opp.lastName} od waszej walki nie daje ci spokoju w mediach. Do tej pory ${h2hWords(h2h.w, h2h.l, h2h.d)}. Organizator dokłada 30% do gaży, bo bilety na tę walkę sprzedadzą się same.${title ? (defense ? ' I tym razem bronisz pasa.' : ' A on ma pas.') : ''}`,
     });
   }
   // wywołany przez mikrofon mistrz przyjmuje wyzwanie
@@ -1940,7 +2077,7 @@ function inviteWanted(rng: Rng, s: GameState): boolean {
   if (s.tier < 1 || s.contract.kind === 'freak' || run.inviteOffered || s.quick) return false;
   if (run.fights.length === 0 || run.fights.length >= run.planned) return false;
   if (s.injury && s.injury.penalty >= 5) return false;
-  return rng.chance(coachOf(s).contacts ? 0.62 : 0.4);
+  return rng.chance(coachOf(s).contacts ? 0.8 : 0.62);
 }
 
 export function isExclusiveContract(s: GameState): boolean {
@@ -1969,7 +2106,7 @@ export function declineInvite(s0: GameState): GameState {
 
 export function inviteChance(s: GameState): number | null {
   const inv = s.run?.invite;
-  if (!inv || inv.kind === 'seminar' || inv.kind === 'film') return null;
+  if (!inv || !['grappling', 'boxing', 'grapple1', 'kick'].includes(inv.kind)) return null;
   const p = sideChance(s, inv.kind, s.run!.form.mod);
   return Math.round((inv.kind === 'grappling' ? p * p * p : p) * 100);
 }
@@ -2009,12 +2146,12 @@ function buildShortNotice(rng: Rng, s: GameState): FightOffer {
 }
 
 function rivalHook(p: Peer, title: boolean, defense: boolean, trilogy: boolean): string {
-  const h = `${p.h2h.w}-${p.h2h.l}${p.h2h.d ? `-${p.h2h.d}` : ''}`;
-  if (title && defense) return `Obrona pasa przeciwko odwiecznemu rywalowi. ${p.lastName} czekał na to latami. Wasz bilans: ${h}.`;
-  if (title) return `${p.lastName} ma pas. Twoja walka o tytuł to walka z odwiecznym rywalem. Wasz bilans: ${h}.`;
-  if (trilogy) return `Trylogia. Bilans 1-1, ta walka rozstrzygnie, kto był lepszy. Organizator dokłada 30% do gaży.`;
+  const h = h2hWords(p.h2h.w, p.h2h.l, p.h2h.d);
+  if (title && defense) return `Obrona pasa przeciwko odwiecznemu rywalowi. ${p.lastName} czekał na to latami, a ty ${h}.`;
+  if (title) return `${p.lastName} ma pas. Twoja walka o tytuł to walka z odwiecznym rywalem, a ty ${h}.`;
+  if (trilogy) return `Trylogia. Po jednej wygranej dla każdego, ta walka rozstrzygnie, kto był lepszy. Organizator dokłada 30% do gaży.`;
   if (p.metCount === 0) return `${p.lastName}: rywal, o którym mówią wszyscy. Pierwsze starcie zawodowe, gaża +15%.`;
-  return `Odwieczny rywal. Wasz bilans: ${h}. Organizator dokłada 15% do gaży.`;
+  return `Odwieczny rywal, ${h}. Organizator dokłada 15% do gaży.`;
 }
 
 /** Czy menedżer (albo znajomy promotor) podsunie walkę na odbudowę rekordu. */
@@ -2450,7 +2587,7 @@ export function negotiateChance(s: GameState): number {
   const o = s.run?.offer;
   if (!o) return 0;
   const mg = activeManager(s);
-  let c = 28 + (mg?.negotiate ?? 0) + s.media / 4 + (s.rank !== null && s.rank <= 5 ? 10 : 0) + (o.title ? 10 : 0) + (o.rival ? 8 : 0);
+  let c = 28 + (mg?.negotiate ?? 0) + s.media / 4 + repNego(s) + (s.rank !== null && s.rank <= 5 ? 10 : 0) + (o.title ? 10 : 0) + (o.rival ? 8 : 0);
   if (s.tier >= 3 && s.rank === null) c -= 10;
   if (s.contract.kind === 'freak') c += 10;
   return Math.round(clamp(c, 10, 85));
@@ -2500,83 +2637,68 @@ function mediaGain(s: GameState, base: number): number {
   return Math.max(1, Math.round(base * clamp(1.25 - s.media / 90, 0.3, 1.25)));
 }
 
+/** Bilans z rywalem po ludzku: „masz z nim 2 wygrane i 1 porażkę”. */
+export function h2hWords(w: number, l: number, d = 0): string {
+  const part = (n: number, a: string, b: string, c: string) => `${n} ${pl(n, a, b, c)}`;
+  const bits = [w ? part(w, 'wygraną', 'wygrane', 'wygranych') : '', l ? part(l, 'porażkę', 'porażki', 'porażek') : '', d ? part(d, 'remis', 'remisy', 'remisów') : ''].filter(Boolean);
+  return bits.length ? `masz z nim ${bits.join(bits.length === 2 ? ' i ' : ', ')}` : 'jeszcze się nie biliście';
+}
+
 type PressCtx = NonNullable<FightOffer['pressCtx']>;
 
-/** Konferencja zależna od sytuacji: inne pytanie, inne odpowiedzi i inne ryzyko. */
-export function pressContext(s: GameState, o: FightOffer): PressCtx {
+/** Konferencja zależna od sytuacji: inne pytanie, inne odpowiedzi i inne ryzyko. Każda sytuacja ma kilka wersji. */
+export function pressContext(s: GameState, o: FightOffer, rng?: Rng): PressCtx {
   const n = o.opp.lastName;
+  const me = s.profile.lastName;
+  const pick = <T,>(arr: T[]): T => (rng ? rng.pick(arr) : arr[(s.season + s.history.length) % arr.length]);
   const peer = o.opp.peer ? s.peers.find((p) => p.id === o.opp.id) : undefined;
+  const L = (calm: [string, string], provoke: [string, string], insult: [string, string]) => ({ calm, provoke, insult });
   if (o.opp.freak)
-    return {
-      id: 'freak',
-      question: `Dziennikarz: „Sportowiec kontra ${o.opp.freak}. Nie wstyd ci?”`,
-      labels: {
-        calm: ['„To też praca”', 'Spokojnie, bez wchodzenia w cyrk. Kibice MMA to docenią.'],
-        provoke: ['Grasz w ich grę', 'Riposta pod klipy. Zasięgi pewne, nerwy też.'],
-        insult: ['Robisz show', 'Przewracasz stół i rzucasz butelką. Dokładnie tego chcą organizatorzy.'],
-      },
-      provoke: 0.7,
-      insult: 0.65,
-    };
+    return pick([
+      { id: 'freak', question: `Dziennikarz: „Sportowiec kontra ${o.opp.freak}. Nie wstyd ci?”`, labels: L(['„To też praca”', 'Spokojnie, bez wchodzenia w cyrk. Kibice MMA to docenią.'], ['Grasz w ich grę', 'Riposta pod klipy. Zasięgi pewne, nerwy też.'], ['Robisz show', 'Przewracasz stół i rzucasz butelką. Dokładnie tego chcą organizatorzy.']), provoke: 0.7, insult: 0.65 },
+      { id: 'freak', question: `${n}: „Mam więcej obserwujących niż ty kibiców na wszystkich galach razem. Kto tu jest gwiazdą?”`, labels: L(['„Zobaczymy w klatce”', 'Ignorujesz zasięgi, mówisz o walce.'], ['„Policz je po walce”', 'Szybka riposta pod nagranie.'], ['Wylewasz mu wodę na głowę', 'Klip roku albo kara od organizatora.']), provoke: 0.68, insult: 0.62 },
+    ]);
   if (peer && peer.metCount > 0)
-    return {
-      id: 'rematch',
-      question: `Dziennikarz: „Wasz bilans to ${peer.h2h.w}-${peer.h2h.l}. ${n} mówi, że tym razem nie będzie przypadku. Co ty na to?”`,
-      labels: {
-        calm: ['„Znamy się na pamięć”', 'Szacunek dla historii. Kibice cenią klasę.'],
-        provoke: ['Przypominasz wynik', `Wyciągasz mu wasze poprzednie starcie. Trafi albo go nakręci.`],
-        insult: ['Robisz z tego wojnę', 'Osobiste wycieczki. Hala będzie pełna, a ochrona w gotowości.'],
-      },
-      provoke: peer.h2h.w > peer.h2h.l ? 0.7 : 0.45,
-      insult: 0.4,
-    };
+    return pick([
+      { id: 'rematch', question: `Dziennikarz: „Znacie się z klatki: ${h2hWords(peer.h2h.w, peer.h2h.l, peer.h2h.d)}. ${n} mówi, że tym razem nie będzie przypadku. Co ty na to?”`, labels: L(['„Znamy się na pamięć”', 'Szacunek dla historii. Kibice cenią klasę.'], ['Przypominasz wynik', 'Wyciągasz mu wasze poprzednie starcie. Trafi albo go nakręci.'], ['Robisz z tego wojnę', 'Osobiste wycieczki. Hala będzie pełna, a ochrona w gotowości.']), provoke: peer.h2h.w > peer.h2h.l ? 0.7 : 0.45, insult: 0.4 },
+      { id: 'rematch', question: `${n}: „Znam ${me} od dzieciaka. Wiem, kiedy się boi. Teraz się boi.”`, labels: L(['„Dorośliśmy obaj”', 'Bez wspominek, z szacunkiem.'], ['Przypominasz mu dawne czasy', 'Historia z szatni, która go zaboli.'], ['Wyciągasz brudy', 'Prywatne sprawy na konferencji. Internet zapłonie, federacja też.']), provoke: 0.55, insult: 0.38 },
+    ]);
   if (s.streak <= -2)
-    return {
-      id: 'losing',
-      question: `Dziennikarz: „${Math.abs(s.streak)} porażki z rzędu. Ludzie mówią, że to już koniec. Po co jeszcze walczysz?”`,
-      labels: {
-        calm: ['Bierzesz to na siebie', '„Zawaliłem, wracam silniejszy.” Kibice lubią szczerość.'],
-        provoke: ['Odgryzasz się', 'Ostro do dziennikarza. Po serii porażek łatwo wyjść na sfrustrowanego.'],
-        insult: ['Atakujesz rywala', 'Głośno i agresywnie. Jak przegrasz, internet cię zje.'],
-      },
-      provoke: 0.4,
-      insult: 0.25,
-    };
+    return pick([
+      { id: 'losing', question: `Dziennikarz: „${Math.abs(s.streak)} porażki z rzędu. Ludzie mówią, że to już koniec. Po co jeszcze walczysz?”`, labels: L(['Bierzesz to na siebie', '„Zawaliłem, wracam silniejszy.” Kibice lubią szczerość.'], ['Odgryzasz się', 'Ostro do dziennikarza. Po serii porażek łatwo wyjść na sfrustrowanego.'], ['Atakujesz rywala', 'Głośno i agresywnie. Jak przegrasz, internet cię zje.']), provoke: 0.4, insult: 0.25 },
+      { id: 'losing', question: `${n}: „Przyszedłem po łatwe zwycięstwo. Po ostatnich walkach ${me} sam to wie.”`, labels: L(['„Oceniaj mnie w sobotę”', 'Bez tłumaczenia się, krótko.'], ['„Łatwe? Sprawdź mój rekord”', 'Pewność siebie wbrew wynikom. Ryzykowne.'], ['Rzucasz się do niego', 'Ochrona was rozdziela. Albo cię to nakręci, albo spali.']), provoke: 0.42, insult: 0.28 },
+    ]);
   if (s.streak >= 3)
-    return {
-      id: 'streak',
-      question: `Dziennikarz: „Seria ${s.streak} wygranych. ${n} twierdzi, że biłeś się z nikim. Czujesz się faworytem?”`,
-      labels: {
-        calm: ['„Każda walka jest inna”', 'Pokora faworyta. Bez fajerwerków.'],
-        provoke: ['„Zapytaj moich ostatnich rywali”', 'Pewność siebie na fali. Zwykle działa.'],
-        insult: ['Wyśmiewasz go', 'Arogancja zwycięzcy. Jak się potkniesz, wróci do ciebie.'],
-      },
-      provoke: 0.72,
-      insult: 0.5,
-    };
+    return pick([
+      { id: 'streak', question: `Dziennikarz: „Seria ${s.streak} wygranych. ${n} twierdzi, że biłeś się z nikim. Czujesz się faworytem?”`, labels: L(['„Każda walka jest inna”', 'Pokora faworyta. Bez fajerwerków.'], ['„Zapytaj moich ostatnich rywali”', 'Pewność siebie na fali. Zwykle działa.'], ['Wyśmiewasz go', 'Arogancja zwycięzcy. Jak się potkniesz, wróci do ciebie.']), provoke: 0.72, insult: 0.5 },
+      { id: 'streak', question: `${n}: „Każda seria się kiedyś kończy. Twoja kończy się w sobotę.”`, labels: L(['„Może tak, może nie”', 'Spokój kogoś, kto wie, ile jest wart.'], ['„Ustaw się w kolejce”', 'Lista pokonanych rośnie. Mówisz to z uśmiechem.'], ['Wręczasz mu listę pokonanych', 'Kartka z nazwiskami i jego na końcu. Klip pewny, kara możliwa.']), provoke: 0.7, insult: 0.48 },
+    ]);
   if (o.title)
-    return {
-      id: 'title',
-      question: `Dziennikarz: „${o.defense ? 'Pierwsza obrona? Druga? Ile jeszcze utrzymasz ten pas?' : 'Walka o pas. Co to dla ciebie znaczy?'}”`,
-      labels: {
-        calm: ['Mówisz o drodze', '„Od remizy do tego miejsca.” Kibice to kupują.'],
-        provoke: ['„Pas już jest mój”', 'Pewność siebie przed największą walką.'],
-        insult: ['Jedziesz po rywalu', 'Wszystko albo nic. Federacja patrzy, kibice też.'],
-      },
-      provoke: 0.55,
-      insult: 0.35,
-    };
-  return {
-    id: 'default',
-    question: `${n} na face to face: „${o.pressQuote ?? ''}”`,
-    labels: {
-      calm: ['Spokojnie i z klasą', 'Szacunek, zero emocji. Kibice cenią.'],
-      provoke: ['Odbijasz piłeczkę', 'Ostra riposta. Może wyprowadzić go z równowagi albo ciebie.'],
-      insult: ['Jedziesz po bandzie', 'Zasięgi gwarantowane. Federacja może ukarać, a nerwy mogą puścić.'],
-    },
-    provoke: 0.6,
-    insult: 0.4,
+    return pick([
+      { id: 'title', question: `Dziennikarz: „${o.defense ? 'Kolejna obrona. Ile jeszcze utrzymasz ten pas?' : 'Walka o pas. Co to dla ciebie znaczy?'}”`, labels: L(['Mówisz o drodze', '„Od pierwszej sali do tego miejsca.” Kibice to kupują.'], ['„Pas już jest mój”', 'Pewność siebie przed największą walką.'], ['Jedziesz po rywalu', 'Wszystko albo nic. Federacja patrzy, kibice też.']), provoke: 0.55, insult: 0.35 },
+      { id: 'title', question: `${n} kładzie rękę na pasie na stole: „${o.defense ? 'Pożyczyłeś go tylko na chwilę.' : 'Przyzwyczaj się, że to ja go noszę.'}”`, labels: L(['Zabierasz rękę z uśmiechem', 'Bez słowa, z klasą. Kamery to łapią.'], ['„Zrób sobie z nim zdjęcie”', 'Riposta, po której sala wybucha śmiechem.'], ['Wyrywasz mu pas', 'Przepychanka przy stole. Hit internetu albo kara i nerwy.']), provoke: 0.58, insult: 0.36 },
+    ]);
+  // bez szczególnej historii: rywal mówi coś o swoim stylu, kraju albo wieku
+  const style = o.opp.style;
+  const opts: PressCtx[] = [];
+  const STYLE_Q: Partial<Record<Style, string>> = {
+    wrestler: `Położę ${me} na plecy w pierwszej minucie i będę trzymał do gongu.`,
+    grappler: `Niech ${me} poćwiczy obronę duszeń. Będzie mu potrzebna.`,
+    boxer: `Jedno trafienie i ${me} zobaczy sufit hali.`,
+    kickboxer: `Moje kopnięcia na korpus kończyły już lepszych od ${me}.`,
+    brawler: `Nie będę biegał. Staniemy na środku i zobaczymy, kto ma twardszą szczękę.`,
+    allround: `Jestem lepszy wszędzie: w stójce, w parterze i w głowie.`,
   };
+  if (style && STYLE_Q[style])
+    opts.push({ id: 'style', question: `${n}: „${STYLE_Q[style]}”`, labels: L(['„Zobaczymy w klatce”', 'Nie dajesz się wciągnąć w gierki.'], [`Wyśmiewasz jego ${STYLE_LABELS[style].toLowerCase()}`, 'Trafiasz w jego dumę. Może zacząć walczyć na złość.'], ['Zapraszasz go na środek sceny', 'Face to face nos w nos. Sekundanci muszą was rozdzielać.']), provoke: 0.6, insult: 0.42 });
+  if (o.opp.country && o.opp.country !== 'Polska')
+    opts.push({ id: 'foreign', question: `${n}: „Przyjechałem do Polski zabrać to zwycięstwo do domu. ${me} to tylko przystanek.”`, labels: L(['Witasz go w Polsce', 'Gościnnie, ale stanowczo. Kibice to lubią.'], ['„Bilet powrotny kupiłeś?”', 'Riposta pod polską publikę.'], ['Podgrzewasz kibiców przeciw niemu', 'Hala będzie gwizdać przez całą walkę. Albo go to złamie, albo nakręci.']), provoke: 0.62, insult: 0.45 });
+  if (o.opp.age >= 33 && s.age <= 26)
+    opts.push({ id: 'veteran', question: `${n}: „Ten dzieciak nosił pieluchy, kiedy ja walczyłem o pierwszy pas.”`, labels: L(['„Szacunek dla doświadczenia”', 'Uczeń mówi o mistrzu. Ładnie wygląda w telewizji.'], ['„Dlatego czas na emeryturę”', 'Przypominasz mu jego wiek. Boli każdego weterana.'], ['Przynosisz mu laskę', 'Rekwizyt na konferencję. Śmiech na sali albo kara.']), provoke: 0.62, insult: 0.42 });
+  if (o.opp.age <= 23 && s.age >= 30)
+    opts.push({ id: 'young', question: `${n}: „Najlepsze lata ${me} już minęły. Czas zrobić miejsce młodym.”`, labels: L(['„Jeszcze się nauczysz”', 'Spokój weterana. Kibice to szanują.'], ['„Ucz się, dopóki możesz”', 'Lekcja dla młodego. Może go wytrącić z rytmu.'], ['Robisz z niego dzieciaka', 'Poklepujesz go po głowie przy kamerach. Wściekłość gwarantowana.']), provoke: 0.62, insult: 0.44 });
+  opts.push({ id: 'default', question: `${n} na face to face: „${o.pressQuote ?? ''}”`, labels: L(['Spokojnie i z klasą', 'Szacunek, zero emocji. Kibice cenią.'], ['Odbijasz piłeczkę', 'Ostra riposta. Może wyprowadzić go z równowagi albo ciebie.'], ['Jedziesz po bandzie', 'Zasięgi gwarantowane. Federacja może ukarać, a nerwy mogą puścić.']), provoke: 0.6, insult: 0.4 });
+  return pick(opts);
 }
 
 export function pressAnswer(s0: GameState, key: PressAnswer): GameState {
@@ -2797,8 +2919,10 @@ function buildPost(rng: Rng, s: GameState, rep: FightReport): PostFight | null {
   return null;
 }
 
-export function prepCost(_s: GameState, o: FightOffer): number {
-  return Math.max(1000, Math.round((o.purse * 0.35) / 100) * 100);
+export function prepCost(s: GameState, o: FightOffer): number {
+  // sparingpartnerzy w stylu rywala i analityk: realnie kilka do kilkudziesięciu tysięcy na obóz
+  const cap = [1000, 2500, 8000, 18000, 40000][s.tier] ?? 8000;
+  return Math.round(clamp(o.purse * 0.15, 800, cap) / 100) * 100;
 }
 
 export function acceptOffer(s0: GameState, prep: 'std' | 'rival' | 'hard' = 'std', tickets: TicketPlan = 'std'): GameState {
@@ -2811,10 +2935,12 @@ export function acceptOffer(s0: GameState, prep: 'std' | 'rival' | 'hard' = 'std
   // zastępstwo to walka ponad plan
   if (o.short || o.abroad) s.run!.planned += 1;
   s.run!.offer = null;
-  if (pressEligible(o) && !s.run!.autoAccept) {
+  const bigPress = !!(o.title || o.rival || o.superfight || o.opp.freak || o.nemesis || o.farewell);
+  const lastHadPress = s.run!.fights[s.run!.fights.length - 1]?.pressMod !== undefined;
+  if (pressEligible(o) && !s.run!.autoAccept && (bigPress || (!lastHadPress && (s.run!.fights.length + s.season) % 2 === 0))) {
     withRng(s, (rng) => {
       o.pressQuote = rng.pick(PRESS_QUOTES).replace('{n}', s.profile.lastName);
-      o.pressCtx = pressContext(s, o);
+      o.pressCtx = pressContext(s, o, rng);
     });
     s.run!.press = o;
     return s;
@@ -2988,6 +3114,8 @@ function updateRank(s: GameState, rep: FightReport) {
     if (res === 'W') {
       s.flags.superDone = (s.flags.superDone ?? 0) + 1;
       s.flags.doubleChamp = 1;
+      // drugi pas trzymasz, dopóki bronisz swojego; po roku federacja każe wybrać kategorię
+      s.flags.doubleActive = s.season;
       const name = `${BELT_NAMES[s.tier]} wagi ${rep.superfight} (superfight)`;
       s.belts.push({ name, season: s.season, age: s.age });
       log(s, `👑 Podwójny mistrz! Superfight wygrany z ${opp.firstName} ${opp.lastName} (w wadze ${rep.superfight}).`);
@@ -3041,6 +3169,7 @@ function updateRank(s: GameState, rep: FightReport) {
       }
     } else {
       s.rank = 1;
+      s.flags.doubleActive = 0;
       log(s, `Pas stracony. Nowy mistrz: ${opp.firstName} ${opp.lastName}.`);
     }
     return;
@@ -3084,12 +3213,12 @@ function nemesisAfterFight(s: GameState, rep: FightReport, rf: RosterFighter, re
       if (rf.h2h.w >= rf.h2h.l) {
         s.nemesis = null;
         s.flags.nemesisSettled = (s.flags.nemesisSettled ?? 0) + 1;
-        rep.moments.push({ round: rep.round, title: 'Rachunki wyrównane', text: `${opp.firstName} ${opp.lastName} leży, a ty patrzysz mu w oczy. Bilans ${rf.h2h.w}-${rf.h2h.l}. Zadra wyjęta, kibice to pamiętają.`, tone: 'good' });
+        rep.moments.push({ round: rep.round, title: 'Rachunki wyrównane', text: `${opp.firstName} ${opp.lastName} leży, a ty patrzysz mu w oczy. Teraz ${h2hWords(rf.h2h.w, rf.h2h.l)}. Zadra wyjęta, kibice to pamiętają.`, tone: 'good' });
       } else
-        rep.moments.push({ round: rep.round, title: 'Zadra', text: `Wygrana z rywalem, który zalazł ci za skórę. Bilans ${rf.h2h.w}-${rf.h2h.l}, jeszcze jedna i rachunki wyrównane.`, tone: 'good' });
+        rep.moments.push({ round: rep.round, title: 'Zadra', text: `Wygrana z rywalem, który zalazł ci za skórę. Teraz ${h2hWords(rf.h2h.w, rf.h2h.l)}, jeszcze jedna i rachunki wyrównane.`, tone: 'good' });
     } else if (res === 'L') {
       s.media = clamp(s.media + 1, 0, 100);
-      rep.moments.push({ round: rep.round, title: 'Zadra', text: `${opp.lastName} znowu górą. Bilans ${rf.h2h.w}-${rf.h2h.l}. W mediach śmieje się, że ma cię „w kieszeni”.`, tone: 'bad' });
+      rep.moments.push({ round: rep.round, title: 'Zadra', text: `${opp.lastName} znowu górą: ${h2hWords(rf.h2h.w, rf.h2h.l)}. W mediach śmieje się, że ma cię „w kieszeni”.`, tone: 'bad' });
     }
     return;
   }
@@ -3318,7 +3447,7 @@ function finalizeFight(rng: Rng, s: GameState, rep: FightReport) {
         rep.moments.unshift({
           round: 0,
           title: 'Odwieczny rywal',
-          text: `${p.firstName} ${p.lastName}. Wasz bilans przed walką: ${p.h2h.w - (res === 'W' ? 1 : 0)}-${p.h2h.l - (res === 'L' ? 1 : 0)}. Hala jest pełna, bo wszyscy wiedzą, że tu nie chodzi tylko o ranking.`,
+          text: `${p.firstName} ${p.lastName}. Przed walką ${h2hWords(p.h2h.w - (res === 'W' ? 1 : 0), p.h2h.l - (res === 'L' ? 1 : 0))}. Hala jest pełna, bo wszyscy wiedzą, że tu nie chodzi tylko o ranking.`,
           tone: 'purple',
         });
       else if (p.metCount === 1)
@@ -3339,9 +3468,9 @@ function finalizeFight(rng: Rng, s: GameState, rep: FightReport) {
     const lines: Record<string, string[]> = {
       'W:Decyzja jednogłośna': [
         `Kontrolowałeś walkę od początku do końca. Sędziowie nie mieli wątpliwości, ${n} chyba też nie.`,
-        'Bez fajerwerków, ale pewnie. Każda runda twoja.',
+        'Bez fajerwerków, ale pewnie. Sędziowie zgodni co do zwycięzcy.',
         `${n} do końca szukał jednego ciosu. Nie znalazł.`,
-        'Trzy rundy, trzy razy 10-9. Trener kiwa głową, czyli jest zadowolony.',
+        'Trzech sędziów, trzy karty po twojej stronie. Trener kiwa głową, czyli jest zadowolony.',
         `${n} po walce mówi, że następnym razem będzie inaczej. Każdy tak mówi.`,
         'Wygrana na kartach. Nie najładniejsza, ale do rekordu się liczy.',
       ],
@@ -3466,7 +3595,11 @@ function headlineFor(rep: FightReport): string {
 // Podsumowanie roku
 // ---------------------------------------------------------------------------
 
-const fmtK = (n: number) => `${n >= 0 ? '+' : '−'}${Math.abs(Math.round(n / 1000)).toLocaleString('pl-PL')} tys. zł`;
+const fmtK = (n: number) => {
+  const a = Math.abs(n);
+  const v = a >= 1e6 ? `${(a / 1e6).toLocaleString('pl-PL', { maximumFractionDigits: 2 })} mln zł` : `${Math.round(a / 1000).toLocaleString('pl-PL')} tys. zł`;
+  return `${n >= 0 ? '+' : '−'}${v}`;
+};
 
 // ---------------------------------------------------------------------------
 // Cel roku od federacji: wybierasz jeden z trzech, nagroda po roku
@@ -3585,7 +3718,7 @@ export function toSummary(s0: GameState): GameState {
   const d = fights.filter((f) => f.result === 'D').length;
   const total = Math.max(1, w + l + d);
   const moneyDelta = s.money - (s.flags.moneyStart ?? run.startMoney);
-  const beltWon = fights.some((f) => f.title && !f.defense && !f.interim && f.result === 'W') || (run.tourneys ?? []).some((t) => t.championship && t.medal === 'gold');
+  const beltWon = fights.some((f) => ((f.title && !f.defense && !f.interim) || f.superfight) && f.result === 'W') || (run.tourneys ?? []).some((t) => t.championship && t.medal === 'gold');
   const amateur = !!run.tourneys;
 
   const winPct = w / total;
@@ -3598,7 +3731,7 @@ export function toSummary(s0: GameState): GameState {
       value: overPct,
       note: overPct >= 62 ? 'lepiej, niż wskazywał poziom' : overPct >= 40 ? 'mniej więcej tyle, ile się dało' : 'poniżej możliwości',
     },
-    { label: 'Pieniądze', value: Math.round(clamp(50 + (moneyDelta / Math.max(5000, TIER_PURSE[s.tier][1] * 2)) * 60, 5, 100)), note: fmtK(moneyDelta) },
+    { label: 'Bilans kasy', value: Math.round(clamp(50 + (moneyDelta / Math.max(5000, TIER_PURSE[s.tier][1] * 2)) * 60, 5, 100)), note: `${fmtK(moneyDelta)} po kosztach` },
     { label: 'Forma', value: Math.round(clamp(50 + run.form.mod * 5, 5, 100)), note: run.form.label.toLowerCase() },
   ];
   const medalPts = (run.tourneys ?? []).reduce((a, t) => a + (t.medal === 'gold' ? 14 : t.medal === 'silver' ? 8 : t.medal === 'bronze' ? 5 : 0), 0);
@@ -3652,6 +3785,9 @@ export function toSummary(s0: GameState): GameState {
     champion: s.rank === 0,
     beltWon,
     moneyDelta,
+    moneyFights: fights.reduce((a, f) => a + (f.earned ?? 0), 0),
+    legacyFrom: s.flags.legacyPrev ?? 0,
+    legacyTo: legacyScore(s),
     ovrFrom: s.flags.ovrStart ?? run.startOvr,
     ovrTo: ovr(s.stats),
     form: run.form.label,
@@ -3662,6 +3798,7 @@ export function toSummary(s0: GameState): GameState {
   };
   s.seasons.push(summary);
   s.lastSummary = summary;
+  s.flags.legacyPrev = summary.legacyTo ?? 0;
   s.phase = 'summary';
   withRng(s, (rng) => {
     for (const p of s.peers) progressPeer(rng, p);
@@ -3684,6 +3821,12 @@ export function toSummary(s0: GameState): GameState {
 // ---------------------------------------------------------------------------
 
 function ageOneYear(rng: Rng, s: GameState) {
+  // podwójny mistrz: po pełnym roku drugi pas zostaje zwolniony (nie da się bronić dwóch kategorii naraz)
+  if ((s.flags.doubleActive ?? 0) > 0 && s.season - s.flags.doubleActive >= 1) {
+    s.flags.doubleActive = 0;
+    log(s, 'Federacja każe wybrać kategorię. Zwalniasz drugi pas, zostajesz przy swoim.');
+  }
+  if (s.rank !== 0) s.flags.doubleActive = 0;
   s.age += 1;
   s.season += 1;
   s.year += 1;
@@ -3767,16 +3910,22 @@ export function checkEnd(s: GameState): string | null {
 // Rynek
 // ---------------------------------------------------------------------------
 
-function contractFor(rng: Rng, s: GameState, tier: number, kind: Contract['kind'], startRank: number | null): Contract {
+/** Gaża za walkę z kontraktu: szczebel, pozycja w rankingu (rk 0..1, mistrz 1.2), federacja i mnożnik (media, trudność). */
+export function contractPurse(tier: number, fed: string, rk: number, mult: number) {
   const [lo, hi] = TIER_PURSE[tier];
+  const excl = isExclusiveFed(fed);
+  return Math.round(((lo + (hi - lo) * Math.max(0, rk) ** 1.6) * fedPay(fed) * mult * (excl ? EXCLUSIVE_BONUS : 1)) / 500) * 500;
+}
+
+function contractFor(rng: Rng, s: GameState, tier: number, kind: Contract['kind'], startRank: number | null): Contract {
   const rk = startRank === null ? 0 : startRank === 0 ? 1.2 : 1 - startRank / (RANK_SIZE[tier] + 1);
-  const mediaF = 1 + s.media / 120;
+  const mediaF = 1 + s.media / 200;
   const hard = s.profile.difficulty === 'hard' ? 0.85 : 1;
   const stigma = kind !== 'freak' && (s.flags.freakStigma ?? 0) > 0 ? 0.8 : 1;
   const fed = tier === s.tier && kind === 'stay' ? s.fed : fedFor(rng, tier, s.profile.region);
   // wyłączność: gala płaci trochę więcej, ale nie puszcza na inne gale
   const excl = kind !== 'freak' && isExclusiveFed(fed);
-  const purse = Math.round(((lo + (hi - lo) * Math.max(0, rk) ** 1.6) * mediaF * hard * stigma * (excl ? EXCLUSIVE_BONUS : 1)) / 500) * 500;
+  const purse = contractPurse(tier, fed, rk, mediaF * hard * stigma);
   return {
     id: uid(rng, 'k'),
     tier,
@@ -3786,7 +3935,7 @@ function contractFor(rng: Rng, s: GameState, tier: number, kind: Contract['kind'
     seasons: tier >= 2 ? rng.int(1, 2) : 1,
     fights: TIER_FIGHTS[tier],
     purse,
-    winBonus: tier === 0 ? 0 : Math.round(purse * 0.7),
+    winBonus: tier === 0 ? 0 : Math.round(purse * winRatio(tier, fed)),
     entryCost: TIER_ENTRY[tier],
     startRank,
     note: '',
@@ -3850,7 +3999,7 @@ export function buildMarket(rng: Rng, s: GameState) {
       const boost = amChamp ? 1.35 : medals >= 3 ? 1.2 : 1;
       if (boost > 1) {
         c.purse = Math.round((c.purse * boost) / 100) * 100;
-        c.winBonus = Math.round(c.purse * 0.7);
+        c.winBonus = Math.round(c.purse * winRatio(c.tier, c.fed));
         c.note += amChamp ? ' Mistrz Polski amatorów: organizator płaci więcej i od razu stawia cię wyżej w karcie.' : ` ${medals} medali w amatorce robi wrażenie: organizator dokłada do gaży.`;
       }
     } else {
@@ -3900,13 +4049,17 @@ export function buildMarket(rng: Rng, s: GameState) {
   if (s.tier >= 3 && !cut && rng.chance(s.rank !== null && s.rank <= 8 ? 0.6 : 0.35)) {
     const others = TIER_FEDS[s.tier].filter((f) => f !== s.fed && !contracts.some((c) => c.fed === f));
     if (others.length) {
-      const sr = s.rank === null ? null : clamp(s.rank + rng.int(-2, 3), 1, RANK_SIZE[s.tier]);
+      const hot = proStreak(s) >= 6 ? 3 : proStreak(s) >= 4 ? 1 : 0;
+      const sr = s.rank === null ? (hot ? RANK_SIZE[s.tier] - 2 * hot : null) : clamp(s.rank + rng.int(-2, 3) - hot, 1, RANK_SIZE[s.tier]);
       const c = contractFor(rng, s, s.tier, 'side', sr === 0 ? 1 : sr);
       const wasExcl = !!c.exclusive;
+      void wasExcl;
       c.fed = rng.pick(others);
       c.exclusive = isExclusiveFed(c.fed) || undefined;
-      c.purse = Math.round(((c.purse / (wasExcl ? EXCLUSIVE_BONUS : 1)) * (c.exclusive ? EXCLUSIVE_BONUS : 1) * (1 + rng.next() * 0.25)) / 500) * 500;
-      c.winBonus = Math.round(c.purse * 0.7);
+      // nowa federacja liczy po swoich stawkach; za przejście dokłada najwyżej kilkanaście procent
+      const rkT = sr === null ? 0 : 1 - sr / (RANK_SIZE[s.tier] + 1);
+      c.purse = Math.round((contractPurse(s.tier, c.fed, rkT, (1 + s.media / 200) * (s.profile.difficulty === 'hard' ? 0.85 : 1)) * (1 + rng.next() * 0.15)) / 500) * 500;
+      c.winBonus = Math.round(c.purse * winRatio(s.tier, c.fed));
       c.note = `Transfer: ${sr === null ? 'zaczynasz bez rankingu' : `startujesz z miejsca #${sr}`}. ${FED_NOTES[c.fed] ?? 'Nowa federacja, nowi rywale.'}`;
       contracts.push(c);
     }
@@ -3943,7 +4096,13 @@ export function buildMarket(rng: Rng, s: GameState) {
   if (s.tier >= 1 && (s.media >= 28 || rng.chance(0.1)) && rng.chance(s.freakFights > 0 ? 0.35 : 0.45)) {
     // im więcej freak fightów, tym mniej płacą (widownia się nudzi)
     const fatigue = Math.pow(0.75, s.flags.freakSeasons ?? 0);
-    const purse = Math.round(((20000 + s.media * s.media * 28 + rng.int(0, 20000)) * fatigue) / 1000) * 1000;
+    // gwiazda freak fightów zarabia jak headliner największych gal internetowych (setki tysięcy za walkę);
+    // poniżej światowej federacji freak zawsze płaci wyraźnie więcej niż sport, bo inaczej nikt by nie poszedł
+    const fans = (s.followers ?? 0) / 1000;
+    let purse = (30000 + s.media * s.media * 40 + Math.min(300000, fans * 300) + rng.int(0, 20000)) * fatigue;
+    if (s.tier <= 3) purse = Math.max(purse, s.contract.purse * (1.5 + rng.next() * 0.4));
+    purse = Math.round(purse / 1000) * 1000;
+    const lessThanSport = purse < s.contract.purse;
     contracts.push({
       id: uid(rng, 'k'),
       tier: s.tier,
@@ -3956,9 +4115,11 @@ export function buildMarket(rng: Rng, s: GameState) {
       entryCost: 0,
       startRank: null,
       note:
-        (s.flags.freakSeasons ?? 0) > 0
-          ? 'Znowu cyrk. Widownia już cię zna, więc płacą mniej niż ostatnio.'
-          : 'Raperzy, youtuberzy i celebryci. Kasa duża, ale sportowo to rok w plecy.',
+        lessThanSport
+          ? 'Raperzy, youtuberzy i celebryci. Płacą mniej niż twoja federacja, więc to raczej zabawa i zasięgi niż interes. Sportowo rok w plecy.'
+          : (s.flags.freakSeasons ?? 0) > 0
+            ? 'Znowu cyrk. Widownia już cię zna, więc płacą mniej niż ostatnio, ale wciąż więcej niż sport.'
+            : 'Raperzy, youtuberzy i celebryci. Płacą dużo więcej niż sport, ale sportowo to rok w plecy.',
       available: true,
     });
   }
@@ -4065,7 +4226,7 @@ export const CONTRACT_ASKS: { id: ContractAsk; label: string; desc: string }[] =
 
 export function contractNegoChance(s: GameState, c: Contract, ask: ContractAsk): number {
   const mg = currentManager(s);
-  let ch = 35 + (mg?.negotiate ?? 0) + s.media / 4 + Math.max(0, s.streak) * 3 + (followersOf(s) >= 50000 ? 5 : 0) - c.tier * 4;
+  let ch = 35 + (mg?.negotiate ?? 0) + s.media / 4 + repNego(s) + Math.max(0, s.streak) * 3 + (followersOf(s) >= 50000 ? 5 : 0) - c.tier * 4;
   if (c.kind === 'promotion' && s.rank !== null && s.rank <= 2) ch += 10;
   if (c.kind === 'freak') ch += 10;
   if (ask === 'bonus') ch += 12;
@@ -4109,7 +4270,7 @@ export function setJob(s0: GameState, job: JobMode | undefined): GameState {
   return s;
 }
 
-// Fundacja: duże pieniądze zamieniasz na dobre imię (reputacja i LEGACY), raz na rok
+// Fundacja: duże pieniądze zamieniasz na dobre imię (reputacja i dorobek), raz na rok
 export const DONATIONS = [100000, 300000, 1000000];
 export function foundationOpen(s: GameState) {
   return s.tier >= 3 || s.money >= 250000;
@@ -4358,8 +4519,8 @@ export function syncRival(rng: Rng, s: GameState): string | null {
   if (rv.retired) {
     if (s.flags.rivalGone) return null;
     s.flags.rivalGone = 1;
-    log(s, `${rv.firstName} ${rv.lastName} kończy karierę. Wasz bilans: ${rv.h2h.w}-${rv.h2h.l}.`);
-    return `${rv.lastName} ogłasza koniec kariery. Wasz bilans zostaje na zawsze: ${rv.h2h.w}-${rv.h2h.l}${rv.h2h.d ? `-${rv.h2h.d}` : ''}.`;
+    log(s, `${rv.firstName} ${rv.lastName} kończy karierę (${h2hWords(rv.h2h.w, rv.h2h.l, rv.h2h.d)}).`);
+    return `${rv.lastName} ogłasza koniec kariery. Na zawsze zostaje tak, że ${h2hWords(rv.h2h.w, rv.h2h.l, rv.h2h.d)}.`;
   }
   const before = rv.tier;
   // rywal nie odstaje za bardzo: ten sam rocznik, podobna droga
@@ -4705,4 +4866,59 @@ export function chooseAfter(s0: GameState, key: string): GameState {
   const s = clone(s0);
   s.ending!.after = key;
   return s;
+}
+
+// ---------------------------------------------------------------------------
+// Media, reputacja, rodzina: co realnie dają (silnik i opis na karcie zawodnika)
+// ---------------------------------------------------------------------------
+
+/** Reputacja w negocjacjach: promotorzy chętniej dokładają komuś, kogo szanuje środowisko. */
+export function repNego(s: GameState): number {
+  return Math.round((s.rep - 40) / 4);
+}
+/** Rodzina: dobre relacje to spokojna głowa na start roku, złe to kłopoty. */
+export function familyForm(s: GameState): number {
+  return s.relations >= 6 ? 1 : s.relations <= -2 ? -1 : 0;
+}
+
+export interface PointEffect {
+  key: 'media' | 'rep' | 'family';
+  label: string;
+  value: number;
+  /** pasek 0..100 (rodzina przeskalowana) */
+  bar: number;
+  lines: string[];
+}
+
+export function pointEffects(s: GameState): PointEffect[] {
+  const mediaPurse = Math.round((s.media / 200) * 100);
+  const sponsorP = Math.round(clamp((s.media * 0.8 + s.rep * 0.6) / 120, 0.08, 0.75) * 100);
+  const rn = repNego(s);
+  const fam = familyForm(s);
+  const media: string[] = [
+    `gaże z kontraktów +${mediaPurse}%`,
+    `szansa na nowego sponsora co rok: ${sponsorP}%`,
+    s.media >= 28 ? 'dostajesz oferty freak fightów' : 'freak fighty od 28 punktów',
+    s.media >= 35 ? 'zaproszenia do filmu i reklam' : 'film i reklamy od 35 punktów',
+  ];
+  const rep: string[] = [
+    `negocjacje gaży i kontraktów: ${rn >= 0 ? '+' : ''}${rn} pkt szansy`,
+    s.tier >= 2 ? (s.rep >= 18 ? 'Europa i świat chcą cię oglądać (próg 18)' : 'za mała, żeby wyjść do Europy (potrzeba 18)') : 'od 18 punktów otwiera się Europa',
+    'razem z mediami przyciąga sponsorów',
+  ];
+  const family: string[] = [
+    fam > 0 ? 'forma +1 na start każdego roku' : fam < 0 ? 'forma −1 na start każdego roku' : 'od 6 punktów: forma +1 na start roku (poniżej −1: kara)',
+    s.relations >= 3 ? 'bliscy kupują bilety i ściągają znajomych' : 'od 3 punktów bliscy pomagają sprzedawać bilety',
+  ];
+  if (s.age < 19) family.push(s.relations >= 3 ? 'rodzice dokładają do budżetu' : 'od 3 punktów rodzice dokładają do budżetu');
+  return [
+    { key: 'media', label: 'Media', value: s.media, bar: s.media, lines: media },
+    { key: 'rep', label: 'Reputacja', value: s.rep, bar: s.rep, lines: rep },
+    { key: 'family', label: 'Rodzina', value: s.relations, bar: clamp(50 + s.relations * 5, 0, 100), lines: family },
+  ];
+}
+
+/** Czy gracz trzyma teraz dwa pasy (po wygranym superfighcie). */
+export function isDoubleChamp(s: GameState): boolean {
+  return (s.flags.doubleActive ?? 0) > 0 && s.rank === 0 && s.tier > 0;
 }

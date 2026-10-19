@@ -1,3 +1,4 @@
+import { cash } from './events_money';
 // Dodatkowe zdarzenia losowe: więcej smaczków ze świata MMA (wszystko fikcyjne, z przymrużeniem oka).
 import type { EventDef } from './events';
 import type { GameState } from './types';
@@ -135,9 +136,9 @@ export const EXTRA_EVENTS: EventDef[] = [
         'Waga pokazuje 1,8 kg za dużo. Kolega z klubu proponuje „sprawdzony sposób”: wanna z gorącą wodą i sól Epsom.',
         'Do ważenia zostało 12 godzin, a ty dalej jesteś ponad limitem. Dietetyk nie odbiera telefonu.',
       ]),
-    choices: () => [
+    choices: (s) => [
       { label: 'Zbijasz do końca', desc: 'Ważysz się na styk, potem nawadniasz.', chance: 65, success: { form: 1, note: 'waga zrobiona' }, fail: { form: -4, wear: 2, note: 'zbijanie cię wypompowało' }, successText: 'Równo na limicie. Po ważeniu pijesz trzy litry wody i czujesz się jak nowy.', failText: 'Wchodzisz na wagę na styk, ale wieczorem ledwo stoisz. Organizm pamięta takie rzeczy.' },
-      { label: 'Płacisz karę za wagę', desc: 'Część gaży idzie do rywala.', effects: { money: -1500, rep: -1, form: 1 } },
+      { label: 'Płacisz karę za wagę', desc: 'Część gaży idzie do rywala.', effects: { money: -Math.max(1000, Math.round((s.contract.purse * 0.2) / 100) * 100), rep: -1, form: 1 } },
     ],
   },
   {
@@ -200,8 +201,8 @@ export const EXTRA_EVENTS: EventDef[] = [
     weight: 4,
     cond: (s) => s.tier >= 2 && s.media >= 15,
     text: () => 'Kolega montażysta namawia cię na własny kanał: vlogi z obozu, „dzień z życia zawodnika”, unboxing rękawic.',
-    choices: () => [
-      { label: 'Zakładasz kanał', desc: 'Kamera wszędzie, nawet w saunie.', effects: { media: 5, form: -1, money: 2000, note: 'pierwszy film: 40 tys. wyświetleń' } },
+    choices: (s) => [
+      { label: 'Zakładasz kanał', desc: 'Kamera wszędzie, nawet w saunie.', effects: { media: 5, form: -1, money: cash(s, 0.02, 1500), note: 'pierwszy film: 40 tys. wyświetleń' } },
       { label: 'Nie masz na to głowy', desc: 'Trenujesz, nie nagrywasz.', effects: { form: 1 } },
     ],
   },
@@ -228,8 +229,8 @@ export const EXTRA_EVENTS: EventDef[] = [
     weight: 3,
     cond: (s) => s.tier >= 2 && s.media >= 25,
     text: () => 'Organizator proponuje ci wejście z pirotechniką, ogniem i chórem gregoriańskim. Za dopłatą z twojej gaży.',
-    choices: () => [
-      { label: 'Ogień i chór', desc: 'Raz się żyje.', effects: { money: -4000, media: 5, note: 'wejście roku' } },
+    choices: (s) => [
+      { label: 'Ogień i chór', desc: 'Raz się żyje.', effects: { money: -cash(s, 0.02, 3000), media: 5, note: 'wejście roku' } },
       { label: 'Wchodzisz po cichu', desc: 'Kaptur na głowę i do klatki.', effects: { rep: 1 } },
     ],
   },
@@ -240,8 +241,8 @@ export const EXTRA_EVENTS: EventDef[] = [
     weight: 3,
     cond: (s) => s.tier >= 2 && s.media >= 30,
     text: () => 'Sieć sklepów z elektronarzędziami chce cię do reklamy. Scenariusz: wiercisz dziurę w ścianie jednym ciosem.',
-    choices: () => [
-      { label: 'Kręcisz reklamę', desc: 'Trzy dni na planie, osiem dubli z wiertarką.', effects: { money: 15000, media: 4, form: -1 } },
+    choices: (s) => [
+      { label: 'Kręcisz reklamę', desc: 'Trzy dni na planie, osiem dubli z wiertarką.', effects: { money: cash(s, 0.08, 12000), media: 4, form: -1 } },
       { label: 'Odmawiasz', desc: 'Nie jesteś aktorem.', effects: { rep: 1 } },
     ],
   },
@@ -263,8 +264,8 @@ export const EXTRA_EVENTS: EventDef[] = [
     weight: 3,
     cond: (s) => s.tier >= 2,
     text: () => 'Start-up kryptowalutowy „PunchCoin” chce cię sponsorować. Płaci wyłącznie w swoich tokenach. Prezes ma 22 lata i jacht na zdjęciu profilowym.',
-    choices: () => [
-      { label: 'Bierzesz tokeny', desc: 'Może to przyszłość finansów.', chance: 30, success: { money: 25000, note: 'tokeny wystrzeliły' }, fail: { media: -1, note: 'tokeny warte tyle, co nic' }, successText: 'Po pół roku tokeny są warte dziesięć razy więcej. Sprzedajesz wszystko w dniu, w którym prezes zamyka konta.', failText: 'Tydzień po podpisaniu umowy strona PunchCoin znika. Na pamiątkę zostaje ci naszywka na spodenkach.' },
+    choices: (s) => [
+      { label: 'Bierzesz tokeny', desc: 'Może to przyszłość finansów.', chance: 30, success: { money: cash(s, 0.1, 20000), note: 'tokeny wystrzeliły' }, fail: { media: -1, note: 'tokeny warte tyle, co nic' }, successText: 'Po pół roku tokeny są warte dziesięć razy więcej. Sprzedajesz wszystko w dniu, w którym prezes zamyka konta.', failText: 'Tydzień po podpisaniu umowy strona PunchCoin znika. Na pamiątkę zostaje ci naszywka na spodenkach.' },
       { label: 'Prosisz o złotówki', desc: 'Prezes się obraża.', effects: { rep: 1 } },
     ],
   },
@@ -304,9 +305,9 @@ export const EXTRA_EVENTS: EventDef[] = [
     weight: 3,
     cond: (s) => s.tier >= 3,
     text: () => 'Federacja zaprasza cię na tydzień międzynarodowych walk w Las Vegas, żebyś pokazał się mediom. Kasyno jest na parterze hotelu.',
-    choices: () => [
+    choices: (s) => [
       { label: 'Tylko media i siłownia', desc: 'Wywiady, zdjęcia, trening.', effects: { media: 4, rep: 1 } },
-      { label: 'Jedna partyjka ruletki', desc: 'Na czerwone.', chance: 47, success: { money: 8000, media: 3, note: 'wypadło czerwone' }, fail: { money: -8000, note: 'wypadło zero' }, successText: 'Czerwone. Krupier gratuluje, a federacyjny fotograf ma zdjęcie dnia.', failText: 'Zero. Krupier wzrusza ramionami. Wracasz do pokoju i robisz sto pompek ze złości.' },
+      { label: 'Jedna partyjka ruletki', desc: 'Na czerwone.', chance: 47, success: { money: cash(s, 0.04, 6000), media: 3, note: 'wypadło czerwone' }, fail: { money: -cash(s, 0.04, 6000), note: 'wypadło zero' }, successText: 'Czerwone. Krupier gratuluje, a federacyjny fotograf ma zdjęcie dnia.', failText: 'Zero. Krupier wzrusza ramionami. Wracasz do pokoju i robisz sto pompek ze złości.' },
     ],
   },
   {
@@ -327,8 +328,8 @@ export const EXTRA_EVENTS: EventDef[] = [
     weight: 3,
     cond: (s) => s.tier >= 3,
     text: () => 'Druga w nocy, dzwoni menedżer: rywal z main eventu wypadł, organizator pyta, czy wejdziesz za niego na wyższej wadze za dziesięć dni.',
-    choices: () => [
-      { label: 'Wchodzisz', desc: 'Takie szanse się nie powtarzają.', chance: 55, success: { money: 30000, media: 6, rep: 2, note: 'bohater wieczoru' }, fail: { money: 12000, wear: 4, form: -2, note: 'za ciężki rywal' }, successText: 'Wchodzisz na dziesięć dni przed galą i robisz najlepszą walkę wieczoru. Prezes federacji osobiście ściska ci rękę.', failText: 'Rywal jest o klasę cięższy. Przetrwałeś do końca, ale ciało pamięta każdą rundę.' },
+    choices: (s) => [
+      { label: 'Wchodzisz', desc: 'Takie szanse się nie powtarzają.', chance: 55, success: { money: cash(s, 0.12, 25000), media: 6, rep: 2, note: 'bohater wieczoru' }, fail: { money: cash(s, 0.05, 10000), wear: 4, form: -2, note: 'za ciężki rywal' }, successText: 'Wchodzisz na dziesięć dni przed galą i robisz najlepszą walkę wieczoru. Prezes federacji osobiście ściska ci rękę.', failText: 'Rywal jest o klasę cięższy. Przetrwałeś do końca, ale ciało pamięta każdą rundę.' },
       { label: 'Odmawiasz', desc: 'Zostajesz przy swoim planie.', effects: { form: 1 } },
     ],
   },
@@ -339,8 +340,8 @@ export const EXTRA_EVENTS: EventDef[] = [
     weight: 2,
     cond: (s) => s.tier >= 3 && s.media >= 45,
     text: () => 'Reżyser filmu akcji szuka „groźnego Słowianina” do roli trzeciego ochroniarza złoczyńcy. Masz jedną kwestię: „Nie przejdziesz”.',
-    choices: () => [
-      { label: 'Grasz', desc: 'Dwa tygodnie na planie w Budapeszcie.', effects: { money: 20000, media: 6, form: -2, note: '„Nie przejdziesz”' } },
+    choices: (s) => [
+      { label: 'Grasz', desc: 'Dwa tygodnie na planie w Budapeszcie.', effects: { money: cash(s, 0.1, 15000), media: 6, form: -2, note: '„Nie przejdziesz”' } },
       { label: 'Odmawiasz', desc: 'Kariera w klatce jest ważniejsza.', effects: { rep: 1, form: 1 } },
     ],
   },
@@ -351,9 +352,9 @@ export const EXTRA_EVENTS: EventDef[] = [
     weight: 3,
     cond: (s) => s.tier >= 3 && s.age >= 25,
     text: () => 'Pierwszy trener zaprasza cię do starego klubu. Dzieciaki ustawiają się w kolejce do zdjęć, a na ścianie wisi twoje zdjęcie z pierwszego turnieju.',
-    choices: () => [
+    choices: (s) => [
       { label: 'Prowadzisz trening', desc: 'Dwie godziny z dzieciakami.', effects: { rep: 3, relations: 1, media: 1 } },
-      { label: 'Fundujesz nowe maty', desc: 'Stare pamiętają jeszcze ciebie.', effects: { money: -6000, rep: 4, media: 2 } },
+      { label: 'Fundujesz nowe maty', desc: 'Stare pamiętają jeszcze ciebie.', effects: { money: -cash(s, 0.02, 4000), rep: 4, media: 2 } },
     ],
   },
 
@@ -459,9 +460,9 @@ export const EXTRA_EVENTS: EventDef[] = [
     weight: 2,
     cond: (s) => s.tier >= 2,
     text: () => 'O szóstej rano dzwonek do drzwi. Kontrola antydopingowa. Wczoraj wieczorem piłeś syrop na kaszel od babci.',
-    choices: () => [
+    choices: (s) => [
       { label: 'Zgłaszasz syrop w formularzu', desc: 'Lepiej powiedzieć wszystko.', effects: { rep: 1, note: 'wynik czysty' } },
-      { label: 'Nic nie mówisz', desc: 'To przecież tylko syrop.', chance: 85, success: { note: 'wynik czysty' }, fail: { rep: -6, money: -5000, note: 'wyjaśnienia trwały pół roku' }, successText: 'Wynik czysty. Babcia dumna, że jej syrop przeszedł kontrolę.', failText: 'Syrop zawierał coś z listy zakazanej. Wyjaśnienia trwają pół roku i kosztują fortunę.' },
+      { label: 'Nic nie mówisz', desc: 'To przecież tylko syrop.', chance: 85, success: { note: 'wynik czysty' }, fail: { rep: -6, money: -cash(s, 0.02, 3000), note: 'wyjaśnienia trwały pół roku' }, successText: 'Wynik czysty. Babcia dumna, że jej syrop przeszedł kontrolę.', failText: 'Syrop zawierał coś z listy zakazanej. Wyjaśnienia trwają pół roku i kosztują fortunę.' },
     ],
   },
   {

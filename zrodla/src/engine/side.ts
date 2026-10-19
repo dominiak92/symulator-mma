@@ -13,6 +13,9 @@ const SEMINAR_PAY = [0, 1500, 6000, 16000, 40000];
 const GRAPPLE1_PRIZE = [0, 4000, 12000, 30000, 70000];
 const KICK_PURSE = [0, 3500, 12000, 30000, 80000];
 const FILM_PAY = [0, 6000, 18000, 45000, 120000];
+const CAMP_FEE = [0, 2500, 6000, 15000, 30000];
+const PODCAST_PAY = [0, 500, 2000, 6000, 15000];
+const CELEB_PAY = [0, 8000, 25000, 60000, 140000];
 
 const GRAPPLING_NAMES = [
   ['Puchar Polski No-Gi', 'Grappling Open'],
@@ -30,6 +33,10 @@ export function inviteKinds(s: GameState): SideKind[] {
   if (s.tier >= 2 && s.stats.bjj >= 50) k.push('grapple1');
   if (s.tier >= 1) k.push('kick');
   if (s.media >= 35) k.push('film');
+  if (s.tier >= 2) k.push('camp');
+  k.push('charity');
+  if (s.media >= 15 || s.tier >= 2) k.push('podcast');
+  if (s.tier >= 2 && s.media >= 30) k.push('celebrity');
   return k;
 }
 
@@ -41,7 +48,7 @@ export function buildInvite(rng: Rng, s: GameState): SideInvite | null {
   const kinds = inviteKinds(s);
   if (!kinds.length) return null;
   // grappling najczęściej: to najbardziej naturalny dodatek do MMA
-  const W: Record<SideKind, number> = { grappling: 3, boxing: 2, kick: 1.5, seminar: 1.5, grapple1: 1.2, film: 1 };
+  const W: Record<SideKind, number> = { grappling: 3, boxing: 2, kick: 1.5, seminar: 1.6, grapple1: 1.2, film: 1, camp: 1.4, charity: 1.2, podcast: 1.4, celebrity: 0.9 };
   const kind = rng.weighted(kinds.map((k) => ({ item: k, w: W[k] })));
   const city = pickCity(rng, s);
   const t = s.tier;
@@ -87,6 +94,31 @@ export function buildInvite(rng: Rng, s: GameState): SideInvite | null {
       text: `Federacja kickboxingu robi galę w mieście ${city} i chce kogoś z MMA. Trzy rundy, ciosy, kopnięcia i kolana, bez obaleń. Kondycja i szczęka zostaną sprawdzone.`,
     };
   }
+  if (kind === 'camp') {
+    const who = rng.pick([
+      { t: 'Obóz zapaśniczy w Dagestanie', pl: 'Machaczkała', st: 'wrest' as StatKey, txt: 'Tydzień w górach u trenera, który wychował trzech mistrzów świata. Biegi pod górę o piątej rano i sparingi z chłopakami, którzy nie znają słowa „odpuść”.' },
+      { t: 'Tydzień w tajskim campie', pl: 'Phuket', st: 'stand' as StatKey, txt: 'Phuket, dwa treningi dziennie z byłymi mistrzami Lumpinee. Klincz, łokcie i tarcze w czterdziestostopniowym upale.' },
+      { t: 'Tydzień u legendy BJJ w Rio', pl: 'Rio de Janeiro', st: 'bjj' as StatKey, txt: 'Mata w Rio, czarne pasy na każdym rogu i trener, który pamięta pierwsze turnieje vale tudo. Każdy dzień kończy się czyimś duszeniem.' },
+      { t: 'Obóz kondycyjny w Alpach', pl: 'Alpy', st: 'cardio' as StatKey, txt: 'Trening na wysokości: rower, biegi i interwały w rozrzedzonym powietrzu. Płuca palą, ale serce będzie jak dzwon.' },
+    ]);
+    return { kind, title: who.t, place: who.pl, fee: CAMP_FEE[t], prize: 0, stat: who.st, text: `${who.txt} Bez walki, bez nagrody, tylko praca.` };
+  }
+  if (kind === 'charity') {
+    const ev = rng.pick([
+      { t: 'Gala charytatywna dla szpitala dziecięcego', txt: 'Pokazowa walka w rękawicach 16 uncji, licytacja twoich spodenek i zdjęcia z dzieciakami. Zero pieniędzy, za to dużo dobrego.' },
+      { t: 'Trening z dzieciakami z domu dziecka', txt: 'Sobota w sali gimnastycznej z trzydziestką dzieciaków. Pokazujesz podstawy, rozdajesz rękawice od Ground Game i słuchasz, jak jeden chce zostać „takim jak ty”.' },
+      { t: 'Bieg dla hospicjum', txt: 'Dziesięć kilometrów w koszulce z numerem i z kamerą lokalnej telewizji obok. Ludzie zbierają pieniądze za każdy twój kilometr.' },
+    ]);
+    return { kind, title: ev.t, place: pickCity(rng, s), fee: 0, prize: 0, text: ev.txt };
+  }
+  if (kind === 'podcast') {
+    const show = rng.pick(['„Po gongu”', '„Klatka bez cenzury”', '„Szatnia”', '„Rozmowy przy macie”']);
+    return { kind, title: `Podcast ${show}`, place: 'Warszawa', fee: 0, prize: PODCAST_PAY[t], text: `Trzy godziny rozmowy w podcaście ${show}. Prowadzący lubi dopytywać o rywali, pieniądze i kulisy federacji. Jedno nieostrożne zdanie i klip żyje własnym życiem.` };
+  }
+  if (kind === 'celebrity') {
+    const who = rng.pick(['raper z pierwszej trójki listy przebojów', 'aktor z serialu, który ma walczyć na gali freak fightów', 'piłkarz po karierze, który chce „spróbować MMA”', 'youtuber z dwoma milionami subskrypcji']);
+    return { kind, title: 'Trenujesz celebrytę', place: 'Warszawa', fee: 0, prize: Math.round((CELEB_PAY[t] * (1 + s.media / 150)) / 500) * 500, text: `Dzwoni menedżer: ${who} chce, żebyś przez miesiąc był jego trenerem personalnym. Kasa świetna, nagrania pójdą w internet, a w środowisku powiedzą, że uczysz cyrk.` };
+  }
   if (kind === 'film') {
     const role = rng.pick([
       { title: 'Rola w filmie akcji', text: 'Reżyser kina akcji szuka prawdziwego wojownika do roli ochroniarza głównego bohatera. Trzy dni na planie, jedna scena walki i kwestia do zapamiętania.' },
@@ -101,7 +133,11 @@ export function buildInvite(rng: Rng, s: GameState): SideInvite | null {
     place: city,
     fee: 0,
     prize: Math.round((SEMINAR_PAY[t] * (1 + s.media / 100)) / 500) * 500,
-    text: `Klub z miasta ${city} zaprasza cię na weekendowe seminarium. Pokazujesz swoje techniki, robisz zdjęcia z ludźmi i wracasz z kasą. Tylko że to weekend bez treningu tuż przed walką.`,
+    text: rng.pick([
+      `Klub z miasta ${city} zaprasza cię na weekendowe seminarium. Pokazujesz swoje techniki, robisz zdjęcia z ludźmi i wracasz z kasą. Tylko że to weekend bez treningu tuż przed walką.`,
+      `Sieć klubów z miasta ${city} robi zjazd zawodników i chce, żebyś poprowadził dwie godziny o swojej specjalności. Sala na sto osób już wyprzedana.`,
+      `Policja w mieście ${city} szuka instruktora na szkolenie z obezwładniania. Dzień z antyterrorystami, kawa z termosu i dobra kasa.`,
+    ]),
   };
 }
 
@@ -145,6 +181,42 @@ export function resolveInvite(rng: Rng, s: GameState, inv: SideInvite, form: num
       tone: 'good',
       win: true,
     };
+  }
+  if (inv.kind === 'camp') {
+    s.money -= inv.fee;
+    const st = inv.stat ?? 'wrest';
+    bump(s, st, 2);
+    s.potential[st] = clamp(s.potential[st] + 1, 1, 99);
+    s.wear = clamp(s.wear + 1, 0, 100);
+    const name = { stand: 'Stójka', wrest: 'Zapasy', bjj: 'Parter', cardio: 'Kondycja', chin: 'Szczęka', iq: 'Taktyka' }[st];
+    return { title: inv.title, lines: [`${name} +2, potencjał +1`, `Koszt: ${inv.fee.toLocaleString('pl-PL')} zł`, 'Zużycie +1'], text: 'Wracasz zmęczony jak nigdy, ale z rzeczami, których w swojej sali nie dałoby się nauczyć.', tone: 'purple', win: true };
+  }
+  if (inv.kind === 'charity') {
+    s.rep = clamp(s.rep + 4, 0, 100);
+    s.media = clamp(s.media + 2, 0, 100);
+    s.flags.charity = (s.flags.charity ?? 0) + 1;
+    return { title: inv.title, lines: ['Reputacja +4, media +2', 'Bez pieniędzy'], text: 'Zdjęcie z dzieciakami obiega lokalne media. Kilku sponsorów pisze, że „takich ludzi chcą wspierać”.', tone: 'good', win: true };
+  }
+  if (inv.kind === 'podcast') {
+    s.money += inv.prize;
+    s.totalEarned += inv.prize;
+    const gaffe = rng.chance(0.25);
+    s.media = clamp(s.media + (gaffe ? 4 : 2), 0, 100);
+    if (gaffe) s.rep = clamp(s.rep - 3, 0, 100);
+    return {
+      title: inv.title,
+      lines: [gaffe ? 'Media +4, reputacja −3 (klip z nieostrożnym zdaniem)' : 'Media +2', `Wypłata: ${inv.prize.toLocaleString('pl-PL')} zł`],
+      text: gaffe ? 'Po trzech godzinach mówisz o jedno zdanie za dużo o federacji. Klip ma pół miliona wyświetleń, a prezes nie odbiera od ciebie telefonu.' : 'Spokojna, mądra rozmowa. W komentarzach ludzie piszą, że nie spodziewali się takiej głowy po „zawodniku MMA”.',
+      tone: gaffe ? 'neutral' : 'good',
+      win: !gaffe,
+    };
+  }
+  if (inv.kind === 'celebrity') {
+    s.money += inv.prize;
+    s.totalEarned += inv.prize;
+    s.media = clamp(s.media + 3, 0, 100);
+    s.rep = clamp(s.rep - 2, 0, 100);
+    return { title: inv.title, lines: [`Wypłata: ${inv.prize.toLocaleString('pl-PL')} zł`, 'Media +3, reputacja −2'], text: 'Miesiąc treningów z kimś, kto po pięciu minutach siada na ławce. Nagrania mają miliony wyświetleń, a w twoim klubie nikt o tym nie rozmawia.', tone: 'good', win: true };
   }
   if (inv.kind === 'film') {
     s.money += inv.prize;

@@ -669,7 +669,7 @@ function buildDecisionRaw(rng: Rng, ctx: FightCtx, sim: FightSim): DecisionPoint
       options: [
         option('hurt_wrest', 'normal', 'Klincz i zapasy', 'Wiążesz go przy siatce i kupujesz czas.', 'wrest', me.wrest, op.wrest, base, 'przetrwasz i zabierzesz mu tempo', 'dalej obrywasz'),
         option('hurt_stand', 'risk', 'Wszystko na jedną kartę', 'Stajesz na środku i odpowiadasz bombami.', 'stand', me.stand, op.stand, base - 10, 'szansa na nokaut z niczego', 'możesz zgasnąć'),
-        safe('hurt_safe', 'Przeczekujesz rundę', 'Ruch na nogach, garda wysoko, oddech.', 'dochodzisz do siebie', 'runda dla niego', 'chin'),
+        safe('hurt_safe', 'Przeczekujesz rundę', 'Ruch na nogach, garda wysoko, oddech.', 'dochodzisz do siebie', 'oddajesz mu inicjatywę', 'chin'),
       ],
     };
   }
@@ -695,7 +695,7 @@ function buildDecisionRaw(rng: Rng, ctx: FightCtx, sim: FightSim): DecisionPoint
       options: [
         option('lose_all', 'risk', 'Wszystko albo nic', 'Rzucasz wszystko, co masz.', 'stand', me.stand, op.chin, base - 4, 'szansa na nokaut', 'możesz zostać skontrowany'),
         option('lose_bjj', 'risk', 'Szukasz poddania', 'Ryzykowne przejście do parteru.', 'bjj', me.bjj, op.bjj, base - 4, 'szansa na poddanie', 'stracisz pozycję'),
-        option('lose_wrest', 'normal', 'Wygrywasz rundę zapasami', 'Obalenia i kontrola, reszta w rękach sędziów.', 'wrest', me.wrest, op.wrest, base, 'wyraźnie wygrana runda', 'kolejna runda dla niego'),
+        option('lose_wrest', 'normal', 'Wygrywasz rundę zapasami', 'Obalenia i kontrola, reszta w rękach sędziów.', 'wrest', me.wrest, op.wrest, base, 'punkty po twojej stronie', 'punkty znowu uciekają'),
       ],
     };
   }
@@ -709,7 +709,7 @@ function buildDecisionRaw(rng: Rng, ctx: FightCtx, sim: FightSim): DecisionPoint
       options: [
         option('gr_sprawl', 'normal', 'Bronisz obaleń i bijesz', 'Sprawl, odejście od siatki, ciosy na wejściu.', 'wrest', me.wrest, op.wrest, base, 'zostajecie w stójce', 'znowu lądujesz na plecach'),
         option('gr_guard', 'risk', 'Atakujesz z pleców', 'Gilotyna, trójkąt, cokolwiek złapiesz.', 'bjj', me.bjj, op.bjj, base - 6, 'szansa na poddanie z dołu', 'oddajesz mu dosiad'),
-        safe('gr_cardio', 'Wstajesz za każdym razem', 'Męczysz go ciągłym wstawaniem.', 'on traci siły szybciej niż ty', 'runda dla niego', 'cardio'),
+        safe('gr_cardio', 'Wstajesz za każdym razem', 'Męczysz go ciągłym wstawaniem.', 'on traci siły szybciej niż ty', 'oddajesz mu inicjatywę', 'cardio'),
       ],
     };
   }
@@ -722,7 +722,7 @@ function buildDecisionRaw(rng: Rng, ctx: FightCtx, sim: FightSim): DecisionPoint
       options: [
         option('st_shot', 'normal', 'Skracasz i obalasz', 'Schodzisz do nóg i sprowadzasz go do parteru.', 'wrest', me.wrest, op.wrest, base + 3, 'przenosisz walkę tam, gdzie mu źle', 'nadziewasz się na kolano'),
         option('st_brawl', 'risk', 'Odpowiadasz ogniem', 'Stajesz z nim na wymianę.', 'stand', me.stand, op.stand, base - 6, 'szansa na nokaut', 'on jest w tym lepszy'),
-        safe('st_clinch', 'Klincz i kolana', 'Wiążesz go przy siatce.', 'odbierasz mu dystans', 'runda dla niego', 'cardio'),
+        safe('st_clinch', 'Klincz i kolana', 'Wiążesz go przy siatce.', 'odbierasz mu dystans', 'oddajesz mu inicjatywę', 'cardio'),
       ],
     };
   }
@@ -840,9 +840,9 @@ const POOL = {
     'Przeszarżowałeś. Ręce opadają, a {n} to widzi.',
   ],
   normalOk: [
-    'Plan działa. Ta runda jest twoja.',
+    'Plan działa. Punkty zbierasz ty.',
     'Robisz swoje, a {n} nie ma na to odpowiedzi.',
-    'Spokojnie i konsekwentnie. Sędziowie zapisują rundę dla ciebie.',
+    'Spokojnie i konsekwentnie. Sędziowie mają co zapisywać po twojej stronie.',
     'Trener w narożniku tylko kiwa głową. Tak ma być.',
     '{n} zaczyna się frustrować i szukać pomysłu, którego nie ma.',
   ],
@@ -855,7 +855,7 @@ const POOL = {
     '{n} czyta to bez problemu. Trzeba szukać czegoś innego.',
     'Nie klei się. {n} był na to przygotowany.',
     'Trener w narożniku łapie się za głowę. Plan nie działa.',
-    '{n} odpowiada na każdą twoją akcję. Ta runda dla niego.',
+    '{n} odpowiada na każdą twoją akcję. Punkty uciekają.',
   ],
   safeOk: [
     'Spokojnie, bez szaleństw. Zbierasz punkty.',
@@ -947,7 +947,7 @@ export function applyDecision(rng: Rng, ctx: FightCtx, sim: FightSim, rep: Fight
       sim.momentum += 15;
       sim.opp.stam = clamp(sim.opp.stam - 16, 0, 100);
       text = say(POOL.normalSuper);
-      effect = 'runda twoja bez dyskusji';
+      effect = 'sędziowie mają co punktować';
     } else if (out === 'success') {
       sim.momentum += 9;
       sim.opp.stam = clamp(sim.opp.stam - 10, 0, 100);
@@ -993,7 +993,7 @@ export function applyDecision(rng: Rng, ctx: FightCtx, sim: FightSim, rep: Fight
       sim.momentum -= 3;
       sim.me.stam = clamp(sim.me.stam + 8, 0, 100);
       text = say(POOL.safeFail);
-      effect = 'runda dla rywala, ale odpocząłeś';
+      effect = 'oddajesz mu inicjatywę, ale odpoczywasz';
       tone = 'neutral';
     }
   }

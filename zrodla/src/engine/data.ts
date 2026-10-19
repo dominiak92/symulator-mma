@@ -135,7 +135,7 @@ export const START_PROFILES: Record<StartProfile, StartProfileDef> = {
   },
   wybraniec: {
     label: 'Wybraniec',
-    desc: 'Talent nie z tej ziemi, ale wszyscy chcą cię pokonać, a ciało szybciej się zużywa. Punkty LEGACY się nie liczą.',
+    desc: 'Talent nie z tej ziemi, ale wszyscy chcą cię pokonać, a ciało szybciej się zużywa. Punkty dorobku się nie liczą.',
     mult: null,
     money: 10000,
     talent: [0.86, 0.98],
@@ -222,12 +222,12 @@ export function isExclusiveFed(fed: string) {
 export const FED_NOTES: Record<string, string> = {
   'Oktagram MMA': 'Czesko-słowacka federacja: hale pełne, piwo tanie, a kibice śpiewają przez całą walkę.',
   'Brava CF': 'Gale od Bahrajnu po Brazylię. Dużo latania, dobre hotele.',
-  'Cage Worriers': 'Kuźnia talentów z Wysp. Stąd najczęściej idzie się do UFL.',
+  'Cage Worriers': 'Kuźnia talentów z Wysp. Płacą skromnie, ale stąd najczęściej idzie się do UFL.',
   'Hexagon MMA': 'Francusko-belgijska gala w sześciokątnej klatce. Sędziowie lubią parter.',
   'UFL – Ultimate Fighting League': 'Najbardziej znana liga na świecie. Pieniądze i sława, ale rywale z samego topu.',
-  'Balettor MMA': 'Amerykańska liga, co druga gala w kasynie. Płacą dobrze, a turnieje Grand Prix to szansa na szybki pas.',
-  'TWO FC – Two Fighting Championship': 'Azja: Singapur, Bangkok, Manila. Hale na 20 tysięcy i ważenie z badaniem nawodnienia.',
-  'PLF – Professional League of Fighters': 'Liga z turniejem i play-offami. Wygrywasz turniej, dostajesz czek na milion.',
+  'Balettor MMA': 'Amerykańska liga, co druga gala w kasynie. Płacą wyraźnie mniej niż UFL, ale turnieje Grand Prix to szansa na szybki pas.',
+  'TWO FC – Two Fighting Championship': 'Azja: Singapur, Bangkok, Manila. Hale na 20 tysięcy, ważenie z badaniem nawodnienia i najniższe gaże w światowej czołówce.',
+  'PLF – Professional League of Fighters': 'Liga z turniejem i play-offami. Gaże niższe niż w UFL, ale wygrany turniej to czek na milion.',
 };
 
 /** Hale dla federacji z innych kontynentów (reszta bierze listę ze szczebla). */
@@ -302,13 +302,39 @@ export const RANK_SIZE = [10, 10, 15, 15, 15];
 export const TIER_LEVEL = [28, 40, 54, 66, 78];
 
 // Gaże (zł) za walkę na szczeblu, [min, max] przy zerowym rankingu do top 1
+// Punkt odniesienia (2026, 1 USD ≈ 4 zł): gale regionalne 1–6 tys. zł, krajowa federacja jak KSW
+// 8–45 tys. (gwiazdy z mediami więcej), Europa 12–70 tys., UFL od 12,5 tys. USD (50 tys. zł) za debiut
+// do ~90 tys. USD dla czołówki. Mistrz z pełnymi mediami i walką o pas dobija do kilku milionów.
 export const TIER_PURSE: [number, number][] = [
   [0, 0],
-  [1500, 6000],
-  [12000, 60000],
-  [40000, 160000],
-  [90000, 900000],
+  [1000, 6000],
+  [8000, 45000],
+  [12000, 70000],
+  [50000, 350000],
 ];
+
+/** Ile płaci federacja na tle swojego szczebla (UFL to szczyt, reszta świata płaci mniej). */
+export const FED_PAY: Record<string, number> = {
+  'XSW – Ekstremalne Starcia Wojowników': 1.15,
+  'FAN – Fight Absolute Night': 1,
+  'Oktagram MMA': 1.2,
+  'Brava CF': 1.1,
+  'Hexagon MMA': 0.95,
+  'Cage Worriers': 0.7,
+  'UFL – Ultimate Fighting League': 1,
+  'PLF – Professional League of Fighters': 0.75,
+  'Balettor MMA': 0.7,
+  'TWO FC – Two Fighting Championship': 0.65,
+};
+export function fedPay(fed: string) {
+  const k = Object.keys(FED_PAY).find((f) => fed.startsWith(f));
+  return k ? FED_PAY[k] : 1;
+}
+/** Premia za wygraną jako część gaży: w UFL „show + win” po równo, niżej mniej. */
+export function winRatio(tier: number, fed: string) {
+  if (fed.startsWith('UFL')) return 1;
+  return [0, 0.5, 0.6, 0.6, 0.8][tier] ?? 0.6;
+}
 
 export const TIER_FIGHTS = [4, 3, 3, 3, 2];
 export const TIER_ENTRY = [1200, 800, 0, 0, 0]; // opłaty startowe, dojazdy, badania na rok
@@ -480,9 +506,9 @@ export const CLUB_TEMPLATES: ClubTemplate[] = [
   { name: 'WZA Fight Team', city: 'Warszawa', quality: 4, cost: 28000, specialty: 'wrest', injuryMod: 0.85, desc: 'Czołowy klub w kraju. Na treningach mijasz się z mistrzami największych gal.', minTier: 2, crest: { shape: 'shield', bg: '#111827', fg: '#01aeee', icon: 'star', text: 'WZA' } },
   { name: 'Barracuda Top Team', city: 'Gdynia', quality: 4, cost: 25000, specialty: 'cardio', injuryMod: 0.85, desc: 'Obozy nad morzem, bieganie po plaży o szóstej rano i przygotowanie motoryczne na serio.', minTier: 2, crest: { shape: 'circle', bg: '#0c4a6e', fg: '#f8fafc', icon: 'wave', text: 'BTT' } },
   { name: 'Czerwony Wąż', city: 'Poznań', quality: 4, cost: 24000, specialty: 'iq', injuryMod: 0.85, desc: 'Klub od lat robiący mistrzów. Tu uczą, jak wygrywać walki głową, a nie tylko pięściami.', minTier: 2, crest: { shape: 'hex', bg: '#991b1b', fg: '#fef2f2', icon: 'snake', text: 'CW' } },
-  { name: 'Phuket Top Camp', city: 'Tajlandia', quality: 4, cost: 45000, specialty: 'stand', injuryMod: 1.1, desc: 'Muay thai dwa razy dziennie w 35 stopniach. Wracasz opalony i ostry jak brzytwa.', minTier: 2, crest: { shape: 'diamond', bg: '#c2410c', fg: '#fef3c7', icon: 'palm', text: 'PTC' } },
-  { name: 'American Top Dog', city: 'Floryda, USA', quality: 5, cost: 140000, specialty: 'iq', injuryMod: 0.8, desc: 'Światowa czołówka. Pasy wiszą na ścianie, rachunek też robi wrażenie.', minTier: 3, crest: { shape: 'hex', bg: '#0f766e', fg: '#fde047', icon: 'sun', text: 'ATD' } },
-  { name: 'Altitude Fight Lab', city: 'Kolorado, USA', quality: 5, cost: 120000, specialty: 'cardio', injuryMod: 0.8, desc: 'Obóz w górach, sztab naukowców i kondycja z kosmosu.', minTier: 3, crest: { shape: 'shield', bg: '#1f2937', fg: '#93c5fd', icon: 'mountain', text: 'AFL' } },
+  { name: 'Phuket Top Camp', city: 'Tajlandia', quality: 4, cost: 30000, specialty: 'stand', injuryMod: 1.1, desc: 'Muay thai dwa razy dziennie w 35 stopniach. Wracasz opalony i ostry jak brzytwa.', minTier: 2, crest: { shape: 'diamond', bg: '#c2410c', fg: '#fef3c7', icon: 'palm', text: 'PTC' } },
+  { name: 'American Top Dog', city: 'Floryda, USA', quality: 5, cost: 60000, specialty: 'iq', injuryMod: 0.8, desc: 'Światowa czołówka. Pasy wiszą na ścianie, rachunek też robi wrażenie.', minTier: 3, crest: { shape: 'hex', bg: '#0f766e', fg: '#fde047', icon: 'sun', text: 'ATD' } },
+  { name: 'Altitude Fight Lab', city: 'Kolorado, USA', quality: 5, cost: 55000, specialty: 'cardio', injuryMod: 0.8, desc: 'Obóz w górach, sztab naukowców i kondycja z kosmosu.', minTier: 3, crest: { shape: 'shield', bg: '#1f2937', fg: '#93c5fd', icon: 'mountain', text: 'AFL' } },
   { name: 'Garaż u Zbyszka', city: '{home}', quality: 1, cost: 0, specialty: 'cardio', injuryMod: 1.25, desc: 'Mata rozłożona między kosiarką a starym fiatem. Zbyszek oglądał każdą galę w telewizji i ma swoje teorie.', minTier: 0, crest: { shape: 'badge', bg: '#78350f', fg: '#fde68a', icon: 'wrench', text: 'GZ' } },
   { name: 'LZS Kłos Fight', city: '{home}', quality: 1, cost: 500, specialty: 'wrest', injuryMod: 1.15, desc: 'Ludowy Zespół Sportowy. Mata leży w świetlicy po dożynkach, a sołtys przychodzi kibicować na sparingi.', minTier: 0, crest: { shape: 'shield', bg: '#3f6212', fg: '#fef08a', icon: 'wheat', text: 'LZS' } },
   { name: 'Akademia Kimura Kraków', city: 'Kraków', quality: 2, cost: 5000, specialty: 'bjj', injuryMod: 1.0, desc: 'Kimona, maty i zdjęcia brazylijskich mistrzów na ścianie. Trener mówi „oss” nawet do kuriera.', minTier: 0, crest: { shape: 'circle', bg: '#f8fafc', fg: '#1e3a8a', icon: 'fist', text: 'AK' } },
@@ -492,11 +518,11 @@ export const CLUB_TEMPLATES: ClubTemplate[] = [
   { name: 'Gracje Barra Rio', city: 'Rio de Janeiro', quality: 4, cost: 38000, specialty: 'bjj', injuryMod: 0.9, desc: 'Kimona, plaża i churrasco po treningu. Każdy tu jest czyimś kuzynem, a każdy kuzyn ma czarny pas.', minTier: 2, crest: { shape: 'diamond', bg: '#15803d', fg: '#fde047', icon: 'wave', text: 'GB' } },
   { name: 'Straight Blarney Gym', city: 'Dublin', quality: 4, cost: 36000, specialty: 'stand', injuryMod: 0.9, desc: 'Trener mówi, że nie ma talentu, jest tylko obsesja. Po sparingach cała ekipa idzie do pubu na wodę.', minTier: 2, crest: { shape: 'shield', bg: '#166534', fg: '#f8fafc', icon: 'mug', text: 'SBG' } },
   { name: 'All-Gwiazdy Sztokholm', city: 'Sztokholm', quality: 4, cost: 34000, specialty: 'iq', injuryMod: 0.85, desc: 'Skandynawski spokój, analiza wideo i sauna po każdym treningu. Nikt tu nie krzyczy.', minTier: 2, crest: { shape: 'circle', bg: '#1d4ed8', fg: '#fde047', icon: 'star', text: 'AG' } },
-  { name: 'Miasto Kickboxing', city: 'Auckland', quality: 4, cost: 48000, specialty: 'stand', injuryMod: 0.85, desc: 'Najluźniejsza sala na świecie: muzyka, taniec na rozgrzewce i stójka jak z filmu. Lot trwa 30 godzin.', minTier: 2, crest: { shape: 'diamond', bg: '#0a0a0a', fg: '#f472b6', icon: 'bolt', text: 'MK' } },
-  { name: 'Team Alfa Samiec', city: 'Sacramento, USA', quality: 5, cost: 95000, specialty: 'wrest', injuryMod: 0.85, desc: 'Wszyscy niewysocy, wszyscy zapaśnicy, wszyscy z rozjaśnionymi włosami. Obalenia uczą tu jak alfabetu.', minTier: 3, crest: { shape: 'badge', bg: '#111827', fg: '#facc15', icon: 'wolf', text: 'TAS' } },
-  { name: 'Orły Machaczkała', city: 'Dagestan', quality: 5, cost: 85000, specialty: 'wrest', injuryMod: 0.9, desc: 'Rozgrzewka to noszenie się na barana pod górę. Ojca głównego trenera lepiej nie denerwować.', minTier: 3, crest: { shape: 'shield', bg: '#1e3a8a', fg: '#f8fafc', icon: 'eagle', text: 'OM' } },
-  { name: 'Jackman-Wonk', city: 'Albuquerque, USA', quality: 5, cost: 115000, specialty: 'iq', injuryMod: 0.8, desc: 'Trener rozpisuje walki na tablicy jak partię szachów. Sala na wysokości 1600 m, oddycha się ciężko.', minTier: 3, crest: { shape: 'hex', bg: '#7c2d12', fg: '#fef3c7', icon: 'mountain', text: 'JW' } },
-  { name: 'Kill Klif FC', city: 'Floryda, USA', quality: 5, cost: 105000, specialty: 'cardio', injuryMod: 0.85, desc: 'Upał, sprinty po plaży i sparingi z połową topowej dziesiątki świata. Klimatyzacja tylko w szatni.', minTier: 3, crest: { shape: 'circle', bg: '#0e7490', fg: '#fef9c3', icon: 'sun', text: 'KK' } },
+  { name: 'Miasto Kickboxing', city: 'Auckland', quality: 4, cost: 35000, specialty: 'stand', injuryMod: 0.85, desc: 'Najluźniejsza sala na świecie: muzyka, taniec na rozgrzewce i stójka jak z filmu. Lot trwa 30 godzin.', minTier: 2, crest: { shape: 'diamond', bg: '#0a0a0a', fg: '#f472b6', icon: 'bolt', text: 'MK' } },
+  { name: 'Team Alfa Samiec', city: 'Sacramento, USA', quality: 5, cost: 45000, specialty: 'wrest', injuryMod: 0.85, desc: 'Wszyscy niewysocy, wszyscy zapaśnicy, wszyscy z rozjaśnionymi włosami. Obalenia uczą tu jak alfabetu.', minTier: 3, crest: { shape: 'badge', bg: '#111827', fg: '#facc15', icon: 'wolf', text: 'TAS' } },
+  { name: 'Orły Machaczkała', city: 'Dagestan', quality: 5, cost: 30000, specialty: 'wrest', injuryMod: 0.9, desc: 'Rozgrzewka to noszenie się na barana pod górę. Ojca głównego trenera lepiej nie denerwować.', minTier: 3, crest: { shape: 'shield', bg: '#1e3a8a', fg: '#f8fafc', icon: 'eagle', text: 'OM' } },
+  { name: 'Jackman-Wonk', city: 'Albuquerque, USA', quality: 5, cost: 55000, specialty: 'iq', injuryMod: 0.8, desc: 'Trener rozpisuje walki na tablicy jak partię szachów. Sala na wysokości 1600 m, oddycha się ciężko.', minTier: 3, crest: { shape: 'hex', bg: '#7c2d12', fg: '#fef3c7', icon: 'mountain', text: 'JW' } },
+  { name: 'Kill Klif FC', city: 'Floryda, USA', quality: 5, cost: 50000, specialty: 'cardio', injuryMod: 0.85, desc: 'Upał, sprinty po plaży i sparingi z połową topowej dziesiątki świata. Klimatyzacja tylko w szatni.', minTier: 3, crest: { shape: 'circle', bg: '#0e7490', fg: '#fef9c3', icon: 'sun', text: 'KK' } },
 ];
 
 // nom: jak w wyniku walki; form: KO w narzędniku („trafia lewym sierpowym”), poddania w bierniku („zapina gilotynę”)

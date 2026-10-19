@@ -1,3 +1,4 @@
+import { cash } from './events_money';
 import type { EventChoice, GameState } from './types';
 import { BELT_NAMES, START_PROFILES } from './data';
 import { EXTRA_EVENTS } from './events_extra';
@@ -285,9 +286,9 @@ export const EVENTS: EventDef[] = [
     weight: 5,
     cond: (s) => s.tier >= 1,
     text: () => 'Konferencja przed galą. Rywal na żywo obraża twoją mamę i rzuca w ciebie butelką wody.',
-    choices: () => [
+    choices: (s) => [
       { label: 'Odpowiadasz klasą', desc: '„Pogadamy w klatce”. Dziennikarze kiwają głowami.', effects: { rep: 3 } },
-      { label: 'Wywracasz stół', desc: 'Ochrona ledwo was rozdziela. Klipy lecą wszędzie.', effects: { media: 6, rep: -3, money: -2000, note: 'kara od federacji' } },
+      { label: 'Wywracasz stół', desc: 'Ochrona ledwo was rozdziela. Klipy lecą wszędzie.', effects: { media: 6, rep: -3, money: -cash(s, 0.015, 1000), note: 'kara od federacji' } },
     ],
   },
   {
@@ -427,15 +428,15 @@ export const EVENTS: EventDef[] = [
     weight: 3,
     cond: (s) => s.tier >= 1 && s.tier <= 3,
     text: () => 'W szatni podchodzi typ w dresie z „propozycją biznesową”: 30 tys. zł, jeśli położysz się w drugiej rundzie.',
-    choices: () => [
+    choices: (s) => [
       { label: 'Odmawiasz i zgłaszasz federacji', desc: 'Sport ma być czysty.', effects: { rep: 6, media: 2 } },
       { label: 'Odmawiasz po cichu', desc: 'Nie chcesz problemów.', effects: {} },
       {
         label: 'Bierzesz kasę',
         desc: 'Jedna walka, nikt się nie dowie.',
         chance: 50,
-        success: { money: 30000, rep: -10, form: -6, note: 'przegrywasz walkę i szacunek do siebie' },
-        fail: { money: 30000, rep: -40, media: 10, flag: 'banned', note: 'afera, federacja zrywa kontrakt' },
+        success: { money: cash(s, 0.15, 20000), rep: -10, form: -6, note: 'przegrywasz walkę i szacunek do siebie' },
+        fail: { money: cash(s, 0.15, 20000), rep: -40, media: 10, flag: 'banned', note: 'afera, federacja zrywa kontrakt' },
         successText: 'Nikt się nie dowiedział. Ty wiesz.',
         failText: 'Nagranie z szatni wycieka. Afera na pół kraju, federacja rozwiązuje kontrakt.',
       },
@@ -527,13 +528,13 @@ export const EVENTS: EventDef[] = [
     weight: 4,
     cond: (s) => s.tier >= 1,
     text: () => 'Trener mentalny po weekendowym kursie online proponuje sesje „przeprogramowania umysłu zwycięzcy”. 4 tys. zł za pakiet.',
-    choices: () => [
+    choices: (s) => [
       {
         label: 'Kupujesz pakiet',
         desc: 'Wizualizacje, oddechy i afirmacje.',
         chance: 45,
-        success: { money: -4000, stats: { iq: 4 } },
-        fail: { money: -4000, note: 'umysł nie przeprogramowany' },
+        success: { money: -cash(s, 0.015, 2000), stats: { iq: 4 } },
+        fail: { money: -cash(s, 0.015, 2000), note: 'umysł nie przeprogramowany' },
         successText: 'Zaskakująco działa. Pierwszy raz w życiu nie trzęsą ci się ręce w szatni.',
         failText: 'Po trzech sesjach umiesz tylko oddychać przez lewą dziurkę od nosa.',
       },
@@ -547,13 +548,13 @@ export const EVENTS: EventDef[] = [
     weight: 5,
     cond: (s) => s.tier >= 1 && s.money >= 12000,
     text: () => 'Znajomy z klubu jedzie na miesiąc do Tajlandii trenować muay thai. Bilet i obóz to ok. 10 tys. zł.',
-    choices: () => [
+    choices: (s) => [
       {
         label: 'Lecisz z nim',
         desc: 'Dwa treningi dziennie w 35 stopniach.',
         chance: 80,
-        success: { money: -10000, stats: { stand: 4, cardio: 2 } },
-        fail: { money: -10000, form: -4, note: 'denga w drugim tygodniu' },
+        success: { money: -cash(s, 0.03, 6000), stats: { stand: 4, cardio: 2 } },
+        fail: { money: -cash(s, 0.03, 6000), form: -4, note: 'denga w drugim tygodniu' },
         successText: 'Wracasz opalony, z kolanami jak noże i nowym tatuażem, którego nie umiesz przeczytać.',
         failText: 'Komar okazał się szybszy od ciebie. Dwa tygodnie w szpitalu w Phuket.',
       },
@@ -591,8 +592,8 @@ export const EVENTS: EventDef[] = [
     weight: 4,
     cond: (s) => s.media >= 45,
     text: () => 'Stacja telewizyjna proponuje udział w reality show na bezludnej wyspie. Dwa miesiące bez treningu, ale 60 tys. zł.',
-    choices: () => [
-      { label: 'Lecisz na wyspę', desc: 'Kokosy, kamery i dramy.', effects: { money: 60000, media: 12, rep: -6, form: -6 } },
+    choices: (s) => [
+      { label: 'Lecisz na wyspę', desc: 'Kokosy, kamery i dramy.', effects: { money: cash(s, 0.2, 30000), media: 12, rep: -6, form: -6 } },
       { label: 'Odmawiasz', desc: 'Sport przede wszystkim.', effects: { rep: 3 } },
     ],
   },
@@ -863,8 +864,8 @@ export const EVENTS: EventDef[] = [
     weight: 5,
     cond: (s) => s.tier >= 3,
     text: () => 'Pierwsza walka roku w Londynie. Federacja kupiła ci lot z przesiadką w Dubaju i hotel przy lotnisku. Możesz dopłacić za wcześniejszy przylot.',
-    choices: () => [
-      { label: 'Lecisz tydzień wcześniej', desc: 'Aklimatyzacja, spokojny sen, własny dietetyk.', effects: { money: -9000, form: 2 } },
+    choices: (s) => [
+      { label: 'Lecisz tydzień wcześniej', desc: 'Aklimatyzacja, spokojny sen, własny dietetyk.', effects: { money: -cash(s, 0.03, 6000), form: 2 } },
       { label: 'Lecisz z federacją', desc: 'Jet lag to dla słabych.', effects: { form: -2 } },
     ],
   },
@@ -906,8 +907,8 @@ export const EVENTS: EventDef[] = [
     weight: 5,
     cond: (s) => s.tier >= 2 && s.media >= 30,
     text: () => 'Stacja telewizyjna chce zrobić o tobie serial dokumentalny „Droga do pasa”. Kamery będą na każdym treningu.',
-    choices: () => [
-      { label: 'Zgadzasz się', desc: 'Sława i pieniądze, ale prywatności zero.', effects: { money: 20000, media: 10, relations: -2, form: -1 } },
+    choices: (s) => [
+      { label: 'Zgadzasz się', desc: 'Sława i pieniądze, ale prywatności zero.', effects: { money: cash(s, 0.08, 15000), media: 10, relations: -2, form: -1 } },
       { label: 'Odmawiasz', desc: 'Trening to nie reality show.', effects: { form: 1 } },
     ],
   },
@@ -940,13 +941,13 @@ export const EVENTS: EventDef[] = [
     weight: 4,
     cond: (s) => s.tier >= 3,
     text: () => 'Dostajesz zaproszenie na obóz zapaśniczy w górach Dagestanu. Treningi trzy razy dziennie, jedzenie proste, sauny brak.',
-    choices: () => [
+    choices: (s) => [
       {
         label: 'Jedziesz',
         desc: 'Wracasz albo zapaśnikiem, albo w trumnie.',
         chance: 75,
-        success: { stats: { wrest: 4, cardio: 2 }, money: -8000 },
-        fail: { injury: { name: 'naderwany bark', seasons: 1, penalty: 5 }, money: -8000 },
+        success: { stats: { wrest: 4, cardio: 2 }, money: -cash(s, 0.03, 6000) },
+        fail: { injury: { name: 'naderwany bark', seasons: 1, penalty: 5 }, money: -cash(s, 0.03, 6000) },
         successText: 'Po miesiącu obalasz ludzi, zanim zdążą pomyśleć o gardzie.',
         failText: 'Trzeci dzień, rzut przez biodro na beton. Bark mówi „dość”.',
       },
@@ -960,8 +961,8 @@ export const EVENTS: EventDef[] = [
     weight: 4,
     cond: (s) => s.tier >= 3,
     text: () => 'Twoja walka będzie na gali w Las Vegas. Federacja daje bilety tylko dla ciebie i trenera. Rodzina pyta, czy mogą lecieć.',
-    choices: () => [
-      { label: 'Fundujesz im lot', desc: 'Mama pierwszy raz w samolocie.', effects: { money: -25000, relations: 5, form: 2 } },
+    choices: (s) => [
+      { label: 'Fundujesz im lot', desc: 'Mama pierwszy raz w samolocie.', effects: { money: -cash(s, 0.05, 15000), relations: 5, form: 2 } },
       { label: 'Obejrzą w telewizji', desc: 'Skupienie przede wszystkim.', effects: { relations: -2 } },
     ],
   },
@@ -1058,8 +1059,8 @@ export const EVENTS: EventDef[] = [
     weight: 3,
     cond: (s) => s.belts.length >= 2 && s.age >= 27,
     text: () => 'Wydawnictwo chce wydać twoją biografię. Ghostwriter zadaje pytania o dzieciństwo, porażki i pierwsze rękawice.',
-    choices: () => [
-      { label: 'Opowiadasz wszystko', desc: 'Bez upiększania.', effects: { money: 30000, media: 5, rep: 2 } },
+    choices: (s) => [
+      { label: 'Opowiadasz wszystko', desc: 'Bez upiększania.', effects: { money: cash(s, 0.1, 25000), media: 5, rep: 2 } },
       { label: 'Odkładasz to na emeryturę', desc: 'Historia jeszcze się pisze.', effects: { form: 1 } },
     ],
   },
@@ -1092,9 +1093,9 @@ export const EVENTS: EventDef[] = [
     weight: 3,
     cond: (s) => s.tier >= 1,
     text: () => 'Dzień przed ważeniem waga pokazuje 1,5 kg za dużo. Trener patrzy na saunę, dietetyk na ciebie.',
-    choices: () => [
+    choices: (s) => [
       { label: 'Sauna do ostatniej kropli', desc: 'Wchodzisz w limit, ale suchy jak wiór.', effects: { form: -2, wear: 2 } },
-      { label: 'Przyjmujesz karę 20% gaży', desc: 'Zdrowie ważniejsze.', effects: { money: -3000, rep: -2, form: 1 } },
+      { label: 'Przyjmujesz karę 20% gaży', desc: 'Zdrowie ważniejsze.', effects: { money: -Math.max(1000, Math.round((s.contract.purse * 0.2) / 100) * 100), rep: -2, form: 1 } },
     ],
   },
   {
