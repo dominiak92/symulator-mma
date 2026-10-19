@@ -41,10 +41,10 @@ export const STYLE_DESC: Record<Style, string> = {
 // Profil statystyk stylu (dodawany do bazy)
 export const STYLE_PROFILE: Record<Style, Stats> = {
   boxer: { stand: 10, wrest: -3, bjj: -6, cardio: 2, chin: 1, iq: 3 },
-  kickboxer: { stand: 9, wrest: -6, bjj: -4, cardio: 3, chin: -1, iq: 2 },
-  wrestler: { stand: -5, wrest: 11, bjj: 2, cardio: 4, chin: 0, iq: 0 },
+  kickboxer: { stand: 10, wrest: -4, bjj: -4, cardio: 4, chin: 0, iq: 2 },
+  wrestler: { stand: -5, wrest: 11, bjj: 1, cardio: 3, chin: 0, iq: 0 },
   grappler: { stand: -6, wrest: 3, bjj: 12, cardio: 0, chin: -2, iq: 2 },
-  brawler: { stand: 6, wrest: -3, bjj: -7, cardio: -3, chin: 9, iq: -5 },
+  brawler: { stand: 8, wrest: -2, bjj: -6, cardio: -1, chin: 10, iq: -2 },
   allround: { stand: 2, wrest: 2, bjj: 2, cardio: 1, chin: 0, iq: 1 },
 };
 

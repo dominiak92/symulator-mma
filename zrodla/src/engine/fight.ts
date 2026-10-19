@@ -217,20 +217,23 @@ function decideOnCards(rep: FightReport, sim: FightSim) {
     rep.result = 'L';
     rep.method = 'Decyzja niejednogłośna';
   } else if (meW === 2 || oppW === 2) {
+    // dwie karty i remis u trzeciego sędziego
     rep.result = meW === 2 ? 'W' : 'L';
     rep.method = 'Decyzja większościowa';
-  } else if (meW > oppW) {
-    rep.result = 'W';
-    rep.method = 'Decyzja większościowa';
-  } else if (oppW > meW) {
-    rep.result = 'L';
-    rep.method = 'Decyzja większościowa';
   } else {
+    // jedna karta dla kogoś i dwa remisy (albo 1:1 i remis): w MMA to remis
     rep.result = 'D';
     rep.method = 'Remis';
   }
   // karty jak na portalach: z perspektywy zwycięzcy (wyższa liczba pierwsza)
   rep.detail = rep.cards.map((c) => (rep.result === 'L' ? `${c[1]}–${c[0]}` : `${c[0]}–${c[1]}`)).join(', ');
+}
+
+/** Wybór tekstu, który w tej walce jeszcze nie padł (dwa nokdauny nie brzmią identycznie). */
+function pickFresh(rng: Rng, rep: FightReport, arr: string[]): string {
+  const used = new Set(rep.moments.map((m) => m.text));
+  const fresh = arr.filter((t) => !used.has(t));
+  return rng.pick(fresh.length ? fresh : arr);
 }
 
 function addMoment(rep: FightReport, m: Moment) {
@@ -361,16 +364,17 @@ function simulateRoundInner(rng: Rng, ctx: FightCtx, sim: FightSim, rep: FightRe
             round: r,
             title: fin ? 'Nokaut!' : 'Rywal leży!',
             text: fin
-              ? rng.pick([
+              ? pickFresh(rng, rep, [
                   `Trafiasz go ${d.form} i ${n} pada jak długi. Sędzia od razu przerywa.`,
                   `${d.nom.charAt(0).toUpperCase() + d.nom.slice(1)} ląduje idealnie. ${n} jeszcze stoi, ale oczy ma już puste. Sędzia wchodzi między was.`,
                   `Widzisz, że ${n} opuszcza ręce, i trafiasz go ${d.form}. Hala wstaje, zanim ciało dotknie maty.`,
                   `Jedno trafienie ${d.form} i po wszystkim. ${n} szuka siatki, żeby się podeprzeć, ale sędzia już macha rękami.`,
                 ])
-              : rng.pick([
+              : pickFresh(rng, rep, [
                   `Trafiasz go ${d.form}. ${n} ląduje na macie, ale zdąży się pozbierać, zanim do niego dopadniesz.`,
                   `${n} siada na macie po trafieniu ${d.form}. Wstaje na liczenie, ale nogi mu się trzęsą.`,
-                  `Trafiasz ${d.form} i ${n} przyklęka. Podnosi się, ale widać, że runda należy do ciebie.`,
+                  `Trafiasz ${d.form} i ${n} przyklęka. Podnosi się, ale nogi ma jak z galarety.`,
+                  `${n} pada po trafieniu ${d.form}. Sędzia patrzy mu w oczy dłużej, niż ${n} by chciał.`,
                 ]),
             stat: 'stand',
             chance: pf,
@@ -383,15 +387,17 @@ function simulateRoundInner(rng: Rng, ctx: FightCtx, sim: FightSim, rep: FightRe
             round: r,
             title: fin ? 'Zgasło światło' : 'Podnosisz się po nokdaunie',
             text: fin
-              ? rng.pick([
+              ? pickFresh(rng, rep, [
                   `${n} trafia cię ${d.form}. Budzisz się na stołku w narożniku i pytasz, która runda.`,
                   `Nie widziałeś tego ciosu. ${n} trafia ${d.form}, a następne, co pamiętasz, to lekarz świecący ci latarką w oczy.`,
                   `${n} łapie cię ${d.form} w momencie, gdy wchodziłeś z kombinacją. Sędzia przerywa, zanim zdążysz zaprotestować.`,
                 ])
-              : rng.pick([
+              : pickFresh(rng, rep, [
                   `${n} trafia cię ${d.form} i lądujesz na macie. Szczęka wytrzymała, zbierasz się.`,
                   `Trafienie ${d.form} i nagle patrzysz w światła hali. Wstajesz na sześć, trener krzyczy, żebyś trzymał gardę.`,
                   `${n} rzuca cię na matę ${d.form}. Przez sekundę nie wiesz, gdzie jesteś, ale wstajesz.`,
+                  `Trafienie ${d.form} sadza cię na macie. Słyszysz, jak mama w trzecim rzędzie zasłania oczy. Wstajesz.`,
+                  `${n} trafia ${d.form}, kolana miękną. Łapiesz się siatki i wracasz do gardy, zanim sędzia zdąży doliczyć do pięciu.`,
                 ]),
             stat: 'chin',
             chance: 100 - pf,
@@ -827,6 +833,7 @@ function cornerFallback(sim: FightSim, me: Eff, op: Eff, n: string, next: number
 
 const POOL = {
   riskOk: [
+    'Ryzyko się opłaca. Ktoś z pierwszego rzędu rozlewa piwo z wrażenia.',
     'Wchodzi! {n} cofa się pod siatkę i szuka ratunku.',
     'Trafiasz. {n} pierwszy raz w tej walce wygląda na przestraszonego.',
     'Hala wstaje z miejsc. {n} chwieje się i łapie cię w klincz, żeby przetrwać.',
@@ -834,12 +841,14 @@ const POOL = {
     'Narożnik krzyczy „jeszcze!”. {n} ledwo trzyma gardę.',
   ],
   riskFail: [
+    'Szarżujesz jak dzik na ziemniaki. {n} tylko się odsuwa.',
     '{n} tylko na to czekał. Łapiesz kontrę i teraz to ty masz problem.',
     'Nie wyszło. Tracisz pozycję i zbierasz kilka mocnych ciosów.',
     'Za szeroko. {n} wchodzi w środek i trafia cię czysto.',
     'Przeszarżowałeś. Ręce opadają, a {n} to widzi.',
   ],
   normalOk: [
+    'Robisz swoje. Komentator mówi, że „to jest szachy, tylko z łokciami”.',
     'Plan działa. Punkty zbierasz ty.',
     'Robisz swoje, a {n} nie ma na to odpowiedzi.',
     'Spokojnie i konsekwentnie. Sędziowie mają co zapisywać po twojej stronie.',
@@ -852,12 +861,14 @@ const POOL = {
     'Dominacja. Komentator mówi, że „to jest lekcja MMA”.',
   ],
   normalFail: [
+    'Nic nie wchodzi. Trener w narożniku zaczyna liczyć na palcach, ile zostało do gongu.',
     '{n} czyta to bez problemu. Trzeba szukać czegoś innego.',
     'Nie klei się. {n} był na to przygotowany.',
     'Trener w narożniku łapie się za głowę. Plan nie działa.',
     '{n} odpowiada na każdą twoją akcję. Punkty uciekają.',
   ],
   safeOk: [
+    'Spokojnie, bez szaleństw. Ktoś z trybun krzyczy „nudy!”, ale to nie on dostaje w twarz.',
     'Spokojnie, bez szaleństw. Zbierasz punkty.',
     'Trzymasz dystans i nie dajesz mu niczego za darmo.',
     'Pracujesz na nogach, kąsasz i odchodzisz. {n} bije powietrze.',
@@ -881,7 +892,7 @@ export function applyDecision(rng: Rng, ctx: FightCtx, sim: FightSim, rep: Fight
   const out = rollOutcome(rng, opt.chance);
   const n = shortName(ctx.opp);
   const kind: OptKind = opt.kind ?? KIND_OF[opt.key] ?? 'normal';
-  const say = (pool: string[]) => rng.pick(pool).replace('{n}', n);
+  const say = (pool: string[]) => pickFresh(rng, rep, pool.map((t) => t.replace('{n}', n)));
   let text = '';
   let effect = '';
   let tone: Moment['tone'] = out === 'super' ? 'purple' : out === 'success' ? 'good' : 'bad';

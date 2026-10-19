@@ -1270,6 +1270,9 @@ function poolPay(s: GameState, pool: SponsorPool) {
   return (POOL_BASE[pool][s.tier] ?? 0) * (0.7 + s.media / 100);
 }
 
+const SPONSOR_CLAUSES_BIG = ['logo na spodenkach w każdej walce', 'reklama w telewizji śniadaniowej', 'twarz na billboardach w dużych miastach', 'dwa eventy firmowe w roku', 'logo na banerze za tobą na konferencjach', 'kampania w social mediach z kodem rabatowym'];
+const SPONSOR_CLAUSES_GLOBAL = ['twarz globalnej kampanii', 'wywiad w magazynie marki', 'sesja zdjęciowa w Los Angeles', 'logo na walkoutowej bluzie', 'ambasador marki na Europę Środkową', 'film reklamowy z gwiazdą sportu'];
+
 function maybeAutoSponsor(rng: Rng, s: GameState): string | null {
   const cap = 1 + s.tier;
   if (s.sponsors.length >= cap) return null;
@@ -1278,7 +1281,8 @@ function maybeAutoSponsor(rng: Rng, s: GameState): string | null {
   const pool = sponsorPoolCapped(s, sponsorPool(rng, s));
   const name = pickSponsorName(rng, s, pool);
   const per = Math.max(500, Math.round((poolPay(s, pool) * (0.8 + rng.next() * 0.4)) / 500) * 500);
-  s.sponsors.push({ id: uid(rng, 's'), name, perSeason: per, seasonsLeft: rng.int(1, 3), clause: rng.pick(SPONSOR_CLAUSES) });
+  const clauses = pool === 'local' ? SPONSOR_CLAUSES : pool === 'national' ? SPONSOR_CLAUSES_BIG : SPONSOR_CLAUSES_GLOBAL;
+  s.sponsors.push({ id: uid(rng, 's'), name, perSeason: per, seasonsLeft: rng.int(1, 3), clause: rng.pick(clauses) });
   return name;
 }
 
@@ -3024,7 +3028,7 @@ export function fightRange(s: GameState): [number, number] | null {
   return [Math.max(1, f - 1), Math.min(5, f + 1)];
 }
 export function plannedFights(s: GameState): number {
-  if (s.flags.farewell && s.tier > 0) return 1;
+  if (s.flags.farewell && s.tier > 0 && s.contract.kind !== 'freak') return 1;
   const r = fightRange(s);
   if (!r) return s.contract.kind === 'freak' ? 2 : s.contract.fights;
   return clamp(s.flags.wantFights || s.contract.fights, r[0], r[1]);
@@ -3472,14 +3476,15 @@ function finalizeFight(rng: Rng, s: GameState, rep: FightReport) {
         `${n} do końca szukał jednego ciosu. Nie znalazł.`,
         'Trzech sędziów, trzy karty po twojej stronie. Trener kiwa głową, czyli jest zadowolony.',
         `${n} po walce mówi, że następnym razem będzie inaczej. Każdy tak mówi.`,
+        'Po werdykcie ktoś z sektora krzyczy, że się spodziewał. To ten sam człowiek, który w drugiej rundzie krzyczał „koniec z tobą”.',
         'Wygrana na kartach. Nie najładniejsza, ale do rekordu się liczy.',
       ],
-      'W:Decyzja niejednogłośna': ['Wyrównana wojna. Dwóch sędziów punktuje dla ciebie, jeden dla niego.', `Część hali gwiżdże, ${n} kręci głową, ale to twoja ręka idzie w górę.`],
+      'W:Decyzja niejednogłośna': ['Twój trener ogląda ogłoszenie werdyktu z zamkniętymi oczami. Otwiera je dopiero, kiedy słyszy twoje nazwisko.', 'Wyrównana wojna. Dwóch sędziów punktuje dla ciebie, jeden dla niego.', `Część hali gwiżdże, ${n} kręci głową, ale to twoja ręka idzie w górę.`],
       'W:Decyzja większościowa': ['Jeden sędzia dał remis, dwóch ciebie. Wystarczy.', 'Sędzia punktowy numer trzy chyba oglądał inną walkę. Na szczęście pozostali dwaj nie.'],
-      'L:Decyzja jednogłośna': [`${n} był dziś po prostu lepszy. Długa droga do szatni.`, 'Goniłeś go przez całą walkę i nie dogoniłeś.', 'Trener w szatni mówi tylko: „wracamy do roboty”.', `${n} rozbił walkę na kawałki. Trzeba to obejrzeć jeszcze raz i wyciągnąć wnioski.`],
-      'L:Decyzja niejednogłośna': ['Jeden sędzia był z tobą, dwóch nie. W szatni cisza.', 'Kibice krzyczą twoje nazwisko, ale sędzia podnosi drugą rękę.', 'Internet pisze o skandalu, ale w rekordzie i tak zostaje porażka.'],
+      'L:Decyzja jednogłośna': ['W szatni mama dzwoni z pytaniem, czy jadłeś. To jedyna dobra wiadomość tego wieczoru.', `${n} był dziś po prostu lepszy. Długa droga do szatni.`, 'Goniłeś go przez całą walkę i nie dogoniłeś.', 'Trener w szatni mówi tylko: „wracamy do roboty”.', `${n} rozbił walkę na kawałki. Trzeba to obejrzeć jeszcze raz i wyciągnąć wnioski.`],
+      'L:Decyzja niejednogłośna': [`Sędzia, który punktował dla ciebie, macha ci z trybun. Pozostali dwaj patrzą w telefony.`, 'Jeden sędzia był z tobą, dwóch nie. W szatni cisza.', 'Kibice krzyczą twoje nazwisko, ale sędzia podnosi drugą rękę.', 'Internet pisze o skandalu, ale w rekordzie i tak zostaje porażka.'],
       'L:Decyzja większościowa': ['Remis u jednego sędziego, porażka u dwóch. Boli.'],
-      'D:Remis': ['Remis. Nikt nie jest zadowolony, wszyscy chcą rewanżu.', 'Remis. Organizator już zaciera ręce na rewanż.'],
+      'D:Remis': ['Remis. Babcia przez telefon pyta, kto wygrał. Nie umiesz jej tego wytłumaczyć.', 'Remis. Nikt nie jest zadowolony, wszyscy chcą rewanżu.', 'Remis. Organizator już zaciera ręce na rewanż.'],
     };
     const pool = (lines[`${res}:${rep.method}`] ?? []).filter((t) => rep.sim.maxRounds === 3 || !/Trzy rundy|Każda runda/.test(t));
     if (pool.length && !rep.moments.some((m) => m.title === 'Dogrywka'))
@@ -4335,6 +4340,8 @@ export function confirmMarket(s0: GameState): GameState {
   const c = m.contracts[m.pickedContract];
   const club = m.clubs[m.pickedClub];
   if (!c) return s;
+  // pożegnanie robi się w swojej federacji, nie na gali freak fightów
+  if (c.kind === 'freak') s.flags.farewell = 0;
   // obietnice
   for (const w of marketWarnings(s)) {
     if (w.startsWith('Łamiesz')) {
