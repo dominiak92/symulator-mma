@@ -369,6 +369,136 @@ function createRng(seed) {
   return rng;
 }
 
+// src/engine/club_farewell.ts
+var h = (t) => {
+  let x = 2166136261;
+  for (let i = 0; i < t.length; i++) x = Math.imul(x ^ t.charCodeAt(i), 16777619) >>> 0;
+  return x;
+};
+var ex = (s) => s.exClub ?? { name: "stary klub", coach: "Trener", years: 1, up: true, to: s.club.name };
+var pick = (s, salt, arr) => arr[h(`${salt}:${s.profile.lastName}:${s.season}`) % arr.length];
+var lat = (n) => n === 1 ? "rok" : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20) ? `${n} lata` : `${n} lat`;
+var MATES = ["Seba", "Dawid", "Krzychu", "Mietek", "Ola", "Bartek", "Kamil"];
+function mateOf(s, k) {
+  return MATES[(h(`${ex(s).name}:${s.season}`) + k * 3) % MATES.length];
+}
+function coachSulks(s) {
+  const e = ex(s);
+  const pain = (e.years >= 3 ? 2 : e.years >= 2 ? 1 : 0) + (e.up ? 0 : 2);
+  return h(`${e.name}:${s.season}:coach`) % 5 < pain + 1;
+}
+function mateSulks(s, k) {
+  return h(`${ex(s).name}:${s.season}:m${k}`) % 3 === 0;
+}
+var FAREWELL_STEPS = [
+  {
+    id: "pozegnanie.trener",
+    app: "sms",
+    from: (s) => ex(s).coach,
+    title: "Stary trener",
+    cond: (s) => !!s.exClub,
+    text: (s) => {
+      const e = ex(s);
+      if (coachSulks(s))
+        return pick(s, "tf", [
+          `Dowiaduj\u0119 si\u0119 od ludzi, nie od ciebie. \u0141adnie. Powodzenia w ${e.to}.`,
+          `${lat(e.years)} ci\u0119 uczy\u0142em, a ty mi SMS-em. Nie dzwo\u0144, jak ci tam nie wyjdzie. Dobra\u2026 dzwo\u0144.`,
+          `S\u0142ysza\u0142em. ${e.to}. No to tam ci powiedz\u0105, \u017Ce lewa r\u0119ka ci opada. Ja m\xF3wi\u0142em za darmo.`,
+          `Klucze do szatni oddaj Mietkowi. Reszty nie trzeba.`
+        ]);
+      return pick(s, "to", [
+        `S\u0142ysza\u0142em, \u017Ce idziesz do ${e.to}. Szkoda, ale rozumiem. Tam ci\u0119 naucz\u0105 rzeczy, kt\xF3rych ja ju\u017C nie umiem. Pami\u0119taj, sk\u0105d jeste\u015B.`,
+        `No to le\u0107. Tylko nie zapomnij, kto ci pierwszy owija\u0142 r\u0119ce. Drzwi u nas zawsze otwarte.`,
+        `Dumny jestem, cho\u0107 nie powiem tego przy ch\u0142opakach. Poka\u017C im tam, jak si\u0119 u nas trenuje.`,
+        `Jak ci\u0119 tam b\u0119d\u0105 m\u0119czy\u0107, to znaczy, \u017Ce dobrze trafi\u0142e\u015B. Powodzenia, mistrzu.`
+      ]);
+    },
+    choices: (s) => coachSulks(s) ? [
+      { label: pick(s, "tf1", ["Dzwonisz i t\u0142umaczysz", "Jedziesz do niego na sal\u0119", "Piszesz d\u0142ug\u0105 wiadomo\u015B\u0107"]), desc: pick(s, "tf2", ["P\xF3\u0142 godziny, w tym dwadzie\u015Bcia minut milczenia.", "Stoi przy workach i udaje, \u017Ce ci\u0119 nie widzi.", "Trzy wersje, wysy\u0142asz czwart\u0105."]), chance: 60, success: { relations: 2, note: "trener m\xF3wi \u201Edobra, dobra\u201D" }, fail: { relations: -1, note: "odk\u0142ada s\u0142uchawk\u0119" } },
+      { label: "Piszesz \u201Edzi\u0119kuj\u0119 za wszystko\u201D", desc: "Kr\xF3tko i od serca.", effects: { relations: 1 } },
+      { label: "Nie odpisujesz", desc: "Niech och\u0142onie.", effects: { relations: -1 } }
+    ] : [
+      pick(s, "tc1", [
+        { label: "\u201EDzi\u0119ki, trenerze. Za wszystko.\u201D", desc: "I wysy\u0142asz zdj\u0119cie z pierwszych zawod\xF3w.", effects: { relations: 2, note: "trener ustawia je jako tapet\u0119" } },
+        { label: "Dzwonisz, zamiast pisa\u0107", desc: "Dziesi\u0119\u0107 minut wspominek o pierwszym sparingu.", effects: { relations: 2, note: "trener udaje, \u017Ce ma katar" } },
+        { label: "Wysy\u0142asz zdj\u0119cie starej rozpiski", desc: "Tej z kaw\u0105 rozlan\u0105 na \u015Brod\u0119.", effects: { relations: 2, note: "trener odpisuje samym \u201Eno\u201D" } }
+      ]),
+      pick(s, "tc2", [
+        { label: "Obiecujesz, \u017Ce wpadniesz na trening", desc: "Raz w roku, z p\u0105czkami.", effects: { relations: 1, rep: 1 } },
+        { label: "Zapraszasz go na swoj\u0105 gal\u0119", desc: "Miejsce przy klatce, obok mamy.", effects: { relations: 1, rep: 1 } },
+        { label: "Zostawiasz mu swoje stare r\u0119kawice", desc: "Dla dzieciak\xF3w z sekcji.", effects: { relations: 1, rep: 1 } }
+      ])
+    ]
+  },
+  {
+    id: "pozegnanie.kumpel",
+    app: "sms",
+    from: (s) => mateOf(s, 0),
+    title: "Kumpel ze starej sali",
+    cond: (s) => !!s.exClub,
+    text: (s) => {
+      const e = ex(s);
+      const who = mateOf(s, 0);
+      if (mateSulks(s, 0))
+        return pick(s, `kf${who}`, [
+          `czyli co, za dobry na nas jeste\u015B? spoko. zapami\u0119tam`,
+          `zdrajca. dobra nie no powodzenia. ale zdrajca`,
+          `nawet nie przyszed\u0142e\u015B si\u0119 po\u017Cegna\u0107. s\u0142abo mordo`,
+          `${e.to}? tam same lalusie w nowych r\u0119kawicach. no ale twoja sprawa`,
+          `kto teraz b\u0119dzie ze mn\u0105 robi\u0142 sparingi o 7 rano? nikt. dzi\u0119ki`
+        ]);
+      return pick(s, `ko${who}`, [
+        `byku serio idziesz do ${e.to}? szacun. tylko nie zapomnij o nas jak b\u0119dziesz w telewizji \u{1F4AA}`,
+        `b\u0119dzie nam ciebie brakowa\u0142o na porannych. powodzenia!!`,
+        `stary poka\u017C im tam jak si\u0119 bije u nas na dzielni \u{1F525}`,
+        `trener niby z\u0142y ale ca\u0142e popo\u0142udnie o tobie gada\u0142. trzymaj si\u0119 mordo`,
+        `jak b\u0119dziesz mia\u0142 walk\u0119 to dawaj zna\u0107, robimy busa`
+      ]);
+    },
+    choices: (s) => mateSulks(s, 0) ? [
+      { label: pick(s, "kf1", ["Zapraszasz na piwo", "Proponujesz ostatni wsp\xF3lny sparing", "Dzwonisz pogada\u0107 jak cz\u0142owiek"]), desc: pick(s, "kf2", ["Po piwie wszystko si\u0119 prostuje.", "Trzy rundy i po sprawie.", "Bez emotek, normalnie."]), chance: 70, success: { relations: 1, note: "po drugim piwie znowu jeste\u015Bcie kumplami" }, fail: { relations: -1, note: "nie przyszed\u0142" } },
+      { label: "\u201ETaki sport, byku\u201D", desc: "I emotka z r\u0119kawic\u0105.", effects: { note: "odpisuje samym \u201Eok\u201D" } }
+    ] : [
+      pick(s, "k1", [
+        { label: "Obiecujesz bilety na gal\u0119", desc: "Dla ca\u0142ej starej ekipy.", effects: { relations: 1, money: -150, note: "bus ju\u017C zarezerwowany" } },
+        { label: "Stawiasz po\u017Cegnalnego kebaba", desc: "Z podw\xF3jnym mi\u0119sem, dla wszystkich.", effects: { relations: 1, money: -150, note: "kebab u Ahmeda, jak zawsze" } }
+      ]),
+      pick(s, "k2", [
+        { label: "\u201EDzi\u0119ki byku, widzimy si\u0119\u201D", desc: "Kr\xF3tko.", effects: { relations: 1 } },
+        { label: "\u201ENie p\u0142acz, mordo\u201D", desc: "I emotka z r\u0119kawic\u0105.", effects: { relations: 1 } },
+        { label: "Wysy\u0142asz wsp\xF3lne zdj\u0119cie z szatni", desc: "To, na kt\xF3rym wszyscy wygl\u0105daj\u0105 \u017Ale.", effects: { relations: 1 } }
+      ])
+    ]
+  },
+  {
+    id: "pozegnanie.grupa",
+    app: "gym",
+    note: true,
+    from: (s) => `${ex(s).name} \u2014 sekcja MMA`,
+    title: "Grupa starego klubu",
+    cond: (s) => !!s.exClub,
+    text: (s) => {
+      const m1 = mateOf(s, 1);
+      const m2 = mateOf(s, 2) === m1 ? mateOf(s, 3) : mateOf(s, 2);
+      const lines = mateSulks(s, 1) ? [`${m1}: kto\u015B tu nas zostawi\u0142 dla lepszej sali`, `${m2}: dajcie spok\xF3j, ka\u017Cdy by poszed\u0142`, `${m1}: ja bym nie poszed\u0142`, `${m2}: bo ci\u0119 nikt nie chcia\u0142 XD`] : [`${m1}: trzymamy kciuki!!`, `${m2}: jak wygrasz pierwsz\u0105 walk\u0119 w nowym klubie to stawiasz pizz\u0119`, `${m1}: dwie pizze`];
+      return `Kto\u015B doda\u0142 zdj\u0119cie z twojego pierwszego treningu. Pod spodem:
+${lines.join("\n")}`;
+    },
+    choices: () => [
+      { label: "Wrzucasz \u201Edzi\u0119ki za wszystko, ekipa \u2764\uFE0F\u201D", desc: "Zostajesz w grupie jeszcze troch\u0119.", effects: { relations: 1, media: 1 } },
+      { label: "Wychodzisz z grupy", desc: "Czysta karta.", effects: { note: "grupa pisze \u201Eno i poszed\u0142\u201D" } }
+    ]
+  }
+];
+function scheduleFarewell(s, prev, coach, years, up) {
+  s.exClub = { name: prev.name, coach, years, up, to: s.club.name };
+  const ph = s.phone;
+  if (!ph) return;
+  ph.due = ph.due.filter((d) => !d.step.startsWith("pozegnanie."));
+  ph.due.push({ step: "pozegnanie.trener", at: ph.tick + 1 }, { step: "pozegnanie.kumpel", at: ph.tick + 1 });
+  if (years >= 2) ph.due.push({ step: "pozegnanie.grupa", at: ph.tick + 2 });
+}
+
 // src/engine/threads.ts
 var sc = (s) => [1, 1.5, 3, 5, 8][Math.min(4, Math.max(0, s.tier))] ?? 1;
 var zl = (s, n) => Math.max(50, Math.round(n * sc(s) / 50) * 50);
@@ -381,6 +511,9 @@ function twistName(n) {
   if (n.endsWith("ek")) return `${n.slice(0, -2)}ak`;
   return `${n.slice(0, -1)}o`;
 }
+var buddy = (s) => s.profile.firstName === "Kamil" ? "Kuba" : "Kamil";
+var schoolmate = (s) => s.profile.firstName === "Kamil" ? "Patryk" : "Kamil";
+var roundAge = (age) => age <= 18 ? "osiemnastk\u0119" : age <= 21 ? "dwudziestk\u0119" : age <= 26 ? "dwudziestk\u0119 pi\u0105tk\u0119" : age <= 31 ? "trzydziestk\u0119" : age <= 36 ? "trzydziestk\u0119 pi\u0105tk\u0119" : "czterdziestk\u0119";
 var THREADS = [
   // ---------- Torba z szatni ----------
   {
@@ -1124,12 +1257,12 @@ var THREADS = [
   {
     id: "kolega.start",
     app: "fotogram",
-    from: "@motywacja_kamil",
+    from: (s) => `@motywacja_${schoolmate(s).toLowerCase()}`,
     title: "Rewan\u017C z podstaw\xF3wki",
     start: { weight: 3, cond: (s) => pro(s) && s.media >= 10 },
     text: () => "Pami\u0119tasz mnie? Podstaw\xF3wka, przerwy, ja ci\u0119 la\u0142em \u{1F60E} Teraz mam 300 tysi\u0119cy obserwuj\u0105cych. Rewan\u017C na gali freak? Kasa jest, i to du\u017Ca. Wrzucam film, czekam na odpowied\u017A.",
     choices: (s) => [
-      { label: "Przyjmujesz wyzwanie", desc: "Kasa jest. Kamil te\u017C.", effects: { money: zl(s, 2500), media: 3, rep: -2, follow: { step: "kolega.konferencja", after: 1 } } },
+      { label: "Przyjmujesz wyzwanie", desc: `Kasa jest. ${schoolmate(s)} te\u017C.`, effects: { money: zl(s, 2500), media: 3, rep: -2, follow: { step: "kolega.konferencja", after: 1 } } },
       { label: "Wy\u015Bmiewasz go w komentarzu", desc: "\u201ELa\u0142e\u015B mnie? Pami\u0119tam inaczej.\u201D", effects: { media: 2 } },
       { label: "Ignorujesz", desc: "Nie dla freak\xF3w.", effects: { rep: 1 } }
     ]
@@ -1140,9 +1273,9 @@ var THREADS = [
     app: "klatka",
     from: "KlatkaNews",
     title: "Konferencja freak",
-    text: () => "Konferencja przed gal\u0105 freak. Kamil rzuca w ciebie butelk\u0105 wody i krzyczy co\u015B o twojej mamie.",
-    choices: () => [
-      { label: "Siedzisz spokojnie", desc: "Woda sp\u0142ywa po twarzy.", effects: { rep: 2, media: 1, note: "w walce Kamil pada po 40 sekundach" } },
+    text: (s) => `Konferencja przed gal\u0105 freak. ${schoolmate(s)} rzuca w ciebie butelk\u0105 wody i krzyczy co\u015B o twojej mamie.`,
+    choices: (s) => [
+      { label: "Siedzisz spokojnie", desc: "Woda sp\u0142ywa po twarzy.", effects: { rep: 2, media: 1, note: `w walce ${schoolmate(s)} pada po 40 sekundach` } },
       { label: "Rzucasz krzes\u0142em", desc: "Freak to freak.", effects: { media: 5, rep: -4, note: "krzes\u0142o trafia ochroniarza" } },
       { label: "Wychodzisz", desc: "Nie b\u0119dziesz bra\u0142 w tym udzia\u0142u.", effects: { rep: 1, media: -1 } }
     ]
@@ -1373,22 +1506,22 @@ var THREADS = [
   {
     id: "urodziny.start",
     app: "sms",
-    from: "Kumpel Kamil",
+    from: (s) => `Kumpel ${buddy(s)}`,
     title: "Urodziny w sobot\u0119",
     start: { weight: 5, cond: (s) => s.age <= 30 },
-    text: () => "Mordo, w sobot\u0119 robi\u0119 trzydziestk\u0119 w \u201EPresti\u017Cu\u201D. Tydzie\u0144 przed twoj\u0105 walk\u0105, ale na chwil\u0119 wbijasz, nie? Bez ciebie to nie to samo. B\u0119dzie sztos.",
-    choices: () => [
+    text: (s) => `Mordo, w sobot\u0119 robi\u0119 ${roundAge(s.age)} w \u201EPresti\u017Cu\u201D. Tydzie\u0144 przed twoj\u0105 walk\u0105, ale na chwil\u0119 wbijasz, nie? Bez ciebie to nie to samo. B\u0119dzie sztos.`,
+    choices: (s) => [
       {
         label: "Wpadasz na chwil\u0119",
         desc: "Do 23:00, s\u0142owo.",
         chance: 40,
         success: { note: "wychodzisz o 23:00, jak obieca\u0142e\u015B" },
-        successText: "Wychodzisz o 23:00, jak obieca\u0142e\u015B. Kamil szcz\u0119\u015Bliwy, trener nie wie.",
+        successText: `Wychodzisz o 23:00, jak obieca\u0142e\u015B. ${buddy(s)} szcz\u0119\u015Bliwy, trener nie wie.`,
         fail: { nextFight: -3, media: 1 },
         failText: "Wychodzisz o 5:00. Trener wie, bo kto\u015B wrzuci\u0142 relacj\u0119."
       },
       { label: "Idziesz i pijesz tylko wod\u0119", desc: "Najtrze\u017Awiejszy go\u015B\u0107 w historii \u201EPresti\u017Cu\u201D.", effects: { nextFight: -1, rep: 1 } },
-      { label: "Odmawiasz", desc: "Najpierw walka.", effects: { nextFight: 1, note: "Kamil m\xF3wi, \u017Ce jeste\u015B nudziarz" } }
+      { label: "Odmawiasz", desc: "Najpierw walka.", effects: { nextFight: 1, note: `${buddy(s)} m\xF3wi, \u017Ce jeste\u015B nudziarz` } }
     ]
   },
   // ---------- Festyn parafialny ----------
@@ -1535,11 +1668,11 @@ var THREADS = [
       }
     ]
   },
-  // ---------- Ola i weekend ----------
+  // ---------- Natalia i weekend ----------
   {
     id: "ola.start",
     app: "sms",
-    from: "Ola",
+    from: "Natalia",
     title: "Weekend w g\xF3rach?",
     start: { weight: 4, cond: (s) => s.age >= 19 && s.age <= 34 },
     text: () => "Kochanie, mam wolny weekend. Jedziemy w g\xF3ry? Wiem, \u017Ce za tydzie\u0144 masz walk\u0119, ale ostatnio widzimy si\u0119 tylko na Instagrymie.",
@@ -1550,9 +1683,9 @@ var THREADS = [
         desc: "Obiecujesz najlepszy weekend w \u017Cyciu.",
         chance: 60,
         success: { relations: 1 },
-        successText: "Ola rozumie i rezerwuje pok\xF3j na termin po walce.",
+        successText: "Natalia rozumie i rezerwuje pok\xF3j na termin po walce.",
         fail: { relations: -2 },
-        failText: "Ola jedzie z kole\u017Cank\u0105. Zdj\u0119cia z g\xF3r ogl\u0105dasz mi\u0119dzy sparingami."
+        failText: "Natalia jedzie z kole\u017Cank\u0105. Zdj\u0119cia z g\xF3r ogl\u0105dasz mi\u0119dzy sparingami."
       },
       { label: "Zabierasz j\u0105 na ob\xF3z", desc: "Ona czyta, ty biegasz po g\xF3rach.", effects: { money: -zl(s, 400), relations: 1 } }
     ]
@@ -1842,7 +1975,7 @@ var THREADS = [
     app: "gym",
     from: "Trener",
     title: "Dwie pora\u017Cki z rz\u0119du",
-    start: { weight: 30, cond: (s, c) => !c.pre && pro(s) && s.history.length >= 2 && s.history.slice(-2).every((h) => h.result === "L" && !h.amateur), repeat: true },
+    start: { weight: 30, cond: (s, c) => !c.pre && pro(s) && s.history.length >= 2 && s.history.slice(-2).every((h2) => h2.result === "L" && !h2.amateur), repeat: true },
     text: () => "Dwie pora\u017Cki z rz\u0119du. Jutro 7:00 w klubie, pogadamy. Bez telefonu, bez wym\xF3wek.",
     choices: () => [
       { label: "Przychodzisz i gadacie szczerze", desc: "Godzina rozmowy, nagrania, nowy plan. Boli, ale pomaga.", effects: { nextFight: 2, relations: 1 } },
@@ -1936,7 +2069,7 @@ var THREADS = [
     from: "Oliks \xB7 wiadomo\u015B\u0107 od kupuj\u0105cego",
     title: "Pytanie o og\u0142oszenie",
     start: { weight: 3, cond: (s) => s.record.w >= 3 },
-    text: (s) => `Kupuj\u0105cy \u201EKolekcjoner_MMA\u201D pyta: \u201ECzy sprzedasz spodenki z ostatniej wygranej walki (rywal: ${s.history.filter((h) => !h.amateur && h.result === "W").slice(-1)[0]?.opponent ?? "niewa\u017Cne"})? Najlepiej nieprane. P\u0142ac\u0119 dobrze, nie pytaj dlaczego\u201D.`,
+    text: (s) => `Kupuj\u0105cy \u201EKolekcjoner_MMA\u201D pyta: \u201ECzy sprzedasz spodenki z ostatniej wygranej walki (rywal: ${s.history.filter((h2) => !h2.amateur && h2.result === "W").slice(-1)[0]?.opponent ?? "niewa\u017Cne"})? Najlepiej nieprane. P\u0142ac\u0119 dobrze, nie pytaj dlaczego\u201D.`,
     choices: (s) => [
       { label: "Sprzedajesz, i to nieprane", desc: "Nie pytasz dlaczego.", effects: { money: zl(s, 500), media: 1, note: "nie pytasz dlaczego" } },
       { label: "Oddajesz na licytacj\u0119 charytatywn\u0105", desc: "Dzieci zamiast dziwaka.", effects: { rep: 3, media: 1 } },
@@ -1959,7 +2092,7 @@ var THREADS = [
   }
 ];
 function findStep(id) {
-  return THREADS.find((t) => t.id === id);
+  return THREADS.find((t) => t.id === id) ?? FAREWELL_STEPS.find((t) => t.id === id);
 }
 
 // src/engine/errands.ts
@@ -2137,7 +2270,7 @@ var STYLE_PROFILE = {
   kickboxer: { stand: 10, wrest: -4, bjj: -4, cardio: 4, chin: 0, iq: 2 },
   wrestler: { stand: -5, wrest: 11, bjj: 1, cardio: 3, chin: 0, iq: 0 },
   grappler: { stand: -6, wrest: 3, bjj: 12, cardio: 0, chin: -2, iq: 2 },
-  brawler: { stand: 8, wrest: -2, bjj: -6, cardio: -1, chin: 10, iq: -2 },
+  brawler: { stand: 9, wrest: -1, bjj: -6, cardio: 1, chin: 9, iq: -2 },
   allround: { stand: 2, wrest: 2, bjj: 2, cardio: 1, chin: 0, iq: 1 }
 };
 var WEIGHTS = {
@@ -3618,25 +3751,25 @@ function buildWeek(rng, s, o) {
   const pool = WEEK_EVENTS.filter((e) => (!e.cond || e.cond(s, o)) && !(e.once && s.flags[`wk:${e.id}`])).map((e) => ({ e, w: e.w / (1 + 4 * (s.flags[`wk:${e.id}`] ?? 0)) }));
   const tot = pool.reduce((a, x) => a + x.w, 0);
   let r = rng.next() * tot;
-  let pick = pool[0].e;
+  let pick2 = pool[0].e;
   for (const x of pool) {
     r -= x.w;
     if (r <= 0) {
-      pick = x.e;
+      pick2 = x.e;
       break;
     }
   }
-  s.flags[`wk:${pick.id}`] = (s.flags[`wk:${pick.id}`] ?? 0) + 1;
-  return pick;
+  s.flags[`wk:${pick2.id}`] = (s.flags[`wk:${pick2.id}`] ?? 0) + 1;
+  return pick2;
 }
 
 // src/engine/prolog.ts
 var COACH_NAMES = ["Mirek", "Waldek", "Heniek", "Zbyszek", "Rafa\u0142", "Grzesiek"];
 var STREETS = ["Przemys\u0142owa 4, wej\u015Bcie od gara\u017Cy", "Kolejowa 12, piwnica pod si\u0142owni\u0105", "Polna 3, za Pszcz\xF3\u0142k\u0105", "Sportowa 1, hala po starym PGR-ze", "Fabryczna 8, drugie pi\u0119tro, bez windy"];
 function hash(t) {
-  let h = 7;
-  for (const c of t) h = h * 31 + c.charCodeAt(0) >>> 0;
-  return h;
+  let h2 = 7;
+  for (const c of t) h2 = h2 * 31 + c.charCodeAt(0) >>> 0;
+  return h2;
 }
 function clubCoachName(club) {
   return `Trener ${COACH_NAMES[hash(club.name) % COACH_NAMES.length]}`;
@@ -3880,6 +4013,21 @@ function ageRate(age) {
   if (age <= 30) return 0.045;
   if (age <= 32) return 0.015;
   return 0;
+}
+function dedupePeerRanks(peers) {
+  for (let tier = 1; tier <= 4; tier++) {
+    const used = /* @__PURE__ */ new Set();
+    const list = peers.filter((p) => !p.retired && p.tier === tier && p.rank !== null).sort((a, b) => (a.rank ?? 0) - (b.rank ?? 0));
+    for (const p of list) {
+      let r = p.rank;
+      while (used.has(r)) r++;
+      if (r > RANK_SIZE[tier]) p.rank = null;
+      else {
+        p.rank = r;
+        used.add(r);
+      }
+    }
+  }
 }
 function progressPeer(rng, p) {
   if (p.retired) return;
@@ -5137,9 +5285,10 @@ var EXTRA_EVENTS = [
     weight: 4,
     cond: (s) => s.tier === 0 && s.age <= 18,
     text: () => "Wuefista nie wierzy, \u017Ce trenujesz MMA. Ka\u017Ce ci gra\u0107 w siatk\xF3wk\u0119 z reszt\u0105 klasy, \u201Ebo zasady s\u0105 dla wszystkich\u201D.",
-    choices: () => [
+    choices: (s) => [
       { label: "Grasz w siatk\u0119", desc: "Atakujesz pi\u0142k\u0119 jak rywala.", effects: { stats: { cardio: 1 }, relations: 1 } },
-      { label: "Pokazujesz medal", desc: "Wuefista robi zdj\u0119cie i wrzuca na stron\u0119 szko\u0142y.", effects: { media: 2, rep: 1 } }
+      // medal tylko, jeśli już jakiś masz; wcześniej pokazujesz nagranie z treningu
+      s.medals.gold + s.medals.silver + s.medals.bronze > 0 ? { label: "Pokazujesz medal", desc: "Wuefista robi zdj\u0119cie i wrzuca na stron\u0119 szko\u0142y.", effects: { media: 2, rep: 1 } } : { label: "Pokazujesz nagranie ze sparingu", desc: "Wuefista ogl\u0105da dwa razy i ka\u017Ce ci prowadzi\u0107 rozgrzewk\u0119.", effects: { media: 1, rep: 1 } }
     ]
   },
   {
@@ -7151,7 +7300,7 @@ ${t}: I przy\u0142\xF3\u017C l\xF3d na to oko.`;
     id: "pas_kradziony",
     title: "Skradziona walka?",
     weight: 3,
-    cond: (s) => s.tier >= 2 && s.history.slice(-3).some((h) => h.result === "L" && h.method === "Decyzja niejednog\u0142o\u015Bna"),
+    cond: (s) => s.tier >= 2 && s.history.slice(-3).some((h2) => h2.result === "L" && h2.method === "Decyzja niejednog\u0142o\u015Bna"),
     text: () => "Po ostatniej niejednog\u0142o\u015Bnej decyzji internet huczy, \u017Ce ci\u0119 okradli. Mo\u017Cesz z\u0142o\u017Cy\u0107 oficjalny protest albo odpu\u015Bci\u0107 i odpowiedzie\u0107 w klatce.",
     choices: () => [
       { label: "Sk\u0142adasz protest", desc: "Sprawiedliwo\u015B\u0107 musi by\u0107.", chance: 30, success: { rep: 3, media: 3, note: "komisja przyznaje, \u017Ce s\u0119dziowie si\u0119 pomylili" }, fail: { rep: -1, note: "protest odrzucony" } },
@@ -8594,17 +8743,20 @@ function cheaperClub(s) {
   if (s.club.cost <= 0) return null;
   const room = s.club.cost + s.money + budgetBalance(s) + OVERDRAFT;
   const cands = CLUB_TEMPLATES.map((t, idx) => ({ t, idx })).filter(({ t }) => t.cost < s.club.cost && t.minTier <= s.tier && t.cost <= Math.max(0, room)).sort((a, b) => b.t.quality - a.t.quality || a.t.cost - b.t.cost);
-  const pick = cands[0] ?? { t: CLUB_TEMPLATES[0], idx: 0 };
-  return { idx: pick.idx, name: pick.t.name, cost: pick.t.cost, quality: pick.t.quality };
+  const pick2 = cands[0] ?? { t: CLUB_TEMPLATES[0], idx: 0 };
+  return { idx: pick2.idx, name: pick2.t.name, cost: pick2.t.cost, quality: pick2.t.quality };
 }
 function downgradeClub(s0) {
   const c = cheaperClub(s0);
   if (!c) return s0;
   const s = clone(s0);
   withRng(s, (rng) => {
-    const prev = s.club.name;
+    const prevClub = s.club;
+    const prev = prevClub.name;
+    const years = Math.max(1, s.clubSeasons);
     s.club = makeClub(rng, c.idx, s.profile.hometown);
     s.clubSeasons = 0;
+    scheduleFarewell(s, prevClub, clubCoachName(prevClub), years, false);
     log(s, `Na sk\u0142adki w ${prev} nie starcza. Przenosisz si\u0119 do ${s.club.name}.`);
   });
   return s;
@@ -8698,6 +8850,7 @@ function takeBreakYear(s0) {
     s.flags.breakYears = (s.flags.breakYears ?? 0) + 1;
     log(s, "Rok przerwy: praca zamiast walk.");
     for (const p of s.peers) progressPeer(rng, p);
+    dedupePeerRanks(s.peers);
   });
   s.phase = "summary";
   return s;
@@ -8786,6 +8939,7 @@ function rehabYear(s0) {
     s.eventQueue = [];
     log(s, `Rok rehabilitacji: ${name}.`);
     for (const p of s.peers) progressPeer(rng, p);
+    dedupePeerRanks(s.peers);
   });
   s.phase = "summary";
   return s;
@@ -8936,6 +9090,7 @@ function goExpedition(s0, id) {
       yearFrom = s.money;
     }
     for (let i = 0; i < e.years; i++) for (const p of s.peers) progressPeer(rng, p);
+    dedupePeerRanks(s.peers);
     s.media = clamp(s.media + e.media, 0, 100);
     s.rep = clamp(s.rep + e.rep, 0, 100);
     s.wear = clamp(s.wear + e.wear, 0, 100);
@@ -9169,12 +9324,12 @@ function startSeason(s0) {
   return nextEventOrSeason(s);
 }
 function shuffleChoices(arr, key) {
-  let h = 2166136261;
-  for (let i = 0; i < key.length; i++) h = Math.imul(h ^ key.charCodeAt(i), 16777619);
+  let h2 = 2166136261;
+  for (let i = 0; i < key.length; i++) h2 = Math.imul(h2 ^ key.charCodeAt(i), 16777619);
   const out = [...arr];
   for (let i = out.length - 1; i > 0; i--) {
-    h = Math.imul(h ^ h >>> 13, 2246822507) >>> 0;
-    const j = h % (i + 1);
+    h2 = Math.imul(h2 ^ h2 >>> 13, 2246822507) >>> 0;
+    const j = h2 % (i + 1);
     [out[i], out[j]] = [out[j], out[i]];
   }
   return out;
@@ -9315,12 +9470,12 @@ function errandsLeft(s) {
 function errandOptions(s) {
   const all = ERRANDS.filter((e) => !e.cond || e.cond(s));
   const k = all.length > 7 ? s.season * 3 % all.length : 0;
-  const pick = all.length > 7 ? [...all.slice(k), ...all.slice(0, k)].slice(0, 7) : all;
-  if (s.errand && !pick.some((e) => e.id === s.errand.id)) {
+  const pick2 = all.length > 7 ? [...all.slice(k), ...all.slice(0, k)].slice(0, 7) : all;
+  if (s.errand && !pick2.some((e) => e.id === s.errand.id)) {
     const cur = all.find((e) => e.id === s.errand.id);
-    if (cur) pick.push(cur);
+    if (cur) pick2.push(cur);
   }
-  return pick.map((e) => ({ def: e, cost: e.cost?.(s) ?? 0, ok: (e.cost?.(s) ?? 0) <= Math.max(0, s.money) }));
+  return pick2.map((e) => ({ def: e, cost: e.cost?.(s) ?? 0, ok: (e.cost?.(s) ?? 0) <= Math.max(0, s.money) }));
 }
 function errandMs(s, id) {
   const d = findErrand(id);
@@ -9418,10 +9573,10 @@ function weekGo(s0) {
 function tourneyEntry(s, t, ti) {
   const coach = clubCoachName(s.club);
   const fee = [60, 80, 120][Math.min(2, amLevel(s) + (t.championship ? 1 : 0))];
-  const first = s.history.filter((h2) => h2.amateur).length === 0;
+  const first = s.history.filter((h3) => h3.amateur).length === 0;
   const k = s.season * 3 + ti;
-  const h = k * 7 + s.profile.lastName.length + (s.flags.entryN ?? 0);
-  const open = t.championship ? `To s\u0105 Mistrzostwa Polski, ${t.city}. Tu nie ma przypadkowych ludzi: ka\u017Cdy w drabince wygra\u0142 ju\u017C swoje wojew\xF3dztwo.` : first ? `Zapisa\u0142em ci\u0119 na ${t.name} w ${t.city}. Twoje pierwsze zawody. Spokojnie, ka\u017Cdy kiedy\u015B debiutowa\u0142.` : [`Zapisa\u0142em ci\u0119 na ${t.name}, ${t.city}.`, `Lista startowa na ${t.name} posz\u0142a. Jeste\u015B na niej. ${t.city}.`, `Nast\u0119pne zawody: ${t.name} w ${t.city}. Ju\u017C ci\u0119 zg\u0142osi\u0142em.`][k % 3];
+  const h2 = k * 7 + s.profile.lastName.length + (s.flags.entryN ?? 0);
+  const open = t.championship ? `To s\u0105 Mistrzostwa Polski, ${t.city}. Tu nie ma przypadkowych ludzi: ka\u017Cdy w drabince wygra\u0142 ju\u017C swoje wojew\xF3dztwo.` : first ? `Zapisa\u0142em ci\u0119 na zawody: ${t.name}, ${t.city}. Twoje pierwsze zawody. Spokojnie, ka\u017Cdy kiedy\u015B debiutowa\u0142.` : [`Zapisa\u0142em ci\u0119 na zawody: ${t.name}, ${t.city}.`, `Lista startowa posz\u0142a: ${t.name}. Jeste\u015B na niej. Miasto: ${t.city}.`, `Nast\u0119pne zawody: ${t.name}, ${t.city}. Ju\u017C ci\u0119 zg\u0142osi\u0142em.`][k % 3];
   const body = `Kategoria: ${t.division}. O\u015Bmiu w drabince, trzy wygrane walki dziel\u0105 ci\u0119 od z\u0142ota. Wa\u017Cenie o 7:00, wpisowe ${fee} z\u0142 p\u0142aci klub.`;
   const tail = ["Jak jedziemy?", "Pisz, jak doje\u017Cd\u017Casz.", "Wyjazd wcze\u015Bnie rano. Albo radzisz sobie sam."][k % 3];
   const local = amLevel(s) === 0;
@@ -9440,7 +9595,7 @@ ${coach}: ${tail}`,
         { label: "Studio na wynajem, \u201Eprzytulne\u201D, ocena 4,2", desc: "Przytulne znaczy: \u0142\xF3\u017Cko stoi w kuchni.", effects: { money: -Math.round(lodging * 0.8 / 50) * 50, nextFight: 1, note: "klucz w skrzynce na listy" } },
         { label: "Internat szko\u0142y sportowej przy hali", desc: "\u0141\xF3\u017Cko pi\u0119trowe, kakao na \u015Bniadanie, cisza nocna od 22:00.", effects: { money: -Math.round(lodging / 3 / 50) * 50, nextFight: 1, note: "kakao jak w podstaw\xF3wce" } },
         { label: "Motel przy kraj\xF3wce", desc: "Tirowcy, schabowy do sufitu i cisza od 23:00 (w teorii).", effects: { money: -Math.round(lodging / 2 / 50) * 50, nextFight: 1, note: "schabowy na kolacj\u0119, ry\u017C na \u015Bniadanie" } }
-      ][h % 6],
+      ][h2 % 6],
       [
         {
           label: "Klubowy bus o 4:30",
@@ -9496,7 +9651,7 @@ ${coach}: ${tail}`,
           fail: { nextFight: -1 },
           failText: "Cztery godziny tej samej bajki na p\u0119tli. Na rozgrzewce nucisz czo\u0142\xF3wk\u0119 i nie mo\u017Cesz przesta\u0107."
         }
-      ][(h * 5 + 1) % 6],
+      ][(h2 * 5 + 1) % 6],
       [
         {
           label: t.city === s.profile.hometown ? "\u015Api\u0119 w domu, mama robi \u015Bniadanie" : `\u015Api\u0119 u cioci w ${t.city}`,
@@ -9552,7 +9707,7 @@ ${coach}: ${tail}`,
           fail: { money: -30, nextFight: -2 },
           failText: "Pod\u0142okietnik co p\xF3\u0142 metra. Nie \u015Bpisz wcale, a o pi\u0105tej sprz\u0105taczka myje pod\u0142og\u0119 pod twoimi nogami."
         }
-      ][(h * 11 + 2) % 6]
+      ][(h2 * 11 + 2) % 6]
     ]
   };
 }
@@ -9571,9 +9726,9 @@ function entryGo(s0) {
   s.run.entry = null;
   return seasonNext(s);
 }
-function answerPhoneAll(s, pick = () => 0) {
+function answerPhoneAll(s, pick2 = () => 0) {
   let out = s;
-  for (const m of phoneUnread(s)) out = answerMessage(out, m.id, Math.min(m.choices.length - 1, Math.max(0, pick(m))));
+  for (const m of phoneUnread(s)) out = answerMessage(out, m.id, Math.min(m.choices.length - 1, Math.max(0, pick2(m))));
   if (afterPending(out) !== null) out = afterNext(out);
   if (out.run?.announce) out = announceAnswer(out, "ignore");
   if (out.run?.camp) {
@@ -9812,7 +9967,14 @@ function pickOpponent(rng, s, idx) {
   };
   if (isAmateurRun(s)) {
     const t = run.tourneys[run.tIdx ?? 0];
-    if (peers.length && (wantPeer || rng.chance(0.14))) return peerPick();
+    const elite = /Mistrzostwa/.test(t.name);
+    const okPeer = (p) => !elite || p.record.w >= 2 && p.record.w >= p.record.l;
+    if (peers.some(okPeer) && (wantPeer || rng.chance(0.14))) {
+      const pool = peers.filter(okPeer);
+      const p = rng.pick(pool);
+      if (wantPeer) s.flags.peerCallout = 0;
+      return { opp: { ...p, stats: { ...p.stats }, record: { ...p.record }, rank: null, peer: true }, title: false, defense: false, peer: p };
+    }
     return { opp: amateurOpponent(rng, s, t, t.stage ?? "qf"), title: false, defense: false, peer: null };
   }
   const rivalPeer = s.rivalId ? s.peers.find((p) => p.id === s.rivalId && !p.retired && p.tier === tier && tier >= 1 && !metThisSeason.has(p.id)) : void 0;
@@ -9916,11 +10078,11 @@ function tasmaItems(s) {
   if (s.proDebut) {
     for (const l of LUXURY) if (s.tier >= l.minTier && !s.flags[`own:${l.id}`] && !(l.id === "passat" && s.flags["own:audi"])) out.push({ id: `lux-${l.id}`, kind: "buy", title: l.title, desc: vary6(s, l.desc, l.id.length), seller: l.seller, price: l.price, effects: l.effects, hint: l.hint, big: true });
   }
-  const titles = s.history.filter((h) => h.title && h.result === "W");
-  for (const h of titles.slice(-3)) {
-    const id = `pas-${h.season}-${h.opponent.replace(/\s+/g, "")}`;
+  const titles = s.history.filter((h2) => h2.title && h2.result === "W");
+  for (const h2 of titles.slice(-3)) {
+    const id = `pas-${h2.season}-${h2.opponent.replace(/\s+/g, "")}`;
     if (s.flags[tmKey(s, id, true)]) continue;
-    out.push({ id, kind: "sell", title: `R\u0119kawice z walki o pas vs ${h.opponent}`, desc: `Z autografem, z krwi\u0105 rywala (gratis). Rok ${s.seasons.find((x) => x.season === h.season)?.year ?? ""}.`, seller: "ty", price: Math.round(2500 * tmScale({ ...s, tier: h.tier }) / 50) * 50, effects: { media: 1 }, hint: "media +1" });
+    out.push({ id, kind: "sell", title: `R\u0119kawice z walki o pas vs ${h2.opponent}`, desc: `Z autografem, z krwi\u0105 rywala (gratis). Rok ${s.seasons.find((x) => x.season === h2.season)?.year ?? ""}.`, seller: "ty", price: Math.round(2500 * tmScale({ ...s, tier: h2.tier }) / 50) * 50, effects: { media: 1 }, hint: "media +1" });
   }
   const medals = s.medals.gold + s.medals.silver + s.medals.bronze - (s.flags.medalsSold ?? 0);
   if (medals > 0) out.push({ id: "medal", kind: "sell", title: "Medal z turnieju amatorskiego", desc: "Prawdziwy, wisia\u0142 w pokoju u mamy. Mama jeszcze nie wie.", seller: "ty", price: tmZl(s, 200), effects: { relations: -1 }, hint: "rodzina \u22121" });
@@ -9961,16 +10123,16 @@ function tasmaDeal(s0, id) {
   return s;
 }
 function fotoPostOptions(s) {
-  const h = s.history[s.history.length - 1];
-  if (!h || s.phase === "ended" || !s.proDebut || s.flags[`fp:${s.history.length}`]) return null;
-  const opp = surname(h.opponent);
+  const h2 = s.history[s.history.length - 1];
+  if (!h2 || s.phase === "ended" || !s.proDebut || s.flags[`fp:${s.history.length}`]) return null;
+  const opp = surname(h2.opponent);
   const opts = [
-    { id: "respekt", label: "Zdj\u0119cie z rywalem", caption: h.result === "W" ? `${opp}, szacunek. Twarda walka, wielkie serce. \u{1F91D}` : `${opp}, gratulacje. Dzi\u015B by\u0142e\u015B lepszy. Wracam silniejszy. \u{1F91D}`, hint: "reputacja +1, obserwuj\u0105cy +" },
-    { id: "trash", label: "Wywo\u0142anie kolejnego rywala", caption: h.result === "W" ? `Nast\u0119pny. Kto chce by\u0107 kolejny? Czekam. \u{1F624}` : `S\u0119dziowie mnie okradli. Rewan\u017C albo nic. \u{1F624}`, hint: "media +2, reputacja \u22121, du\u017Co obserwuj\u0105cych, ryzyko kary" }
+    { id: "respekt", label: "Zdj\u0119cie z rywalem", caption: h2.result === "W" ? `${opp}, szacunek. Twarda walka, wielkie serce. \u{1F91D}` : `${opp}, gratulacje. Dzi\u015B by\u0142e\u015B lepszy. Wracam silniejszy. \u{1F91D}`, hint: "reputacja +1, obserwuj\u0105cy +" },
+    { id: "trash", label: "Wywo\u0142anie kolejnego rywala", caption: h2.result === "W" ? `Nast\u0119pny. Kto chce by\u0107 kolejny? Czekam. \u{1F624}` : `S\u0119dziowie mnie okradli. Rewan\u017C albo nic. \u{1F624}`, hint: "media +2, reputacja \u22121, du\u017Co obserwuj\u0105cych, ryzyko kary" }
   ];
   if (s.sponsors.length) opts.push({ id: "sponsor", label: "Post z produktem sponsora", caption: `Regeneracja po walce tylko z ${s.sponsors[0].name}! Kod rabatowy w bio \u{1F4AA}`, hint: "pieni\u0105dze od sponsor\xF3w, media +1" });
-  if (h.result !== "W") opts.push({ id: "kulisy", label: "Szczera relacja z szatni", caption: "Nie b\u0119d\u0119 \u015Bciemnia\u0142. Boli. Ale tak wygl\u0105da ten sport. Dzi\u0119kuj\u0119, \u017Ce jeste\u015Bcie. \u2764\uFE0F", hint: "reputacja +2, obserwuj\u0105cy +" });
-  return { fight: h, opts };
+  if (h2.result !== "W") opts.push({ id: "kulisy", label: "Szczera relacja z szatni", caption: "Nie b\u0119d\u0119 \u015Bciemnia\u0142. Boli. Ale tak wygl\u0105da ten sport. Dzi\u0119kuj\u0119, \u017Ce jeste\u015Bcie. \u2764\uFE0F", hint: "reputacja +2, obserwuj\u0105cy +" });
+  return { fight: h2, opts };
 }
 function fotoPost(s0, kind) {
   const o = fotoPostOptions(s0);
@@ -10404,12 +10566,12 @@ function buildShortNotice(rng, s) {
   };
 }
 function rivalHook(p, title, defense, trilogy) {
-  const h = h2hWords(p.h2h.w, p.h2h.l, p.h2h.d);
-  if (title && defense) return `Obrona pasa przeciwko odwiecznemu rywalowi. ${p.lastName} czeka\u0142 na to latami, a ty ${h}.`;
-  if (title) return `${p.lastName} ma pas. Twoja walka o tytu\u0142 to walka z odwiecznym rywalem, a ty ${h}.`;
+  const h2 = h2hWords(p.h2h.w, p.h2h.l, p.h2h.d);
+  if (title && defense) return `Obrona pasa przeciwko odwiecznemu rywalowi. ${p.lastName} czeka\u0142 na to latami, a ty ${h2}.`;
+  if (title) return `${p.lastName} ma pas. Twoja walka o tytu\u0142 to walka z odwiecznym rywalem, a ty ${h2}.`;
   if (trilogy) return `Trylogia. Po jednej wygranej dla ka\u017Cdego, ta walka rozstrzygnie, kto by\u0142 lepszy. Organizator dok\u0142ada 30% do ga\u017Cy.`;
   if (p.metCount === 0) return `${p.lastName}: rywal, o kt\xF3rym m\xF3wi\u0105 wszyscy. Pierwsze starcie zawodowe, ga\u017Ca +15%.`;
-  return `Odwieczny rywal, ${h}. Organizator dok\u0142ada 15% do ga\u017Cy.`;
+  return `Odwieczny rywal, ${h2}. Organizator dok\u0142ada 15% do ga\u017Cy.`;
 }
 function tuneupWanted(rng, s, _idx) {
   const run = s.run;
@@ -10931,31 +11093,31 @@ function h2hWords(w, l, d = 0) {
 function pressContext(s, o, rng) {
   const n = o.opp.lastName;
   const me = s.profile.lastName;
-  const pick = (arr) => rng ? rng.pick(arr) : arr[(s.season + s.history.length) % arr.length];
+  const pick2 = (arr) => rng ? rng.pick(arr) : arr[(s.season + s.history.length) % arr.length];
   const peer = o.opp.peer ? s.peers.find((p) => p.id === o.opp.id) : void 0;
   const L = (calm, provoke, insult) => ({ calm, provoke, insult });
   if (o.opp.freak)
-    return pick([
+    return pick2([
       { id: "freak", question: `Dziennikarz: \u201ESportowiec kontra ${o.opp.freak}. Nie wstyd ci?\u201D`, labels: L(["\u201ETo te\u017C praca\u201D", "Spokojnie, bez wchodzenia w cyrk. Kibice MMA to doceni\u0105."], ["Grasz w ich gr\u0119", "Riposta pod klipy. Zasi\u0119gi pewne, nerwy te\u017C."], ["Robisz show", "Przewracasz st\xF3\u0142 i rzucasz butelk\u0105. Dok\u0142adnie tego chc\u0105 organizatorzy."]), provoke: 0.7, insult: 0.65 },
       { id: "freak", question: `${n}: \u201EMam wi\u0119cej obserwuj\u0105cych ni\u017C ty kibic\xF3w na wszystkich galach razem. Kto tu jest gwiazd\u0105?\u201D`, labels: L(["\u201EZobaczymy w klatce\u201D", "Ignorujesz zasi\u0119gi, m\xF3wisz o walce."], ["\u201EPolicz je po walce\u201D", "Szybka riposta pod nagranie."], ["Wylewasz mu wod\u0119 na g\u0142ow\u0119", "Klip roku albo kara od organizatora."]), provoke: 0.68, insult: 0.62 }
     ]);
   if (peer && peer.metCount > 0)
-    return pick([
+    return pick2([
       { id: "rematch", question: `Dziennikarz: \u201EZnacie si\u0119 z klatki: ${h2hWords(peer.h2h.w, peer.h2h.l, peer.h2h.d)}. ${n} m\xF3wi, \u017Ce tym razem nie b\u0119dzie przypadku. Co ty na to?\u201D`, labels: L(["\u201EZnamy si\u0119 na pami\u0119\u0107\u201D", "Szacunek dla historii. Kibice ceni\u0105 klas\u0119."], ["Przypominasz wynik", "Wyci\u0105gasz mu wasze poprzednie starcie. Trafi albo go nakr\u0119ci."], ["Robisz z tego wojn\u0119", "Osobiste wycieczki. Hala b\u0119dzie pe\u0142na, a ochrona w gotowo\u015Bci."]), provoke: peer.h2h.w > peer.h2h.l ? 0.7 : 0.45, insult: 0.4 },
-      { id: "rematch", question: `${n}: \u201EZnam ${me} od dzieciaka. Wiem, kiedy si\u0119 boi. Teraz si\u0119 boi.\u201D`, labels: L(["\u201EDoro\u015Bli\u015Bmy obaj\u201D", "Bez wspominek, z szacunkiem."], ["Przypominasz mu dawne czasy", "Historia z szatni, kt\xF3ra go zaboli."], ["Wyci\u0105gasz brudy", "Prywatne sprawy na konferencji. Internet zap\u0142onie, federacja te\u017C."]), provoke: 0.55, insult: 0.38 }
+      { id: "rematch", question: `${n}: \u201EZnam ${genitive(me)} od dzieciaka. Wiem, kiedy si\u0119 boi. Teraz si\u0119 boi.\u201D`, labels: L(["\u201EDoro\u015Bli\u015Bmy obaj\u201D", "Bez wspominek, z szacunkiem."], ["Przypominasz mu dawne czasy", "Historia z szatni, kt\xF3ra go zaboli."], ["Wyci\u0105gasz brudy", "Prywatne sprawy na konferencji. Internet zap\u0142onie, federacja te\u017C."]), provoke: 0.55, insult: 0.38 }
     ]);
   if (s.streak <= -2)
-    return pick([
+    return pick2([
       { id: "losing", question: `Dziennikarz: \u201E${Math.abs(s.streak)} ${pl(Math.abs(s.streak), "pora\u017Cka", "pora\u017Cki", "pora\u017Cek")} z rz\u0119du. Ludzie m\xF3wi\u0105, \u017Ce to ju\u017C koniec. Po co jeszcze walczysz?\u201D`, labels: L(["Bierzesz to na siebie", "\u201EZawali\u0142em, wracam silniejszy.\u201D Kibice lubi\u0105 szczero\u015B\u0107."], ["Odgryzasz si\u0119", "Ostro do dziennikarza. Po serii pora\u017Cek \u0142atwo wyj\u015B\u0107 na sfrustrowanego."], ["Atakujesz rywala", "G\u0142o\u015Bno i agresywnie. Jak przegrasz, internet ci\u0119 zje."]), provoke: 0.4, insult: 0.25 },
       { id: "losing", question: `${n}: \u201EPrzyszed\u0142em po \u0142atwe zwyci\u0119stwo. Po ostatnich walkach ${me} sam to wie.\u201D`, labels: L(["\u201EOceniaj mnie w sobot\u0119\u201D", "Bez t\u0142umaczenia si\u0119, kr\xF3tko."], ["\u201E\u0141atwe? Sprawd\u017A m\xF3j rekord\u201D", "Pewno\u015B\u0107 siebie wbrew wynikom. Ryzykowne."], ["Rzucasz si\u0119 do niego", "Ochrona was rozdziela. Albo ci\u0119 to nakr\u0119ci, albo spali."]), provoke: 0.42, insult: 0.28 }
     ]);
   if (s.streak >= 3)
-    return pick([
+    return pick2([
       { id: "streak", question: `Dziennikarz: \u201ESeria ${s.streak} wygranych. ${n} twierdzi, \u017Ce bi\u0142e\u015B si\u0119 z nikim. Czujesz si\u0119 faworytem?\u201D`, labels: L(["\u201EKa\u017Cda walka jest inna\u201D", "Pokora faworyta. Bez fajerwerk\xF3w."], ["\u201EZapytaj moich ostatnich rywali\u201D", "Pewno\u015B\u0107 siebie na fali. Zwykle dzia\u0142a."], ["Wy\u015Bmiewasz go", "Arogancja zwyci\u0119zcy. Jak si\u0119 potkniesz, wr\xF3ci do ciebie."]), provoke: 0.72, insult: 0.5 },
       { id: "streak", question: `${n}: \u201EKa\u017Cda seria si\u0119 kiedy\u015B ko\u0144czy. Twoja ko\u0144czy si\u0119 w sobot\u0119.\u201D`, labels: L(["\u201EMo\u017Ce tak, mo\u017Ce nie\u201D", "Spok\xF3j kogo\u015B, kto wie, ile jest wart."], ["\u201EUstaw si\u0119 w kolejce\u201D", "Lista pokonanych ro\u015Bnie. M\xF3wisz to z u\u015Bmiechem."], ["Wr\u0119czasz mu list\u0119 pokonanych", "Kartka z nazwiskami i jego na ko\u0144cu. Klip pewny, kara mo\u017Cliwa."]), provoke: 0.7, insult: 0.48 }
     ]);
   if (o.title)
-    return pick([
+    return pick2([
       { id: "title", question: `Dziennikarz: \u201E${o.defense ? "Kolejna obrona. Ile jeszcze utrzymasz ten pas?" : "Walka o pas. Co to dla ciebie znaczy?"}\u201D`, labels: L(["M\xF3wisz o drodze", "\u201EOd pierwszej sali do tego miejsca.\u201D Kibice to kupuj\u0105."], ["\u201EPas ju\u017C jest m\xF3j\u201D", "Pewno\u015B\u0107 siebie przed najwi\u0119ksz\u0105 walk\u0105."], ["Jedziesz po rywalu", "Wszystko albo nic. Federacja patrzy, kibice te\u017C."]), provoke: 0.55, insult: 0.35 },
       { id: "title", question: `${n} k\u0142adzie r\u0119k\u0119 na pasie na stole: \u201E${o.defense ? "Po\u017Cyczy\u0142e\u015B go tylko na chwil\u0119." : "Przyzwyczaj si\u0119, \u017Ce to ja go nosz\u0119."}\u201D`, labels: L(["Zabierasz r\u0119k\u0119 z u\u015Bmiechem", "Bez s\u0142owa, z klas\u0105. Kamery to \u0142api\u0105."], ["\u201EZr\xF3b sobie z nim zdj\u0119cie\u201D", "Riposta, po kt\xF3rej sala wybucha \u015Bmiechem."], ["Wyrywasz mu pas", "Przepychanka przy stole. Hit internetu albo kara i nerwy."]), provoke: 0.58, insult: 0.36 }
     ]);
@@ -10986,7 +11148,7 @@ function pressContext(s, o, rng) {
   if (o.opp.age <= 23 && s.age >= 30)
     opts.push({ id: "young", question: `${n}: \u201ENajlepsze lata ${me} ju\u017C min\u0119\u0142y. Czas zrobi\u0107 miejsce m\u0142odym.\u201D`, labels: L(["\u201EJeszcze si\u0119 nauczysz\u201D", "Spok\xF3j weterana. Kibice to szanuj\u0105."], ["\u201EUcz si\u0119, dop\xF3ki mo\u017Cesz\u201D", "Lekcja dla m\u0142odego. Mo\u017Ce go wytr\u0105ci\u0107 z rytmu."], ["Robisz z niego dzieciaka", "Poklepujesz go po g\u0142owie przy kamerach. W\u015Bciek\u0142o\u015B\u0107 gwarantowana."]), provoke: 0.62, insult: 0.44 });
   opts.push({ id: "default", question: `${n} na face to face: \u201E${o.pressQuote ?? ""}\u201D`, labels: L(["Spokojnie i z klas\u0105", "Szacunek, zero emocji. Kibice ceni\u0105."], ["Odbijasz pi\u0142eczk\u0119", "Ostra riposta. Mo\u017Ce wyprowadzi\u0107 go z r\xF3wnowagi albo ciebie."], ["Jedziesz po bandzie", "Zasi\u0119gi gwarantowane. Federacja mo\u017Ce ukara\u0107, a nerwy mog\u0105 pu\u015Bci\u0107."]), provoke: 0.6, insult: 0.4 });
-  return pick(opts);
+  return pick2(opts);
 }
 function pressAnswer(s0, key) {
   const s = clone(s0);
@@ -11152,10 +11314,10 @@ function vary6(s, arr, salt = 0) {
   return arr[(s.history.length * 7 + s.season * 3 + salt) % arr.length];
 }
 function fanNickFor(rng, s) {
-  const proWins = s.history.filter((h) => !h.amateur && !h.freak && h.result === "W");
-  const ko = proWins.filter((h) => h.method === "KO/TKO").length;
-  const sub = proWins.filter((h) => h.method === "Poddanie").length;
-  const dec = proWins.filter((h) => h.method.startsWith("Decyzja")).length;
+  const proWins = s.history.filter((h2) => !h2.amateur && !h2.freak && h2.result === "W");
+  const ko = proWins.filter((h2) => h2.method === "KO/TKO").length;
+  const sub = proWins.filter((h2) => h2.method === "Poddanie").length;
+  const dec = proWins.filter((h2) => h2.method.startsWith("Decyzja")).length;
   if ((s.flags.shortWins ?? 0) >= 2) return "Stra\u017Cak";
   if (ko >= 3 && ko >= sub) return rng.pick(["M\u0142ot", "Kowad\u0142o", "Dynamit", "Kafar"]);
   if (sub >= 3) return rng.pick(["Anakonda", "Pyton", "Imad\u0142o", "Dusiciel"]);
@@ -11268,7 +11430,7 @@ function buildHype(rng, s, o) {
   const headlines = [
     o.title ? `OFICJALNIE: ${me} vs ${o.opp.lastName} o pas na ${gala}!` : o.superfight ? `Superfight potwierdzony! ${me} i ${o.opp.lastName} na ${gala}` : `${gala}: ${me} kontra ${op}`,
     rng.pick([
-      `Bukmacherzy: ${o.opp.lastName} lekkim faworytem. \u201E${me} ma za sob\u0105 s\u0142abszych rywali\u201D`,
+      `Bukmacherzy ju\u017C licz\u0105 kursy. Ob\xF3z rywala: \u201E${me} ma za sob\u0105 s\u0142abszych rywali\u201D`,
       `Eksperci podzieleni. Kto wygra starcie ${me} \u2013 ${o.opp.lastName}?`,
       `${o.opp.lastName}: \u201EPrzygotowuj\u0119 si\u0119 jak na walk\u0119 \u017Cycia\u201D`,
       `Bilety na ${gala} schodz\u0105 w zawrotnym tempie`
@@ -11816,7 +11978,7 @@ function finalizeFight(rng, s, rep) {
       rep.moments.push({ round: rep.round, title: "Werdykt", text: rng.pick(pool), tone: res === "W" ? "good" : res === "L" ? "bad" : "neutral" });
   }
   rep.headline = headlineFor(rep);
-  const h = {
+  const h2 = {
     amateur: rep.amateur,
     gala: rep.gala ?? rep.tourney,
     stage: rep.stage,
@@ -11839,7 +12001,7 @@ function finalizeFight(rng, s, rep) {
     peer: rep.peer,
     earned
   };
-  s.history.push(h);
+  s.history.push(h2);
   if (totalWins(s) === 1 && res === "W") log(s, `Pierwsze zwyci\u0119stwo: ${opp.firstName} ${opp.lastName}.`);
   if (res === "W" && rep.method === "KO/TKO" && s.finishes.ko === 1) log(s, `Pierwszy nokaut (${rep.detail}).`);
   if (rep.freak && s.freakFights === 1) log(s, `Pierwszy freak fight (${opp.freak}).`);
@@ -12068,7 +12230,16 @@ function toSummary(s0) {
   if (finishes >= 2) lines.push(`${finishes} ${pl(finishes, "walk\u0119", "walki", "walk")} sko\u0144czy\u0142e\u015B przed czasem.`);
   else if (fights.length >= 2 && fights.every((f) => f.method?.startsWith("Decyzja"))) lines.push("Wszystkie walki do ostatniego gongu, s\u0119dziowie mieli co robi\u0107.");
   const peerFight = fights.find((f) => f.peer);
-  if (peerFight) lines.push(`${peerFight.opp.id === s.rivalId ? "Starcie z odwiecznym rywalem" : "Pojedynek z koleg\u0105 z rocznika"} (${peerFight.opp.firstName} ${peerFight.opp.lastName}): ${peerFight.result === "W" ? "wygrany" : peerFight.result === "L" ? "przegrany" : "remis"}.`);
+  const oldRival = !!peerFight && s.history.filter((h2) => h2.opponent === `${peerFight.opp.firstName} ${peerFight.opp.lastName}`).length > 1;
+  if (peerFight) {
+    const same = fights.filter((f) => f.peer && f.opp.id === peerFight.opp.id);
+    const who = `${peerFight.opp.id === s.rivalId ? oldRival ? "odwiecznym rywalem" : "nowym rywalem" : "koleg\u0105 z rocznika"} (${peerFight.opp.firstName} ${peerFight.opp.lastName})`;
+    if (same.length > 1) {
+      const sw = same.filter((f) => f.result === "W").length;
+      const sl = same.filter((f) => f.result === "L").length;
+      lines.push(`${same.length === 2 ? "Dwie walki" : `${same.length} walki`} z ${who}: ${sw}-${sl}${sw > sl ? ", rachunki wyr\xF3wnane z nawi\u0105zk\u0105" : sw === sl ? ", remis w serii" : ""}.`);
+    } else lines.push(`${peerFight.opp.id === s.rivalId ? oldRival ? "Starcie z odwiecznym rywalem" : "Pierwsze starcie z nowym rywalem" : "Pojedynek z koleg\u0105 z rocznika"} (${peerFight.opp.firstName} ${peerFight.opp.lastName}): ${peerFight.result === "W" ? "wygrany" : peerFight.result === "L" ? "przegrany" : "remis"}.`);
+  }
   const goodForm = GOOD_FORMS.includes(run.form.label);
   const badForm = BAD_FORMS.includes(run.form.label);
   if (goodForm && winPct >= 0.6) lines.push("Forma by\u0142a i wszystko wychodzi\u0142o.");
@@ -12113,6 +12284,7 @@ function toSummary(s0) {
   s.phase = "summary";
   withRng(s, (rng) => {
     for (const p of s.peers) progressPeer(rng, p);
+    dedupePeerRanks(s.peers);
     if (s.flags.expBoost) delete s.flags.expBoost;
     const note = syncRival(rng, s);
     if (note) summary.story = `${summary.story} ${note}`.trim();
@@ -12166,24 +12338,24 @@ function ageOneYear(rng, s) {
 }
 function checkEnd(s) {
   if ((s.flags.farewellDone ?? 0) > 0) {
-    const h = s.history[s.history.length - 1];
-    return h?.result === "W" ? `Walka po\u017Cegnalna wygrana przed w\u0142asn\u0105 publiczno\u015Bci\u0105 w mie\u015Bcie ${s.profile.hometown}. Zdejmujesz r\u0119kawice na \u015Brodku klatki i k\u0142adziesz je na macie.` : h?.result === "D" ? `Walka po\u017Cegnalna ko\u0144czy si\u0119 remisem. Hala i tak wstaje, a ty k\u0142adziesz r\u0119kawice na \u015Brodku klatki.` : `Walka po\u017Cegnalna przegrana, ale hala w mie\u015Bcie ${s.profile.hometown} skanduje twoje nazwisko d\u0142ugo po werdykcie. R\u0119kawice zostaj\u0105 na macie.`;
+    const h2 = s.history[s.history.length - 1];
+    return h2?.result === "W" ? `Walka po\u017Cegnalna wygrana przed w\u0142asn\u0105 publiczno\u015Bci\u0105 w mie\u015Bcie ${s.profile.hometown}. Zdejmujesz r\u0119kawice na \u015Brodku klatki i k\u0142adziesz je na macie.` : h2?.result === "D" ? `Walka po\u017Cegnalna ko\u0144czy si\u0119 remisem. Hala i tak wstaje, a ty k\u0142adziesz r\u0119kawice na \u015Brodku klatki.` : `Walka po\u017Cegnalna przegrana, ale hala w mie\u015Bcie ${s.profile.hometown} skanduje twoje nazwisko d\u0142ugo po werdykcie. R\u0119kawice zostaj\u0105 na macie.`;
   }
   if (s.age >= 40) return "Czterdziestka na karku. Komisja lekarska nie przed\u0142u\u017Ca ci licencji.";
   if (s.quick && s.age >= 35) return "Szybka kariera dobiega ko\u0144ca: 35 lat i czas zawiesi\u0107 r\u0119kawice.";
   if (s.wear >= 100) {
-    const pick = (a) => a[(s.season * 7 + s.record.w * 3 + s.finishes.ko) % a.length];
+    const pick2 = (a) => a[(s.season * 7 + s.record.w * 3 + s.finishes.ko) % a.length];
     if (s.finishes.koLosses >= 6)
-      return pick([
+      return pick2([
         "Rezonans g\u0142owy po ostatniej walce. Neurolog d\u0142ugo milczy, potem odk\u0142ada wyniki i m\xF3wi tylko: \u201EWystarczy\u201D. Komisja nie przed\u0142u\u017Ca licencji.",
         "Po kolejnym nokaucie lekarz komisji k\u0142adzie ci r\u0119k\u0119 na ramieniu. Szcz\u0119ka i g\u0142owa przyj\u0119\u0142y ju\u017C za du\u017Co. Licencja cofni\u0119ta."
       ]);
     if (s.finishes.subLosses >= 4)
-      return pick([
+      return pick2([
         "Bark wyskakuje przy zwyk\u0142ej rozgrzewce. Trzecia operacja w karierze nie wchodzi w gr\u0119, ortopeda skre\u015Bla dalsze walki.",
         "\u0141okie\u0107 po d\u017Awigniach nie prostuje si\u0119 do ko\u0144ca. Lekarze m\xF3wi\u0105 jasno: albo klatka, albo sprawna r\u0119ka na reszt\u0119 \u017Cycia."
       ]);
-    return pick([
+    return pick2([
       "Lekarze nie daj\u0105 ci zgody na kolejne walki. Za du\u017Co przyj\u0119tych cios\xF3w.",
       "Kolana, kr\u0119gos\u0142up, barki: wyniki bada\u0144 wygl\u0105daj\u0105 jak u pi\u0119\u0107dziesi\u0119ciolatka. Komisja lekarska nie podpisuje zgody na kolejny sezon.",
       "Okulista wykrywa uszkodzenie siatk\xF3wki. Jeden mocny cios i mo\u017Cesz straci\u0107 oko. Licencji ju\u017C nie dostaniesz.",
@@ -12192,7 +12364,7 @@ function checkEnd(s) {
   }
   if (s.finishes.koLosses >= 9 && s.proDebut) return "Dziewi\u0105ty nokaut w karierze. Komisja lekarska cofa licencj\u0119: szcz\u0119ka ju\u017C nie wytrzyma.";
   if ((s.flags.lastSeason ?? 0) > 0) return "Obieca\u0142e\u015B rodzinie, \u017Ce to ostatni rok. Dotrzymujesz s\u0142owa.";
-  if (s.age >= 27 && s.finishes.koLosses >= 5 && s.history.slice(-4).filter((h) => h.result === "L" && h.method === "KO/TKO").length >= 3)
+  if (s.age >= 27 && s.finishes.koLosses >= 5 && s.history.slice(-4).filter((h2) => h2.result === "L" && h2.method === "KO/TKO").length >= 3)
     return "Trzy nokauty w czterech walkach. Trener rzuca r\u0119cznik, tym razem za ca\u0142\u0105 karier\u0119.";
   if (s.money < -8e4 && s.age >= 24 && s.tier <= 1) return "D\u0142ugi ci\u0119 przygniot\u0142y. Wyje\u017Cd\u017Casz do pracy w Holandii i do klatki ju\u017C nie wracasz.";
   return null;
@@ -12572,8 +12744,11 @@ function confirmMarket(s0) {
   }
   s.promises = s.promises.filter((p) => p.untilSeason >= s.season);
   if (club && club.id !== s.club.id) {
+    const prev = s.club;
+    const years = Math.max(1, s.clubSeasons);
     s.club = club;
     s.clubSeasons = 0;
+    scheduleFarewell(s, prev, clubCoachName(prev), years, club.quality >= prev.quality);
     log(s, `Zmiana klubu: ${club.name} (${club.city}).`);
   }
   const prevTier = s.tier;
@@ -12729,7 +12904,7 @@ function syncRival(rng, s) {
   const before = rv.tier;
   const gap = ovr(s.stats) - ovr(rv.stats);
   if (gap > 6) for (const k of STAT_KEYS) rv.stats[k] = clamp(rv.stats[k] + rng.int(1, 3), 5, 99);
-  if (rv.tier < s.tier && rng.chance(0.55)) {
+  if (rv.tier < s.tier && (rv.tier > 0 || rv.age >= 18) && rng.chance(0.55)) {
     if (rv.tier === 0) rv.record = { w: 0, l: 0, d: 0 };
     rv.tier++;
     rv.rank = rng.int(4, RANK_SIZE[rv.tier]);
@@ -12737,6 +12912,7 @@ function syncRival(rng, s) {
     rv.tier--;
     rv.rank = rng.int(1, 6);
   }
+  dedupePeerRanks(s.peers);
   if (rv.tier !== before) {
     const up = rv.tier > before;
     log(s, `Rywal ${rv.lastName}: ${up ? "awans" : "spadek"} do poziomu \u201E${TIER_NAMES[rv.tier]}\u201D.`);
@@ -12749,9 +12925,9 @@ function syncRival(rng, s) {
 function proStreak(s) {
   let n = 0;
   for (let i = s.history.length - 1; i >= 0; i--) {
-    const h = s.history[i];
-    if (h.amateur || h.freak) continue;
-    if (h.result !== "W") break;
+    const h2 = s.history[i];
+    if (h2.amateur || h2.freak) continue;
+    if (h2.result !== "W") break;
     n++;
   }
   return n;
@@ -12798,15 +12974,15 @@ var TIER_WIN_PTS = [3, 8, 20, 45, 90];
 var BELT_PTS = [40, 120, 320, 700, 1600];
 function legacyScore(s) {
   let pts = 0;
-  for (const h of s.history) {
-    if (s.quick && h.amateur) continue;
-    if (h.result === "W") {
-      let p = h.freak ? 10 : h.amateur ? 2 : TIER_WIN_PTS[h.tier];
-      if (h.method === "KO/TKO" || h.method === "Poddanie") p *= 1.3;
-      if (h.title) p *= 1.5;
+  for (const h2 of s.history) {
+    if (s.quick && h2.amateur) continue;
+    if (h2.result === "W") {
+      let p = h2.freak ? 10 : h2.amateur ? 2 : TIER_WIN_PTS[h2.tier];
+      if (h2.method === "KO/TKO" || h2.method === "Poddanie") p *= 1.3;
+      if (h2.title) p *= 1.5;
       pts += p;
-    } else if (h.result === "D") pts += TIER_WIN_PTS[h.tier] * 0.3;
-    else if (h.result === "L" && h.age >= 34 && !h.amateur) pts -= TIER_WIN_PTS[h.tier] * 0.6;
+    } else if (h2.result === "D") pts += TIER_WIN_PTS[h2.tier] * 0.3;
+    else if (h2.result === "L" && h2.age >= 34 && !h2.amateur) pts -= TIER_WIN_PTS[h2.tier] * 0.6;
   }
   const beltCount = {};
   for (const b of s.belts) {
@@ -12882,8 +13058,8 @@ function endCareer(s, reason) {
   const v = verdictFor(s);
   s.ending = { reason, verdict: v.verdict, verdictDesc: v.desc, legacy: legacyScore(s), story: careerStory(s) };
   if ((s.flags.farewellDone ?? 0) > 0) {
-    const h = s.history[s.history.length - 1];
-    const won = h?.result === "W";
+    const h2 = s.history[s.history.length - 1];
+    const won = h2?.result === "W";
     const base = [0, 30, 80, 180, 400][s.tier] ?? 30;
     const pts = Math.round((won ? base : base * 0.4) * (START_PROFILES[s.profile.start].mult ?? 0) * DIFFICULTY[s.profile.difficulty].mult);
     s.ending.top = { title: won ? "Po\u017Cegnanie jak z filmu" : "Po\u017Cegnanie z honorem", pts, lines: [won ? `Wygrana walka po\u017Cegnalna: +${pts}` : `Walka po\u017Cegnalna przed w\u0142asn\u0105 publiczno\u015Bci\u0105: +${pts}`] };
