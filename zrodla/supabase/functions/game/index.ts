@@ -91,6 +91,7 @@ __export(game_exports, {
   depositPayout: () => depositPayout,
   dietCost: () => dietCost,
   dietForm: () => dietForm,
+  dietMidYear: () => dietMidYear,
   displayName: () => displayName,
   divisionKey: () => divisionKey,
   divisionOptions: () => divisionOptions,
@@ -9101,9 +9102,13 @@ function dietForm(s) {
   const d = DIET[s.diet ?? "norma"];
   return weightShift(s) < 0 ? d.formCut : d.form;
 }
+function dietMidYear(s) {
+  if (s.phase === "budget" || s.phase === "training") return false;
+  return s.phase === "season" || s.phase === "summary" || s.phase === "market" || !!s.flags[`yearStarted:${s.season}`];
+}
 function setDiet(s0, mode) {
   if (!DIET[mode] || s0.phase === "ended" || (s0.diet ?? "norma") === mode) return s0;
-  const midYear = s0.phase !== "budget" && s0.phase !== "training";
+  const midYear = dietMidYear(s0);
   const paid = !!s0.flags[`dietPaid:${s0.season}`];
   if (mode === "catering" && midYear && !paid && s0.money < dietCost(s0)) return s0;
   const s = clone(s0);
@@ -10232,6 +10237,7 @@ function startSeason(s0) {
       s.deposit = null;
     }
     if (s.diet === "catering") s.flags[`dietPaid:${s.season}`] = 1;
+    s.flags[`yearStarted:${s.season}`] = 1;
     if (followersOf(s) >= 2e3 && (s.social === "self" || s.social === "pro")) s.media = clamp(s.media + 2, 0, 100);
     const jm = jobDef(s);
     s.flags.jobYear = jm ? s.season * 10 + ["full", "half", "none"].indexOf(jm.id) + 1 : 0;
