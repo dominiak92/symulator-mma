@@ -13808,6 +13808,7 @@ var marks = /* @__PURE__ */ new WeakMap();
 var mark = (req, name) => marks.get(req)?.push([name, performance.now()]);
 async function handle(req) {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
+  if (req.method === "GET") return new Response("ok", { headers: cors });
   try {
     const jwt = (req.headers.get("Authorization") ?? "").replace("Bearer ", "");
     const [uid2, body] = await Promise.all([userId(jwt), req.json().catch(() => ({}))]);
@@ -13816,11 +13817,11 @@ async function handle(req) {
     const op = body.op;
     const now = (/* @__PURE__ */ new Date()).toISOString();
     const needCareer = (op === "load" || op === "act") && typeof body.careerId === "string";
-    const [{ data: season }, { data: player }, careerRes] = await Promise.all([
-      db.from("seasons").select("*").lte("starts_at", now).order("starts_at", { ascending: false }).limit(1).maybeSingle(),
-      db.from("players").select("*").eq("id", uid2).maybeSingle(),
-      needCareer ? db.from("careers").select("*").eq("id", body.careerId).eq("player_id", uid2).maybeSingle() : Promise.resolve({ data: null })
-    ]);
+    const ctx = await db.rpc("game_ctx", { p_uid: uid2, p_career: needCareer ? body.careerId : null });
+    if (ctx.error) return json({ error: "Serwer gry chwilowo nie odpowiada.", detail: ctx.error.message }, 503);
+    const season = ctx.data?.season ?? null;
+    const player = ctx.data?.player ?? null;
+    const careerRes = { data: ctx.data?.career ?? null };
     mark(req, "db");
     const leaderboard = async () => {
       if (!season) return [];
@@ -13837,13 +13838,14 @@ async function handle(req) {
       return [...best.values()].slice(0, 100).map((r, i) => ({ place: i + 1, ...r }));
     };
     if (op === "status") {
+      const lbP = leaderboard();
       const careers = season && player ? (await db.from("careers").select("id, attempt, legacy, finished, bank, refill_day, first:state->profile->>firstName, last:state->profile->>lastName, age:state->age, phase:state->>phase").eq("season_id", season.id).eq("player_id", uid2).order("attempt")).data ?? [] : [];
       for (const c of careers) refill(c, season);
       return json({
         season: season ? { id: season.id, name: season.name, startsAt: season.starts_at, endsAt: season.ends_at, yearsPerDay: season.years_per_day, bankCap: season.bank_cap, maxCareers: season.max_careers, open: now < season.ends_at } : null,
         player: player ? { nick: player.nick } : null,
         careers: careers.map((c) => ({ id: c.id, attempt: c.attempt, legacy: c.legacy, finished: c.finished, bank: c.bank, nextRefillAt: nextRefillAt(season, c), name: `${c.first} ${c.last}`, age: Number(c.age), phase: c.phase })),
-        leaderboard: await leaderboard()
+        leaderboard: await lbP
       });
     }
     if (op === "setNick") {
