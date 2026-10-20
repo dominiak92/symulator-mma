@@ -9934,6 +9934,7 @@ function startFight(rng, s, o) {
         superfight: o.superfight,
         abroad: o.abroad,
         farewell: o.farewell,
+        announce: o.announceChoice,
         earned: 0
       };
       if (o.tuneup || o.abroad) rep.fed = o.gala.split(" \xB7 ")[0];
