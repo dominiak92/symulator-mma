@@ -952,7 +952,7 @@ var RAW_STEPS = [
     note: true,
     wait: true,
     cond: (s) => pro(s) && !s.ending,
-    from: "KlatkaNews",
+    from: "MMAKlops",
     title: "Z\u0142oto dla ch\u0142opaka z twojego bloku",
     text: (s) => `Oskar \u201EMa\u0142y\u201D ${oskarLast(s)} mistrzem Polski junior\xF3w! W wywiadzie po finale: \u201EWszystko zacz\u0119\u0142o si\u0119 od jednego go\u015Bcia z mojego bloku: ${s.profile.firstName} ${s.profile.lastName}. Pokaza\u0142 mi, \u017Ce od nas te\u017C mo\u017Cna\u201D. Zdj\u0119cie z podium obieg\u0142o ca\u0142e osiedle.`,
     choices: () => [
@@ -1025,7 +1025,7 @@ var RAW_STEPS = [
     id: "zdzisiek.decyzja",
     app: "klatka",
     note: true,
-    from: "KlatkaNews",
+    from: "MMAKlops",
     title: "Sala pod szko\u0142\u0105",
     text: (s) => s.flags.zdzisZbiorka || s.flags.zdzisSala ? `Sala pod szko\u0142\u0105 zostaje! ${s.flags.zdzisZbiorka ? "Zbi\xF3rka, kt\xF3r\u0105 rozkr\u0119ci\u0142" : "Pieni\u0105dze na kaucj\u0119 da\u0142 po cichu"} ${s.profile.firstName} ${s.profile.lastName}. ${zdz(s)} przenosi worki do by\u0142ego pawilonu meblowego, dwie ulice dalej. Dzieciaki same maluj\u0105 \u015Bciany.` : `Sala pod szko\u0142\u0105 zamkni\u0119ta. ${zdz(s)} trenuje dzieciaki na boisku za szko\u0142\u0105, dop\xF3ki nie spadnie \u015Bnieg. Na zdj\u0119ciu stary worek na \u0142a\u0144cuchu le\u017Cy przy kontenerze.`,
     choices: (s) => s.flags.zdzisZbiorka || s.flags.zdzisSala ? [
@@ -1103,7 +1103,7 @@ var RAW_STEPS = [
     note: true,
     wait: true,
     cond: (s) => !s.ending,
-    from: "KlatkaNews",
+    from: "MMAKlops",
     title: "Premiera dokumentu",
     text: (s) => `\u201E${s.profile.lastName}. Mi\u0119dzy rundami\u201D od dzi\u015B na Kinoflix. ${s.flags.dokHonest ? "Recenzenci pisz\u0105 o scenie z szatni po pora\u017Cce: \u201Epierwszy raz widzimy, ile to kosztuje\u201D." : s.flags.dokFull ? "Najwi\u0119cej komentarzy zbiera scena zbijania wagi w \u0142azience." : "Recenzenci chwal\u0105 zdj\u0119cia z gal, ale pisz\u0105, \u017Ce \u201Ezawodnik niewiele o sobie m\xF3wi\u201D."} ${s.flags.dokCare ? "Film trafia do pierwszej dziesi\u0105tki w Polsce." : ""}`,
     choices: () => [
@@ -1231,7 +1231,7 @@ var THREADS = [
         success: { gear: -30, rep: 2 },
         successText: "Sprzedawca widzi twoje uszy, oddaje torb\u0119 i dorzuca przeprosiny. Klapki wyprane.",
         fail: { rep: -4, media: 2, nextFight: -2 },
-        failText: "Okazuje si\u0119, \u017Ce sprzedawca te\u017C trenuje. Kickboxing. Wracasz z torb\u0105 i podbitym okiem, a nagranie l\u0105duje w KlatkaNews."
+        failText: "Okazuje si\u0119, \u017Ce sprzedawca te\u017C trenuje. Kickboxing. Wracasz z torb\u0105 i podbitym okiem, a nagranie l\u0105duje w MMAKlopsie."
       },
       { label: "Wysy\u0142asz link dzielnicowemu", desc: "Niech prawo dzia\u0142a.", effects: { follow: { step: "torba.policja", after: 1 } } }
     ]
@@ -1247,7 +1247,7 @@ var THREADS = [
       { label: "Zostawiasz klapki jako dow\xF3d", desc: "Niech s\u0142u\u017C\u0105 sprawiedliwo\u015Bci.", effects: { media: 1, note: "klapki w aktach sprawy" } }
     ]
   },
-  // ---------- Okazja na Oliksie ----------
+  // ---------- Okazja na DLX-ie ----------
   {
     id: "okazja.start",
     note: true,
@@ -1284,7 +1284,7 @@ var THREADS = [
     app: "bank",
     from: "Rewolwer",
     title: "Reklamacja odrzucona",
-    text: () => "\u201ETwoja reklamacja przelewu zosta\u0142a odrzucona. Przelew wykonano zgodnie z dyspozycj\u0105.\u201D Na Oliksie pi\u0119\u0107 os\xF3b pisze, \u017Ce te\u017C wp\u0142aci\u0142o zaliczk\u0119 temu samemu go\u015Bciowi.",
+    text: () => "\u201ETwoja reklamacja przelewu zosta\u0142a odrzucona. Przelew wykonano zgodnie z dyspozycj\u0105.\u201D Na DLX-ie pi\u0119\u0107 os\xF3b pisze, \u017Ce te\u017C wp\u0142aci\u0142o zaliczk\u0119 temu samemu go\u015Bciowi.",
     choices: (s) => [
       { label: "Ostrzegasz innych na grupie", desc: "Przynajmniej nikt wi\u0119cej si\u0119 nie nabierze.", effects: { rep: 1, media: 1, note: "admin banuje sprzedawc\u0119 po trzech dniach" } },
       { label: "Kupujesz r\u0119kawice w sklepie", desc: "Nauczka kosztuje podw\xF3jnie.", effects: { money: -zl2(s, 900), gear: -35 } },
@@ -1315,10 +1315,10 @@ var THREADS = [
     id: "dojazd.start",
     note: true,
     app: "mapka",
-    from: "Gugle Mapy",
+    from: "Goong Maps",
     title: "Jak dojedziesz na gal\u0119?",
     start: { weight: 4, cond: (s) => pro2(s) && s.tier <= 2, repeat: true },
-    text: () => "Gala w drugim ko\u0144cu Polski. Organizator nie zapewnia transportu. Gugle Mapy pokazuj\u0105 6 godzin drogi i trzy objazdy.",
+    text: () => "Gala w drugim ko\u0144cu Polski. Organizator nie zapewnia transportu. Goong Maps pokazuj\u0105 6 godzin drogi i trzy objazdy.",
     choices: (s) => [
       {
         label: "Poci\u0105g InterTrz\u0119\u015B",
@@ -1389,7 +1389,7 @@ var THREADS = [
     id: "parking.start",
     note: true,
     app: "mapka",
-    from: "Gugle Mapy",
+    from: "Goong Maps",
     title: "Parking pod hal\u0105",
     start: { weight: 4, cond: (s) => pro2(s) },
     text: () => "Parking pod hal\u0105 pe\u0142ny. Jest jedno miejsce przy zakazie, tu\u017C przy wej\u015Bciu dla zawodnik\xF3w.",
@@ -1430,7 +1430,7 @@ var THREADS = [
   {
     id: "podkast.start",
     app: "sms",
-    from: "Na Macie u Zdzicha",
+    from: "Bez Klepania",
     title: "Zaproszenie do podcastu",
     start: { weight: 5, cond: (s) => pro2(s) && s.media >= 5 },
     text: () => "Siema, tu Zdzichu z \u201ENa Macie\u201D. Nagrywamy w czwartek u mnie w piwnicy, dwa mikrofony, lampka jest, pe\u0142en profesjonalizm. Na koniec i tak ci\u0119 zapytam, jaki masz plan na najbli\u017Csz\u0105 walk\u0119, wi\u0119c przygotuj co\u015B dobrego \u{1F399}\uFE0F",
@@ -1490,15 +1490,15 @@ var THREADS = [
       { label: "Ignorujesz", desc: "Najpierw najbli\u017Csza walka.", effects: { rep: 1 } }
     ]
   },
-  // ---------- Ważka ----------
+  // ---------- Medirower ----------
   {
     id: "wazka.start",
     note: true,
     app: "wazka",
-    from: "Wa\u017Cka",
+    from: "Medirower",
     title: "Za du\u017Co na wadze",
     start: { weight: 4, cond: (s) => pro2(s), repeat: true },
-    text: (s) => ["\u201EDo wa\u017Cenia 10 dni. Jeste\u015B 3,2 kg nad limitem. Dzisiejsza sugestia: ry\u017C z kurczakiem (posi\u0142ek nr 412).\u201D", "\u201EDo wa\u017Cenia 9 dni. 2,8 kg nad limitem. Wczorajsze pierogi zosta\u0142y zapisane w historii.\u201D", "\u201EDo wa\u017Cenia 11 dni. 3,5 kg nad limitem. Wa\u017Cka przypomina: piwo to te\u017C kalorie.\u201D"][s.season % 3],
+    text: (s) => ["\u201EDo wa\u017Cenia 10 dni. Jeste\u015B 3,2 kg nad limitem. Dzisiejsza sugestia: ry\u017C z kurczakiem (posi\u0142ek nr 412).\u201D", "\u201EDo wa\u017Cenia 9 dni. 2,8 kg nad limitem. Wczorajsze pierogi zosta\u0142y zapisane w historii.\u201D", "\u201EDo wa\u017Cenia 11 dni. 3,5 kg nad limitem. Medirower przypomina: piwo to te\u017C kalorie.\u201D"][s.season % 3],
     choices: () => [
       { label: "Dieta, powoli i bez cud\xF3w", desc: "Ry\u017C, kurczak, ry\u017C.", effects: { nextFight: 1, note: "ry\u017C \u015Bni ci si\u0119 po nocach" } },
       {
@@ -1526,7 +1526,7 @@ var THREADS = [
     id: "kebab.start",
     note: true,
     app: "klatka",
-    from: "KlatkaNews",
+    from: "MMAKlops",
     title: "Nagranie z kebaba",
     start: { weight: 3, cond: (s) => pro2(s) && s.media >= 8 },
     text: (s) => `\u201E${s.profile.lastName} w trakcie ci\u0119cia wagi zajada kebaba o 1:12 w nocy. WIDEO!\u201D Nagra\u0142 ci\u0119 kto\u015B z kolejki. Wida\u0107 nawet sos czosnkowy.`,
@@ -1681,7 +1681,7 @@ var THREADS = [
     id: "bramka.film",
     note: true,
     app: "klatka",
-    from: "KlatkaNews",
+    from: "MMAKlops",
     title: "Wideo z bramki",
     text: () => "\u201EZawodnik MMA wynosi awanturnika z klubu jak worek ziemniak\xF3w.\u201D Kto\u015B nagra\u0142, jak wynosisz go\u015Bcia w r\xF3\u017Cowej koszuli. 40 tysi\u0119cy wy\u015Bwietle\u0144.",
     choices: () => [
@@ -1737,7 +1737,7 @@ var THREADS = [
         success: { note: "wynik negatywny" },
         successText: "Wynik negatywny. Tym razem si\u0119 uda\u0142o. Nast\u0119pnym razem mo\u017Ce nie.",
         fail: { rep: -10, media: 3, money: -zl2(s, 2e3), nextFight: -4, note: "wpadka dopingowa" },
-        failText: "Wynik pozytywny. Kara finansowa, zawieszenie i nag\u0142\xF3wek \u201ESKANDAL\u201D na KlatkaNews. Sponsorzy przestaj\u0105 odbiera\u0107 telefony."
+        failText: "Wynik pozytywny. Kara finansowa, zawieszenie i nag\u0142\xF3wek \u201ESKANDAL\u201D w MMAKlopsie. Sponsorzy przestaj\u0105 odbiera\u0107 telefony."
       },
       {
         label: "\u017B\u0105dasz badania pr\xF3bki B",
@@ -1785,7 +1785,7 @@ var THREADS = [
     id: "przelew.upada",
     note: true,
     app: "klatka",
-    from: "KlatkaNews",
+    from: "MMAKlops",
     title: "Gala og\u0142asza upad\u0142o\u015B\u0107",
     text: () => "\u201EOrganizator gali og\u0142asza zawieszenie dzia\u0142alno\u015Bci.\u201D W komentarzach dwudziestu zawodnik\xF3w pisze, \u017Ce te\u017C czeka na pieni\u0105dze.",
     choices: (s) => [
@@ -1957,7 +1957,7 @@ var THREADS = [
     id: "kolega.konferencja",
     note: true,
     app: "klatka",
-    from: "KlatkaNews",
+    from: "MMAKlops",
     title: "Konferencja freak",
     text: (s) => `Konferencja przed gal\u0105 freak. ${schoolmate(s)} rzuca w ciebie butelk\u0105 wody i krzyczy co\u015B o twojej mamie.`,
     choices: (s) => [
@@ -2018,7 +2018,7 @@ var THREADS = [
   {
     id: "fryzjer.start",
     app: "sms",
-    from: "Salon u Gra\u017Cyny",
+    from: "Salon Grzywka",
     title: "Wzorek przed gal\u0105",
     start: { weight: 3, cond: (s, c) => pro2(s) && !c.pre },
     text: () => "Dzie\u0144 dobry, tu Gra\u017Cyna z salonu \u{1F487} Przed gal\u0105 zrobi\u0119 panu wzorek na boku g\u0142owy: b\u0142yskawica albo inicja\u0142y. Robi\u0142am ju\u017C dla pi\u0142karzy z czwartej ligi!",
@@ -2062,7 +2062,7 @@ var THREADS = [
     app: "tasma",
     from: "Sporty walki \u2014 kupi\u0119/sprzedam",
     title: "34 puszki w piwnicy",
-    text: () => "W piwnicy wci\u0105\u017C 34 puszki. Smak bubble gum da si\u0119 pi\u0107 tylko z zamkni\u0119tymi oczami. Wystawiasz na Oliksie?",
+    text: () => "W piwnicy wci\u0105\u017C 34 puszki. Smak bubble gum da si\u0119 pi\u0107 tylko z zamkni\u0119tymi oczami. Wystawiasz na DLX-ie?",
     choices: (s) => [
       {
         label: "Sprzedajesz",
@@ -2227,9 +2227,9 @@ var THREADS = [
     id: "festyn.ciasto",
     note: true,
     app: "wazka",
-    from: "Wa\u017Cka",
+    from: "Medirower",
     title: "Ciasto od Ko\u0142a Gospody\u0144",
-    text: () => "Panie z Ko\u0142a Gospody\u0144 Wiejskich da\u0142y ci na drog\u0119 p\xF3\u0142 blachy dro\u017Cd\u017Cowego z kruszonk\u0105. Wa\u017Cka pyta, czy wpisa\u0107 \u201Eciasto, 1 sztuka\u201D.",
+    text: () => "Panie z Ko\u0142a Gospody\u0144 Wiejskich da\u0142y ci na drog\u0119 p\xF3\u0142 blachy dro\u017Cd\u017Cowego z kruszonk\u0105. Medirower pyta, czy wpisa\u0107 \u201Eciasto, 1 sztuka\u201D.",
     choices: () => [
       { label: "Zjadasz", desc: "Nie godzi si\u0119 odm\xF3wi\u0107.", effects: { relations: 1, nextFight: -1, note: "+1,2 kg na wadze" } },
       { label: "Oddajesz trenerowi", desc: "Trener te\u017C cz\u0142owiek.", effects: { rep: 1, note: "trener zjada ca\u0142\u0105 blach\u0119" } }
@@ -2408,10 +2408,10 @@ var THREADS = [
     id: "waga.start",
     note: true,
     app: "wazka",
-    from: "Wa\u017Cka",
+    from: "Medirower",
     title: "Kt\xF3ra waga k\u0142amie?",
     start: { weight: 3, cond: (s) => pro2(s) },
-    text: () => "Waga w \u0142azience pokazuje 2 kg mniej ni\u017C waga na sali. Wa\u017Cka grzecznie pyta, kt\xF3rej wadze wierzysz.",
+    text: () => "Waga w \u0142azience pokazuje 2 kg mniej ni\u017C waga na sali. Medirower grzecznie pyta, kt\xF3rej wadze wierzysz.",
     choices: (s) => [
       {
         label: "Wierzysz \u0142azienkowej",
@@ -2443,7 +2443,7 @@ var THREADS = [
     id: "ustawka.przeciek",
     note: true,
     app: "klatka",
-    from: "KlatkaNews",
+    from: "MMAKlops",
     title: "Dziwne zak\u0142ady na twoj\u0105 walk\u0119",
     text: () => "\u201ENa kilka godzin przed gal\u0105 kto\u015B postawi\u0142 du\u017Ce pieni\u0105dze na pora\u017Ck\u0119 faworyta w drugiej rundzie. Federacja przygl\u0105da si\u0119 sprawie.\u201D W tek\u015Bcie jest twoje nazwisko.",
     choices: (s) => [
@@ -2530,10 +2530,10 @@ var THREADS = [
     id: "pudelka.start",
     note: true,
     app: "wazka",
-    from: "Wa\u017Cka",
+    from: "Medirower",
     title: "Dieta pude\u0142kowa?",
     start: { weight: 4, cond: (s, c) => c.pre && s.tier >= 1 },
-    text: (s) => `Wa\u017Cka poleca diet\u0119 pude\u0142kow\u0105 \u201EFitFighter\u201D na ca\u0142y ob\xF3z: pi\u0119\u0107 posi\u0142k\xF3w dziennie, ${zl2(s, 500)} z\u0142 miesi\u0119cznie. Albo gotuje mama.`,
+    text: (s) => `Medirower poleca diet\u0119 pude\u0142kow\u0105 \u201EFitFighter\u201D na ca\u0142y ob\xF3z: pi\u0119\u0107 posi\u0142k\xF3w dziennie, ${zl2(s, 500)} z\u0142 miesi\u0119cznie. Albo gotuje mama.`,
     choices: (s) => [
       { label: "Bierzesz pude\u0142ka", desc: "Wygodnie i co do grama.", effects: { money: -zl2(s, 500), nextFight: 2 } },
       {
@@ -2690,18 +2690,18 @@ var THREADS = [
       { label: "\u201E\u0106wiczy\u0142em go sam\u201D", desc: "Mietek odpisuje tylko \u201Eok\u201D.", effects: { relations: -1, rep: 1 } }
     ]
   },
-  // ---------- Recenzja klubu na Gugle Mapach ----------
+  // ---------- Recenzja klubu na Goong Maps ----------
   {
     id: "recenzja.start",
     note: true,
     app: "mapka",
-    from: "Gugle Mapy",
+    from: "Goong Maps",
     title: "Nowa recenzja twojego klubu",
     start: { weight: 4, cond: () => true },
     text: (s) => `${s.club.name}: nowa recenzja \u2605\u2606\u2606\u2606\u2606 od \u201EGra\u017Cyna_z_Bloku\u201D: \u201ECi\u0105gle krzycz\u0105, jakby kto\u015B kogo\u015B bi\u0142. Okaza\u0142o si\u0119, \u017Ce bij\u0105. Nie polecam\u201D. Pod spodem 14 os\xF3b klikn\u0119\u0142o \u201Eprzydatne\u201D.`,
     choices: () => [
       { label: "Odpowiadasz z humorem", desc: "\u201EPani Gra\u017Cyno, pierwszy trening gratis\u201D.", effects: { media: 2, rep: 1, note: "pani Gra\u017Cyna przysz\u0142a na zaj\u0119cia dla senior\xF3w" } },
-      { label: "Prosisz ekip\u0119 o pi\u0119\u0107 gwiazdek", desc: "Dwadzie\u015Bcia recenzji w godzin\u0119.", chance: 60, success: { media: 1 }, successText: "\u015Arednia skacze do 4,9. Kto\u015B pisze: \u201ESeba robi najlepsze kanapki w szatni\u201D.", fail: { rep: -1 }, failText: "Gugle usuwa recenzje jako \u201Epodejrzane\u201D. Zostaje tylko ta od Gra\u017Cyny." },
+      { label: "Prosisz ekip\u0119 o pi\u0119\u0107 gwiazdek", desc: "Dwadzie\u015Bcia recenzji w godzin\u0119.", chance: 60, success: { media: 1 }, successText: "\u015Arednia skacze do 4,9. Kto\u015B pisze: \u201ESeba robi najlepsze kanapki w szatni\u201D.", fail: { rep: -1 }, failText: "Goong usuwa recenzje jako \u201Epodejrzane\u201D. Zostaje tylko ta od Gra\u017Cyny." },
       { label: "Ignorujesz", desc: "Trener m\xF3wi, \u017Ce to jego s\u0105siadka.", effects: {} }
     ]
   },
@@ -2713,13 +2713,13 @@ var THREADS = [
     from: "Rewolwer",
     title: "Podejrzana transakcja",
     start: { weight: 3, cond: (_s, c) => c.pre },
-    text: () => "Zauwa\u017Cyli\u015Bmy nietypow\u0105 aktywno\u015B\u0107 na koncie: 3 \xD7 \u201EKebab u Ahmeda\u201D, godz. 2:14, 2:31 i 2:58. Czy to Ty? Je\u015Bli nie, zablokujemy kart\u0119.",
+    text: () => "Zauwa\u017Cyli\u015Bmy nietypow\u0105 aktywno\u015B\u0107 na koncie: 3 \xD7 \u201EKebab Nocna Zmiana\u201D, godz. 2:14, 2:31 i 2:58. Czy to Ty? Je\u015Bli nie, zablokujemy kart\u0119.",
     choices: (s) => [
       { label: "To ja. Dieta od poniedzia\u0142ku", desc: "Szczero\u015B\u0107 z bankiem.", effects: { nextFight: -1, note: "bank wysy\u0142a emotk\u0119 z kciukiem" } },
       { label: "\u201ETo nie ja\u201D, blokujesz kart\u0119", desc: "Lepiej dmucha\u0107 na zimne.", effects: { money: -zl2(s, 50), note: "nowa karta przychodzi po tygodniu" } }
     ]
   },
-  // ---------- Zjazd rocznika na Fejsbuku (w WhatsApce) ----------
+  // ---------- Zjazd rocznika na Boomerbooku (w ŁapCappie) ----------
   {
     id: "zjazd.start",
     app: "sms",
@@ -2733,7 +2733,7 @@ var THREADS = [
       { label: "Odmawiasz, ob\xF3z to ob\xF3z", desc: "Ch\u0142opaki zrozumiej\u0105. Mo\u017Ce.", effects: { nextFight: 1, relations: -1 } }
     ]
   },
-  // ---------- Juniorzy w klubie (Mesendżer) ----------
+  // ---------- Juniorzy w klubie (Grupa MMA) ----------
   {
     id: "juniorzy.start",
     app: "gym",
@@ -2747,12 +2747,12 @@ var THREADS = [
       { label: "Odmawiasz", desc: "Sobota to dzie\u0144 regeneracji.", effects: { nextFight: 1 } }
     ]
   },
-  // ---------- Oliks: ktoś chce kupić twoje rzeczy ----------
+  // ---------- DLX: ktoś chce kupić twoje rzeczy ----------
   {
     id: "oliks_fan.start",
     note: true,
     app: "tasma",
-    from: "Oliks \xB7 wiadomo\u015B\u0107 od kupuj\u0105cego",
+    from: "DLX \xB7 wiadomo\u015B\u0107 od kupuj\u0105cego",
     title: "Pytanie o og\u0142oszenie",
     start: { weight: 3, cond: (s) => s.record.w >= 3 },
     text: (s) => `Kupuj\u0105cy \u201EKolekcjoner_MMA\u201D pyta: \u201ECzy sprzedasz spodenki z ostatniej wygranej walki (rywal: ${s.history.filter((h2) => !h2.amateur && h2.result === "W").slice(-1)[0]?.opponent ?? "niewa\u017Cne"})? Najlepiej nieprane. P\u0142ac\u0119 dobrze, nie pytaj dlaczego\u201D.`,
@@ -2762,14 +2762,14 @@ var THREADS = [
       { label: "Blokujesz u\u017Cytkownika", desc: "S\u0105 granice.", effects: {} }
     ]
   },
-  // ---------- Spotifaj: hejt w podcaście ----------
+  // ---------- Sztosify: hejt w podcaście ----------
   {
     id: "podkast_hejt.start",
     app: "sms",
     from: "Kolega z klubu",
     title: "S\u0142ysza\u0142e\u015B ten podcast?",
     start: { weight: 3, cond: (s) => s.tier >= 1 },
-    text: (s) => `S\u0142ucha\u0142e\u015B najnowszego odcinka \u201ERozbi\xF3rki MMA\u201D? Przez 12 minut gadaj\u0105, \u017Ce ${s.profile.lastName} to \u201Enajbardziej przereklamowany zawodnik w kraju\u201D. Wrzuci\u0142em ci link na Spotifaju.`,
+    text: (s) => `S\u0142ucha\u0142e\u015B najnowszego odcinka \u201ERozbi\xF3rki MMA\u201D? Przez 12 minut gadaj\u0105, \u017Ce ${s.profile.lastName} to \u201Enajbardziej przereklamowany zawodnik w kraju\u201D. Wrzuci\u0142em ci link na Sztosify.`,
     choices: () => [
       { label: "Dzwonisz do studia na \u017Cywo", desc: "Raz si\u0119 \u017Cyje.", chance: 50, success: { media: 4, rep: 1 }, successText: "Prowadz\u0105cy zaskoczony, rozmowa na luzie, ko\u0144czy si\u0119 zaproszeniem do studia. Fragment kr\u0105\u017Cy po sieci.", fail: { media: 2, rep: -2 }, failText: "Puszczaj\u0105 ci nerwy na antenie. Klip \u201Ezawodnik dzwoni z p\u0142aczem\u201D ma ju\u017C remixy." },
       { label: "Odpowiadasz wygran\u0105", desc: "Najlepsza odpowied\u017A to klatka.", effects: { nextFight: 1, note: "link zapisany do motywacji" } },
@@ -3578,7 +3578,7 @@ var CLUB_TEMPLATES = [
   { name: "Phuket Top Camp", city: "Tajlandia", quality: 4, cost: 3e4, specialty: "stand", injuryMod: 1.1, desc: "Muay thai dwa razy dziennie w 35 stopniach. Wracasz opalony i ostry jak brzytwa.", minTier: 2, crest: { shape: "diamond", bg: "#c2410c", fg: "#fef3c7", icon: "palm", text: "PTC" } },
   { name: "American Top Dog", city: "Floryda, USA", quality: 5, cost: 6e4, specialty: "iq", injuryMod: 0.8, desc: "\u015Awiatowa czo\u0142\xF3wka. Pasy wisz\u0105 na \u015Bcianie, rachunek te\u017C robi wra\u017Cenie.", minTier: 3, crest: { shape: "hex", bg: "#0f766e", fg: "#fde047", icon: "sun", text: "ATD" } },
   { name: "Altitude Fight Lab", city: "Kolorado, USA", quality: 5, cost: 55e3, specialty: "cardio", injuryMod: 0.8, desc: "Ob\xF3z w g\xF3rach, sztab naukowc\xF3w i kondycja z kosmosu.", minTier: 3, crest: { shape: "shield", bg: "#1f2937", fg: "#93c5fd", icon: "mountain", text: "AFL" } },
-  { name: "Gara\u017C u Zbyszka", city: "{home}", quality: 1, cost: 0, specialty: "cardio", injuryMod: 1.25, desc: "Mata roz\u0142o\u017Cona mi\u0119dzy kosiark\u0105 a starym fiatem. Zbyszek ogl\u0105da\u0142 ka\u017Cd\u0105 gal\u0119 w telewizji i ma swoje teorie.", minTier: 0, crest: { shape: "badge", bg: "#78350f", fg: "#fde68a", icon: "wrench", text: "GZ" } },
+  { name: "Blacharnia Team", city: "{home}", quality: 1, cost: 0, specialty: "cardio", injuryMod: 1.25, desc: "Mata roz\u0142o\u017Cona mi\u0119dzy kosiark\u0105 a starym fiatem. Zbyszek ogl\u0105da\u0142 ka\u017Cd\u0105 gal\u0119 w telewizji i ma swoje teorie.", minTier: 0, crest: { shape: "badge", bg: "#78350f", fg: "#fde68a", icon: "wrench", text: "GZ" } },
   { name: "LZS K\u0142os Fight", city: "{home}", quality: 1, cost: 500, specialty: "wrest", injuryMod: 1.15, desc: "Ludowy Zesp\xF3\u0142 Sportowy. Mata le\u017Cy w \u015Bwietlicy po do\u017Cynkach, a so\u0142tys przychodzi kibicowa\u0107 na sparingi.", minTier: 0, crest: { shape: "shield", bg: "#3f6212", fg: "#fef08a", icon: "wheat", text: "LZS" } },
   { name: "Akademia Kimura Krak\xF3w", city: "Krak\xF3w", quality: 2, cost: 5e3, specialty: "bjj", injuryMod: 1, desc: "Kimona, maty i zdj\u0119cia brazylijskich mistrz\xF3w na \u015Bcianie. Trener m\xF3wi \u201Eoss\u201D nawet do kuriera.", minTier: 0, crest: { shape: "circle", bg: "#f8fafc", fg: "#1e3a8a", icon: "fist", text: "AK" } },
   { name: "Dziki Zach\xF3d Szczecin", city: "Szczecin", quality: 2, cost: 4500, specialty: "chin", injuryMod: 1.15, desc: "Port, wiatr i sparingi bez przerw na wod\u0119. Kto przetrwa tu rok, nie boi si\u0119 ju\u017C niczego.", minTier: 0, crest: { shape: "badge", bg: "#1c1917", fg: "#fb923c", icon: "boar", text: "DZ" } },
@@ -3809,7 +3809,7 @@ var WEEK_EVENTS = [
         desc: "Domowy spos\xF3b babci.",
         chance: 60,
         success: { nextFight: 0, note: "babcia mia\u0142a racj\u0119" },
-        successText: "Rano jak nowy. Babcia na Mesend\u017Cerze pisze \u201Ea nie m\xF3wi\u0142am\u201D.",
+        successText: "Rano jak nowy. Babcia na Boomerbooku pisze \u201Ea nie m\xF3wi\u0142am\u201D.",
         fail: { nextFight: -3 },
         failText: "Do walki wchodzisz blady jak \u015Bciana. Naro\u017Cnik pyta, czy na pewno dasz rad\u0119."
       }
@@ -6043,7 +6043,7 @@ var MONEY_EVENTS = [
     choices: (s) => [
       { label: "Gruba koperta", desc: "Rodzina pami\u0119ta takie rzeczy.", effects: { money: -cash(s, 0.04, 400, 15e3), relations: 3 } },
       { label: "Skromna koperta", desc: "Ciocia zrobi min\u0119.", effects: { money: -cash(s, 0.015, 150, 3e3), relations: -1 } },
-      { label: "Nie jedziesz, ob\xF3z", desc: "Wysy\u0142asz \u017Cyczenia na Mesend\u017Cerze.", effects: { relations: -3, form: 1 } }
+      { label: "Nie jedziesz, ob\xF3z", desc: "Wysy\u0142asz \u017Cyczenia na Boomerbooku.", effects: { relations: -3, form: 1 } }
     ]
   },
   {
@@ -6278,7 +6278,7 @@ var EXTRA_EVENTS = [
     cond: (s) => s.tier >= 1 && s.tier <= 2,
     text: () => "Lokalna masarnia chce sponsorowa\u0107 twoj\u0105 walk\u0119. Warunek: po wygranej wznosisz do kamery p\u0119to kie\u0142basy jak pas mistrzowski.",
     choices: () => [
-      { label: "Wznosisz kie\u0142bas\u0119", desc: "Godno\u015B\u0107 to rzecz wzgl\u0119dna.", effects: { sponsor: { name: "Masarnia u Grzesia", perSeason: 3500, seasonsLeft: 2, clause: "p\u0119to kie\u0142basy w g\xF3r\u0119 po wygranej" }, media: 2 } },
+      { label: "Wznosisz kie\u0142bas\u0119", desc: "Godno\u015B\u0107 to rzecz wzgl\u0119dna.", effects: { sponsor: { name: "Masarnia Mi\u0119sie\u0144", perSeason: 3500, seasonsLeft: 2, clause: "p\u0119to kie\u0142basy w g\xF3r\u0119 po wygranej" }, media: 2 } },
       { label: "Odmawiasz", desc: "Jeste\u015B sportowcem, nie reklam\u0105.", effects: { rep: 1 } }
     ]
   },
@@ -6523,12 +6523,12 @@ var EXTRA_EVENTS = [
   },
   {
     id: "mama_facebook",
-    title: "Mama na Fejsbuku",
+    title: "Mama na Boomerbooku",
     weight: 3,
     cond: (s) => s.media >= 10,
     text: (s) => vary2(s, [
       "Mama komentuje ka\u017Cdy post o tobie. Pod zapowiedzi\u0105 walki napisa\u0142a: \u201ESynku, uwa\u017Caj na buzi\u0119, ubierz si\u0119 ciep\u0142o\u201D.",
-      "Mama za\u0142o\u017Cy\u0142a na Fejsbuku fanpage \u201EMama zawodnika\u201D. Ma wi\u0119cej obserwuj\u0105cych ni\u017C ty.",
+      "Mama za\u0142o\u017Cy\u0142a na Boomerbooku fanpage \u201EMama zawodnika\u201D. Ma wi\u0119cej obserwuj\u0105cych ni\u017C ty.",
       "Mama wda\u0142a si\u0119 w k\u0142\xF3tni\u0119 w komentarzach z hejterem. Hejter przeprosi\u0142."
     ]),
     choices: () => [
@@ -7215,7 +7215,7 @@ var EVENTS = [
       {
         label: "Bierzesz",
         desc: "Kasa niedu\u017Ca, ale pita po ka\u017Cdej walce gratis.",
-        effects: { sponsor: { name: "Kebab u Ahmeda", perSeason: tys(1500), seasonsLeft: 2, clause: "zdj\u0119cie z rollo po ka\u017Cdej wygranej" }, media: 1 }
+        effects: { sponsor: { name: "Kebab Nocna Zmiana", perSeason: tys(1500), seasonsLeft: 2, clause: "zdj\u0119cie z rollo po ka\u017Cdej wygranej" }, media: 1 }
       },
       { label: "Dzi\u0119kujesz i odmawiasz", desc: "Czekasz na powa\u017Cniejszego sponsora.", effects: { rep: 1 } }
     ]
@@ -7556,7 +7556,7 @@ ${t}: I przy\u0142\xF3\u017C l\xF3d na to oko.`;
     text: () => "Siostra bierze \u015Blub. Termin? Dok\u0142adnie w dniu wa\u017Cenia przed wa\u017Cn\u0105 walk\u0105. Rodzina m\xF3wi, \u017Ce nie wybaczy.",
     choices: () => [
       { label: "Idziesz na wesele", desc: "Woda zamiast w\xF3dki, ale i tak ta\u0144czysz do 4 rano.", effects: { relations: 4, form: -4 } },
-      { label: "Jedziesz na wa\u017Cenie", desc: "Siostra wysy\u0142a ci tort na Mesend\u017Cerze.", effects: { relations: -4, rep: 1 } }
+      { label: "Jedziesz na wa\u017Cenie", desc: "Siostra wysy\u0142a ci tort na Boomerbooku.", effects: { relations: -4, rep: 1 } }
     ]
   },
   {
@@ -9115,7 +9115,7 @@ function setDiet(s0, mode) {
   if (mode === "catering" && midYear && !paid) {
     s.money -= dietCost(s);
     s.flags[`dietPaid:${s.season}`] = 1;
-    log(s, `Wa\u017Cka: catering FitFighter na ca\u0142y rok (${dietCost(s)} z\u0142).`);
+    log(s, `Medirower: catering FitFighter na ca\u0142y rok (${dietCost(s)} z\u0142).`);
   }
   s.diet = mode;
   return s;
@@ -9511,7 +9511,7 @@ function budgetLines(s) {
     );
   const dep = depositPayout(s);
   if (dep) lines.push({ label: "Lokata Wojownik: zwrot z odsetkami", sub: `${s.deposit.amount.toLocaleString("pl-PL")} z\u0142 + ${Math.round(DEPOSIT_RATE * 100)}%`, amount: dep, icon: "trend" });
-  if (s.diet === "catering") lines.push({ label: "Catering FitFighter", sub: "dieta z Wa\u017Cki, ca\u0142y rok", amount: -dietCost(s), icon: "receipt" });
+  if (s.diet === "catering") lines.push({ label: "Catering FitFighter", sub: "dieta z Medirowera, ca\u0142y rok", amount: -dietCost(s), icon: "receipt" });
   const staff = [0, 0, 2500, 6e3, 3e4][s.tier];
   if (staff > 0 && s.contract.kind !== "freak")
     lines.push({ label: "Sztab", sub: "trener przygotowania, dietetyk", amount: -staff, icon: "users" });
@@ -11109,11 +11109,11 @@ function tasmaDeal(s0, id) {
       if (fake) {
         applyEffects(s, { gear: -10 }, rng);
         s.flags.tasmaLast = 2;
-        log(s, `Oliks: \u201E${it.title}\u201D okaza\u0142y si\u0119 podr\xF3bk\u0105. Logo krzywe, szwy puszczaj\u0105.`);
+        log(s, `DLX: \u201E${it.title}\u201D okaza\u0142y si\u0119 podr\xF3bk\u0105. Logo krzywe, szwy puszczaj\u0105.`);
       } else {
         applyEffects(s, it.effects, rng);
         s.flags.tasmaLast = 1;
-        log(s, `Oliks: kupione \u201E${it.title}\u201D.`);
+        log(s, `DLX: kupione \u201E${it.title}\u201D.`);
       }
     } else {
       s.money += it.price;
@@ -11121,7 +11121,7 @@ function tasmaDeal(s0, id) {
       applyEffects(s, it.effects, rng);
       if (id === "medal") s.flags.medalsSold = (s.flags.medalsSold ?? 0) + 1;
       s.flags.tasmaLast = 3;
-      log(s, `Oliks: sprzedane \u201E${it.title}\u201D.`);
+      log(s, `DLX: sprzedane \u201E${it.title}\u201D.`);
     }
   });
   return s;
@@ -11853,7 +11853,7 @@ function startFight(rng, s, o) {
         });
       }
       if (gearMod(s) < 0)
-        rep.moments.push({ round: 0, title: "Zu\u017Cyty sprz\u0119t", text: `Sprz\u0119t zu\u017Cyty w ${Math.round(s.gear ?? 0)}%. ${fresh(s, ["R\u0119kawice sparingowe trzyma ju\u017C tylko ta\u015Bma, a ochraniacz pami\u0119ta poprzedni sezon.", "Ochraniacz na z\u0119by pami\u0119ta czasy amatorki. R\u0119kawice pachn\u0105 jak piwnica.", "Nakolanniki z dziur\u0105, tejpy z odzysku. Nowy sprz\u0119t kupisz na Oliksie albo w zapleczu.", "Sprz\u0119t si\u0119 sypie. Trener patrzy na twoje r\u0119kawice i kr\u0119ci g\u0142ow\u0105.", "Rzep od r\u0119kawic ju\u017C nie trzyma. Owijasz go ta\u015Bm\u0105 przed ka\u017Cdym sparingiem.", "Spodenki p\u0119k\u0142y w kroku na rozgrzewce. Zszywane na szybko agrafk\u0105.", "Sparingpartnerzy prosz\u0105, \u017Ceby\u015B nie zak\u0142ada\u0142 tych r\u0119kawic. Ze wzgl\u0119du na zapach.", "Ochraniacz na piszczel trzyma si\u0119 na s\u0142owo honoru i gumk\u0119 recepturk\u0119."])} Szanse ${gearMod(s)} pkt.`, tone: "bad" });
+        rep.moments.push({ round: 0, title: "Zu\u017Cyty sprz\u0119t", text: `Sprz\u0119t zu\u017Cyty w ${Math.round(s.gear ?? 0)}%. ${fresh(s, ["R\u0119kawice sparingowe trzyma ju\u017C tylko ta\u015Bma, a ochraniacz pami\u0119ta poprzedni sezon.", "Ochraniacz na z\u0119by pami\u0119ta czasy amatorki. R\u0119kawice pachn\u0105 jak piwnica.", "Nakolanniki z dziur\u0105, tejpy z odzysku. Nowy sprz\u0119t kupisz na DLX-ie albo w zapleczu.", "Sprz\u0119t si\u0119 sypie. Trener patrzy na twoje r\u0119kawice i kr\u0119ci g\u0142ow\u0105.", "Rzep od r\u0119kawic ju\u017C nie trzyma. Owijasz go ta\u015Bm\u0105 przed ka\u017Cdym sparingiem.", "Spodenki p\u0119k\u0142y w kroku na rozgrzewce. Zszywane na szybko agrafk\u0105.", "Sparingpartnerzy prosz\u0105, \u017Ceby\u015B nie zak\u0142ada\u0142 tych r\u0119kawic. Ze wzgl\u0119du na zapach.", "Ochraniacz na piszczel trzyma si\u0119 na s\u0142owo honoru i gumk\u0119 recepturk\u0119."])} Szanse ${gearMod(s)} pkt.`, tone: "bad" });
       if (!amateur && !freak && (s.flags.sideTired ?? 0) > 0) {
         s.flags.sideTired = 0;
         rep.tired = true;
@@ -12476,7 +12476,7 @@ function buildHype(rng, s, o) {
     const nu = nextUnknown(all, [...s.scouted?.[o.opp.id] ?? [], ...o.known ?? []]);
     if (nu) {
       o.known = [...o.known ?? [], nu];
-      headlines.push(`Analiza KlatkaNews: ${tapeLine(o.opp, nu)} Czy ${me} to wykorzysta?`);
+      headlines.push(`Analiza MMAKlops: ${tapeLine(o.opp, nu)} Czy ${me} to wykorzysta?`);
     }
   }
   const dm = (o.opp.freak || o.rival || o.nemesis) && rng.chance(0.5) ? rng.pick(["\u0141adne masz auto. Szkoda by by\u0142o.", "Wiem, gdzie trenujesz. Do soboty.", "Przegraj w drugiej, b\u0119dzie zdrowiej dla wszystkich."]) : void 0;
