@@ -10402,12 +10402,12 @@ function pressContext(s, o, rng) {
   const style = o.opp.style;
   const opts = [];
   const STYLE_Q = {
-    wrestler: `${me}, po\u0142o\u017C\u0119 ci\u0119 na plecy w pierwszej minucie i b\u0119d\u0119 trzyma\u0142 do gongu.`,
-    grappler: `Niech ${me} po\u0107wiczy obron\u0119 dusze\u0144. B\u0119dzie mu potrzebna.`,
-    boxer: `Jedno trafienie i ${me} zobaczy sufit hali.`,
-    kickboxer: `${me}, moje kopni\u0119cia na korpus ko\u0144czy\u0142y ju\u017C lepszych zawodnik\xF3w.`,
-    brawler: `Nie b\u0119d\u0119 biega\u0142. Staniemy na \u015Brodku i zobaczymy, kto ma twardsz\u0105 szcz\u0119k\u0119.`,
-    allround: `Jestem lepszy wsz\u0119dzie: w st\xF3jce, w parterze i w g\u0142owie.`
+    wrestler: vary6(s, [`${me}, po\u0142o\u017C\u0119 ci\u0119 na plecy w pierwszej minucie i b\u0119d\u0119 trzyma\u0142 do gongu.`, `Sprowadzam do parteru ludzi ci\u0119\u017Cszych od ${me}. Na treningu, dla rozgrzewki.`, `${me} b\u0119dzie ogl\u0105da\u0142 t\u0119 walk\u0119 z perspektywy maty. Z bliska.`], o.opp.lastName.length),
+    grappler: vary6(s, [`Niech ${me} po\u0107wiczy obron\u0119 dusze\u0144. B\u0119dzie mu potrzebna.`, `${me} jeszcze nie wie, jak wygl\u0105da klatka od do\u0142u. W sobot\u0119 si\u0119 dowie.`, `Klepnie w drugiej rundzie. Mog\u0119 wam powiedzie\u0107 nawet, kt\xF3r\u0105 r\u0119k\u0105.`], o.opp.lastName.length),
+    boxer: vary6(s, [`Jedno trafienie i ${me} zobaczy sufit hali.`, `${me} ma szcz\u0119k\u0119 jak z porcelany. Widzia\u0142em jego walki.`, `Nie potrzebuj\u0119 parteru. Wystarczy mi lewy prosty i troch\u0119 cierpliwo\u015Bci.`], o.opp.lastName.length),
+    kickboxer: vary6(s, [`${me}, moje kopni\u0119cia na korpus ko\u0144czy\u0142y ju\u017C lepszych zawodnik\xF3w.`, `Niech ${me} wzmocni \u017Cebra. Albo kupi sobie zapasowe.`, `Po moich low kickach ${me} b\u0119dzie schodzi\u0142 po schodach ty\u0142em.`], o.opp.lastName.length),
+    brawler: vary6(s, [`Nie b\u0119d\u0119 biega\u0142. Staniemy na \u015Brodku i zobaczymy, kto ma twardsz\u0105 szcz\u0119k\u0119.`, `Technika jest dla tych, co si\u0119 boj\u0105. Ja przychodz\u0119 si\u0119 bi\u0107.`, `${me} niech zabierze ochraniacz na z\u0119by. I zapasowy.`], o.opp.lastName.length),
+    allround: vary6(s, [`Jestem lepszy wsz\u0119dzie: w st\xF3jce, w parterze i w g\u0142owie.`, `Gdzie ${me} chce walczy\u0107? Wyb\xF3r nale\u017Cy do niego. Przegra wsz\u0119dzie.`, `Przygotowa\u0142em plan A, B i C. ${me} nie ma nawet planu A.`], o.opp.lastName.length)
   };
   const STYLE_MOCK = {
     wrestler: "\u201ELe\u017Ce\u0107 na kim\u015B to jeszcze nie walka\u201D",
@@ -10420,7 +10420,7 @@ function pressContext(s, o, rng) {
   if (style && STYLE_Q[style])
     opts.push({ id: "style", question: `${n}: \u201E${STYLE_Q[style]}\u201D`, labels: L(["\u201EZobaczymy w klatce\u201D", "Nie dajesz si\u0119 wci\u0105gn\u0105\u0107 w gierki."], [STYLE_MOCK[style] ?? "Wy\u015Bmiewasz jego styl", "Trafiasz w jego dum\u0119. Mo\u017Ce zacz\u0105\u0107 walczy\u0107 na z\u0142o\u015B\u0107."], ["Zapraszasz go na \u015Brodek sceny", "Face to face nos w nos. Sekundanci musz\u0105 was rozdziela\u0107."]), provoke: 0.6, insult: 0.42 });
   if (o.opp.country && o.opp.country !== "Polska")
-    opts.push({ id: "foreign", question: `${n}: \u201EPrzyjecha\u0142em do Polski zabra\u0107 to zwyci\u0119stwo do domu. ${me} to tylko przystanek.\u201D`, labels: L(["Witasz go w Polsce", "Go\u015Bcinnie, ale stanowczo. Kibice to lubi\u0105."], ["\u201EBilet powrotny kupi\u0142e\u015B?\u201D", "Riposta pod polsk\u0105 publik\u0119."], ["Podgrzewasz kibic\xF3w przeciw niemu", "Hala b\u0119dzie gwizda\u0107 przez ca\u0142\u0105 walk\u0119. Albo go to z\u0142amie, albo nakr\u0119ci."]), provoke: 0.62, insult: 0.45 });
+    opts.push({ id: "foreign", question: `${n}: \u201E${vary6(s, [`Przyjecha\u0142em do Polski zabra\u0107 to zwyci\u0119stwo do domu. ${me} to tylko przystanek.`, `W ${o.opp.country === "Brazylia" ? "Brazylii" : "moim kraju"} takich jak ${me} mamy na ka\u017Cdej sali. Po walce zjem pierogi i wracam.`, `Wasze jedzenie jest dobre. Wasi zawodnicy nie bardzo. ${me} to sprawdzi w sobot\u0119.`, `M\xF3j mened\u017Cer pokaza\u0142 mi ${me} na filmikach. Wy\u0142\u0105czy\u0142em po minucie, bo zasn\u0105\u0142em.`, `Lubi\u0119 gra\u0107 na wyje\u017Adzie. Cisza na hali po moim nokaucie to najlepsza muzyka.`], o.opp.lastName.length)}\u201D`, labels: L(["Witasz go w Polsce", "Go\u015Bcinnie, ale stanowczo. Kibice to lubi\u0105."], ["\u201EBilet powrotny kupi\u0142e\u015B?\u201D", "Riposta pod polsk\u0105 publik\u0119."], ["Podgrzewasz kibic\xF3w przeciw niemu", "Hala b\u0119dzie gwizda\u0107 przez ca\u0142\u0105 walk\u0119. Albo go to z\u0142amie, albo nakr\u0119ci."]), provoke: 0.62, insult: 0.45 });
   if (o.opp.age >= 33 && s.age <= 26)
     opts.push({ id: "veteran", question: `${n}: \u201ETen dzieciak nosi\u0142 pieluchy, kiedy ja walczy\u0142em o pierwszy pas.\u201D`, labels: L(["\u201ESzacunek dla do\u015Bwiadczenia\u201D", "Ucze\u0144 m\xF3wi o mistrzu. \u0141adnie wygl\u0105da w telewizji."], ["\u201EDlatego czas na emerytur\u0119\u201D", "Przypominasz mu jego wiek. Boli ka\u017Cdego weterana."], ["Przynosisz mu lask\u0119", "Rekwizyt na konferencj\u0119. \u015Amiech na sali albo kara."]), provoke: 0.62, insult: 0.42 });
   if (o.opp.age <= 23 && s.age >= 30)
@@ -10438,15 +10438,15 @@ function pressAnswer(s0, key) {
     if (key === "calm") {
       s.rep = clamp(s.rep + (ctx.id === "losing" || ctx.id === "title" ? 3 : 2), 0, 100);
       o.pressMod = 1;
-      o.pressNote = rng.pick(["Spokojnie odpowiadasz, \u017Ce w sobot\u0119 wszystko si\u0119 wyja\u015Bni. Dziennikarze kiwaj\u0105 g\u0142owami.", "M\xF3wisz o szacunku i ci\u0119\u017Ckiej pracy. Nudne, ale profesjonalne."]);
+      o.pressNote = rng.pick(["Spokojnie odpowiadasz, \u017Ce w sobot\u0119 wszystko si\u0119 wyja\u015Bni. Dziennikarze kiwaj\u0105 g\u0142owami.", "M\xF3wisz o szacunku i ci\u0119\u017Ckiej pracy. Nudne, ale profesjonalne.", "Dzi\u0119kujesz federacji, sponsorom i mamie. Rywal przewraca oczami, kamera i tak lubi spokojnych.", "Odpowiadasz jednym zdaniem i pijesz wod\u0119. Cisza robi wi\u0119ksze wra\u017Cenie ni\u017C krzyk.", "M\xF3wisz, \u017Ce szanujesz ka\u017Cdego rywala. Rywal si\u0119 \u015Bmieje. Ty nie."]);
     } else if (key === "provoke") {
       s.media = clamp(s.media + mediaGain(s, 2), 0, 100);
       if (rng.chance(ctx.provoke)) {
         o.pressMod = 3;
-        o.pressNote = rng.pick(["Twoja riposta trafia. Rywal czerwienieje i nie wie, co odpowiedzie\u0107. Sala si\u0119 \u015Bmieje.", "Odbijasz pi\u0142eczk\u0119 tak, \u017Ce rywal schodzi ze sceny w\u015Bciek\u0142y. To ty kontrolujesz emocje."]);
+        o.pressNote = rng.pick(["Twoja riposta trafia. Rywal czerwienieje i nie wie, co odpowiedzie\u0107. Sala si\u0119 \u015Bmieje.", "Odbijasz pi\u0142eczk\u0119 tak, \u017Ce rywal schodzi ze sceny w\u015Bciek\u0142y. To ty kontrolujesz emocje.", "Rywal zaczyna odpowied\u017A trzy razy i trzy razy si\u0119 gubi. Jego trener zabiera mu mikrofon.", "Twoja odpowied\u017A w godzin\u0119 ma wi\u0119cej wy\u015Bwietle\u0144 ni\u017C ca\u0142a zapowied\u017A gali. Rywal przestaje si\u0119 u\u015Bmiecha\u0107.", "Sala bije brawo, a rywal szuka wzrokiem swojego mened\u017Cera. Wygra\u0142e\u015B pierwsz\u0105 rund\u0119 bez r\u0119kawic."]);
       } else {
         o.pressMod = -3;
-        o.pressNote = rng.pick(["Rywal ma odpowied\u017A na wszystko. To ciebie wyprowadzi\u0142 z r\xF3wnowagi.", "Wdajesz si\u0119 w przepychank\u0119 s\u0142own\u0105 i przegrywasz j\u0105. Wracasz do hotelu z\u0142y."]);
+        o.pressNote = rng.pick(["Rywal ma odpowied\u017A na wszystko. To ciebie wyprowadzi\u0142 z r\xF3wnowagi.", "Wdajesz si\u0119 w przepychank\u0119 s\u0142own\u0105 i przegrywasz j\u0105. Wracasz do hotelu z\u0142y.", "Rywal odpowiada tak, \u017Ce \u015Bmieje si\u0119 nawet tw\xF3j naro\u017Cnik. Do walki odtwarzasz to w g\u0142owie.", "Riposta wychodzi ci w po\u0142owie. Druga po\u0142owa zostaje w gardle, a internet robi z tego mema."]);
       }
     } else {
       s.media = clamp(s.media + mediaGain(s, ctx.id === "freak" ? 5 : 3), 0, 100);
