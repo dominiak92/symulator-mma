@@ -7711,7 +7711,13 @@ function rosterNews(rng, s, after) {
   if (r2 < 0.5 && s.rank !== null && s.rank > 0) {
     const f = rng.pick(r.list.filter((x) => x.rank >= 1 && Math.abs(x.rank - s.rank) <= 3));
     if (f) {
-      return { after, kind: "callout", text: `${nm(f)} (nr ${f.rank} rankingu) wywo\u0142uje ci\u0119 w wywiadzie: \u201ENiech przyjdzie, je\u015Bli si\u0119 nie boi\u201D.` };
+      return { after, kind: "callout", text: `${nm(f)} (nr ${f.rank} rankingu) ${rng.pick([
+        "wywo\u0142uje ci\u0119 w wywiadzie: \u201ENiech przyjdzie, je\u015Bli si\u0119 nie boi\u201D.",
+        "m\xF3wi w podka\u015Bcie, \u017Ce \u201Ez tob\u0105 zrobi\u0142by trening, nie walk\u0119\u201D.",
+        "wrzuca story z twoim zdj\u0119ciem i podpisem \u201Enast\u0119pny?\u201D.",
+        "pyta na konferencji, czemu \u201Eten od pierog\xF3w\u201D jeszcze si\u0119 nie zg\u0142osi\u0142.",
+        "pisze w komentarzu pod twoim postem: \u201EOdpisz, jak b\u0119dziesz gotowy. Czekam\u201D."
+      ])}` };
     }
   }
   const pool = r.list.filter((x) => x.rank >= 1).sort((a2, b2) => a2.rank - b2.rank);
@@ -11008,9 +11014,9 @@ function buildPost(rng, s, rep) {
     if (rk === 0 && s.tier >= 3 && s.titleDefenses >= 1 && (s.flags.superDone ?? 0) < 2 && !rep.superfight)
       opts.push({ key: "super", label: "Wywo\u0142aj mistrza kategorii obok", desc: "Superfight o drugi pas. Wielkie pieni\u0105dze, je\u015Bli federacja to kupi.", chance: Math.round(clamp(30 + s.media / 3 + (finish ? 10 : 0), 15, 80)) });
     if (rk !== null && rk !== 0 && rk <= 6 && !(s.flags.interim ?? 0))
-      opts.push({ key: "champ", label: "Wywo\u0142aj mistrza", desc: "Uda si\u0119: nast\u0119pna walka o pas. Nie uda: wyjdziesz na pysza\u0142ka.", chance: Math.round(clamp(12 + s.media / 3 + (finish ? 12 : 0) + (rk <= 2 ? 20 : rk <= 4 ? 10 : 0), 8, 80)) });
+      opts.push({ key: "champ", label: vary6(s, ["Wywo\u0142aj mistrza", "\u201EMistrzu, jeste\u015B nast\u0119pny!\u201D", "Poka\u017C na pas mistrza"], 7), desc: "Uda si\u0119: nast\u0119pna walka o pas. Nie uda: wyjdziesz na pysza\u0142ka.", chance: Math.round(clamp(12 + s.media / 3 + (finish ? 12 : 0) + (rk <= 2 ? 20 : rk <= 4 ? 10 : 0), 8, 80)) });
     if (rk !== 0)
-      opts.push({ key: "up", label: rk === null ? "Wywo\u0142aj kogo\u015B z rankingu" : "Wywo\u0142aj kogo\u015B z czo\u0142\xF3wki", desc: "Mocniejszy rywal w nast\u0119pnej walce i wi\u0119kszy skok w rankingu po wygranej.", chance: Math.round(clamp(42 + s.media / 4 + (finish ? 10 : 0), 20, 88)) });
+      opts.push({ key: "up", label: rk === null ? vary6(s, ["Wywo\u0142aj kogo\u015B z rankingu", "\u201EDajcie mi kogo\u015B z rankingu!\u201D", "Wska\u017C palcem kogo\u015B z rankingu"], 6) : vary6(s, ["Wywo\u0142aj kogo\u015B z czo\u0142\xF3wki", "\u201EDajcie mi kogo\u015B z topu!\u201D", "Wymie\u0144 nazwisko z czo\u0142\xF3wki"], 6), desc: "Mocniejszy rywal w nast\u0119pnej walce i wi\u0119kszy skok w rankingu po wygranej.", chance: Math.round(clamp(42 + s.media / 4 + (finish ? 10 : 0), 20, 88)) });
     const rival = s.rivalId ? s.peers.find((x) => x.id === s.rivalId && !x.retired && x.tier === s.tier) : void 0;
     if (rival && rival.id !== rep.opp.id && rk !== 0) opts.push({ key: "rival", label: `Wywo\u0142aj rywala: ${rival.lastName}`, desc: "Pewna walka z odwiecznym rywalem przy najbli\u017Cszej okazji." });
     opts.push(
