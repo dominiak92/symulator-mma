@@ -3021,7 +3021,7 @@ var WEEK_EVENTS = [
     w: 4,
     text: (s) => `Pod hotel podje\u017Cd\u017Ca autokar. Tablica: ${s.profile.hometown}. Pi\u0119\u0107dziesi\u0105t os\xF3b w koszulkach z twoj\u0105 twarz\u0105, transparent i b\u0119ben. Chc\u0105 zdj\u0119cie. Ka\u017Cdy.`,
     choices: () => [
-      { label: "Wychodzisz do nich na godzin\u0119", desc: "Zdj\u0119cia, autografy, u\u015Bciski od cio\u0107.", effects: { rep: 2, media: 1, nextFight: 1, note: "ciocia p\u0142acze ze wzruszenia" } },
+      { label: "Wychodzisz do nich na godzin\u0119", desc: "Zdj\u0119cia, autografy, u\u015Bciski od cio\u0107.", effects: { rep: 2, media: 1, wear: 1, note: "ciocia p\u0142acze ze wzruszenia" } },
       { label: "Machasz z okna i wracasz do planu", desc: "Skupienie przed walk\u0105 jest wa\u017Cniejsze.", effects: { nextFight: 1, rep: -1 } }
     ]
   },
@@ -3046,7 +3046,7 @@ var WEEK_EVENTS = [
     cond: (_s, o) => !!o.hype?.dm || !!o.opp.freak || !!o.rival,
     text: () => "Trzeci dzie\u0144 z rz\u0119du pod hotelem stoi ten sam czarny samoch\xF3d z przyciemnianymi szybami. Kto\u015B robi zdj\u0119cia, jak wychodzisz na rozruch.",
     choices: () => [
-      { label: "Zg\u0142aszasz ochronie federacji", desc: "Niech si\u0119 tym zajm\u0105 profesjonali\u015Bci.", effects: { nextFight: 0, note: "ochrona spisuje numery" } },
+      { label: "Zg\u0142aszasz ochronie federacji", desc: "Niech si\u0119 tym zajm\u0105 profesjonali\u015Bci.", effects: { nextFight: 0, rep: 1, note: "ochrona spisuje numery" } },
       {
         label: "Podchodzisz i pukasz w szyb\u0119",
         desc: "Raz si\u0119 \u017Cyje.",
@@ -3059,9 +3059,9 @@ var WEEK_EVENTS = [
       {
         label: "Ignorujesz",
         desc: "Nie dajesz si\u0119 wci\u0105gn\u0105\u0107 w gierki.",
-        chance: 70,
-        success: { nextFight: 0 },
-        successText: "Samoch\xF3d znika po dniu. Pewnie nic takiego.",
+        chance: 65,
+        success: { nextFight: 1 },
+        successText: "Samoch\xF3d znika po dniu. A ty przez te trzy dni by\u0142e\u015B skupiony jak nigdy.",
         fail: { nextFight: -1 },
         failText: "Niby ignorujesz, ale w g\u0142owie siedzi. Na rozruchu jeste\u015B spi\u0119ty."
       }
@@ -3077,8 +3077,8 @@ var WEEK_EVENTS = [
       {
         label: "Zmieniasz plan na ostatni\u0105 chwil\u0119",
         desc: "Nowa taktyka trzy dni przed walk\u0105. Ryzykowne.",
-        chance: 50,
-        success: { nextFight: 2 },
+        chance: 55,
+        success: { nextFight: 3 },
         successText: "Trener rysuje nowy plan na serwetce. Rywal b\u0119dzie zaskoczony.",
         fail: { nextFight: -2 },
         failText: "Nowy plan miesza ci w g\u0142owie. Na rozgrzewce mylisz kombinacje."
@@ -3128,7 +3128,7 @@ var WEEK_EVENTS = [
         chance: 45,
         success: { media: 3, note: "linia lotnicza przeprasza na Instagrymie" },
         successText: "Post wybucha. Linia lotnicza przysy\u0142a kuriera z torb\u0105 i voucher na lot. Ludzie pisz\u0105, \u017Ce to lepsze ni\u017C serial.",
-        fail: { money: -zl4(s, 450), media: 1 },
+        fail: { money: -zl4(s, 450), media: 1, rep: -1 },
         failText: "Linia odpisuje automatem: \u201ETwoje zg\u0142oszenie jest dla nas wa\u017Cne\u201D. Kupujesz wszystko od nowa."
       }
     ]
@@ -3143,14 +3143,14 @@ var WEEK_EVENTS = [
       {
         label: "Odpisujesz \u201Edzi\u0119ki\u201D",
         desc: "Kr\xF3tko i kulturalnie.",
-        chance: 55,
-        success: { nextFight: 0 },
-        successText: "Odpisuje kciukiem. Koniec rozmowy. Zasypiasz po godzinie gapienia si\u0119 w sufit.",
-        fail: { nextFight: -1 },
+        chance: 60,
+        success: { nextFight: 3 },
+        successText: "Odpisuje kciukiem. Koniec rozmowy. Zamkni\u0119ty rozdzia\u0142, a ty zasypiasz lekki jak pi\xF3rko.",
+        fail: { nextFight: -2 },
         failText: "Odpisuje elaboratem. Ko\u0144czycie o trzeciej, a ty nie wiesz ju\u017C, kto kogo zostawi\u0142."
       },
       { label: "Blokujesz numer", desc: "Tydzie\u0144 walki to tydzie\u0144 walki.", effects: { nextFight: 1, note: "telefon na noc do szuflady" } },
-      { label: "Pokazujesz trenerowi", desc: "On wie, co z tym zrobi\u0107.", effects: { nextFight: 1, relations: 1, note: "trener: \u201Eusu\u0144 i spa\u0107\u201D" } }
+      { label: "Pokazujesz trenerowi", desc: "On wie, co z tym zrobi\u0107.", effects: { relations: 2, note: "trener: \u201Eusu\u0144 i spa\u0107\u201D. Potem \u015Bmieje si\u0119 z ciebie przez trzy dni" } }
     ]
   },
   {
@@ -3164,12 +3164,12 @@ var WEEK_EVENTS = [
         label: "Zjadasz p\u0105czka na live\u2019ie",
         desc: "Skoro i tak ju\u017C o tym pisz\u0105.",
         chance: 50,
-        success: { media: 4 },
+        success: { media: 6 },
         successText: "Live ogl\u0105da dziesi\u0119\u0107 tysi\u0119cy ludzi. Kto\u015B robi z tego remix. Nawet rywal pisze \u201Eszacun\u201D.",
         fail: { media: 2, nextFight: -1 },
         failText: "\u015Amieszne by\u0142o przez minut\u0119. Waga nast\u0119pnego dnia: p\xF3\u0142 kilo wi\u0119cej. Trener nie odzywa si\u0119 do wieczora."
       },
-      { label: "Nie komentujesz", desc: "P\u0105czek zniesie wszystko.", effects: {} }
+      { label: "Nie komentujesz", desc: "Telefon na noc do szuflady, zero rozpraszaczy.", effects: { nextFight: 1 } }
     ]
   },
   {
@@ -3178,7 +3178,7 @@ var WEEK_EVENTS = [
     w: 3,
     text: () => "Recepcja dzwoni do pokoju: \u201EPana mama przyjecha\u0142a. Ma ze sob\u0105\u2026 du\u017Co s\u0142oik\xF3w\u201D. Ros\xF3\u0142, go\u0142\u0105bki, pierogi i bigos na wszelki wypadek.",
     choices: () => [
-      { label: "Jesz ros\xF3\u0142, reszt\u0119 rozdajesz w szatni", desc: "Ros\xF3\u0142 to nie dieta, to lekarstwo.", effects: { nextFight: 1, rep: 1, relations: 1, note: "ca\u0142a karta walk zna twoj\u0105 mam\u0119" } },
+      { label: "Jesz ros\xF3\u0142, reszt\u0119 rozdajesz w szatni", desc: "Ros\xF3\u0142 to nie dieta, to lekarstwo.", effects: { rep: 1, relations: 1, note: "ca\u0142a karta walk zna twoj\u0105 mam\u0119" } },
       {
         label: "Wszystko zjadasz po wa\u017Ceniu",
         desc: "Po wa\u017Ceniu wolno.",
@@ -3188,7 +3188,7 @@ var WEEK_EVENTS = [
         fail: { nextFight: -2 },
         failText: "Bigos by\u0142 b\u0142\u0119dem. Wiedzia\u0142e\u015B, \u017Ce bigos b\u0119dzie b\u0142\u0119dem."
       },
-      { label: "Odsy\u0142asz z pozdrowieniami", desc: "Dieta to dieta.", effects: { relations: -1, nextFight: 0 } }
+      { label: "Odsy\u0142asz z pozdrowieniami", desc: "Dieta to dieta.", effects: { relations: -1, nextFight: 1 } }
     ]
   },
   {
@@ -3198,7 +3198,7 @@ var WEEK_EVENTS = [
     cond: (s) => s.tier >= 1,
     text: (s) => `Przy automacie z kaw\u0105 podchodzi go\u015B\u0107 w za du\u017Cej marynarce. M\xF3wi, \u017Ce \u201Ema znajomych w zak\u0142adach\u201D i \u017Ce ${zl4(s, 4e3)} z\u0142 czeka, je\u015Bli \u201Ezm\u0119czysz si\u0119\u201D w drugiej rundzie.`,
     choices: () => [
-      { label: "Odmawiasz i zg\u0142aszasz federacji", desc: "Tak si\u0119 to robi.", effects: { rep: 3, media: 1, note: "federacja dzi\u0119kuje i prosi o dyskrecj\u0119" } },
+      { label: "Odmawiasz i zg\u0142aszasz federacji", desc: "Tak si\u0119 to robi.", effects: { rep: 3, media: 1, nextFight: -1, note: "federacja dzi\u0119kuje, a ty p\xF3\u0142 dnia przed walk\u0105 spisujesz zeznania" } },
       {
         label: "Udajesz zainteresowanie i nagrywasz",
         desc: "Dziennikarze \u015Bledczy by si\u0119 ucieszyli.",
@@ -3208,7 +3208,7 @@ var WEEK_EVENTS = [
         fail: { nextFight: -2, rep: -1 },
         failText: "Go\u015B\u0107 orientuje si\u0119 i znika. Do walki ogl\u0105dasz si\u0119 przez rami\u0119, a w sieci kto\u015B pisze, \u017Ce \u201Eco\u015B wiedzia\u0142e\u015B\u201D."
       },
-      { label: "Odchodzisz bez s\u0142owa", desc: "Nie twoja sprawa.", effects: { nextFight: -1 } }
+      { label: "Odchodzisz bez s\u0142owa", desc: "Nie twoja sprawa. My\u015Blisz tylko o walce.", effects: { nextFight: 1, rep: -1 } }
     ]
   },
   {
@@ -3226,7 +3226,7 @@ var WEEK_EVENTS = [
         fail: { media: 2, wear: 2, nextFight: -1 },
         failText: "L\u0105dujesz na pupie. Nagranie i tak kr\u0105\u017Cy po sieci, tylko z inn\u0105 muzyk\u0105."
       },
-      { label: "Spokojne tarcze z trenerem", desc: "Pokaz, nie cyrk.", effects: { rep: 1, media: 1 } },
+      { label: "Spokojne tarcze z trenerem", desc: "Pokaz, nie cyrk. Przy okazji ostatni rozruch.", effects: { rep: 1, nextFight: 1 } },
       { label: "Uczysz dzieciaki d\u017Awigni na tacie", desc: "Tata si\u0119 zg\u0142osi\u0142 sam.", effects: { media: 2, rep: 2, note: "tata klepie po trzech sekundach" } }
     ]
   },
@@ -3236,13 +3236,21 @@ var WEEK_EVENTS = [
     w: 3,
     text: (_s, o) => `Lista s\u0119dzi\xF3w wisi na drzwiach szatni. Twoj\u0105 walk\u0119 (rywal: ${o.opp.lastName}) prowadzi \u201ESzybki Zdzis\u0142aw\u201D, kt\xF3ry przerywa, zanim ktokolwiek zd\u0105\u017Cy upa\u015B\u0107.`,
     choices: () => [
-      { label: "Ustawiasz plan na szybki finisz", desc: "Jak trafisz, on przerwie.", effects: { nextFight: 1, note: "pierwsza seria ma by\u0107 mocna" } },
+      {
+        label: "Ustawiasz plan na szybki finisz",
+        desc: "Jak trafisz, on przerwie. Jak nie trafisz\u2026",
+        chance: 60,
+        success: { nextFight: 3, note: "pierwsza seria ma by\u0107 mocna" },
+        successText: "Trener rozpisuje pierwsze trzydzie\u015Bci sekund co do ciosu. Jeste\u015B gotowy wystrzeli\u0107.",
+        fail: { nextFight: -1 },
+        failText: "Ca\u0142y plan stoi na jednej serii. Im d\u0142u\u017Cej o tym my\u015Blisz, tym bardziej si\u0119 spinasz."
+      },
       { label: "Plan: zero ryzyka w st\xF3jce", desc: "Jak ci\u0119 trafi\u0105, on te\u017C przerwie.", effects: { nextFight: 1 } },
       {
         label: "Idziesz pogada\u0107 z s\u0119dzi\u0105",
         desc: "Grzecznie, o zasadach.",
         chance: 50,
-        success: { rep: 1, nextFight: 1 },
+        success: { rep: 2, nextFight: 2 },
         successText: "S\u0119dzia okazuje si\u0119 mi\u0142ym panem, kt\xF3ry trenowa\u0142 judo. Wiesz ju\u017C, czego si\u0119 spodziewa\u0107.",
         fail: { rep: -2 },
         failText: "S\u0119dzia patrzy na ciebie jak na kogo\u015B, kto pr\xF3buje co\u015B za\u0142atwi\u0107. Federacja dostaje notatk\u0119."
@@ -3261,7 +3269,7 @@ var WEEK_EVENTS = [
         label: "Negocjujesz prz\xF3d spodenek za wi\u0119cej",
         desc: "Prz\xF3d to presti\u017C.",
         chance: 45,
-        success: { money: zl4(s, 1100) },
+        success: { money: zl4(s, 1500), rep: 1 },
         successText: "Pan Mirek z Kafel-Maxu m\xF3wi \u201Edobra, niech pan ma\u201D. Prz\xF3d spodenek wyceniony.",
         fail: { money: 0 },
         failText: "Pan Mirek si\u0119 obra\u017Ca i dzwoni do twojego rywala."
@@ -3309,7 +3317,7 @@ var WEEK_EVENTS = [
         label: "M\xF3wisz mu co\u015B do ucha",
         desc: "Nikt nie us\u0142yszy, on zapami\u0119ta.",
         chance: 60,
-        success: { nextFight: 2 },
+        success: { nextFight: 3 },
         successText: "Rywal czerwienieje i rzuca si\u0119 do przodu. Ochrona go trzyma. Wygra\u0142e\u015B pierwsz\u0105 rund\u0119, zanim si\u0119 zacz\u0119\u0142a.",
         fail: { nextFight: -1 },
         failText: "Odpowiada co\u015B o twojej mamie. Ca\u0142\u0105 noc wymy\u015Blasz ripost\u0119."
@@ -3322,9 +3330,9 @@ var WEEK_EVENTS = [
     title: "List od dzieciaka",
     w: 3,
     text: () => "Na recepcji czeka koperta. W \u015Brodku rysunek: ty z pasem i podpis krzywymi literami: \u201EJak wygrasz, dasz mi r\u0119kawice? Mam 9 lat i trenuj\u0119 od wtorku. Kuba\u201D.",
-    choices: () => [
-      { label: "Obiecujesz r\u0119kawice niezale\u017Cnie od wyniku", desc: "Wygrana czy nie, Kuba je dostanie.", effects: { rep: 2, nextFight: 1, note: "rysunek przyklejony w szafce" } },
-      { label: "Zapraszasz Kub\u0119 na rozgrzewk\u0119", desc: "Niech zobaczy szatni\u0119 od \u015Brodka.", effects: { media: 2, rep: 2, nextFight: 1 } }
+    choices: (s) => [
+      { label: "Obiecujesz r\u0119kawice niezale\u017Cnie od wyniku", desc: "Wygrana czy nie, Kuba je dostanie.", effects: { rep: 2, nextFight: 1, money: -zl4(s, 150), note: "rysunek przyklejony w szafce" } },
+      { label: "Zapraszasz Kub\u0119 na rozgrzewk\u0119", desc: "Niech zobaczy szatni\u0119 od \u015Brodka.", effects: { media: 2, rep: 1, wear: 1, note: "Kuba trzyma tarcze lepiej ni\u017C asystent trenera" } }
     ]
   },
   {
@@ -3335,7 +3343,7 @@ var WEEK_EVENTS = [
     cond: (s) => s.tier >= 1,
     text: () => "Sz\xF3sta rano. Pukanie do drzwi: kontrola antydopingowa. Pan z kontroli ma w\u0105sy, termos i du\u017Co czasu. Ty po wieczornym zbijaniu wagi nie masz w sobie ani kropli wody.",
     choices: (s) => [
-      { label: "Pijesz i czekasz", desc: "Trzy godziny z panem z w\u0105sami.", effects: { nextFight: -1, note: "pan z w\u0105sami opowiada o w\u0119dkowaniu" } },
+      { label: "Pijesz i czekasz", desc: "Trzy godziny z panem z w\u0105sami.", effects: { nextFight: -1, relations: 1, note: "pan z w\u0105sami opowiada o w\u0119dkowaniu" } },
       {
         label: "Puszczasz wod\u0119 w kranie",
         desc: "Stara sztuczka.",
@@ -3392,7 +3400,7 @@ var WEEK_EVENTS = [
         fail: { media: 2, rep: -2 },
         failText: "Internet uznaje, \u017Ce przesadzi\u0142e\u015B. Komunia to \u015Bwi\u0119to\u015B\u0107."
       },
-      { label: "Udajesz, \u017Ce to nie ty", desc: "Grzywka zmienia twarz.", effects: { media: 1 } }
+      { label: "Udajesz, \u017Ce to nie ty", desc: "Wy\u0142\u0105czasz internet do walki.", effects: { nextFight: 1 } }
     ]
   },
   {
@@ -3419,7 +3427,7 @@ var WEEK_EVENTS = [
     title: "Ekipa robi wyjazd",
     w: 3,
     text: () => `Ekipa z twojego miasta pisze na grupie, \u017Ce jedzie na gal\u0119. Busem. Z grillem. \u201EOdpalimy ci race przy wej\u015Bciu, spoko, nikt nie zauwa\u017Cy\u201D.`,
-    choices: () => [
+    choices: (s) => [
       { label: "Zakazujesz rac", desc: "Federacja i tak by zauwa\u017Cy\u0142a.", effects: { rep: 1, note: "race zostaj\u0105 w busie" } },
       {
         label: "Niech b\u0119dzie klimat",
@@ -3430,7 +3438,7 @@ var WEEK_EVENTS = [
         fail: { money: -800, rep: -2, media: 2 },
         failText: "Ochrona wyprowadza p\xF3\u0142 ekipy, a federacja wysy\u0142a ci faktur\u0119 za \u201Eszkody w obiekcie\u201D."
       },
-      { label: "Za\u0142atwiasz im bilety w twoim sektorze", desc: "B\u0119d\u0105 blisko i pod kontrol\u0105.", effects: { rep: 1, relations: 1 } }
+      { label: "Za\u0142atwiasz im bilety w twoim sektorze", desc: "B\u0119d\u0105 blisko i pod kontrol\u0105. Bilety na tw\xF3j koszt.", effects: { money: -zl4(s, 300), relations: 2, nextFight: 1 } }
     ]
   },
   {
@@ -3469,7 +3477,7 @@ var WEEK_EVENTS = [
     choices: (s) => [
       { label: "Zdj\u0119cie i autograf obok tatua\u017Cu", desc: "D\u0142ugopisem. Na \u0142ydce.", effects: { media: 2, rep: 1, note: "fan obiecuje, \u017Ce autograf te\u017C wytatuuje" } },
       { label: "Fundujesz mu poprawk\u0119 u dobrego tatua\u017Cysty", desc: "Niech chocia\u017C w\u0105sa nie b\u0119dzie.", effects: { money: -zl4(s, 400), rep: 2, media: 1, note: "poprawka um\xF3wiona na wtorek" } },
-      { label: "M\xF3wisz, \u017Ce wysz\u0142o lepiej ni\u017C orygina\u0142", desc: "Dyplomacja.", effects: { rep: 1 } }
+      { label: "M\xF3wisz, \u017Ce wysz\u0142o lepiej ni\u017C orygina\u0142", desc: "Dyplomacja. I szybko wracasz do rozgrzewki.", effects: { rep: 1, nextFight: 1 } }
     ]
   },
   {
@@ -3502,7 +3510,7 @@ var WEEK_EVENTS = [
         label: "Rozbijasz je na worku do nocy",
         desc: "Stary spos\xF3b. Kciuk i tak zaboli.",
         chance: 60,
-        success: { nextFight: 1 },
+        success: { nextFight: 2 },
         successText: "Po trzech godzinach r\u0119kawice uk\u0142adaj\u0105 si\u0119 do d\u0142oni. Kciuk \u017Cyje, ty te\u017C.",
         fail: { wear: 1, nextFight: -1 },
         failText: "R\u0119kawice wygrywaj\u0105. Kciuk puchnie, a ty banda\u017Cujesz go na zapas."
@@ -3510,13 +3518,13 @@ var WEEK_EVENTS = [
       {
         label: "Prosisz o inny rozmiar",
         desc: "Pan od sprz\u0119tu \u201Ezobaczy, co da si\u0119 zrobi\u0107\u201D.",
-        chance: 45,
+        chance: 60,
         success: { nextFight: 1, note: "pan od sprz\u0119tu ma jednak zapas" },
         successText: "Pan od sprz\u0119tu wyci\u0105ga z baga\u017Cnika par\u0119 o p\xF3\u0142 rozmiaru wi\u0119ksz\u0105. Pasuj\u0105 jak ula\u0142.",
-        fail: { nextFight: 0 },
+        fail: { nextFight: -1 },
         failText: "Pan od sprz\u0119tu zobaczy\u0142. Nie da si\u0119 nic zrobi\u0107."
       },
-      { label: "Walczysz w tym, co daj\u0105", desc: "Rywal ma takie same.", effects: { nextFight: 0, note: "obaj macie twarde r\u0119kawice" } }
+      { label: "Walczysz w tym, co daj\u0105", desc: "Rywal ma takie same. Nie marnujesz na to g\u0142owy.", effects: { nextFight: 0, rep: 1, note: "obaj macie twarde r\u0119kawice" } }
     ]
   },
   {
@@ -3537,12 +3545,12 @@ var WEEK_EVENTS = [
     cond: (_s, o) => !!o.abroad,
     text: (_s, o) => `Burza nad lotniskiem, lot do miasta ${o.abroad} odwo\u0142any. Nast\u0119pny jutro wieczorem. Wa\u017Cenie pojutrze rano.`,
     choices: (s) => [
-      { label: "Wynajmujesz auto i jedziesz noc\u0105", desc: "Dwana\u015Bcie godzin za kierownic\u0105 na zmian\u0119 z trenerem.", effects: { money: -zl4(s, 600), nextFight: -1, note: "trener prowadzi jak na rajdzie" } },
+      { label: "Wynajmujesz auto i jedziesz noc\u0105", desc: "Dwana\u015Bcie godzin za kierownic\u0105 na zmian\u0119 z trenerem.", effects: { money: -zl4(s, 600), nextFight: 0, note: "trener prowadzi jak na rajdzie, ty \u015Bpisz z ty\u0142u" } },
       {
         label: "Czekasz na jutrzejszy lot",
         desc: "Hotel przy lotnisku i nerwy.",
         chance: 60,
-        success: { nextFight: 0 },
+        success: { nextFight: 1 },
         successText: "Lot wylatuje o czasie. Wa\u017Cysz si\u0119 zm\u0119czony, ale na czas.",
         fail: { nextFight: -2 },
         failText: "Kolejne op\xF3\u017Anienie. L\u0105dujesz trzy godziny przed wa\u017Ceniem i jedziesz prosto na wag\u0119."
@@ -3573,15 +3581,15 @@ var WEEK_EVENTS = [
         fail: { nextFight: -1 },
         failText: "To by\u0142a zmy\u0142ka. Rywal walczy jak zawsze, a ty szukasz w g\u0142owie starego planu."
       },
-      { label: "Trzymacie si\u0119 planu", desc: "\u201ENa nagraniach ka\u017Cdy jest mistrzem.\u201D", effects: { nextFight: 0 } },
+      { label: "Trzymacie si\u0119 planu", desc: "\u201ENa nagraniach ka\u017Cdy jest mistrzem.\u201D", effects: { nextFight: 0, relations: 1, note: "trener lubi, jak mu ufasz" } },
       {
         label: "Dzwonisz do sparingpartnera, kt\xF3ry go zna",
         desc: "Kosztuje piwo i godzin\u0119 rozmowy.",
         chance: 65,
         success: { nextFight: 1, note: "sparingpartner zna jego nawyki" },
         successText: "Kumpel zna go z obozu: \u201EZ odwrotnej si\u0119 tylko popisuje. Jak si\u0119 zm\u0119czy, wraca do swojej\u201D.",
-        fail: { nextFight: 0 },
-        failText: "Kumpel pami\u0119ta tylko, \u017Ce \u201Eby\u0142 mi\u0142y i jad\u0142 du\u017Co ry\u017Cu\u201D."
+        fail: { nextFight: -1 },
+        failText: "Kumpel pami\u0119ta tylko, \u017Ce \u201Eby\u0142 mi\u0142y i jad\u0142 du\u017Co ry\u017Cu\u201D. I \u017Ce \u201Echyba by\u0142 lewor\u0119czny\u201D. Teraz masz m\u0119tlik."
       }
     ]
   },
@@ -5024,7 +5032,7 @@ var MONEY_EVENTS = [
     text: () => "Pies pogryz\u0142 ci r\u0119kawice sparingowe na strz\u0119py. Na szcz\u0119\u015Bcie jeste\u015B w Ground Game Bandzie: piszesz do sponsora i nowe s\u0105 u ciebie po dw\xF3ch dniach. Za darmo.",
     choices: () => [
       { label: "Wrzucasz unboxing", desc: "Pies w roli g\u0142\xF3wnej, oznaczasz Ground Game.", effects: { media: 2, form: 1, note: "nowe r\u0119kawice od sponsora" } },
-      { label: "Po prostu dzi\u0119kujesz", desc: "Kr\xF3tka wiadomo\u015B\u0107 i na trening.", effects: { form: 1, note: "nowe r\u0119kawice od sponsora" } }
+      { label: "Po prostu dzi\u0119kujesz", desc: "Telefon do sponsora, bez spiny o zasi\u0119gi.", effects: { form: 1, relations: 1, note: "nowe r\u0119kawice od sponsora" } }
     ]
   },
   {
@@ -5070,7 +5078,7 @@ var MONEY_EVENTS = [
     text: (s) => `Rada miasta przyznaje ci stypendium sportowe: ${zl5(cash(s, 0.09, 1500, 25e3))}. Trzeba tylko przyj\u015B\u0107 na sesj\u0119 i potrzyma\u0107 czek.`,
     choices: (s) => [
       { label: "Idziesz na sesj\u0119", desc: "Garnitur, u\u015Bmiech, zdj\u0119cie z burmistrzem.", effects: { money: cash(s, 0.09, 1500, 25e3), rep: 2 } },
-      { label: "Wysy\u0142asz trenera", desc: "Ty masz trening.", effects: { money: cash(s, 0.09, 1500, 25e3), relations: -1 } }
+      { label: "Wysy\u0142asz trenera", desc: "Ty masz trening.", effects: { money: cash(s, 0.09, 1500, 25e3), relations: -1, form: 1 } }
     ]
   },
   {
@@ -5451,7 +5459,7 @@ var EXTRA_EVENTS = [
     text: () => "S\u0105siad wyje\u017Cd\u017Ca na dwa tygodnie i prosi, \u017Ceby\u015B wyprowadza\u0142 jego owczarka. Pies ci\u0105gnie jak ci\u0119\u017Car\xF3wka i nie s\u0142ucha nikogo.",
     choices: () => [
       { label: "Wyprowadzasz psa", desc: "Dwa razy dziennie, po pi\u0119\u0107 kilometr\xF3w.", effects: { stats: { cardio: 1 }, relations: 1 } },
-      { label: "Odmawiasz", desc: "Masz treningi.", effects: { relations: -1 } }
+      { label: "Odmawiasz", desc: "Masz treningi. I regeneracj\u0119.", effects: { relations: -1, form: 1 } }
     ]
   },
   {
@@ -5714,7 +5722,7 @@ var FUN_EVENTS = [
     text: () => "Federacja zaprasza ci\u0119 na gal\u0119, \u017Ceby\u015B pokaza\u0142 si\u0119 kibicom z klatki. Ochroniarz przy wej\u015Bciu dla zawodnik\xF3w nie wierzy, \u017Ce jeste\u015B na li\u015Bcie. \u201EKa\u017Cdy tak m\xF3wi. Bilet?\u201D",
     choices: () => [
       { label: "Pokazujesz plakat na telefonie", desc: "Twoja twarz, jego zdziwienie.", effects: { media: 1, note: "ochroniarz prosi o autograf dla syna" } },
-      { label: "Dzwonisz do organizatora", desc: "Dwadzie\u015Bcia minut czekania na zimnie.", effects: { form: -1, note: "katar po czekaniu na zimnie" } }
+      { label: "Dzwonisz do organizatora", desc: "Dwadzie\u015Bcia minut czekania na zimnie.", effects: { form: -1, rep: 2, note: "organizator przeprasza na scenie, sala bije brawo" } }
     ]
   },
   {
@@ -5725,7 +5733,7 @@ var FUN_EVENTS = [
     text: () => "Dwie godziny przed walk\u0105 okazuje si\u0119, \u017Ce spodenki walkowe zosta\u0142y w pralce. W hotelu. W innym mie\u015Bcie.",
     choices: () => [
       { label: "Po\u017Cyczasz od kolegi z klubu", desc: "Dwa rozmiary za du\u017Ce.", effects: { media: 2, form: -1, note: "w klatce trzymasz spodenki jedn\u0105 r\u0119k\u0105" } },
-      { label: "Kupujesz w sklepie przy hali", desc: "Jedyne, jakie maj\u0105: r\xF3\u017Cowe z jednoro\u017Ccem.", effects: { media: 3, rep: 1, note: "jednoro\u017Cec staje si\u0119 twoim znakiem" } }
+      { label: "Kupujesz w sklepie przy hali", desc: "Jedyne, jakie maj\u0105: r\xF3\u017Cowe z jednoro\u017Ccem.", effects: { media: 3, rep: 1, money: -350, note: "jednoro\u017Cec staje si\u0119 twoim znakiem (i kosztuje jak jednoro\u017Cec)" } }
     ]
   },
   {
@@ -6228,7 +6236,7 @@ var EVENTS = [
     cond: (s) => s.tier === 0,
     text: () => "Wa\u017Cenie przed turniejem, tolerancja zerowa. Waga pokazuje 300 gram\xF3w za du\u017Co, a do zamkni\u0119cia listy zosta\u0142o czterdzie\u015Bci minut.",
     choices: () => [
-      { label: "Skakanka w kurtce", desc: "Pocisz si\u0119 w toalecie i wchodzisz na wag\u0119 na styk.", effects: { form: -1 } },
+      { label: "Skakanka w kurtce", desc: "Pocisz si\u0119 w toalecie i wchodzisz na wag\u0119 na styk.", effects: { form: -2 } },
       {
         label: "Startujesz kategori\u0119 wy\u017Cej",
         desc: "Bez zbijania, ale rywale b\u0119d\u0105 wi\u0119ksi.",
@@ -6321,7 +6329,7 @@ var EVENTS = [
     text: () => "Ground Game Labs szuka zawodnik\xF3w do testowania nowych spodenek przed premier\u0105. Trzeba w nich trenowa\u0107 przez miesi\u0105c i napisa\u0107 szczer\u0105 opini\u0119.",
     choices: () => [
       { label: "Zg\u0142aszasz si\u0119", desc: "Nowy sprz\u0119t, zanim trafi do sklepu.", effects: { media: 2, rep: 1, note: "spodenki przed premier\u0105" } },
-      { label: "Nie masz czasu", desc: "Ob\xF3z si\u0119 sam nie zrobi.", effects: {} }
+      { label: "Nie masz czasu", desc: "Ob\xF3z si\u0119 sam nie zrobi.", effects: { form: 1 } }
     ]
   },
   // ---------- Start kariery: sparing kontrolny u trenera (kolejkowany przy pierwszym roku) ----------
@@ -6847,7 +6855,7 @@ ${t}: I przy\u0142\xF3\u017C l\xF3d na to oko.`;
     text: () => "Twoja stara podstaw\xF3wka zaprasza ci\u0119 na spotkanie z dzieciakami. Pani dyrektor pami\u0119ta, jak bi\u0142e\u015B si\u0119 na przerwach.",
     choices: () => [
       { label: "Idziesz", desc: "Autografy na zeszytach do matmy.", effects: { rep: 2, relations: 1, media: 1 } },
-      { label: "Nie masz czasu", desc: "Ob\xF3z si\u0119 sam nie zrobi.", effects: {} }
+      { label: "Nie masz czasu", desc: "Ob\xF3z si\u0119 sam nie zrobi.", effects: { form: 1 } }
     ]
   },
   {
@@ -7426,10 +7434,11 @@ function resolveInvite(rng, s, inv, form) {
     s.money -= inv.fee;
     const st = inv.stat ?? "wrest";
     bump(s, st, 2);
-    s.potential[st] = clamp2(s.potential[st] + 1, 1, 99);
-    s.wear = clamp2(s.wear + 1, 0, 100);
+    const deep = rng.chance(0.5);
+    if (deep) s.potential[st] = clamp2(s.potential[st] + 1, 1, 99);
+    s.wear = clamp2(s.wear + 2, 0, 100);
     const name = { stand: "St\xF3jka", wrest: "Zapasy", bjj: "Parter", cardio: "Kondycja", chin: "Szcz\u0119ka", iq: "Taktyka" }[st];
-    return { title: inv.title, lines: [`${name} +2, potencja\u0142 +1`, `Koszt: ${inv.fee.toLocaleString("pl-PL")} z\u0142`, "Zu\u017Cycie +1"], text: "Wracasz zm\u0119czony jak nigdy, ale z rzeczami, kt\xF3rych w swojej sali nie da\u0142oby si\u0119 nauczy\u0107.", tone: "purple", win: true };
+    return { title: inv.title, lines: [deep ? `${name} +2, potencja\u0142 +1` : `${name} +2`, `Koszt: ${inv.fee.toLocaleString("pl-PL")} z\u0142`, "Zu\u017Cycie +2"], text: "Wracasz zm\u0119czony jak nigdy, ale z rzeczami, kt\xF3rych w swojej sali nie da\u0142oby si\u0119 nauczy\u0107.", tone: "purple", win: true };
   }
   if (inv.kind === "charity") {
     s.rep = clamp2(s.rep + 4, 0, 100);
