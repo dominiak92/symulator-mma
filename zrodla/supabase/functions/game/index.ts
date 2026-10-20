@@ -10563,6 +10563,7 @@ function announceAnswer(s0, key) {
   o.announceChoice = key;
   withRng(s, (rng) => {
     if (key === "respect") s.rep = clamp(s.rep + 1, 0, 100);
+    else if (key === "ignore") s.flags.nextFightMod = (s.flags.nextFightMod ?? 0) + 1;
     else if (key === "trash") {
       s.media = clamp(s.media + mediaGain(s, 2), 0, 100);
       s.rep = clamp(s.rep - 1, 0, 100);
