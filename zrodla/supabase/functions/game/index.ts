@@ -2059,7 +2059,7 @@ var WEEK_EVENTS = [
     id: "hotel",
     title: "Wesele za \u015Bcian\u0105",
     w: 5,
-    text: (_s, o) => `Hotel organizatora przy obwodnicy. Za \u015Bcian\u0105 wesele do czwartej rano, a za trzy dni walka z ${o.opp.lastName}. Disco polo przez \u015Bcian\u0119 s\u0142ycha\u0107 tak, jakby zesp\xF3\u0142 gra\u0142 w \u0142azience.`,
+    text: (_s, o) => `Hotel organizatora przy obwodnicy. Za \u015Bcian\u0105 wesele do czwartej rano, a za trzy dni walka. Rywal: ${o.opp.lastName}. Disco polo przez \u015Bcian\u0119 s\u0142ycha\u0107 tak, jakby zesp\xF3\u0142 gra\u0142 w \u0142azience.`,
     choices: (s) => [
       { label: "Zmieniasz hotel na w\u0142asny koszt", desc: "Cisza, ale portfel cierpi.", effects: { money: -zl4(s, 400) } },
       { label: "Zatyczki do uszu i medytacja", desc: "Albo zadzia\u0142a, albo nie.", chance: 55, success: { nextFight: 0, note: "\u015Bpisz jak dziecko" }, successText: "Zatyczki daj\u0105 rad\u0119. Budzisz si\u0119 wyspany i lekko nucisz \u201EBayer full\u201D.", fail: { nextFight: -2 }, failText: "O trzeciej orkiestra gra \u201ESoko\u0142y\u201D. Nie \u015Bpisz do rana." },
@@ -2092,7 +2092,7 @@ var WEEK_EVENTS = [
     id: "kibice",
     title: "Autokar z twojego miasta",
     w: 4,
-    text: (s) => `Pod hotel podje\u017Cd\u017Ca autokar z ${s.profile.hometown}. Pi\u0119\u0107dziesi\u0105t os\xF3b w koszulkach z twoj\u0105 twarz\u0105, transparent i b\u0119ben. Chc\u0105 zdj\u0119cie. Ka\u017Cdy.`,
+    text: (s) => `Pod hotel podje\u017Cd\u017Ca autokar. Tablica: ${s.profile.hometown}. Pi\u0119\u0107dziesi\u0105t os\xF3b w koszulkach z twoj\u0105 twarz\u0105, transparent i b\u0119ben. Chc\u0105 zdj\u0119cie. Ka\u017Cdy.`,
     choices: () => [
       { label: "Wychodzisz do nich na godzin\u0119", desc: "Zdj\u0119cia, autografy, u\u015Bciski od cio\u0107.", effects: { rep: 2, media: 1, nextFight: 1, note: "ciocia p\u0142acze ze wzruszenia" } },
       { label: "Machasz z okna i wracasz do planu", desc: "Skupienie przed walk\u0105 jest wa\u017Cniejsze.", effects: { nextFight: 1, rep: -1 } }
@@ -2213,7 +2213,7 @@ var WEEK_EVENTS = [
     id: "sedzia",
     title: "Wiesz ju\u017C, kto s\u0119dziuje",
     w: 3,
-    text: (_s, o) => `Lista s\u0119dzi\xF3w wisi na drzwiach szatni. Twoj\u0105 walk\u0119 z ${o.opp.lastName} prowadzi \u201ESzybki Zdzis\u0142aw\u201D, kt\xF3ry przerywa, zanim ktokolwiek zd\u0105\u017Cy upa\u015B\u0107.`,
+    text: (_s, o) => `Lista s\u0119dzi\xF3w wisi na drzwiach szatni. Twoj\u0105 walk\u0119 (rywal: ${o.opp.lastName}) prowadzi \u201ESzybki Zdzis\u0142aw\u201D, kt\xF3ry przerywa, zanim ktokolwiek zd\u0105\u017Cy upa\u015B\u0107.`,
     choices: () => [
       { label: "Ustawiasz plan na szybki finisz", desc: "Jak trafisz, on przerwie.", effects: { nextFight: 1, note: "pierwsza seria ma by\u0107 mocna" } },
       { label: "Plan: zero ryzyka w st\xF3jce", desc: "Jak ci\u0119 trafi\u0105, on te\u017C przerwie.", effects: { nextFight: 1 } },
@@ -2224,7 +2224,7 @@ var WEEK_EVENTS = [
     id: "sponsor_tylek",
     title: "Logo na po\u015Bladku",
     w: 3,
-    text: (s) => `Dzwoni hurtownia p\u0142ytek z ${s.profile.hometown}: ${zl4(s, 600)} z\u0142 za logo na spodenkach. Jedyne wolne miejsce: ty\u0142. Nazwa firmy: \u201EKafel-Max\u201D.`,
+    text: (s) => `Dzwoni lokalna hurtownia p\u0142ytek (${s.profile.hometown}): ${zl4(s, 600)} z\u0142 za logo na spodenkach. Jedyne wolne miejsce: ty\u0142. Nazwa firmy: \u201EKafel-Max\u201D.`,
     choices: (s) => [
       { label: "Bierzesz, pieni\u0105dz nie \u015Bmierdzi", desc: "Kafel-Max na po\u015Bladku.", effects: { money: zl4(s, 600), media: 1, note: "komentator czyta logo na g\u0142os" } },
       { label: "Negocjujesz prz\xF3d spodenek za wi\u0119cej", desc: "Prz\xF3d to presti\u017C.", chance: 45, success: { money: zl4(s, 1100) }, successText: "Pan Mirek z Kafel-Maxu m\xF3wi \u201Edobra, niech pan ma\u201D. Prz\xF3d spodenek wyceniony.", fail: { money: 0 }, failText: "Pan Mirek si\u0119 obra\u017Ca i dzwoni do twojego rywala." },
@@ -2312,7 +2312,7 @@ var WEEK_EVENTS = [
     id: "koledzy_z_bloku",
     title: "Ekipa robi wyjazd",
     w: 3,
-    text: (s) => `Ekipa z ${s.profile.hometown} pisze na grupie, \u017Ce jedzie na gal\u0119. Busem. Z grillem. \u201EOdpalimy ci race przy wej\u015Bciu, spoko, nikt nie zauwa\u017Cy\u201D.`,
+    text: () => `Ekipa z twojego miasta pisze na grupie, \u017Ce jedzie na gal\u0119. Busem. Z grillem. \u201EOdpalimy ci race przy wej\u015Bciu, spoko, nikt nie zauwa\u017Cy\u201D.`,
     choices: () => [
       { label: "Zakazujesz rac", desc: "Federacja i tak by zauwa\u017Cy\u0142a.", effects: { rep: 1, note: "race zostaj\u0105 w busie" } },
       { label: "Niech b\u0119dzie klimat", desc: "Raz si\u0119 \u017Cyje.", chance: 40, success: { media: 3, nextFight: 1 }, successText: "Race, dym, sektor \u015Bpiewa twoje nazwisko. Wchodzisz do klatki jak na derby.", fail: { money: -800, rep: -2, media: 2 }, failText: "Ochrona wyprowadza p\xF3\u0142 ekipy, a federacja wysy\u0142a ci faktur\u0119 za \u201Eszkody w obiekcie\u201D." },
@@ -10183,6 +10183,8 @@ var PRESS_QUOTES = [
   "Po tej walce {n} wr\xF3ci do roznoszenia ulotek.",
   "Widzia\u0142em jego walki. Zasn\u0105\u0142em w drugiej rundzie, w klatce b\u0119dzie tak samo, tylko on za\u015Bnie.",
   "M\xF3j trener powiedzia\u0142, \u017Ce {n} ma szcz\u0119k\u0119 ze szk\u0142a. Sprawdz\u0119.",
+  "Niech {n} odpocznie przed walk\u0105. Po walce te\u017C b\u0119dzie odpoczywa\u0142. D\u0142ugo.",
+  "Pytacie, co wiem o rywalu? \u017Be {n} ma \u0142adne zdj\u0119cia na Instagrymie. I tyle.",
   "Niech {n} lepiej przyniesie r\u0119cznik. Przyda si\u0119, \u017Ceby rzuci\u0107 go na ring.",
   "Nie wiem nawet, jak on si\u0119 nazywa. Za tydzie\u0144 te\u017C nikt nie b\u0119dzie wiedzia\u0142."
 ];
@@ -10233,10 +10235,10 @@ function pressContext(s, o, rng) {
   const style = o.opp.style;
   const opts = [];
   const STYLE_Q = {
-    wrestler: `Po\u0142o\u017C\u0119 ${me} na plecy w pierwszej minucie i b\u0119d\u0119 trzyma\u0142 do gongu.`,
+    wrestler: `${me}, po\u0142o\u017C\u0119 ci\u0119 na plecy w pierwszej minucie i b\u0119d\u0119 trzyma\u0142 do gongu.`,
     grappler: `Niech ${me} po\u0107wiczy obron\u0119 dusze\u0144. B\u0119dzie mu potrzebna.`,
     boxer: `Jedno trafienie i ${me} zobaczy sufit hali.`,
-    kickboxer: `Moje kopni\u0119cia na korpus ko\u0144czy\u0142y ju\u017C lepszych od ${me}.`,
+    kickboxer: `${me}, moje kopni\u0119cia na korpus ko\u0144czy\u0142y ju\u017C lepszych zawodnik\xF3w.`,
     brawler: `Nie b\u0119d\u0119 biega\u0142. Staniemy na \u015Brodku i zobaczymy, kto ma twardsz\u0105 szcz\u0119k\u0119.`,
     allround: `Jestem lepszy wsz\u0119dzie: w st\xF3jce, w parterze i w g\u0142owie.`
   };
@@ -10384,7 +10386,7 @@ function postAnswer(s0, key) {
           "Pozdrawiasz mam\u0119 przed kamer\u0105 i oddajesz mikrofon. Hala bije brawo.",
           "Dzi\u0119kujesz rywalowi za walk\u0119 i podnosisz mu r\u0119k\u0119. Takie rzeczy ludzie zapami\u0119tuj\u0105.",
           "M\xF3wisz trzy zdania, z czego dwa do trenera. Kr\xF3tko, po ludzku.",
-          `Pozdrawiasz ${s.profile.hometown} i ekip\u0119 z sektora. Sektor od\u015Bpiewuje ci \u201Esto lat\u201D.`
+          `Pozdrawiasz swoje miasto, ${s.profile.hometown}, i ekip\u0119 z sektora. Sektor od\u015Bpiewuje ci \u201Esto lat\u201D.`
         ]);
         tone = "good";
         break;
@@ -10548,7 +10550,7 @@ function buildHype(rng, s, o) {
   const post = o.rival || o.nemesis ? rng.pick([`Znowu ty? My\u015Bla\u0142em, \u017Ce po ostatnim razie zmienisz sport. Do zobaczenia, ${me}. \u{1F608}`, `Rok czeka\u0142em na ten rewan\u017C. Tym razem nie b\u0119dzie s\u0119dzi\xF3w. \u{1F52A}`]) : o.opp.freak ? rng.pick([`Ten \u201Esportowiec\u201D ${me} to papier. Zrobi\u0119 z niego mema na \u017Cywo \u{1F921}`, `${me} tak si\u0119 boi, \u017Ce ju\u017C szuka wym\xF3wek. Ch\u0142opaki, kupujcie PPV \u{1F4B8}`]) : o.title ? rng.pick([`Pas zostaje u mnie. ${me}, szanuj\u0119, ale przyjdziesz po nauczk\u0119. \u{1F3C6}`, `D\u0142ugo czeka\u0142e\u015B na t\u0119 szans\u0119. Szkoda, \u017Ce sko\u0144czy si\u0119 w pierwszej rundzie.`]) : rng.pick([
     `Kolejny rywal z listy. ${me}, nic osobistego. \u{1F94A}`,
     `Widzia\u0142em twoje walki, ${me}. St\xF3jka do poprawy. Poka\u017C\u0119 ci, gdzie.`,
-    `Szacunek dla ${me}. Ale w sobot\u0119 szacunek si\u0119 ko\u0144czy. \u{1F4AA}`,
+    `${me}? Szacunek. Ale w sobot\u0119 szacunek si\u0119 ko\u0144czy. \u{1F4AA}`,
     `Ob\xF3z idzie \u015Bwietnie. ${me}, mam nadziej\u0119, \u017Ce ty te\u017C trenujesz. \u{1F609}`
   ]);
   const dm = (o.opp.freak || o.rival || o.nemesis) && rng.chance(0.5) ? rng.pick(["\u0141adne masz auto. Szkoda by by\u0142o.", "Wiem, gdzie trenujesz. Do soboty.", "Przegraj w drugiej, b\u0119dzie zdrowiej dla wszystkich."]) : void 0;
@@ -10741,7 +10743,7 @@ function updateRank(s, rep) {
       s.flags.doubleActive = s.season;
       const name = `${BELT_NAMES[s.tier]} wagi ${rep.superfight} (superfight)`;
       s.belts.push({ name, season: s.season, age: s.age });
-      log(s, `\u{1F451} Podw\xF3jny mistrz! Superfight wygrany z ${opp.firstName} ${opp.lastName} (w wadze ${rep.superfight}).`);
+      log(s, `\u{1F451} Podw\xF3jny mistrz! Superfight wygrany. Rywal: ${opp.firstName} ${opp.lastName} (waga ${rep.superfight}).`);
     } else if (res === "D") {
       s.flags.superDone = (s.flags.superDone ?? 0) + 1;
       log(s, `Remis w superfighcie z ${opp.firstName} ${opp.lastName}.`);
@@ -12246,7 +12248,7 @@ function afterPaths(s) {
       icon: "star",
       desc: "Podcast, kana\u0142 i walki pokazowe dla zasi\u0119g\xF3w.",
       locked: fans >= 8e4 ? void 0 : "potrzeba 80 tys. obserwuj\u0105cych",
-      epilogue: `Podcast \u201EPo gongu\u201D z ${n} ma milion wy\u015Bwietle\u0144 miesi\u0119cznie. Najch\u0119tniej ogl\u0105dany odcinek to ten, w kt\xF3rym opowiadasz, jak w wieku 16 lat mama wyjmowa\u0142a pieni\u0105dze z koperty na pierwsze r\u0119kawice.`
+      epilogue: `Tw\xF3j podcast \u201EPo gongu\u201D ma milion wy\u015Bwietle\u0144 miesi\u0119cznie. Najch\u0119tniej ogl\u0105dany odcinek to ten, w kt\xF3rym opowiadasz, jak w wieku 16 lat mama wyjmowa\u0142a pieni\u0105dze z koperty na pierwsze r\u0119kawice.`
     },
     {
       key: "firefighter",
