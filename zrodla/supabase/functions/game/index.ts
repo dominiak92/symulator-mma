@@ -660,7 +660,7 @@ var THREADS = [
     from: "Wa\u017Cka",
     title: "Za du\u017Co na wadze",
     start: { weight: 4, cond: (s) => pro(s), repeat: true },
-    text: () => "\u201EDo wa\u017Cenia 10 dni. Jeste\u015B 3,2 kg nad limitem. Dzisiejsza sugestia: ry\u017C z kurczakiem (posi\u0142ek nr 412).\u201D",
+    text: (s) => ["\u201EDo wa\u017Cenia 10 dni. Jeste\u015B 3,2 kg nad limitem. Dzisiejsza sugestia: ry\u017C z kurczakiem (posi\u0142ek nr 412).\u201D", "\u201EDo wa\u017Cenia 9 dni. 2,8 kg nad limitem. Wczorajsze pierogi zosta\u0142y zapisane w historii.\u201D", "\u201EDo wa\u017Cenia 11 dni. 3,5 kg nad limitem. Wa\u017Cka przypomina: piwo to te\u017C kalorie.\u201D"][s.season % 3],
     choices: () => [
       { label: "Dieta, powoli i bez cud\xF3w", desc: "Ry\u017C, kurczak, ry\u017C.", effects: { nextFight: 1, note: "ry\u017C \u015Bni ci si\u0119 po nocach" } },
       {
@@ -1161,7 +1161,7 @@ var THREADS = [
     from: "Trener",
     title: "Twoje r\u0119kawice",
     start: { weight: 14, cond: (s) => (s.gear ?? 0) >= 55, repeat: true },
-    text: (s) => `Twoje r\u0119kawice \u015Bmierdz\u0105 tak, \u017Ce Mietek trenuje w masce. Na oko s\u0105 zajechane w ${Math.round(s.gear ?? 0)}%. Kup nowe, zanim co\u015B p\u0119knie na sparingu.`,
+    text: (s) => `${["Twoje r\u0119kawice \u015Bmierdz\u0105 tak, \u017Ce Mietek trenuje w masce.", "Ochraniacz na z\u0119by ma ju\u017C kolor herbaty. Na szcz\u0119\u015Bcie nie smak.", "Nakolanniki trzymaj\u0105 si\u0119 na dw\xF3ch nitkach i nadziei.", "Kask ma p\u0119kni\u0119cie, przez kt\xF3re wida\u0107 przysz\u0142o\u015B\u0107. S\u0142ab\u0105."][s.season % 4]} Na oko sprz\u0119t jest zajechany w ${Math.round(s.gear ?? 0)}%. Kup nowy, zanim co\u015B p\u0119knie na sparingu.`,
     choices: (s) => [
       { label: "Kupujesz nowy komplet", desc: "R\u0119kawice, ochraniacze, kask.", effects: { money: -zl(s, 700), gear: -55 } },
       {
@@ -1169,9 +1169,9 @@ var THREADS = [
         desc: "Patent z internetu.",
         chance: 50,
         success: { gear: -15 },
-        successText: "Pachn\u0105 prawie normalnie. Prawie.",
+        successText: ["Pachn\u0105 prawie normalnie. Prawie.", "Soda dzia\u0142a. Mietek zdejmuje mask\u0119 po raz pierwszy od miesi\u0105ca.", "Wygl\u0105daj\u0105 jak nowe. Z daleka. W s\u0142abym \u015Bwietle."][s.season % 3],
         fail: { gear: -10, relations: -1 },
-        failText: "Pralka mamy ju\u017C nigdy nie b\u0119dzie taka sama."
+        failText: ["Pralka mamy ju\u017C nigdy nie b\u0119dzie taka sama.", "Pralka wydaje d\u017Awi\u0119k jak przy nokaucie. Mama dzwoni do serwisu.", "Ca\u0142a \u0142azienka pachnie szatni\u0105. Mama m\xF3wi, \u017Ce to tw\xF3j ostatni raz z pralk\u0105."][s.season % 3]
       },
       { label: "Trenujesz w tym, co masz", desc: "Jeszcze poci\u0105gn\u0105.", effects: { gear: 5, nextFight: -1 } }
     ]
@@ -1850,6 +1850,92 @@ var THREADS = [
       { label: "\u201EJasne, to twoja zas\u0142uga\u201D", desc: "Mietek b\u0119dzie to powtarza\u0142 do ko\u0144ca \u017Cycia.", effects: { relations: 1, note: "Mietek drukuje sobie zdj\u0119cie" } },
       { label: "Wrzucasz film na Instagrym", desc: "Nokaut w zwolnionym tempie, z muzyk\u0105 z \u201ERocky\u2019ego\u201D.", effects: { media: 1 } },
       { label: "\u201E\u0106wiczy\u0142em go sam\u201D", desc: "Mietek odpisuje tylko \u201Eok\u201D.", effects: { relations: -1, rep: 1 } }
+    ]
+  },
+  // ---------- Recenzja klubu na Gugle Mapach ----------
+  {
+    id: "recenzja.start",
+    note: true,
+    app: "mapka",
+    from: "Gugle Mapy",
+    title: "Nowa recenzja twojego klubu",
+    start: { weight: 4, cond: () => true },
+    text: (s) => `${s.club.name}: nowa recenzja \u2605\u2606\u2606\u2606\u2606 od \u201EGra\u017Cyna_z_Bloku\u201D: \u201ECi\u0105gle krzycz\u0105, jakby kto\u015B kogo\u015B bi\u0142. Okaza\u0142o si\u0119, \u017Ce bij\u0105. Nie polecam\u201D. Pod spodem 14 os\xF3b klikn\u0119\u0142o \u201Eprzydatne\u201D.`,
+    choices: () => [
+      { label: "Odpowiadasz z humorem", desc: "\u201EPani Gra\u017Cyno, pierwszy trening gratis\u201D.", effects: { media: 2, rep: 1, note: "pani Gra\u017Cyna przysz\u0142a na zaj\u0119cia dla senior\xF3w" } },
+      { label: "Prosisz ekip\u0119 o pi\u0119\u0107 gwiazdek", desc: "Dwadzie\u015Bcia recenzji w godzin\u0119.", chance: 60, success: { media: 1 }, successText: "\u015Arednia skacze do 4,9. Kto\u015B pisze: \u201ESeba robi najlepsze kanapki w szatni\u201D.", fail: { rep: -1 }, failText: "Gugle usuwa recenzje jako \u201Epodejrzane\u201D. Zostaje tylko ta od Gra\u017Cyny." },
+      { label: "Ignorujesz", desc: "Trener m\xF3wi, \u017Ce to jego s\u0105siadka.", effects: {} }
+    ]
+  },
+  // ---------- Podejrzana transakcja w banku ----------
+  {
+    id: "bank_kebab.start",
+    note: true,
+    app: "bank",
+    from: "Rewolwer",
+    title: "Podejrzana transakcja",
+    start: { weight: 3, cond: (_s, c) => c.pre },
+    text: () => "Zauwa\u017Cyli\u015Bmy nietypow\u0105 aktywno\u015B\u0107 na koncie: 3 \xD7 \u201EKebab u Ahmeda\u201D, godz. 2:14, 2:31 i 2:58. Czy to Ty? Je\u015Bli nie, zablokujemy kart\u0119.",
+    choices: (s) => [
+      { label: "To ja. Dieta od poniedzia\u0142ku", desc: "Szczero\u015B\u0107 z bankiem.", effects: { nextFight: -1, note: "bank wysy\u0142a emotk\u0119 z kciukiem" } },
+      { label: "\u201ETo nie ja\u201D, blokujesz kart\u0119", desc: "Lepiej dmucha\u0107 na zimne.", effects: { money: -zl(s, 50), note: "nowa karta przychodzi po tygodniu" } }
+    ]
+  },
+  // ---------- Zjazd rocznika na Fejsbuku (w WhatsApce) ----------
+  {
+    id: "zjazd.start",
+    app: "sms",
+    from: "Kumpel z rocznika",
+    title: "Zjazd rocznika",
+    start: { weight: 3, cond: (s) => s.age >= 20 },
+    text: () => "Stary, robimy zjazd ch\u0142opak\xF3w z amatorki. Grill, piwo, wspominki o pucharze w Gliwicach. W sobot\u0119. Wiem, \u017Ce masz ob\xF3z, ale raz si\u0119 \u017Cyje.",
+    choices: () => [
+      { label: "Wpadasz na godzin\u0119, bez piwa", desc: "Kie\u0142baska i wspomnienia.", effects: { relations: 1, rep: 1 } },
+      { label: "Zostajesz do rana", desc: "Raz si\u0119 \u017Cyje, m\xF3wi\u0105.", chance: 40, success: { media: 2, rep: 1 }, successText: "Najlepsza noc od lat. Kto\u015B wrzuca wsp\xF3lne zdj\u0119cie, internet szaleje: \u201ERocznik 2010 wci\u0105\u017C razem\u201D.", fail: { nextFight: -2, wear: 1 }, failText: "Si\u0142owanie na r\u0119k\u0119 z by\u0142ym zapa\u015Bnikiem o trzeciej w nocy. \u0141okie\u0107 pami\u0119ta to do walki." },
+      { label: "Odmawiasz, ob\xF3z to ob\xF3z", desc: "Ch\u0142opaki zrozumiej\u0105. Mo\u017Ce.", effects: { nextFight: 1, relations: -1 } }
+    ]
+  },
+  // ---------- Juniorzy w klubie (Mesendżer) ----------
+  {
+    id: "juniorzy.start",
+    app: "gym",
+    from: "Trener",
+    title: "Zast\u0119pstwo na juniorach",
+    start: { weight: 4, cond: (s) => s.age >= 19 },
+    text: () => "Mam w sobot\u0119 wesele szwagra. Poprowadzisz zaj\u0119cia dla dzieciak\xF3w o 10:00? Dwudziestu o\u015Bmiolatk\xF3w, jeden z nich gryzie. P\u0142ac\u0119 obiadem.",
+    choices: () => [
+      { label: "Prowadzisz zaj\u0119cia", desc: "Dzieciaki ci\u0119 uwielbiaj\u0105. Prawie wszystkie.", effects: { rep: 2, relations: 1, note: "ten, kt\xF3ry gryzie, zosta\u0142 twoim fanem" } },
+      { label: "Robisz z tego nagranie na Instagrym", desc: "Zaj\u0119cia plus tre\u015B\u0107.", chance: 65, success: { media: 3, rep: 1 }, successText: "Rolka \u201Eucz\u0119 o\u015Bmiolatk\xF3w d\u017Awigni\u201D ma 80 tys. wy\u015Bwietle\u0144. Rodzice zapisuj\u0105 dzieci do klubu.", fail: { rep: -1, media: 1 }, failText: "Jedna mama pisze, \u017Ce nie zgadza\u0142a si\u0119 na nagrywanie. Usuwasz rolk\u0119 i przepraszasz." },
+      { label: "Odmawiasz", desc: "Sobota to dzie\u0144 regeneracji.", effects: { nextFight: 1 } }
+    ]
+  },
+  // ---------- Oliks: ktoś chce kupić twoje rzeczy ----------
+  {
+    id: "oliks_fan.start",
+    note: true,
+    app: "tasma",
+    from: "Oliks \xB7 wiadomo\u015B\u0107 od kupuj\u0105cego",
+    title: "Pytanie o og\u0142oszenie",
+    start: { weight: 3, cond: (s) => s.record.w >= 3 },
+    text: (s) => `Kupuj\u0105cy \u201EKolekcjoner_MMA\u201D pyta: \u201ECzy sprzedasz spodenki z ostatniej wygranej walki (rywal: ${s.history.filter((h) => !h.amateur && h.result === "W").slice(-1)[0]?.opponent ?? "niewa\u017Cne"})? Najlepiej nieprane. P\u0142ac\u0119 dobrze, nie pytaj dlaczego\u201D.`,
+    choices: (s) => [
+      { label: "Sprzedajesz, i to nieprane", desc: "Nie pytasz dlaczego.", effects: { money: zl(s, 500), media: 1, note: "nie pytasz dlaczego" } },
+      { label: "Oddajesz na licytacj\u0119 charytatywn\u0105", desc: "Dzieci zamiast dziwaka.", effects: { rep: 3, media: 1 } },
+      { label: "Blokujesz u\u017Cytkownika", desc: "S\u0105 granice.", effects: {} }
+    ]
+  },
+  // ---------- Spotifaj: hejt w podcaście ----------
+  {
+    id: "podkast_hejt.start",
+    app: "sms",
+    from: "Kolega z klubu",
+    title: "S\u0142ysza\u0142e\u015B ten podcast?",
+    start: { weight: 3, cond: (s) => s.tier >= 1 },
+    text: (s) => `S\u0142ucha\u0142e\u015B najnowszego odcinka \u201ERozbi\xF3rki MMA\u201D? Przez 12 minut gadaj\u0105, \u017Ce ${s.profile.lastName} to \u201Enajbardziej przereklamowany zawodnik w kraju\u201D. Wrzuci\u0142em ci link na Spotifaju.`,
+    choices: () => [
+      { label: "Dzwonisz do studia na \u017Cywo", desc: "Raz si\u0119 \u017Cyje.", chance: 50, success: { media: 4, rep: 1 }, successText: "Prowadz\u0105cy zaskoczony, rozmowa na luzie, ko\u0144czy si\u0119 zaproszeniem do studia. Fragment kr\u0105\u017Cy po sieci.", fail: { media: 2, rep: -2 }, failText: "Puszczaj\u0105 ci nerwy na antenie. Klip \u201Ezawodnik dzwoni z p\u0142aczem\u201D ma ju\u017C remixy." },
+      { label: "Odpowiadasz wygran\u0105", desc: "Najlepsza odpowied\u017A to klatka.", effects: { nextFight: 1, note: "link zapisany do motywacji" } },
+      { label: "Nie s\u0142uchasz", desc: "Zdrowie psychiczne.", effects: {} }
     ]
   }
 ];
@@ -9974,7 +10060,7 @@ function startFight(rng, s, o) {
         if (rep.prep === "rival") {
           const cost = prepCost(s, o);
           s.money -= cost;
-          rep.moments.push({ round: 0, title: "Ob\xF3z pod rywala", text: `Sparingpartnerzy w stylu rywala i godziny nagra\u0144. Kosztuje ${cost.toLocaleString("pl-PL")} z\u0142, ale znasz ka\u017Cdy jego nawyk.`, tone: "good" });
+          rep.moments.push({ round: 0, title: "Ob\xF3z pod rywala", text: `${vary6(s, ["Sparingpartnerzy w stylu rywala i godziny nagra\u0144.", "Sparingpartner z jego stylem przez trzy tygodnie i analityk z laptopem.", "Nagrania, sparingi, notatki. Rywal nie ma ju\u017C przed tob\u0105 tajemnic."])} Kosztuje ${cost.toLocaleString("pl-PL")} z\u0142, ale znasz ka\u017Cdy jego nawyk.`, tone: "good" });
         } else if (rep.prep === "hard") {
           rep.moments.push({
             round: 0,
