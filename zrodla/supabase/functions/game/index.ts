@@ -3311,8 +3311,8 @@ var CAMP_ACTS = [
   {
     id: "rywal",
     name: "Analiza rywala",
-    desc: "Nagrania jego walk, nawyki, ulubione kombinacje.",
-    hint: "forma na t\u0119 walk\u0119",
+    desc: "Nagrania jego walk: odkrywasz jeden z jego nawyk\xF3w.",
+    hint: "nawyk rywala i forma",
     roll: (s, rng, opp, _w, picks) => {
       const again = picks.includes("rywal");
       const smart = s.stats.iq >= 50;
@@ -4455,6 +4455,147 @@ function applyPerks(dp, perks, chanceToDist) {
   }
 }
 
+// src/engine/habits.ts
+var notSafe = (k) => k !== "safe";
+var HABITS = [
+  {
+    id: "lewa",
+    name: "Opuszcza lew\u0105 r\u0119k\u0119",
+    tape: "po ka\u017Cdej kombinacji opuszcza lew\u0105 r\u0119k\u0119",
+    seen: (n) => `Trener \u0142apie ci\u0119 za rami\u0119: \u201EWidzia\u0142e\u015B? Po ka\u017Cdej serii ${n} opuszcza lew\u0105. Kontra praw\u0105, tam jest dziura\u201D.`,
+    hits: (o) => o.stat === "stand" && notSafe(o.kind),
+    bonus: 9,
+    fits: () => true
+  },
+  {
+    id: "gaz",
+    name: "Siada w trzeciej rundzie",
+    tape: "od trzeciej rundy wyra\u017Anie zwalnia i oddycha ustami",
+    seen: (n) => `\u201E${n} ju\u017C \u0142apie powietrze ustami. Na nagraniach w trzeciej zawsze siada\u0142. Tempo, tempo!\u201D`,
+    hits: (o, r) => r >= 3 && (o.stat === "cardio" || o.stat === "wrest" || o.stat === "stand") && notSafe(o.kind),
+    bonus: 9,
+    fits: (f) => f.stats.cardio < f.stats.stand + 4
+  },
+  {
+    id: "plecy",
+    name: "Panikuje na plecach",
+    tape: "na plecach panikuje i oddaje pozycje",
+    seen: (n) => `\u201EJak go sprowadzi\u0142e\u015B, to ${n} szarpa\u0142 si\u0119 jak karp w wannie. On nie umie le\u017Ce\u0107 na dole!\u201D`,
+    hits: (o) => o.stat === "bjj" && notSafe(o.kind),
+    bonus: 11,
+    fits: (f) => f.style !== "grappler" && f.stats.bjj < f.stats.stand
+  },
+  {
+    id: "siatka",
+    name: "Gubi si\u0119 pod siatk\u0105",
+    tape: "zepchni\u0119ty pod siatk\u0119 tylko si\u0119 zas\u0142ania i czeka",
+    seen: (n) => `\u201EPod siatk\u0105 ${n} stoi jak s\u0142up i tylko si\u0119 zas\u0142ania. Dociskaj go tam!\u201D`,
+    hits: (o) => o.stat === "wrest" && notSafe(o.kind),
+    bonus: 9,
+    fits: (f) => f.style !== "wrestler"
+  },
+  {
+    id: "szarza",
+    name: "Szar\u017Cuje po trafieniu",
+    tape: "po ka\u017Cdym trafieniu rzuca si\u0119 do wymiany bez gardy",
+    seen: (n) => `\u201ETrafi\u0142e\u015B go i ${n} od razu polecia\u0142 na \u015Blepo. Niech szar\u017Cuje, ty skracaj i kontruj\u201D.`,
+    hits: (o) => o.stat === "stand" && o.kind === "risk",
+    bonus: 12,
+    fits: (f) => f.style === "brawler" || f.style === "boxer" || f.style === "kickboxer" || f.style === "allround"
+  },
+  {
+    id: "kopni\u0119cia",
+    name: "Kopie na niskie",
+    tape: "kopie na niskie bez przygotowania, nog\u0119 \u0142atwo z\u0142apa\u0107",
+    seen: (n) => `\u201E${n} kopie na niskie, jakby gra\u0142 w nog\u0119. Z\u0142ap t\u0119 nog\u0119 i do parteru!\u201D`,
+    hits: (o) => (o.stat === "wrest" || o.stat === "bjj") && notSafe(o.kind),
+    bonus: 8,
+    fits: (f) => f.style === "kickboxer" || f.style === "allround" || f.style === "boxer"
+  },
+  {
+    id: "wolny",
+    name: "Wolno zaczyna",
+    tape: "pierwsz\u0105 rund\u0119 zawsze przespacerowuje i si\u0119 rozgl\u0105da",
+    seen: (n) => `\u201E${n} rozkr\u0119ca si\u0119 dopiero w drugiej. Nast\u0119pnym razem idziemy po niego od pierwszego gongu\u201D.`,
+    hits: (o, r) => r <= 1 && o.kind === "risk",
+    bonus: 10,
+    fits: () => true
+  },
+  {
+    id: "korpus",
+    name: "Nie lubi cios\xF3w na korpus",
+    tape: "po ciosach na korpus opuszcza \u0142okcie i traci tempo",
+    seen: (n) => `\u201ES\u0142ysza\u0142e\u015B, jak ${n} j\u0119kn\u0105\u0142 po w\u0105trobie? Na d\xF3\u0142, potem na g\xF3r\u0119\u201D.`,
+    hits: (o) => (o.stat === "stand" || o.stat === "cardio") && notSafe(o.kind),
+    bonus: 7,
+    fits: (f) => f.stats.chin < 70
+  },
+  {
+    id: "nogi",
+    name: "Wchodzi w nogi z daleka",
+    tape: "wchodzi w nogi z daleka, z opuszczon\u0105 g\u0142ow\u0105",
+    seen: (n) => `\u201E${n} strzela w nogi z drugiego ko\u0144ca klatki. Kolano na wej\u015Bcie albo sprawl i ciosy\u201D.`,
+    hits: (o) => (o.stat === "stand" || o.stat === "wrest") && notSafe(o.kind),
+    bonus: 8,
+    fits: (f) => f.style === "wrestler" || f.style === "grappler"
+  },
+  {
+    id: "czeka",
+    name: "Z do\u0142u tylko czeka",
+    tape: "z plec\xF3w nic nie robi, czeka na b\u0142\u0105d i pierwszy krok",
+    seen: (n) => `\u201E${n} na dole tylko czeka, a\u017C si\u0119 pomylisz. Wstawaj i nie wchod\u017A mu w gard\u0119\u201D.`,
+    hits: (o) => (o.stat === "wrest" || o.stat === "cardio") && notSafe(o.kind),
+    bonus: 8,
+    fits: (f) => f.style === "grappler"
+  }
+];
+function findHabit(id) {
+  return HABITS.find((h2) => h2.id === id);
+}
+function hash2(str) {
+  let h2 = 2166136261;
+  for (let i = 0; i < str.length; i++) h2 = Math.imul(h2 ^ str.charCodeAt(i), 16777619) >>> 0;
+  return h2;
+}
+function habitsOf(opp, count) {
+  const pool = HABITS.filter((h2) => h2.fits(opp));
+  const key = `${opp.id}|${opp.firstName}|${opp.lastName}`;
+  const ordered = pool.map((h2) => ({ id: h2.id, k: hash2(`${key}|${h2.id}`) })).sort((a, b) => a.k - b.k).map((x) => x.id);
+  return ordered.slice(0, Math.max(0, Math.min(count, ordered.length)));
+}
+function habitCount(pro2, big) {
+  return big ? 3 : pro2 ? 2 : 1;
+}
+function nextUnknown(all, known) {
+  return all.find((h2) => !known.includes(h2)) ?? null;
+}
+function tapeLine(opp, id) {
+  const h2 = findHabit(id);
+  return h2 ? `${opp.lastName} ${h2.tape}.` : "";
+}
+function applyHabits(dp, sim, chanceToDist) {
+  const known = (sim.known ?? []).map(findHabit).filter((h2) => !!h2);
+  if (!known.length) return;
+  const hitNames = /* @__PURE__ */ new Set();
+  for (const o of dp.options) {
+    let b = 0;
+    const names = [];
+    for (const h2 of known) {
+      if (h2.hits(o, dp.round)) {
+        b += h2.bonus;
+        names.push(h2.name);
+      }
+    }
+    if (b > 0) {
+      o.chance = Math.min(95, o.chance + Math.min(b, 14));
+      o.dist = chanceToDist(o.chance);
+      o.habit = names.join(", ");
+      names.forEach((n) => hitNames.add(n));
+    }
+  }
+  dp.habits = known.map((h2) => ({ name: h2.name, used: hitNames.has(h2.name) }));
+}
+
 // src/engine/fight.ts
 function chanceFrom(atk, def, mod = 0) {
   return Math.round(clamp(50 + 46 * Math.tanh((atk - def) / 27) + mod, 5, 95));
@@ -4605,6 +4746,14 @@ function pickFresh(rng, rep, arr) {
 function addMoment(rep, m) {
   rep.moments.push(m);
 }
+function spotHabit(rng, ctx, sim, rep) {
+  const id = nextUnknown(sim.habits ?? [], sim.known ?? []);
+  const h2 = id ? findHabit(id) : void 0;
+  if (!h2) return;
+  if (!rng.chance(clamp(0.28 + ctx.me.iq / 300, 0.3, 0.62))) return;
+  sim.known = [...sim.known ?? [], h2.id];
+  addMoment(rep, { round: sim.round, title: "Naro\u017Cnik co\u015B widzi", text: h2.seen(shortName(ctx.opp)), effect: `nawyk rywala: ${h2.name.toLowerCase()}`, tone: "good" });
+}
 function snapRound(sim) {
   const t = sim.track ??= [];
   const k = (n) => Math.round(Math.max(0, Math.min(100, n)));
@@ -4613,6 +4762,7 @@ function snapRound(sim) {
 function simulateRound(rng, ctx, sim, rep) {
   simulateRoundInner(rng, ctx, sim, rep);
   snapRound(sim);
+  if (!sim.finished && sim.round < sim.maxRounds) spotHabit(rng, ctx, sim, rep);
   if (sim.finished) {
     const t = sim.track[sim.round];
     if (rep.result === "W" && rep.method !== "Lekarz") t[2] = 0;
@@ -4947,6 +5097,7 @@ function buildDecision(rng, ctx, sim) {
     dp.corner = dp.corner || sim.round > 0;
   }
   if (dp && ctx.perks?.length) applyPerks(dp, ctx.perks, distFrom);
+  if (dp) applyHabits(dp, sim, distFrom);
   if (dp)
     dp.status = {
       lead: sim.round === 0 ? null : cardsLead(sim),
@@ -9928,6 +10079,19 @@ function campWeek(s0, actId) {
   const c = s.run.camp;
   withRng(s, (rng) => {
     const r = act.roll(s, rng, c.o.opp, c.week, c.picks);
+    if (act.id === "rywal") {
+      const all = habitsOf(c.o.opp, habitCount(true, !!(c.o.title || c.o.rival || c.o.superfight)));
+      const known = [...s.scouted?.[c.o.opp.id] ?? [], ...c.o.known ?? []];
+      const again = c.picks.includes("rywal");
+      const nu = nextUnknown(all, known);
+      if (nu && (!again || s.stats.iq >= 50)) {
+        c.o.known = [...c.o.known ?? [], nu];
+        r.text = `${again ? "Drugi tydzie\u0144 nagra\u0144 i jednak co\u015B wychodzi." : "Trener zatrzymuje nagranie i pokazuje palcem."} ${tapeLine(c.o.opp, nu)} W walce naro\u017Cnik ci to przypomni.`;
+        if (again) r.mod = 1;
+      } else if (!nu) {
+        r.text = `Ogl\u0105dasz jego walki po raz kolejny. ${c.o.opp.lastName} nie ma ju\u017C przed tob\u0105 tajemnic, wi\u0119c szlifujesz plan.`;
+      }
+    }
     applyEffects(s, r.effects, rng);
     c.picks.push(act.id);
     c.log.push({ act: act.id, text: r.text, effects: r.effects, mod: r.mod });
@@ -11353,6 +11517,15 @@ function startFight(rng, s, o) {
           tone: "purple"
         });
       }
+      {
+        const all = habitsOf(opp, habitCount(!!rep.sim.pro, !!rep.sim.big));
+        const known = /* @__PURE__ */ new Set([...s.scouted?.[opp.id] ?? [], ...o?.known ?? []]);
+        if (rep.prep === "rival") all.slice(0, 2).forEach((h2) => known.add(h2));
+        rep.sim.habits = all;
+        rep.sim.known = all.filter((h2) => known.has(h2));
+        if (rep.sim.known.length)
+          rep.moments.push({ round: 0, title: "Co o nim wiesz", text: `${rep.sim.known.map((h2) => tapeLine(opp, h2)).join(" ")} Gdy przyjdzie moment, naro\u017Cnik podpowie, jak to wykorzysta\u0107.`, tone: "good" });
+      }
       run.fights.push(rep);
       if (!amateur && !freak && !s.proDebut)
         rep.moments.push({
@@ -12180,6 +12353,12 @@ function nemesisFighter(s) {
 }
 function finalizeFight(rng, s, rep) {
   const opp = rep.opp;
+  if (rep.sim.known?.length) {
+    const sc5 = { ...s.scouted ?? {}, [opp.id]: rep.sim.known };
+    const keys = Object.keys(sc5);
+    for (const k of keys.slice(0, Math.max(0, keys.length - 40))) delete sc5[k];
+    s.scouted = sc5;
+  }
   if (rep.farewell) s.flags.farewellDone = 1;
   if (rep.amateur && rep.result === "D") {
     const edge = (ovr(s.stats) - ovr(opp.stats)) / 40 + rep.sim.momentum / 100 + (s.run.form.mod - (s.injury?.penalty ?? 0)) / 100;
