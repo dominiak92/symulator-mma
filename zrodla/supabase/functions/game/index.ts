@@ -4615,7 +4615,8 @@ var EXTRA_EVENTS = [
     id: "bus_na_turniej",
     title: "Bus na turniej",
     weight: 4,
-    cond: (s) => s.tier === 0,
+    cond: (s) => s.tier === 0 && !!s.quick,
+    // w pełnej karierze dojazd ustalasz w wiadomości od trenera przed turniejem
     text: (s) => vary2(s, [
       "Klubowy bus na turniej to stary ducato trenera. Siedem godzin w jedn\u0105 stron\u0119, ogrzewanie dzia\u0142a tylko na pe\u0142nej mocy.",
       "Bus klubowy znowu nie odpala. Trener m\xF3wi \u201Espokojnie, popchniemy\u201D. Popychacie go ca\u0142\u0105 dru\u017Cyn\u0105.",
@@ -9829,7 +9830,8 @@ function seasonNext(s0) {
   if (cur && !cur.sim.finished) return s;
   if (run.offer || run.press || run.weigh || run.post || run.invite || run.camp || run.announce || run.week || run.entry) return s;
   if (afterPending(s) !== null) return s;
-  if (run.phoneAt !== run.fights.length) {
+  const midTourney = isAmateurRun(s) && run.tourneys?.[run.tIdx ?? 0]?.stage !== "qf";
+  if (run.phoneAt !== run.fights.length && !midTourney) {
     run.phoneAt = run.fights.length;
     withRng(s, (rng) => phoneCheck(rng, s, run.fights.length === 0));
   }
