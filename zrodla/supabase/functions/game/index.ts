@@ -10912,11 +10912,11 @@ function postAnswer(s0, key) {
           s.flags.callUp = 1;
           s.media = clamp(s.media + 2, 0, 100);
           addFans(s, fansBase * 1.5);
-          text = "Wywo\u0142ujesz kogo\u015B z czo\u0142\xF3wki. Federacja kupuje ten pomys\u0142: nast\u0119pny rywal b\u0119dzie wy\u017Cej w rankingu.";
+          text = vary6(s, ["Wywo\u0142ujesz kogo\u015B z czo\u0142\xF3wki. Federacja kupuje ten pomys\u0142: nast\u0119pny rywal b\u0119dzie wy\u017Cej w rankingu.", "Rzucasz nazwisko z czo\u0142\xF3wki, hala podchwytuje. Matchmaker ju\u017C notuje: nast\u0119pny rywal z wy\u017Cszej p\xF3\u0142ki.", "Pokazujesz palcem w stron\u0119 pierwszego rz\u0119du, gdzie siedzi kto\u015B z czo\u0142\xF3wki. Ten kiwa g\u0142ow\u0105. Federacja zaciera r\u0119ce.", "M\xF3wisz, \u017Ce sko\u0144czy\u0142o si\u0119 rozgrzewanie. Federacja s\u0142yszy: nast\u0119pna walka z kim\u015B z czo\u0142\xF3wki."], 8);
         } else {
           s.media = clamp(s.media + 1, 0, 100);
           addFans(s, fansBase * 0.5);
-          text = "Wywo\u0142any zawodnik odpowiada, \u017Ce ma inne plany. Kibice to zapami\u0119tali, federacja niekoniecznie.";
+          text = vary6(s, ["Wywo\u0142any zawodnik odpowiada, \u017Ce ma inne plany. Kibice to zapami\u0119tali, federacja niekoniecznie.", "Wywo\u0142any zawodnik wrzuca tylko emotk\u0119 z ziewaniem. Internet si\u0119 \u015Bmieje, ale nie z niego.", "Jego mened\u017Cer m\xF3wi, \u017Ce \u201Enie walcz\u0105 z kim\u015B spoza pierwszej pi\u0105tki\u201D. Na razie wracasz do kolejki."], 8);
           tone = "neutral";
         }
         break;
