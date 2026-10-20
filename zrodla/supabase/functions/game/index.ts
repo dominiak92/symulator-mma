@@ -7405,16 +7405,18 @@ function bump(s, k, n) {
   s.potential[k] = Math.max(s.potential[k], s.stats[k]);
 }
 function resolveInvite(rng, s, inv, form) {
-  s.flags.sideTired = 1;
+  if (inv.kind !== "charity") s.flags.sideTired = 1;
   s.flags.sideEvents = (s.flags.sideEvents ?? 0) + 1;
   if (inv.kind === "seminar") {
     s.money += inv.prize;
     s.totalEarned += inv.prize;
     s.rep = clamp2(s.rep + 1, 0, 100);
     s.media = clamp2(s.media + 1, 0, 100);
+    const smart = rng.chance(0.4) && s.stats.iq < s.potential.iq;
+    if (smart) s.stats.iq += 1;
     return {
       title: inv.title,
-      lines: [`Wyp\u0142ata: ${inv.prize.toLocaleString("pl-PL")} z\u0142`, "Reputacja +1, media +1"],
+      lines: [`Wyp\u0142ata: ${inv.prize.toLocaleString("pl-PL")} z\u0142`, smart ? "Reputacja +1, media +1, taktyka +1" : "Reputacja +1, media +1"],
       text: "Sala pe\u0142na, ludzie zachwyceni, a ty wracasz z kopert\u0105. Tylko nogi bol\u0105 od stania ca\u0142y weekend.",
       tone: "good",
       win: true
@@ -10064,7 +10066,7 @@ function proFightMods(s) {
   if (cur.tickets?.plan === "none") m += 1;
   if (cur.tired) m -= 2;
   if (cur.prep === "rival") m += 4;
-  if (cur.prep === "hard") m += 3;
+  if (cur.prep === "hard") m += 4;
   m += cur.pressMod ?? 0;
   if (hasBackroom(s, "supps")) m += 2;
   if (hasBackroom(s, "sparring")) m += 4;
@@ -11691,9 +11693,12 @@ function finalizeFight(rng, s, rep) {
   const extra = !rep.amateur && s.run ? Math.max(0, s.run.fights.length - 3) : 0;
   if (!rep.amateur && weightShift(s) < 0) s.wear = clamp(s.wear + 1, 0, 100);
   if (!rep.amateur && weightShift(s) > 0) s.wear = clamp(s.wear - 1.5, 0, 100);
-  if (rep.prep === "hard") s.wear = clamp(s.wear + 1, 0, 100);
+  if (rep.prep === "hard") {
+    s.wear = clamp(s.wear + 1, 0, 100);
+    if (rng.chance(0.35) && s.stats.cardio < s.potential.cardio) s.stats.cardio += 1;
+  }
   if (extra) s.wear = clamp(s.wear + 2 * extra, 0, 100);
-  const injP = (extra * 0.03 + (rep.prep === "hard" ? 0.03 : 0) + (dmgTaken > 50 ? 0.22 : dmgTaken > 30 ? 0.07 : 0.02) + s.wear / 600 + (s.age >= 32 ? 0.03 : 0)) * (rep.amateur ? 0.5 : 0.8);
+  const injP = (extra * 0.03 + (rep.prep === "hard" ? 0.02 : 0) + (dmgTaken > 50 ? 0.22 : dmgTaken > 30 ? 0.07 : 0.02) + s.wear / 600 + (s.age >= 32 ? 0.03 : 0)) * (rep.amateur ? 0.5 : 0.8);
   if (!s.injury && rng.chance(injP * (hasBackroom(s, "doctor") ? 0.65 : 1))) {
     const roll = rng.next() * (hasBackroom(s, "doctor") ? 0.8 : 1);
     if (roll < 0.6) {
