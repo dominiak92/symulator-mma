@@ -7412,7 +7412,7 @@ function resolveInvite(rng, s, inv, form) {
     s.totalEarned += inv.prize;
     s.rep = clamp2(s.rep + 1, 0, 100);
     s.media = clamp2(s.media + 1, 0, 100);
-    const smart = rng.chance(0.4) && s.stats.iq < s.potential.iq;
+    const smart = rng.chance(0.2) && s.stats.iq < s.potential.iq;
     if (smart) s.stats.iq += 1;
     return {
       title: inv.title,
