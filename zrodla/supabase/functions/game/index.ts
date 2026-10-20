@@ -225,6 +225,22 @@ __export(game_exports, {
   yearGoalReward: () => yearGoalReward
 });
 
+// src/engine/grammar.ts
+function genitive(n) {
+  if (/(ski|cki|dzki)$/.test(n)) return `${n}ego`;
+  if (/[yi]$/.test(n)) return n.endsWith("y") ? `${n.slice(0, -1)}ego` : `${n}ego`;
+  if (/ska$|cka$/.test(n)) return `${n.slice(0, -1)}iej`;
+  if (/[gk]a$/.test(n)) return `${n.slice(0, -1)}i`;
+  if (n.endsWith("a")) return `${n.slice(0, -1)}y`;
+  if (n.endsWith("ec") && n.length > 4) return `${n.slice(0, -2)}ca`;
+  if (n.endsWith("o") || n.endsWith("e") || n.endsWith("u")) return n;
+  return `${n}a`;
+}
+function surname(full) {
+  const parts = full.trim().split(/\s+/);
+  return parts.length > 1 ? parts.slice(1).join(" ") : full;
+}
+
 // src/engine/managers.ts
 var MANAGERS = [
   {
@@ -420,7 +436,7 @@ var THREADS = [
     from: "Sporty walki \u2014 kupi\u0119/sprzedam",
     title: "R\u0119kawice za p\xF3\u0142 ceny",
     start: { weight: 5, cond: (s) => (s.gear ?? 0) >= 20 },
-    text: () => "Og\u0142oszenie: \u201ER\u0119kawice FAJRTEKS 16 oz, NOWE, orygina\u0142 100%, za p\xF3\u0142 ceny, bo kupi\u0142em za du\u017Ce. Wysy\u0142ka po wp\u0142acie zaliczki albo odbi\xF3r pod Biedronk\u0105.\u201D",
+    text: () => "Og\u0142oszenie: \u201ER\u0119kawice FAJRTEKS 16 oz, NOWE, orygina\u0142 100%, za p\xF3\u0142 ceny, bo kupi\u0142em za du\u017Ce. Wysy\u0142ka po wp\u0142acie zaliczki albo odbi\xF3r pod Pszcz\xF3\u0142k\u0105.\u201D",
     choices: (s) => [
       {
         label: "Wp\u0142acasz zaliczk\u0119",
@@ -433,7 +449,7 @@ var THREADS = [
       },
       {
         label: "Tylko odbi\xF3r osobisty",
-        desc: "Pod Biedronk\u0105, o 21:00, got\xF3wka.",
+        desc: "Pod Pszcz\xF3\u0142k\u0105, o 21:00, got\xF3wka.",
         chance: 55,
         success: { money: -zl(s, 500), gear: -35 },
         successText: "R\u0119kawice jak nowe. Sprzedawca naprawd\u0119 kupi\u0142 za du\u017Ce.",
@@ -461,7 +477,7 @@ var THREADS = [
     app: "gym",
     from: "Mietek",
     title: "Z r\u0119kawicy wysz\u0142a g\u0105bka",
-    text: () => "Stary, z twojej nowej r\u0119kawicy wysz\u0142a \u017C\xF3\u0142ta g\u0105bka. Le\u017Cy na macie. To jaki\u015B nowy model, \u017Ce si\u0119 sam rozbiera? \u{1F602}",
+    text: () => "Byku, z twojej nowej r\u0119kawicy wysz\u0142a \u017C\xF3\u0142ta g\u0105bka. Le\u017Cy na macie. To jaki\u015B nowy model, \u017Ce si\u0119 sam rozbiera? \u{1F602} beka",
     choices: (s) => [
       { label: "Kupujesz porz\u0105dne", desc: "Tym razem w sklepie.", effects: { money: -zl(s, 900), gear: -40 } },
       {
@@ -732,7 +748,7 @@ var THREADS = [
     from: "Mietek",
     title: "Pomo\u017Cesz przed walk\u0105?",
     start: { weight: 6, cond: () => true },
-    text: () => "Ej, za dwa tygodnie walcz\u0119 z ma\u0144kutem, zapa\u015Bnikiem. Porobisz ze mn\u0105 sparingi pod niego? Obalasz i dociskasz, pi\u0119\u0107 rund. Wiem, \u017Ce to katorga, postawi\u0119 kebaba.",
+    text: () => "Elo byku, za dwa tygodnie walcz\u0119 z ma\u0144kutem, zapa\u015Bnikiem. Porobisz ze mn\u0105 sparingi pod niego? Obalasz i dociskasz, pi\u0119\u0107 rund. Wiem, \u017Ce to katorga, stawiam kebaba. Dawaj.",
     choices: () => [
       { label: "Pomagasz", desc: "Twoje plecy b\u0119d\u0105 to pami\u0119ta\u0107.", effects: { wear: 2, follow: { step: "mietek.cynk", after: 2 } } },
       { label: "Odmawiasz, masz sw\xF3j ob\xF3z", desc: "Ka\u017Cdy ma swoje sprawy.", effects: { follow: { step: "mietek.foch", after: 1 } } }
@@ -1054,7 +1070,7 @@ var THREADS = [
     from: "Mietek",
     title: "Co\u015B ci wysz\u0142o na \u0142ydce",
     start: { weight: 4, cond: () => true },
-    text: () => "Pokaza\u0142e\u015B mi t\u0119 plam\u0119 na \u0142ydce, nie? Czerwona, w k\xF3\u0142ko? Stary, to grzybica. Maty nie myte od Wielkanocy. Nie przychod\u017A na parter, b\u0142agam.",
+    text: () => "Mordo, pokaza\u0142e\u015B mi t\u0119 plam\u0119 na \u0142ydce, nie? Czerwona, w k\xF3\u0142ko? To grzybica. Maty nie myte od Wielkanocy. Nie przychod\u017A na parter, b\u0142agam, przypa\u0142 b\u0119dzie.",
     choices: (s) => [
       { label: "Ma\u015B\u0107 i w\u0142asne kimono", desc: "Apteka i sklep sportowy.", effects: { money: -zl(s, 250) } },
       {
@@ -1360,7 +1376,7 @@ var THREADS = [
     from: "Kumpel Kamil",
     title: "Urodziny w sobot\u0119",
     start: { weight: 5, cond: (s) => s.age <= 30 },
-    text: () => "Stary, w sobot\u0119 moje 30. urodziny w \u201EPresti\u017Cu\u201D. Tydzie\u0144 przed twoj\u0105 walk\u0105, ale na chwil\u0119 wpadniesz, nie? Bez ciebie to nie to samo.",
+    text: () => "Mordo, w sobot\u0119 robi\u0119 trzydziestk\u0119 w \u201EPresti\u017Cu\u201D. Tydzie\u0144 przed twoj\u0105 walk\u0105, ale na chwil\u0119 wbijasz, nie? Bez ciebie to nie to samo. B\u0119dzie sztos.",
     choices: () => [
       {
         label: "Wpadasz na chwil\u0119",
@@ -1473,7 +1489,7 @@ var THREADS = [
     from: "Darek z podstaw\xF3wki",
     title: "Po\u017Cyczysz do pi\u0105tku?",
     start: { weight: 4, cond: (s) => s.money > zl(s, 1e3) },
-    text: (s) => `Stary, po\u017Cycz ${zl(s, 500)} z\u0142 do pi\u0105tku. Oddam co do grosza, wiesz, \u017Ce jestem s\u0142owny.`,
+    text: (s) => `Siema byku, po\u017Cycz ${zl(s, 500)} z\u0142 do pi\u0105tku. Oddam co do grosza, wiesz, \u017Ce jestem s\u0142owny. Szacun.`,
     choices: (s) => [
       { label: "Po\u017Cyczasz", desc: "Kumpel to kumpel.", effects: { money: -zl(s, 500), follow: { step: "darek.piatek", after: 2 } } },
       { label: "Odmawiasz", desc: "Pami\u0119tasz rower z 2011 roku.", effects: { note: "Darek pisze \u201Espoko\u201D i nic wi\u0119cej" } }
@@ -2031,906 +2047,80 @@ var ERRANDS = [
       { w: 5, text: "Godzina pozowania z produktem. Zdj\u0119cia wychodz\u0105 \u015Bwietnie, sponsor zadowolony.", effects: { money: zl2(s, 300), media: 2 } },
       { w: 2, text: "Fotograf ka\u017Ce ci \u201Epatrze\u0107 gro\u017Anie, ale przyja\u017Anie\u201D. Po 200 zdj\u0119ciach jedno si\u0119 nadaje. To wystarczy.", effects: { money: zl2(s, 300), media: 1 } }
     ]
+  },
+  {
+    id: "sauna",
+    name: "Sauna z ch\u0142opakami z klubu",
+    hours: 1,
+    desc: "Osiedlowe SPA \u201ERelaks\u201D. R\u0119czniki w\u0142asne, tematy wsp\xF3lne.",
+    cost: (s) => zl2(s, 80),
+    outcomes: () => [
+      { w: 5, text: "Godzina w saunie i rozmowa o wszystkim: od gardy po kredyty. Wychodzisz czerwony i spokojny.", effects: { wear: -3, relations: 1 } },
+      { w: 2, text: "Mietek rysuje na zaparowanej szybie plan na twoj\u0105 nast\u0119pn\u0105 walk\u0119. Ma sens, cho\u0107 sp\u0142ywa po minucie.", effects: { wear: -2, stats: { iq: 1 } } },
+      { w: 1, text: "Kto\u015B polewa piec piwem \u201Edla aromatu\u201D. Obs\u0142uga wyprasza was po kwadransie.", effects: { wear: -1 } }
+    ]
+  },
+  {
+    id: "radio",
+    name: "Wywiad w lokalnym radiu",
+    hours: 1,
+    desc: "Poranna audycja, mi\u0119dzy prognoz\u0105 pogody a koncertem \u017Cycze\u0144.",
+    cond: (s) => s.tier >= 1,
+    outcomes: () => [
+      { w: 5, text: "Prowadz\u0105cy pyta, czy w MMA wolno gry\u017A\u0107. T\u0142umaczysz cierpliwie. S\u0142uchacze dzwoni\u0105 z gratulacjami.", effects: { media: 2, rep: 1 } },
+      { w: 2, text: "Po wywiadzie puszczaj\u0105 piosenk\u0119 \u201Edla naszego wojownika\u201D. Disco polo. Mama nagra\u0142a ca\u0142o\u015B\u0107.", effects: { media: 2, relations: 1 } },
+      { w: 1, text: "Prowadz\u0105cy myli ci\u0119 z bokserem z s\u0105siedniego miasta. Przez p\xF3\u0142 godziny opowiadasz o jego walkach.", effects: { media: 1 } }
+    ]
+  },
+  {
+    id: "bieg",
+    name: "Bieg charytatywny na 10 km",
+    hours: 2,
+    desc: "Zbi\xF3rka na nowy dach przedszkola. Numer startowy 217.",
+    outcomes: () => [
+      { w: 4, text: "Ko\u0144czysz w pierwszej dwudziestce. Dzieci z przedszkola daj\u0105 ci medal z masy solnej.", effects: { stats: { cardio: 1 }, rep: 1 } },
+      { w: 3, text: "Wyprzedza ci\u0119 emeryt w sanda\u0142ach. Na mecie podaje ci r\u0119k\u0119 i radzi \u201Ewi\u0119cej marchewki\u201D.", effects: { stats: { cardio: 1 }, media: 1 } },
+      { w: 1, text: "Na si\xF3dmym kilometrze \u0142apie ci\u0119 kolka. Ko\u0144czysz marszem, ale ko\u0144czysz.", effects: { wear: 1, rep: 1 } }
+    ]
+  },
+  {
+    id: "basen",
+    name: "Basen i jacuzzi",
+    hours: 1,
+    desc: "Miejski basen, tor trzeci. Ratownik zna ci\u0119 z gali.",
+    cost: (s) => zl2(s, 40),
+    outcomes: () => [
+      { w: 5, text: "Dwadzie\u015Bcia d\u0142ugo\u015Bci i kwadrans w jacuzzi. Barki dzi\u0119kuj\u0105.", effects: { wear: -3 } },
+      { w: 2, text: "Na torze obok emerytki p\u0142ywaj\u0105 szybciej ni\u017C ty. Ratownik robi sobie z tob\u0105 zdj\u0119cie mimo to.", effects: { wear: -2, media: 1 } }
+    ]
+  },
+  {
+    id: "kadra",
+    name: "Trening z kadr\u0105 zapa\u015Bnicz\u0105",
+    hours: 3,
+    desc: "Trener kadry wojew\xF3dzkiej wpuszcza ci\u0119 na jeden trening. Jeden.",
+    cond: (s) => s.tier >= 1,
+    outcomes: () => [
+      { w: 4, text: "Trzy godziny zapas\xF3w z ch\u0142opakami, kt\xF3rzy robi\u0105 to od dziecka. Ka\u017Cde obalenie wychodzi ci potem pewniej.", effects: { stats: { wrest: 1 }, wear: 2 } },
+      { w: 2, text: "Trener kadry m\xF3wi, \u017Ce \u201Emasz biodra jak szafa\u201D. Nie wiesz, czy to komplement, ale uczy ci\u0119, co z tym zrobi\u0107.", effects: { stats: { wrest: 1, iq: 1 }, wear: 2 } },
+      { w: 1, text: "Siedemnastolatek z kadry rzuca tob\u0105 jak workiem. Ego cierpi, kark te\u017C.", effects: { wear: 3, stats: { wrest: 1 } } }
+    ]
+  },
+  {
+    id: "festyn",
+    name: "Pokaz na festynie gminnym",
+    hours: 2,
+    desc: "Scena mi\u0119dzy ko\u0142em gospody\u0144 a dmuchanym zamkiem. Gmina p\u0142aci.",
+    outcomes: (s) => [
+      { w: 4, text: "Pokazujesz kilka rzut\xF3w na materacu z sali gimnastycznej. Ko\u0142o gospody\u0144 daje ci sernik na drog\u0119.", effects: { money: zl2(s, 300), rep: 1 } },
+      { w: 2, text: "W\xF3jt chce \u201Esparowa\u0107 na luzie\u201D. Pozwalasz mu wygra\u0107 rund\u0119. Gmina p\u0142aci podw\xF3jnie.", effects: { money: zl2(s, 600), media: 1 } },
+      { w: 1, text: "Zaczyna la\u0107 w po\u0142owie pokazu. Ko\u0144czycie w remizie przy groch\xF3wce.", effects: { money: zl2(s, 300), relations: 1 } }
+    ]
   }
 ];
 function findErrand(id) {
   return ERRANDS.find((e) => e.id === id);
 }
-
-// src/engine/camp.ts
-var CAMP_WEEKS = 3;
-var CAMP_BASE = 2;
-var sc3 = (s) => [1, 1.5, 3, 5, 8][Math.min(4, Math.max(0, s.tier))] ?? 1;
-var zl3 = (s, n) => Math.max(50, Math.round(n * sc3(s) / 50) * 50);
-var STAT_NAME = { stand: "st\xF3jk\u0119", wrest: "zapasy", bjj: "parter", cardio: "kondycj\u0119", chin: "szcz\u0119k\u0119", iq: "taktyk\u0119" };
-function weakest(s) {
-  return ["stand", "wrest", "bjj"].sort((a, b) => s.stats[a] - s.stats[b])[0];
-}
-var CAMP_ACTS = [
-  {
-    id: "sparingi",
-    name: "Twarde sparingi",
-    desc: "Pe\u0142ne rundy z mocniejszymi od siebie.",
-    hint: "du\u017Co formy, zu\u017Cycie",
-    roll: (_s, rng) => {
-      const r = rng.next();
-      if (r < 0.15)
-        return { text: rng.pick(["Mietek trafia ci\u0119 \u0142okciem w \u0142uk brwiowy. Trzy szwy i tydzie\u0144 ostro\u017Cno\u015Bci.", "Sparingpartner o 15 kg ci\u0119\u017Cszy siada ci na \u017Cebrach. Oddychasz ostro\u017Cnie do ko\u0144ca tygodnia."]), effects: { wear: 1 }, mod: 0 };
-      if (r < 0.45)
-        return { text: rng.pick(["Pi\u0119\u0107 rund z by\u0142ym mistrzem regionu. Ko\u0144czysz na kolanach, ale co\u015B zaskoczy\u0142o.", "Trzech sparingpartner\xF3w na zmian\u0119, co minut\u0119 \u015Bwie\u017Cy. Pod koniec przestajesz my\u015Ble\u0107 i zaczynasz walczy\u0107."]), effects: {}, mod: 3 };
-      return { text: rng.pick(["Twarde rundy, czyste trafienia z obu stron. Tak ma wygl\u0105da\u0107 ob\xF3z.", "Sparingi do zm\u0119czenia. Trener tylko kiwa g\u0142ow\u0105, co u niego znaczy \u201Edobrze\u201D.", "Mietek w formie \u017Cycia, ty te\u017C. Nikt nie odpuszcza."]), effects: {}, mod: 2 };
-    }
-  },
-  {
-    id: "technika",
-    name: "Technika z trenerem",
-    desc: "Powt\xF3rzenia, poprawki, tablica z rozrysowanym planem.",
-    hint: "forma, czasem punkt umiej\u0119tno\u015Bci",
-    roll: (s, rng) => {
-      const k = weakest(s);
-      if (rng.chance(0.22)) return { text: `Tydzie\u0144 d\u0142ubania w detalach. Trener w ko\u0144cu przestaje poprawia\u0107 ci ${STAT_NAME[k]}.`, effects: { stats: { [k]: 1 } }, mod: 1 };
-      return { text: rng.pick(["Sto powt\xF3rze\u0144 tego samego wej\u015Bcia. Na sto pierwszym trener m\xF3wi \u201Eno\u201D.", "Godziny przy tarczach i nagraniach. Mniej efektowne ni\u017C sparingi, ale wchodzi w nawyk.", "Trener rozrysowuje plan na tablicy. Tym razem rozumiesz ka\u017Cd\u0105 strza\u0142k\u0119.", "Lustro, cie\u0144 i trener, kt\xF3ry powtarza \u201E\u0142okie\u0107\u201D czterdzie\u015Bci razy dziennie.", "Ca\u0142y tydzie\u0144 jednej kombinacji. W pi\u0105tek robisz j\u0105 przez sen.", "Trener przynosi stare kasety VHS z walk z lat dziewi\u0119\u0107dziesi\u0105tych. Dzia\u0142a."]), effects: {}, mod: 2 };
-    }
-  },
-  {
-    id: "kondycja",
-    name: "Kondycja",
-    desc: "Interwa\u0142y, g\xF3ry, schody na stadionie.",
-    hint: "forma, czasem kondycja",
-    roll: (_s, rng) => {
-      if (rng.chance(0.2)) return { text: "Schody na stadionie, sto razy w g\xF3r\u0119. W trzeciej rundzie b\u0119dziesz \u015Bwie\u017Cy.", effects: { stats: { cardio: 1 } }, mod: 1 };
-      return { text: rng.pick(["Interwa\u0142y na bie\u017Cni, a\u017C ci si\u0119 czarno przed oczami robi. Trener m\xF3wi, \u017Ce to dopiero rozgrzewka.", "Bieganie po lesie z kamizelk\u0105 obci\u0105\u017Ceniow\u0105. Grzybiarze patrz\u0105 dziwnie.", "P\u0142ywalnia o sz\xF3stej rano. Ratownik ju\u017C ci\u0119 zna.", "Rower stacjonarny w piwnicy klubu. Sto minut, zero widok\xF3w, jeden plakat Rocky\u2019ego.", "Sprinty pod g\xF3r\u0119 za klubem. S\u0105siad z dzia\u0142ki dopinguje z le\u017Caka.", "Skakanka, pi\u0119\u0107 rund po pi\u0119\u0107 minut. Sufit w szatni ma now\u0105 plam\u0119 po twoim pocie."]), effects: {}, mod: 2 };
-    }
-  },
-  {
-    id: "rywal",
-    name: "Analiza rywala",
-    desc: "Nagrania jego walk, nawyki, ulubione kombinacje.",
-    hint: "forma na t\u0119 walk\u0119",
-    roll: (s, rng, opp, _w, picks) => {
-      const again = picks.includes("rywal");
-      const smart = s.stats.iq >= 50;
-      if (again) return { text: `Drugi tydzie\u0144 nagra\u0144 tego samego rywala. ${opp.firstName} ${opp.lastName} \u015Bni ci si\u0119 po nocach, ale nic nowego nie widzisz.`, effects: {}, mod: 0 };
-      return {
-        text: rng.pick([
-          `${opp.lastName} przed ka\u017Cdym kopni\u0119ciem opuszcza prawy bark. Trener zatrzymuje nagranie i pokazuje palcem.`,
-          `Dziesi\u0119\u0107 walk rywala w tydzie\u0144. Wiesz ju\u017C, co ${opp.lastName} robi, kiedy si\u0119 zm\u0119czy.`,
-          `${opp.lastName} nie lubi, jak si\u0119 go spycha pod siatk\u0119. Ca\u0142y plan staje si\u0119 prosty.`
-        ]),
-        effects: {},
-        mod: smart ? 3 : 2
-      };
-    }
-  },
-  {
-    id: "regeneracja",
-    name: "Regeneracja",
-    desc: "Fizjo, sauna, sen. Mniej treningu, wi\u0119cej cia\u0142a.",
-    hint: "mniej zu\u017Cycia",
-    roll: (s, rng) => {
-      if (s.wear < 10) return { text: rng.pick(["Regenerujesz si\u0119, cho\u0107 nie by\u0142o z czego. Nudzisz si\u0119 i ogl\u0105dasz seriale.", "Tydzie\u0144 odpoczynku od niczego. Obejrza\u0142e\u015B trzy sezony serialu o mafii.", "Le\u017Cysz i odpoczywasz. Cia\u0142o nie wie, od czego, ale si\u0119 zgadza."]), effects: { wear: -1 }, mod: 0 };
-      return { text: rng.pick(["Pani Ewa z fizjoterapii robi z twoich plec\xF3w nowe plecy.", "Tydzie\u0144 snu, sauny i lekkiego ruchu. Pierwszy raz od miesi\u0119cy nic nie boli.", "Krioterapia w Spale. Trzy minuty w minus stu dziesi\u0119ciu i nagle wszystko jest prostsze.", "Masa\u017C, joga z dziewczyn\u0105 trenera i dziesi\u0119\u0107 godzin snu. Cia\u0142o dzi\u0119kuje.", "Basen, rozci\u0105ganie i drzemki. Trener m\xF3wi, \u017Ce to te\u017C trening. Wierzysz mu na s\u0142owo."]), effects: { wear: -2 }, mod: 1 };
-    }
-  },
-  {
-    id: "fucha",
-    name: "Fucha po treningach",
-    desc: "Bramka, budowa, kurier. Pieni\u0105dze si\u0119 przydadz\u0105.",
-    hint: "pieni\u0105dze, mniej formy",
-    cond: (s) => s.tier <= 2,
-    roll: (s, rng) => ({
-      text: rng.pick(["Trzy nocki na bramce w \u201EPresti\u017Cu\u201D. Kasa jest, snu brak.", "Kuzyn potrzebowa\u0142 r\u0105k na budowie. Plecy bol\u0105, portfel pe\u0142niejszy.", "Kurier po treningach. Znasz ju\u017C ka\u017Cdy domofon na osiedlu.", "Wnoszenie mebli z koleg\u0105. Szafa trzydrzwiowa na czwarte pi\u0119tro to te\u017C trening.", "Ochrona na festynie w gminie. Najgro\u017Aniejszy by\u0142 pan z wat\u0105 cukrow\u0105.", "Roz\u0142adunek w hurtowni. Kierownik pyta, czy nie chcesz etatu."]),
-      effects: { money: zl3(s, 400) },
-      mod: 0
-    })
-  },
-  {
-    id: "media",
-    name: "Media i sponsorzy",
-    desc: "Wywiady, nagrania, zdj\u0119cia z produktem.",
-    hint: "media, mniej formy",
-    roll: (s, rng) => ({
-      text: rng.pick(["Trzy wywiady, dwa podcasty i sesja zdj\u0119ciowa. Trening wciskasz mi\u0119dzy nagrania.", "Tydzie\u0144 jak w telewizji: kamera wsz\u0119dzie, nawet na rozci\u0105ganiu.", "Spotkanie ze sponsorem i rolka na Instagrym. Telefon \u0142adujesz cz\u0119\u015Bciej ni\u017C siebie.", "Nagranie reklamy suplementu. Dwadzie\u015Bcia dubli, w ka\u017Cdym udajesz, \u017Ce smakuje.", "Wywiad do lokalnej gazety. Dziennikarz pyta g\u0142\xF3wnie o twoj\u0105 mam\u0119.", "Sesja zdj\u0119ciowa w hali. Fotograf ka\u017Ce ci \u201Epatrze\u0107 gro\u017Anie, ale przyja\u017Anie\u201D."]),
-      effects: { media: 2, money: s.sponsors.length ? zl3(s, 200) : 0 },
-      mod: 0
-    })
-  }
-];
-function findCampAct(id) {
-  return CAMP_ACTS.find((a) => a.id === id);
-}
-
-// src/engine/fightweek.ts
-var sc4 = (s) => [1, 1.5, 3, 5, 8][Math.min(4, Math.max(0, s.tier))] ?? 1;
-var zl4 = (s, n) => Math.max(50, Math.round(n * sc4(s) / 50) * 50);
-var WEEK_EVENTS = [
-  {
-    id: "hotel",
-    title: "Wesele za \u015Bcian\u0105",
-    w: 5,
-    text: (_s, o) => `Hotel organizatora przy obwodnicy. Za \u015Bcian\u0105 wesele do czwartej rano, a za trzy dni walka. Rywal: ${o.opp.lastName}. Disco polo przez \u015Bcian\u0119 s\u0142ycha\u0107 tak, jakby zesp\xF3\u0142 gra\u0142 w \u0142azience.`,
-    choices: (s) => [
-      { label: "Zmieniasz hotel na w\u0142asny koszt", desc: "Cisza, ale portfel cierpi.", effects: { money: -zl4(s, 400) } },
-      {
-        label: "Zatyczki do uszu i medytacja",
-        desc: "Albo zadzia\u0142a, albo nie.",
-        chance: 55,
-        success: { nextFight: 0, note: "\u015Bpisz jak dziecko" },
-        successText: "Zatyczki daj\u0105 rad\u0119. Budzisz si\u0119 wyspany i lekko nucisz \u201EBayer full\u201D.",
-        fail: { nextFight: -2 },
-        failText: "O trzeciej orkiestra gra \u201ESoko\u0142y\u201D. Nie \u015Bpisz do rana."
-      },
-      {
-        label: "Idziesz na wesele",
-        desc: "Skoro i tak nie za\u015Bniesz\u2026",
-        chance: 30,
-        success: { media: 2, nextFight: 1, note: "pan m\u0142ody stawia ci bilet na gal\u0119" },
-        successText: "Ta\u0144czysz z babci\u0105 panny m\u0142odej, a go\u015Bcie obiecuj\u0105, \u017Ce przyjd\u0105 kibicowa\u0107. Wracasz o p\xF3\u0142nocy, na\u0142adowany.",
-        fail: { nextFight: -3, wear: 1 },
-        failText: "Wujek pana m\u0142odego chce si\u0119 si\u0142owa\u0107 na r\u0119k\u0119. Potem drugi wujek. Wracasz o pi\u0105tej."
-      }
-    ]
-  },
-  {
-    id: "zatrucie",
-    title: "Co\u015B by\u0142o nie tak z kebabem",
-    w: 4,
-    text: () => "Dwa dni przed walk\u0105 budzisz si\u0119 o drugiej w nocy. Kebab z dworca okaza\u0142 si\u0119 b\u0142\u0119dem. \u017Bo\u0142\u0105dek robi salta, a wa\u017Cenie jutro rano.",
-    choices: (s) => [
-      { label: "Lekarz gali i kropl\xF3wka", desc: "Pewne, ale kosztuje i troch\u0119 os\u0142abia.", effects: { money: -zl4(s, 300), nextFight: -1 } },
-      {
-        label: "Przetrzymujesz na wodzie z sol\u0105",
-        desc: "Domowy spos\xF3b babci.",
-        chance: 60,
-        success: { nextFight: 0, note: "babcia mia\u0142a racj\u0119" },
-        successText: "Rano jak nowy. Babcia na Mesend\u017Cerze pisze \u201Ea nie m\xF3wi\u0142am\u201D.",
-        fail: { nextFight: -3 },
-        failText: "Do walki wchodzisz blady jak \u015Bciana. Naro\u017Cnik pyta, czy na pewno dasz rad\u0119."
-      }
-    ]
-  },
-  {
-    id: "waga_rywala",
-    title: "Rywal nie zrobi\u0142 wagi",
-    w: 4,
-    cond: (s, o) => !o.title && !o.wantPress && s.tier >= 1,
-    text: (_s, o) => `${o.opp.firstName} ${o.opp.lastName} na wa\u017Ceniu: p\xF3\u0142tora kilo za du\u017Co. Organizator pyta, czy mimo to wychodzisz do walki. Rywal oddaje ci 20% swojej ga\u017Cy.`,
-    choices: (_s, o) => [
-      { label: "Walczysz i bierzesz jego pieni\u0105dze", desc: "B\u0119dzie ci\u0119\u017Cszy, ale kasa jest kasa.", effects: { money: Math.round(o.purse * 0.2 / 100) * 100, nextFight: -1 } },
-      {
-        label: "\u017B\u0105dasz premii od organizatora",
-        desc: "Albo dop\u0142ac\u0105, albo uznaj\u0105 ci\u0119 za kapry\u015Bnego.",
-        chance: 50,
-        success: { money: Math.round(o.purse * 0.4 / 100) * 100, nextFight: -1 },
-        successText: "Organizator wzdycha i dop\u0142aca. Rywal nawet nie patrzy ci w oczy na face to face.",
-        fail: { rep: -2, money: Math.round(o.purse * 0.2 / 100) * 100, nextFight: -1 },
-        failText: "Organizator m\xF3wi, \u017Ce \u201Egwiazdorzysz\u201D. Dostajesz tylko te 20%, a w mediach kto\u015B nazywa ci\u0119 primadonn\u0105."
-      },
-      { label: "\u201ENiech je, mnie to nie robi r\xF3\u017Cnicy\u201D", desc: "Pokaz pewno\u015Bci siebie przed kamerami.", effects: { rep: 2, nextFight: -1, media: 1 } }
-    ]
-  },
-  {
-    id: "kibice",
-    title: "Autokar z twojego miasta",
-    w: 4,
-    text: (s) => `Pod hotel podje\u017Cd\u017Ca autokar. Tablica: ${s.profile.hometown}. Pi\u0119\u0107dziesi\u0105t os\xF3b w koszulkach z twoj\u0105 twarz\u0105, transparent i b\u0119ben. Chc\u0105 zdj\u0119cie. Ka\u017Cdy.`,
-    choices: () => [
-      { label: "Wychodzisz do nich na godzin\u0119", desc: "Zdj\u0119cia, autografy, u\u015Bciski od cio\u0107.", effects: { rep: 2, media: 1, nextFight: 1, note: "ciocia p\u0142acze ze wzruszenia" } },
-      { label: "Machasz z okna i wracasz do planu", desc: "Skupienie przed walk\u0105 jest wa\u017Cniejsze.", effects: { nextFight: 1, rep: -1 } }
-    ]
-  },
-  {
-    id: "trener_chory",
-    title: "Trener z gor\u0105czk\u0105",
-    w: 3,
-    text: () => "Trzy dni przed gal\u0105 trener dzwoni z \u0142\xF3\u017Cka: 39 stopni. W naro\u017Cniku stanie asystent, kt\xF3ry dwa razy w \u017Cyciu trzyma\u0142 tarcze.",
-    choices: (s) => [
-      { label: "Bierzesz asystenta", desc: "M\u0142ody, ch\u0119tny, przera\u017Cony.", effects: { nextFight: -2 } },
-      {
-        label: "Dzwonisz do swojego pierwszego trenera",
-        desc: "Przyjedzie, ale trzeba mu op\u0142aci\u0107 podr\xF3\u017C i nocleg.",
-        effects: { money: -zl4(s, 500), relations: 1, nextFight: 0, note: "stary trener m\xF3wi \u201Ejak za dawnych lat\u201D" }
-      }
-    ]
-  },
-  {
-    id: "grozba",
-    title: "Ten sam samoch\xF3d pod hotelem",
-    w: 4,
-    cond: (_s, o) => !!o.hype?.dm || !!o.opp.freak || !!o.rival,
-    text: () => "Trzeci dzie\u0144 z rz\u0119du pod hotelem stoi ten sam czarny samoch\xF3d z przyciemnianymi szybami. Kto\u015B robi zdj\u0119cia, jak wychodzisz na rozruch.",
-    choices: () => [
-      { label: "Zg\u0142aszasz ochronie federacji", desc: "Niech si\u0119 tym zajm\u0105 profesjonali\u015Bci.", effects: { nextFight: 0, note: "ochrona spisuje numery" } },
-      {
-        label: "Podchodzisz i pukasz w szyb\u0119",
-        desc: "Raz si\u0119 \u017Cyje.",
-        chance: 60,
-        success: { nextFight: 1, media: 1 },
-        successText: "W \u015Brodku fan z aparatem. Przeprasza, prosi o autograf i odje\u017Cd\u017Ca. \u015Amiejesz si\u0119 ca\u0142y dzie\u0144.",
-        fail: { nextFight: -2 },
-        failText: "Samoch\xF3d odje\u017Cd\u017Ca z piskiem opon. Nie \u015Bpisz do rana, ka\u017Cdy d\u017Awi\u0119k na korytarzu brzmi jak kroki."
-      },
-      {
-        label: "Ignorujesz",
-        desc: "Nie dajesz si\u0119 wci\u0105gn\u0105\u0107 w gierki.",
-        chance: 70,
-        success: { nextFight: 0 },
-        successText: "Samoch\xF3d znika po dniu. Pewnie nic takiego.",
-        fail: { nextFight: -1 },
-        failText: "Niby ignorujesz, ale w g\u0142owie siedzi. Na rozruchu jeste\u015B spi\u0119ty."
-      }
-    ]
-  },
-  {
-    id: "media_day",
-    title: "Media day",
-    w: 5,
-    text: (_s, o) => `Media day przed gal\u0105. Dziennikarka z telewizji pyta, czy to prawda, \u017Ce ${o.opp.lastName} sparowa\u0142 z twoim by\u0142ym klubem i \u201Ezna wszystkie twoje sekrety\u201D.`,
-    choices: () => [
-      { label: "\u201ENiech zna. I tak go zaskocz\u0119.\u201D", desc: "Pewno\u015B\u0107 siebie dobrze wygl\u0105da w telewizji.", effects: { media: 1, rep: 1 } },
-      {
-        label: "Zmieniasz plan na ostatni\u0105 chwil\u0119",
-        desc: "Nowa taktyka trzy dni przed walk\u0105. Ryzykowne.",
-        chance: 50,
-        success: { nextFight: 2 },
-        successText: "Trener rysuje nowy plan na serwetce. Rywal b\u0119dzie zaskoczony.",
-        fail: { nextFight: -2 },
-        failText: "Nowy plan miesza ci w g\u0142owie. Na rozgrzewce mylisz kombinacje."
-      },
-      { label: "Wychodzisz z wywiadu", desc: "Nie b\u0119dziesz odpowiada\u0142 na plotki.", effects: { media: 2, rep: -1 } }
-    ]
-  },
-  {
-    id: "sauna",
-    title: "Sauna nieczynna",
-    w: 5,
-    cond: (s) => (s.diet ?? "norma") !== "catering" && (s.division ?? s.profile.weight) !== "ciezka",
-    text: () => "Dzie\u0144 przed wa\u017Ceniem, a hotelowa sauna \u201Ew remoncie\u201D. Do limitu brakuje ci jeszcze kilograma.",
-    choices: (s) => [
-      { label: "Szukasz prywatnej sauny w mie\u015Bcie", desc: "Taks\xF3wka, p\u0142atne wej\u015Bcie, ale waga zejdzie.", effects: { money: -zl4(s, 200) } },
-      {
-        label: "Gor\u0105ca k\u0105piel i folia",
-        desc: "Stary spos\xF3b zawodnik\xF3w.",
-        chance: 65,
-        success: { nextFight: 0 },
-        successText: "Kilogram schodzi do rana. Hotelowa wanna nigdy nie widzia\u0142a tyle potu.",
-        fail: { nextFight: -2, wear: 1 },
-        failText: "Waga schodzi, ale razem z si\u0142ami. Na wa\u017Ceniu kr\u0119ci ci si\u0119 w g\u0142owie."
-      }
-    ]
-  },
-  {
-    id: "walizka",
-    once: true,
-    title: "Baga\u017C polecia\u0142 do Lizbony",
-    w: 3,
-    text: (s) => `Na lotnisku ta\u015Bma kr\u0119ci si\u0119 pusta. Twoja torba z r\u0119kawicami, spodenkami i ochraniaczem polecia\u0142a podobno do Lizbony. Walka za dwa dni. ${s.profile.firstName}, masz na sobie dres i klapki.`,
-    choices: (s) => [
-      { label: "Kupujesz wszystko od nowa", desc: "Sklep sportowy przy galerii, ceny jak na lotnisku.", effects: { money: -zl4(s, 450) } },
-      {
-        label: "Po\u017Cyczasz od ch\u0142opak\xF3w z innych klub\xF3w",
-        desc: "Spodenki dwa rozmiary za du\u017Ce, ale s\u0105.",
-        chance: 70,
-        success: { rep: 1, note: "p\xF3\u0142 szatni ma u ciebie piwo" },
-        successText: "Kto\u015B po\u017Cycza r\u0119kawice, kto\u015B spodenki, kto\u015B ochraniacz (\u201Ewygotowany, przysi\u0119gam\u201D). Szatnia dawno nie by\u0142a tak zgrana.",
-        fail: { nextFight: -1 },
-        failText: "Spodenki spadaj\u0105 przy ka\u017Cdym kopni\u0119ciu. Na rozgrzewce trzymasz je jedn\u0105 r\u0119k\u0105."
-      },
-      {
-        label: "Piszesz posta z p\u0142aczem do linii lotniczych",
-        desc: "Mo\u017Ce si\u0119 rozniesie.",
-        chance: 45,
-        success: { media: 3, note: "linia lotnicza przeprasza na Instagrymie" },
-        successText: "Post wybucha. Linia lotnicza przysy\u0142a kuriera z torb\u0105 i voucher na lot. Ludzie pisz\u0105, \u017Ce to lepsze ni\u017C serial.",
-        fail: { money: -zl4(s, 450), media: 1 },
-        failText: "Linia odpisuje automatem: \u201ETwoje zg\u0142oszenie jest dla nas wa\u017Cne\u201D. Kupujesz wszystko od nowa."
-      }
-    ]
-  },
-  {
-    id: "byla",
-    once: true,
-    title: "\u201EPowodzenia \u2764\uFE0F\u201D",
-    w: 3,
-    text: () => "Trzy dni przed walk\u0105, 23:47. By\u0142a pisze \u201Epowodzenia \u2764\uFE0F\u201D. Pierwsza wiadomo\u015B\u0107 od dw\xF3ch lat. Telefon le\u017Cy na ko\u0142drze i \u015Bwieci.",
-    choices: () => [
-      {
-        label: "Odpisujesz \u201Edzi\u0119ki\u201D",
-        desc: "Kr\xF3tko i kulturalnie.",
-        chance: 55,
-        success: { nextFight: 0 },
-        successText: "Odpisuje kciukiem. Koniec rozmowy. Zasypiasz po godzinie gapienia si\u0119 w sufit.",
-        fail: { nextFight: -1 },
-        failText: "Odpisuje elaboratem. Ko\u0144czycie o trzeciej, a ty nie wiesz ju\u017C, kto kogo zostawi\u0142."
-      },
-      { label: "Blokujesz numer", desc: "Tydzie\u0144 walki to tydzie\u0144 walki.", effects: { nextFight: 1, note: "telefon na noc do szuflady" } },
-      { label: "Pokazujesz trenerowi", desc: "On wie, co z tym zrobi\u0107.", effects: { nextFight: 1, relations: 1, note: "trener: \u201Eusu\u0144 i spa\u0107\u201D" } }
-    ]
-  },
-  {
-    id: "paczek",
-    title: "Zdj\u0119cie z p\u0105czkiem",
-    w: 3,
-    text: (s) => `Portal plotkarski wrzuca zdj\u0119cie: ${s.profile.firstName} ${s.profile.lastName} przed piekarni\u0105, z p\u0105czkiem w r\u0119ce. Tytu\u0142: \u201ETak si\u0119 przygotowuje do walki?!\u201D. To by\u0142 p\u0105czek dla mamy.`,
-    choices: () => [
-      { label: "Wrzucasz zdj\u0119cie mamy z tym p\u0105czkiem", desc: "Dow\xF3d rzeczowy.", effects: { media: 3, rep: 1, note: "mama ma 4 tys. polubie\u0144" } },
-      {
-        label: "Zjadasz p\u0105czka na live\u2019ie",
-        desc: "Skoro i tak ju\u017C o tym pisz\u0105.",
-        chance: 50,
-        success: { media: 4 },
-        successText: "Live ogl\u0105da dziesi\u0119\u0107 tysi\u0119cy ludzi. Kto\u015B robi z tego remix. Nawet rywal pisze \u201Eszacun\u201D.",
-        fail: { media: 2, nextFight: -1 },
-        failText: "\u015Amieszne by\u0142o przez minut\u0119. Waga nast\u0119pnego dnia: p\xF3\u0142 kilo wi\u0119cej. Trener nie odzywa si\u0119 do wieczora."
-      },
-      { label: "Nie komentujesz", desc: "P\u0105czek zniesie wszystko.", effects: {} }
-    ]
-  },
-  {
-    id: "sloiki",
-    title: "Mama w recepcji",
-    w: 3,
-    text: () => "Recepcja dzwoni do pokoju: \u201EPana mama przyjecha\u0142a. Ma ze sob\u0105\u2026 du\u017Co s\u0142oik\xF3w\u201D. Ros\xF3\u0142, go\u0142\u0105bki, pierogi i bigos na wszelki wypadek.",
-    choices: () => [
-      { label: "Jesz ros\xF3\u0142, reszt\u0119 rozdajesz w szatni", desc: "Ros\xF3\u0142 to nie dieta, to lekarstwo.", effects: { nextFight: 1, rep: 1, relations: 1, note: "ca\u0142a karta walk zna twoj\u0105 mam\u0119" } },
-      {
-        label: "Wszystko zjadasz po wa\u017Ceniu",
-        desc: "Po wa\u017Ceniu wolno.",
-        chance: 60,
-        success: { nextFight: 2, relations: 1 },
-        successText: "Po wa\u017Ceniu ros\xF3\u0142, go\u0142\u0105bki i pierogi. Na walk\u0119 wchodzisz jak po trzech tygodniach wakacji.",
-        fail: { nextFight: -2 },
-        failText: "Bigos by\u0142 b\u0142\u0119dem. Wiedzia\u0142e\u015B, \u017Ce bigos b\u0119dzie b\u0142\u0119dem."
-      },
-      { label: "Odsy\u0142asz z pozdrowieniami", desc: "Dieta to dieta.", effects: { relations: -1, nextFight: 0 } }
-    ]
-  },
-  {
-    id: "propozycja",
-    title: "Propozycja przy automacie z kaw\u0105",
-    w: 2,
-    cond: (s) => s.tier >= 1,
-    text: (s) => `Przy automacie z kaw\u0105 podchodzi go\u015B\u0107 w za du\u017Cej marynarce. M\xF3wi, \u017Ce \u201Ema znajomych w zak\u0142adach\u201D i \u017Ce ${zl4(s, 4e3)} z\u0142 czeka, je\u015Bli \u201Ezm\u0119czysz si\u0119\u201D w drugiej rundzie.`,
-    choices: () => [
-      { label: "Odmawiasz i zg\u0142aszasz federacji", desc: "Tak si\u0119 to robi.", effects: { rep: 3, media: 1, note: "federacja dzi\u0119kuje i prosi o dyskrecj\u0119" } },
-      {
-        label: "Udajesz zainteresowanie i nagrywasz",
-        desc: "Dziennikarze \u015Bledczy by si\u0119 ucieszyli.",
-        chance: 45,
-        success: { media: 5, rep: 2, note: "nagranie trafia do medi\xF3w" },
-        successText: "Nagranie trafia do medi\xF3w. P\xF3\u0142 Polski pisze o \u201Emafii w MMA\u201D, a ty jeste\u015B bohaterem dnia.",
-        fail: { nextFight: -2, rep: -1 },
-        failText: "Go\u015B\u0107 orientuje si\u0119 i znika. Do walki ogl\u0105dasz si\u0119 przez rami\u0119, a w sieci kto\u015B pisze, \u017Ce \u201Eco\u015B wiedzia\u0142e\u015B\u201D."
-      },
-      { label: "Odchodzisz bez s\u0142owa", desc: "Nie twoja sprawa.", effects: { nextFight: -1 } }
-    ]
-  },
-  {
-    id: "open_workout",
-    title: "Trening otwarty w galerii",
-    w: 4,
-    text: (s) => `Organizator robi trening otwarty w galerii handlowej, mi\u0119dzy drogeri\u0105 a budk\u0105 z kebabem. Dwie\u015Bcie os\xF3b, dzieci z telefonami i babcia, kt\xF3ra my\u015Bli, \u017Ce to pokaz ${s.tier >= 2 ? "zumby" : "odkurzaczy"}.`,
-    choices: () => [
-      {
-        label: "Robisz salto na zako\u0144czenie",
-        desc: "Ostatni raz robi\u0142e\u015B je w gimnazjum.",
-        chance: 40,
-        success: { media: 4, nextFight: 1 },
-        successText: "L\u0105duje! Galeria bije brawo, a nagranie kr\u0105\u017Cy po sieci. Babcia pyta, gdzie mo\u017Cna kupi\u0107 ten odkurzacz.",
-        fail: { media: 2, wear: 2, nextFight: -1 },
-        failText: "L\u0105dujesz na pupie. Nagranie i tak kr\u0105\u017Cy po sieci, tylko z inn\u0105 muzyk\u0105."
-      },
-      { label: "Spokojne tarcze z trenerem", desc: "Pokaz, nie cyrk.", effects: { rep: 1, media: 1 } },
-      { label: "Uczysz dzieciaki d\u017Awigni na tacie", desc: "Tata si\u0119 zg\u0142osi\u0142 sam.", effects: { media: 2, rep: 2, note: "tata klepie po trzech sekundach" } }
-    ]
-  },
-  {
-    id: "sedzia",
-    title: "Wiesz ju\u017C, kto s\u0119dziuje",
-    w: 3,
-    text: (_s, o) => `Lista s\u0119dzi\xF3w wisi na drzwiach szatni. Twoj\u0105 walk\u0119 (rywal: ${o.opp.lastName}) prowadzi \u201ESzybki Zdzis\u0142aw\u201D, kt\xF3ry przerywa, zanim ktokolwiek zd\u0105\u017Cy upa\u015B\u0107.`,
-    choices: () => [
-      { label: "Ustawiasz plan na szybki finisz", desc: "Jak trafisz, on przerwie.", effects: { nextFight: 1, note: "pierwsza seria ma by\u0107 mocna" } },
-      { label: "Plan: zero ryzyka w st\xF3jce", desc: "Jak ci\u0119 trafi\u0105, on te\u017C przerwie.", effects: { nextFight: 1 } },
-      {
-        label: "Idziesz pogada\u0107 z s\u0119dzi\u0105",
-        desc: "Grzecznie, o zasadach.",
-        chance: 50,
-        success: { rep: 1, nextFight: 1 },
-        successText: "S\u0119dzia okazuje si\u0119 mi\u0142ym panem, kt\xF3ry trenowa\u0142 judo. Wiesz ju\u017C, czego si\u0119 spodziewa\u0107.",
-        fail: { rep: -2 },
-        failText: "S\u0119dzia patrzy na ciebie jak na kogo\u015B, kto pr\xF3buje co\u015B za\u0142atwi\u0107. Federacja dostaje notatk\u0119."
-      }
-    ]
-  },
-  {
-    id: "sponsor_tylek",
-    once: true,
-    title: "Logo na po\u015Bladku",
-    w: 3,
-    text: (s) => `Dzwoni lokalna hurtownia p\u0142ytek (${s.profile.hometown}): ${zl4(s, 600)} z\u0142 za logo na spodenkach. Jedyne wolne miejsce: ty\u0142. Nazwa firmy: \u201EKafel-Max\u201D.`,
-    choices: (s) => [
-      { label: "Bierzesz, pieni\u0105dz nie \u015Bmierdzi", desc: "Kafel-Max na po\u015Bladku.", effects: { money: zl4(s, 600), media: 1, note: "komentator czyta logo na g\u0142os" } },
-      {
-        label: "Negocjujesz prz\xF3d spodenek za wi\u0119cej",
-        desc: "Prz\xF3d to presti\u017C.",
-        chance: 45,
-        success: { money: zl4(s, 1100) },
-        successText: "Pan Mirek z Kafel-Maxu m\xF3wi \u201Edobra, niech pan ma\u201D. Prz\xF3d spodenek wyceniony.",
-        fail: { money: 0 },
-        failText: "Pan Mirek si\u0119 obra\u017Ca i dzwoni do twojego rywala."
-      },
-      { label: "Odmawiasz", desc: "Szacunek do siebie.", effects: { rep: 1 } }
-    ]
-  },
-  {
-    id: "korek",
-    title: "Korek na A2",
-    w: 3,
-    cond: (_s, o) => !o.abroad,
-    text: () => "Autobus z klubu stoi na A2 od trzech godzin. Wypadek, objazdu brak, odprawa przed wa\u017Ceniem za cztery godziny. Kierowca w\u0142\u0105cza radio i rozk\u0142ada r\u0119ce.",
-    choices: (s) => [
-      { label: "Taks\xF3wka z najbli\u017Cszego zjazdu", desc: "Przez pole do zjazdu, potem 180 km.", effects: { money: -zl4(s, 500) } },
-      {
-        label: "Czekasz i rozci\u0105gasz si\u0119 na poboczu",
-        desc: "Kierowcy tr\u0105bi\u0105, kto\u015B nagrywa.",
-        chance: 60,
-        success: { media: 1 },
-        successText: "Ruszacie po godzinie. Na odpraw\u0119 wpadasz w ostatniej minucie, rozci\u0105gni\u0119ty jak nigdy.",
-        fail: { nextFight: -2 },
-        failText: "Na wa\u017Cenie docierasz w ostatniej chwili, zestresowany i g\u0142odny. Ten dzie\u0144 siedzi w nogach."
-      }
-    ]
-  },
-  {
-    id: "popchniecie",
-    title: "Popchni\u0119cie na face to face",
-    w: 4,
-    cond: (s) => s.tier >= 1,
-    text: (_s, o) => `Face to face po wa\u017Ceniu. ${o.opp.lastName} podchodzi za blisko i popycha ci\u0119 obur\u0105cz. Flesze, ochrona ju\u017C biegnie, a prowadz\u0105cy krzyczy \u201Epanowie, w klatce!\u201D.`,
-    choices: () => [
-      { label: "Stoisz i si\u0119 u\u015Bmiechasz", desc: "Najbardziej wkurzaj\u0105ce, co mo\u017Cesz zrobi\u0107.", effects: { rep: 2, nextFight: 1 } },
-      {
-        label: "Oddajesz",
-        desc: "Nikt ci\u0119 nie b\u0119dzie popycha\u0142.",
-        chance: 55,
-        success: { media: 4 },
-        successText: "Zdj\u0119cie z przepychanki jest na ok\u0142adce ka\u017Cdego portalu. Bilety na gal\u0119 schodz\u0105 jak ciep\u0142e bu\u0142ki.",
-        fail: { media: 3, money: -500, rep: -2 },
-        failText: "Federacja karze was obu grzywn\u0105, a nagranie wygl\u0105da tak, jakby\u015B zacz\u0105\u0142."
-      },
-      {
-        label: "M\xF3wisz mu co\u015B do ucha",
-        desc: "Nikt nie us\u0142yszy, on zapami\u0119ta.",
-        chance: 60,
-        success: { nextFight: 2 },
-        successText: "Rywal czerwienieje i rzuca si\u0119 do przodu. Ochrona go trzyma. Wygra\u0142e\u015B pierwsz\u0105 rund\u0119, zanim si\u0119 zacz\u0119\u0142a.",
-        fail: { nextFight: -1 },
-        failText: "Odpowiada co\u015B o twojej mamie. Ca\u0142\u0105 noc wymy\u015Blasz ripost\u0119."
-      }
-    ]
-  },
-  {
-    id: "dzieciak",
-    once: true,
-    title: "List od dzieciaka",
-    w: 3,
-    text: () => "Na recepcji czeka koperta. W \u015Brodku rysunek: ty z pasem i podpis krzywymi literami: \u201EJak wygrasz, dasz mi r\u0119kawice? Mam 9 lat i trenuj\u0119 od wtorku. Kuba\u201D.",
-    choices: () => [
-      { label: "Obiecujesz r\u0119kawice niezale\u017Cnie od wyniku", desc: "Wygrana czy nie, Kuba je dostanie.", effects: { rep: 2, nextFight: 1, note: "rysunek przyklejony w szafce" } },
-      { label: "Zapraszasz Kub\u0119 na rozgrzewk\u0119", desc: "Niech zobaczy szatni\u0119 od \u015Brodka.", effects: { media: 2, rep: 2, nextFight: 1 } }
-    ]
-  },
-  {
-    id: "antydoping",
-    once: true,
-    title: "Kontrola antydopingowa, 6:00",
-    w: 3,
-    cond: (s) => s.tier >= 1,
-    text: () => "Sz\xF3sta rano. Pukanie do drzwi: kontrola antydopingowa. Pan z kontroli ma w\u0105sy, termos i du\u017Co czasu. Ty po wieczornym zbijaniu wagi nie masz w sobie ani kropli wody.",
-    choices: (s) => [
-      { label: "Pijesz i czekasz", desc: "Trzy godziny z panem z w\u0105sami.", effects: { nextFight: -1, note: "pan z w\u0105sami opowiada o w\u0119dkowaniu" } },
-      {
-        label: "Puszczasz wod\u0119 w kranie",
-        desc: "Stara sztuczka.",
-        chance: 70,
-        success: { nextFight: 0 },
-        successText: "Dzia\u0142a po dziesi\u0119ciu minutach. Pan z w\u0105sami zostawia ci wizyt\xF3wk\u0119 \u201Egdyby\u015B chcia\u0142 na ryby\u201D.",
-        fail: { nextFight: -2 },
-        failText: "Nie dzia\u0142a. Siedzicie do jedenastej. Znasz ju\u017C wszystkie jego wnuki z imienia."
-      },
-      ...s.flags.labsAutoSupps || s.backroom?.supps ? [
-        {
-          label: "Nerwowo sprawdzasz sk\u0142ad od\u017Cywek",
-          desc: "Te od sponsora z dziwnymi nazwami\u2026",
-          chance: 75,
-          success: { nextFight: 0 },
-          successText: "Wszystko czyste. Wynik przychodzi po tygodniu: zero uwag.",
-          fail: { rep: -4, media: 2 },
-          failText: "Jeden ze sk\u0142adnik\xF3w jest \u201Ena pograniczu\u201D. Ko\u0144czy si\u0119 upomnieniem, ale portale ju\u017C pisz\u0105."
-        }
-      ] : []
-    ]
-  },
-  {
-    id: "kolano",
-    title: "Kolano strzyka na rozruchu",
-    w: 3,
-    text: () => "Lekki rozruch dzie\u0144 przed walk\u0105 i nagle kolano strzela. Nie boli bardzo, ale strzela przy ka\u017Cdym przysiadzie. Trener udaje, \u017Ce nie widzi.",
-    choices: (s) => [
-      { label: "Lekarz gali i zastrzyk", desc: "Bezpiecznie, ale p\u0142atnie.", effects: { money: -zl4(s, 300) } },
-      {
-        label: "Taping i jedziesz",
-        desc: "Kolano jest twarde. Chyba.",
-        chance: 65,
-        success: { nextFight: 0 },
-        successText: "Taping trzyma, kolano w walce w og\xF3le si\u0119 nie odzywa.",
-        fail: { nextFight: -2, wear: 2 },
-        failText: "Kolano daje zna\u0107 przy ka\u017Cdym kopni\u0119ciu. Kopiesz mniej, ni\u017C planowa\u0142e\u015B."
-      }
-    ]
-  },
-  {
-    id: "emo",
-    title: "Zdj\u0119cie z gimnazjum",
-    w: 3,
-    text: (s) => `Kto\u015B wygrzeba\u0142 twoje zdj\u0119cie z gimnazjum: grzywka na p\xF3\u0142 twarzy, kolczyk i podpis \u201E${s.profile.firstName}xD\u201D. Fani rywala robi\u0105 z tego memy szybciej, ni\u017C zd\u0105\u017Cysz si\u0119 zarumieni\u0107.`,
-    choices: () => [
-      { label: "Ustawiasz to zdj\u0119cie jako profilowe", desc: "Najlepsza obrona to atak.", effects: { media: 3, rep: 1, note: "rywal nie ma ju\u017C czym ci\u0119 zaczepi\u0107" } },
-      {
-        label: "Wrzucasz zdj\u0119cie rywala z komunii",
-        desc: "Kumpel z jego szko\u0142y podes\u0142a\u0142.",
-        chance: 60,
-        success: { media: 4 },
-        successText: "Wojna mem\xF3w wygrana. Komentarze: \u201E0:1 dla emo\u201D.",
-        fail: { media: 2, rep: -2 },
-        failText: "Internet uznaje, \u017Ce przesadzi\u0142e\u015B. Komunia to \u015Bwi\u0119to\u015B\u0107."
-      },
-      { label: "Udajesz, \u017Ce to nie ty", desc: "Grzywka zmienia twarz.", effects: { media: 1 } }
-    ]
-  },
-  {
-    id: "live_wywiad",
-    title: "Wywiad na \u017Cywo",
-    w: 3,
-    text: () => "Wywiad na \u017Cywo dla kana\u0142u federacji. Prowadz\u0105cy, zamiast o walk\u0119, pyta, co my\u015Blisz o nowym zwi\u0105zku pewnej celebrytki i czy \u201Eto prawda, \u017Ce jeste\u015Bcie znajomymi\u201D.",
-    choices: () => [
-      { label: "\u201ENie znam pani, ale \u017Cycz\u0119 szcz\u0119\u015Bcia\u201D", desc: "Dyplomacja.", effects: { rep: 1 } },
-      {
-        label: "Udajesz tajemniczego",
-        desc: "\u201ENie mog\u0119 o tym m\xF3wi\u0107\u201D.",
-        chance: 50,
-        success: { media: 5 },
-        successText: "Plotkarskie portale szalej\u0105 przez trzy dni. Twoje nazwisko pierwszy raz w zak\u0142adce \u201Egwiazdy\u201D.",
-        fail: { media: 2, rep: -2 },
-        failText: "Celebrytka dementuje na Instagrymie: \u201Ekto to w og\xF3le jest?\u201D. P\xF3\u0142 internetu pyta to samo."
-      },
-      { label: "Wracasz do tematu walki", desc: "Jeste\u015B tu, \u017Ceby si\u0119 bi\u0107.", effects: { nextFight: 1 } }
-    ]
-  },
-  {
-    id: "koledzy_z_bloku",
-    title: "Ekipa robi wyjazd",
-    w: 3,
-    text: () => `Ekipa z twojego miasta pisze na grupie, \u017Ce jedzie na gal\u0119. Busem. Z grillem. \u201EOdpalimy ci race przy wej\u015Bciu, spoko, nikt nie zauwa\u017Cy\u201D.`,
-    choices: () => [
-      { label: "Zakazujesz rac", desc: "Federacja i tak by zauwa\u017Cy\u0142a.", effects: { rep: 1, note: "race zostaj\u0105 w busie" } },
-      {
-        label: "Niech b\u0119dzie klimat",
-        desc: "Raz si\u0119 \u017Cyje.",
-        chance: 40,
-        success: { media: 3, nextFight: 1 },
-        successText: "Race, dym, sektor \u015Bpiewa twoje nazwisko. Wchodzisz do klatki jak na derby.",
-        fail: { money: -800, rep: -2, media: 2 },
-        failText: "Ochrona wyprowadza p\xF3\u0142 ekipy, a federacja wysy\u0142a ci faktur\u0119 za \u201Eszkody w obiekcie\u201D."
-      },
-      { label: "Za\u0142atwiasz im bilety w twoim sektorze", desc: "B\u0119d\u0105 blisko i pod kontrol\u0105.", effects: { rep: 1, relations: 1 } }
-    ]
-  },
-  {
-    id: "wesele",
-    title: "Wesele za \u015Bcian\u0105",
-    w: 4,
-    text: () => "Hotel przed gal\u0105 okazuje si\u0119 te\u017C sal\u0105 weseln\u0105. O p\xF3\u0142nocy \u201ESto lat\u201D, o pierwszej \u201EJeste\u015B szalona\u201D, o drugiej kto\u015B puka do twojego pokoju i pyta, czy nie widzia\u0142e\u015B pana m\u0142odego.",
-    choices: (s) => [
-      {
-        label: "Zatyczki i poduszka na g\u0142ow\u0119",
-        desc: "Klasyka hotelowego przetrwania.",
-        chance: 55,
-        success: { nextFight: 0 },
-        successText: "Zasypiasz przy \u201EBayer full\u201D jak przy ko\u0142ysance. Rano czujesz si\u0119 dziwnie wypocz\u0119ty.",
-        fail: { nextFight: -1 },
-        failText: "Zatyczki wypadaj\u0105 przy pierwszych oczepinach. \u015Apisz trzy godziny, \u015Bni\u0105 ci si\u0119 przy\u015Bpiewki."
-      },
-      { label: "Zmieniasz pok\xF3j na drugi koniec hotelu", desc: "Recepcja chce dop\u0142aty \u201Eza standard\u201D.", effects: { money: -zl4(s, 250), nextFight: 1, note: "pok\xF3j przy windzie, ale cicho" } },
-      {
-        label: "Schodzisz na pi\u0119\u0107 minut z\u0142o\u017Cy\u0107 \u017Cyczenia",
-        desc: "Para m\u0142oda rozpoznaje ci\u0119 z plakatu.",
-        chance: 50,
-        success: { media: 2, rep: 1, note: "zdj\u0119cie z par\u0105 m\u0142od\u0105 kr\u0105\u017Cy po sieci" },
-        successText: "Pan m\u0142ody \u015Bciska ci\u0119 jak brata, wujek pokazuje \u201Egard\u0119 z wojska\u201D. Zdj\u0119cie z wesela ma wi\u0119cej lajk\xF3w ni\u017C tw\xF3j plakat.",
-        fail: { nextFight: -1, media: 1 },
-        failText: "Pi\u0119\u0107 minut zamienia si\u0119 w godzin\u0119. Ciocia panny m\u0142odej uczy ci\u0119 krok\xF3w do \u201EOna ta\u0144czy dla mnie\u201D."
-      }
-    ]
-  },
-  {
-    id: "tatuaz",
-    title: "Twoja twarz na \u0142ydce",
-    w: 3,
-    once: true,
-    text: () => "Na otwartym treningu podchodzi fan i podwija nogawk\u0119. Na \u0142ydce twoja twarz. To znaczy: kto\u015B \u0142ysy z w\u0105sem, podobny do ciebie jak s\u0105siad z parteru do aktora z Hollywood. \u201ENajlepszy tatua\u017Cysta w powiecie\u201D \u2014 m\xF3wi z dum\u0105.",
-    choices: (s) => [
-      { label: "Zdj\u0119cie i autograf obok tatua\u017Cu", desc: "D\u0142ugopisem. Na \u0142ydce.", effects: { media: 2, rep: 1, note: "fan obiecuje, \u017Ce autograf te\u017C wytatuuje" } },
-      { label: "Fundujesz mu poprawk\u0119 u dobrego tatua\u017Cysty", desc: "Niech chocia\u017C w\u0105sa nie b\u0119dzie.", effects: { money: -zl4(s, 400), rep: 2, media: 1, note: "poprawka um\xF3wiona na wtorek" } },
-      { label: "M\xF3wisz, \u017Ce wysz\u0142o lepiej ni\u017C orygina\u0142", desc: "Dyplomacja.", effects: { rep: 1 } }
-    ]
-  },
-  {
-    id: "komentator",
-    title: "Komentator przekr\u0119ca nazwisko",
-    w: 3,
-    text: (s) => `W zapowiedzi gali komentator trzy razy m\xF3wi o tobie \u201E${s.profile.lastName.endsWith("ski") ? s.profile.lastName.slice(0, -3) + "cki" : s.profile.lastName + "ak"}\u201D. Klip ju\u017C kr\u0105\u017Cy po sieci, a kibice zaczynaj\u0105 tak ci\u0119 wo\u0142a\u0107.`,
-    choices: () => [
-      { label: "Poprawiasz go grzecznie na antenie", desc: "Kulturalnie, z u\u015Bmiechem.", effects: { rep: 1, media: 1 } },
-      {
-        label: "Przyjmujesz now\u0105 ksywk\u0119",
-        desc: "Drukujesz j\u0105 na koszulce do wyj\u015Bcia.",
-        chance: 60,
-        success: { media: 3, note: "koszulki z b\u0142\u0119dem schodz\u0105 jak \u015Bwie\u017Ce bu\u0142ki" },
-        successText: "Koszulka z przekr\u0119conym nazwiskiem staje si\u0119 hitem. Komentator przeprasza na antenie i kupuje dwie.",
-        fail: { media: 1, rep: -1 },
-        failText: "\u017Bart nie chwyta. Po\u0142owa ludzi my\u015Bli, \u017Ce naprawd\u0119 tak si\u0119 nazywasz."
-      },
-      { label: "Ignorujesz", desc: "Po walce zapami\u0119taj\u0105 prawdziwe.", effects: { nextFight: 1 } }
-    ]
-  },
-  {
-    id: "rekawice",
-    title: "Nowe r\u0119kawice federacji",
-    w: 3,
-    text: () => "Federacja zmieni\u0142a sponsora r\u0119kawic. Nowe s\u0105 twarde jak deska do krojenia i cisn\u0105 w kciuku. Do walki trzy dni.",
-    choices: () => [
-      {
-        label: "Rozbijasz je na worku do nocy",
-        desc: "Stary spos\xF3b. Kciuk i tak zaboli.",
-        chance: 60,
-        success: { nextFight: 1 },
-        successText: "Po trzech godzinach r\u0119kawice uk\u0142adaj\u0105 si\u0119 do d\u0142oni. Kciuk \u017Cyje, ty te\u017C.",
-        fail: { wear: 1, nextFight: -1 },
-        failText: "R\u0119kawice wygrywaj\u0105. Kciuk puchnie, a ty banda\u017Cujesz go na zapas."
-      },
-      {
-        label: "Prosisz o inny rozmiar",
-        desc: "Pan od sprz\u0119tu \u201Ezobaczy, co da si\u0119 zrobi\u0107\u201D.",
-        chance: 45,
-        success: { nextFight: 1, note: "pan od sprz\u0119tu ma jednak zapas" },
-        successText: "Pan od sprz\u0119tu wyci\u0105ga z baga\u017Cnika par\u0119 o p\xF3\u0142 rozmiaru wi\u0119ksz\u0105. Pasuj\u0105 jak ula\u0142.",
-        fail: { nextFight: 0 },
-        failText: "Pan od sprz\u0119tu zobaczy\u0142. Nie da si\u0119 nic zrobi\u0107."
-      },
-      { label: "Walczysz w tym, co daj\u0105", desc: "Rywal ma takie same.", effects: { nextFight: 0, note: "obaj macie twarde r\u0119kawice" } }
-    ]
-  },
-  {
-    id: "tiktoker",
-    title: "\u201EDzie\u0144 z \u017Cycia zawodnika\u201D",
-    w: 3,
-    text: () => "Tiktoker z milionem obserwuj\u0105cych chce nagra\u0107 \u201Edzie\u0144 z \u017Cycia zawodnika przed walk\u0105\u201D. Od rana do wieczora, z kamer\u0105 przy twarzy i pytaniami w stylu \u201Ea co jesz na \u015Bniadanie, bro?\u201D.",
-    choices: () => [
-      { label: "Ca\u0142y dzie\u0144, bez cenzury", desc: "Zasi\u0119gi jak na gali freak fight.", effects: { media: 4, nextFight: -1, note: "p\xF3\u0142 internetu wie, ile jesz jajek" } },
-      { label: "Kwadrans na treningu i koniec", desc: "Tylko tarcze, bez wywiadu.", effects: { media: 1 } },
-      { label: "Odmawiasz", desc: "\u201EBro, jestem w obozie.\u201D", effects: { nextFight: 1 } }
-    ]
-  },
-  {
-    id: "lot",
-    title: "Lot odwo\u0142any",
-    w: 3,
-    cond: (_s, o) => !!o.abroad,
-    text: (_s, o) => `Burza nad lotniskiem, lot do miasta ${o.abroad} odwo\u0142any. Nast\u0119pny jutro wieczorem. Wa\u017Cenie pojutrze rano.`,
-    choices: (s) => [
-      { label: "Wynajmujesz auto i jedziesz noc\u0105", desc: "Dwana\u015Bcie godzin za kierownic\u0105 na zmian\u0119 z trenerem.", effects: { money: -zl4(s, 600), nextFight: -1, note: "trener prowadzi jak na rajdzie" } },
-      {
-        label: "Czekasz na jutrzejszy lot",
-        desc: "Hotel przy lotnisku i nerwy.",
-        chance: 60,
-        success: { nextFight: 0 },
-        successText: "Lot wylatuje o czasie. Wa\u017Cysz si\u0119 zm\u0119czony, ale na czas.",
-        fail: { nextFight: -2 },
-        failText: "Kolejne op\xF3\u017Anienie. L\u0105dujesz trzy godziny przed wa\u017Ceniem i jedziesz prosto na wag\u0119."
-      },
-      {
-        label: "Federacja organizuje busa dla zawodnik\xF3w",
-        desc: "Za darmo, z ca\u0142\u0105 kart\u0105 wst\u0119pn\u0105.",
-        chance: 55,
-        success: { rep: 1, note: "w busie gra si\u0119 w karty z rywalami" },
-        successText: "Bus pe\u0142en zawodnik\xF3w. Gracie w karty, a tw\xF3j przysz\u0142y rywal przegrywa ci pi\u0119\u0107 dych.",
-        fail: { nextFight: -1 },
-        failText: "Bus nie ma klimatyzacji, a kto\u015B z karty wst\u0119pnej zbija wag\u0119 w kurtce zimowej. Wszyscy si\u0119 pocicie."
-      }
-    ]
-  },
-  {
-    id: "nowe_nagranie",
-    title: "Rywal zmieni\u0142 pozycj\u0119",
-    w: 4,
-    text: (_s, o) => `Trener dzwoni o dziesi\u0105tej wieczorem: \u201EWrzucili nagranie z treningu ${o.opp.lastName}. \u0106wiczy z odwrotnej pozycji. Albo to zmy\u0142ka, albo co\u015B szykuj\u0105\u201D.`,
-    choices: () => [
-      {
-        label: "Przestawiacie plan pod now\u0105 pozycj\u0119",
-        desc: "Trzy dni, \u017Ceby przestawi\u0107 g\u0142ow\u0119.",
-        chance: 50,
-        success: { nextFight: 2 },
-        successText: "Trafili\u015Bcie. W walce rywal wychodzi z odwrotnej, a ty masz na to gotow\u0105 odpowied\u017A.",
-        fail: { nextFight: -1 },
-        failText: "To by\u0142a zmy\u0142ka. Rywal walczy jak zawsze, a ty szukasz w g\u0142owie starego planu."
-      },
-      { label: "Trzymacie si\u0119 planu", desc: "\u201ENa nagraniach ka\u017Cdy jest mistrzem.\u201D", effects: { nextFight: 0 } },
-      {
-        label: "Dzwonisz do sparingpartnera, kt\xF3ry go zna",
-        desc: "Kosztuje piwo i godzin\u0119 rozmowy.",
-        chance: 65,
-        success: { nextFight: 1, note: "sparingpartner zna jego nawyki" },
-        successText: "Kumpel zna go z obozu: \u201EZ odwrotnej si\u0119 tylko popisuje. Jak si\u0119 zm\u0119czy, wraca do swojej\u201D.",
-        fail: { nextFight: 0 },
-        failText: "Kumpel pami\u0119ta tylko, \u017Ce \u201Eby\u0142 mi\u0142y i jad\u0142 du\u017Co ry\u017Cu\u201D."
-      }
-    ]
-  },
-  {
-    id: "kibice_rywala",
-    title: "Kibice rywala w hotelu",
-    w: 3,
-    cond: (_s, o) => !o.abroad,
-    text: (_s, o) => `W lobby hotelu siedzi kilkunastu kibic\xF3w ${o.opp.lastName} w identycznych koszulkach. Na tw\xF3j widok zaczynaj\u0105 \u015Bpiewa\u0107. S\u0142abo, ale g\u0142o\u015Bno.`,
-    choices: () => [
-      { label: "Machasz i idziesz do windy", desc: "Z u\u015Bmiechem, bez s\u0142owa.", effects: { rep: 1 } },
-      {
-        label: "\u015Apiewasz razem z nimi",
-        desc: "Znasz ju\u017C s\u0142owa.",
-        chance: 55,
-        success: { media: 3, note: "nagranie z lobby ma milion wy\u015Bwietle\u0144" },
-        successText: "Kibice rywala si\u0119 \u015Bmiej\u0105 i robi\u0105 sobie z tob\u0105 zdj\u0119cie. Nagranie robi furor\u0119.",
-        fail: { media: 1, nextFight: -1 },
-        failText: "Kibice nie maj\u0105 poczucia humoru. \u015Apiewaj\u0105 pod twoimi drzwiami do pierwszej."
-      },
-      { label: "Prosisz ochron\u0119 o inne wej\u015Bcie", desc: "Zero nerw\xF3w przed walk\u0105.", effects: { nextFight: 1 } }
-    ]
-  }
-];
-function buildWeek(rng, s, o) {
-  const pool = WEEK_EVENTS.filter((e) => (!e.cond || e.cond(s, o)) && !(e.once && s.flags[`wk:${e.id}`])).map((e) => ({ e, w: e.w / (1 + 4 * (s.flags[`wk:${e.id}`] ?? 0)) }));
-  const tot = pool.reduce((a, x) => a + x.w, 0);
-  let r = rng.next() * tot;
-  let pick = pool[0].e;
-  for (const x of pool) {
-    r -= x.w;
-    if (r <= 0) {
-      pick = x.e;
-      break;
-    }
-  }
-  s.flags[`wk:${pick.id}`] = (s.flags[`wk:${pick.id}`] ?? 0) + 1;
-  return pick;
-}
-
-// src/engine/prolog.ts
-var COACH_NAMES = ["Mirek", "Waldek", "Heniek", "Zbyszek", "Rafa\u0142", "Grzesiek"];
-var STREETS = ["Przemys\u0142owa 4, wej\u015Bcie od gara\u017Cy", "Kolejowa 12, piwnica pod si\u0142owni\u0105", "Polna 3, za Biedronk\u0105", "Sportowa 1, hala po starym PGR-ze", "Fabryczna 8, drugie pi\u0119tro, bez windy"];
-function hash(t) {
-  let h = 7;
-  for (const c of t) h = h * 31 + c.charCodeAt(0) >>> 0;
-  return h;
-}
-function clubCoachName(club) {
-  return `Trener ${COACH_NAMES[hash(club.name) % COACH_NAMES.length]}`;
-}
-function clubStreet(club) {
-  return `ul. ${STREETS[hash(club.city + club.name) % STREETS.length]}`;
-}
-var monthly = (c) => Math.max(100, Math.round(c.cost / 12 / 10) * 10);
-var PROLOG_EVENTS = [
-  {
-    id: "prolog_ekipa",
-    title: "Grupa",
-    once: true,
-    weight: 0,
-    cond: () => false,
-    text: (s) => {
-      const me = s.profile.firstName;
-      const c = s.club.name;
-      switch (s.profile.start) {
-        case "biznes":
-          return [
-            `Tata: Zapisa\u0142em ci\u0119 na MMA. ${c}. Prezes klubu kupuje u nas panele, wi\u0119c traktuj to powa\u017Cnie.`,
-            "Mama: Andrzej, on ma szesna\u015Bcie lat!",
-            "Tata: No w\u0142a\u015Bnie. Ja w jego wieku mia\u0142em ju\u017C pierwsz\u0105 hurtowni\u0119.",
-            "Ola: a mog\u0119 przyj\u015B\u0107 popatrze\u0107 jak mu lej\u0105? \u{1F37F}",
-            `Tata: ${me}, kierowca b\u0119dzie o 17:30. Nie przynie\u015B wstydu.`
-          ].join("\n");
-        case "junior":
-          return [
-            `Bartek: s\u0142yszeli\u015Bcie? w ${c} szukaj\u0105 zapa\u015Bnik\xF3w do MMA. m\xF3wi\u0105 \u017Ce w klatce zapa\u015Bnik to kr\xF3l`,
-            `Trener Zenek: Bartek, nie m\u0105\u0107 mu w g\u0142owie. ${me} w marcu jedzie na mistrzostwa.`,
-            "Bartek: trenerze, w MMA p\u0142ac\u0105",
-            "Trener Zenek: W MMA bij\u0105 po g\u0142owie. Dlatego p\u0142ac\u0105.",
-            `Bartek: ${me} idziesz ze mn\u0105 na pr\xF3bny? wtorek 18:00`
-          ].join("\n");
-        case "wybraniec":
-          return [
-            `Nieznany numer: Dzie\u0144 dobry. M\xF3wi ${clubCoachName(s.club)}, ${c}.`,
-            "Nieznany numer: Kto\u015B mi podes\u0142a\u0142 nagranie z WF-u, jak po\u0142o\u017Cy\u0142e\u015B wuefist\u0119 na materac. Trzy razy.",
-            "Nieznany numer: Pan Andrzej twierdzi, \u017Ce si\u0119 po\u015Blizgn\u0105\u0142. Obejrza\u0142em to dziesi\u0119\u0107 razy. Nie po\u015Blizgn\u0105\u0142 si\u0119.",
-            "Nieznany numer: Mam dla ciebie miejsce w grupie zawodniczej. Za darmo. Wtorek 18:00."
-          ].join("\n");
-        default:
-          return [
-            `Seba: widzieli\u015Bcie? w ${c} ruszy\u0142 nab\xF3r na MMA. pierwszy trening gratis \u{1F94A}`,
-            "Dawid: seba ty by\u015B si\u0119 bi\u0142 z kim? z go\u0142\u0119biem?",
-            `Seba: nie ja. ${me} idzie. ci\u0105gle gada \u017Ce by ka\u017Cdego po\u0142o\u017Cy\u0142`,
-            "Krzychu: \u{1F602}\u{1F602} nagrywamy",
-            `Seba: ${me}? wtorek 18:00. idziesz czy p\u0119kasz`
-          ].join("\n");
-      }
-    },
-    choices: (s) => {
-      switch (s.profile.start) {
-        case "biznes":
-          return [
-            { label: "B\u0119d\u0119 gotowy o 17:20.", desc: "Tata: Tak si\u0119 rozmawia.\nMama: We\u017A chocia\u017C kanapki.\nOla: wys\u0142a\u0142am ci link do ochraniaczy na z\u0119by, r\xF3\u017Cowe", effects: { rep: 1 } },
-            { label: "Mo\u017Ce pojad\u0119 rowerem? \u017Beby nie by\u0142o gadania.", desc: "Tata: Rowerem? Ludzie pomy\u015Bl\u0105, \u017Ce zbankrutowali\u015Bmy.\nMama: Ja tam uwa\u017Cam, \u017Ce to \u0142adnie.\nTata: Kierowca. 17:30.", effects: { relations: 1 } },
-            { label: "Ola, nie przychod\u017A.", desc: "Ola: ju\u017C wrzuci\u0142am na story \u017Ce idziesz \u{1F607}\nOla: 48 wy\u015Bwietle\u0144\nTata: Ola, skasuj to. Natychmiast.\nOla: 112 wy\u015Bwietle\u0144", effects: { media: 1 } }
-          ];
-        case "junior":
-          return [
-            { label: "Id\u0119. Zobacz\u0119, co to za klatka.", desc: "Bartek: TAK\nTrener Zenek: Zobaczysz. I wr\xF3cisz.\nBartek: trenerze to brzmi jak gro\u017Aba\nTrener Zenek: Bo to jest gro\u017Aba.", effects: { rep: 1 } },
-            { label: "Id\u0119, ale z mistrzostw nie rezygnuj\u0119, trenerze.", desc: "Trener Zenek: Trzymam za s\u0142owo.\nTrener Zenek: I \u017Cadnych kopni\u0119\u0107 w kolana. Kolana masz zapa\u015Bnicze, nie do kopania.\nBartek: \u{1F44D}", effects: { relations: 1 } },
-            { label: "Zapa\u015Bnik w klatce to kr\xF3l. Id\u0119.", desc: "Trener Zenek: Kr\xF3l. Do pierwszego kopni\u0119cia w g\u0142ow\u0119.\nBartek: kr\xF3l i jego wierny giermek \u{1F451}\nTrener Zenek: Bartek, ty te\u017C jedziesz w marcu. Pami\u0119taj.", effects: { media: 1 } }
-          ];
-        case "wybraniec":
-          return [
-            { label: "B\u0119d\u0119.", desc: "Nieznany numer: Kr\xF3tko. Lubi\u0119.\nNieznany numer: We\u017A ochraniacz na z\u0119by. I nie m\xF3w nikomu, \u017Ce za darmo, bo reszta p\u0142aci.", effects: { rep: 1 } },
-            { label: "Sk\u0105d pan ma m\xF3j numer?", desc: "Nieznany numer: Od twojej babci. Bardzo mi\u0142a pani.\nNieznany numer: Powiedzia\u0142a, \u017Ce jeste\u015B grzeczny ch\u0142opak i \u017Cebym ci\u0119 za mocno nie bi\u0142.\nNieznany numer: Nie obieca\u0142em.", effects: { relations: 1 } },
-            { label: "To on si\u0119 naprawd\u0119 po\u015Blizgn\u0105\u0142.", desc: "Nieznany numer: Trzy razy?\nNieznany numer: Wtorek, 18:00. Przynie\u015B te po\u015Blizgi.", effects: { media: 1 } }
-          ];
-        default:
-          return [
-            { label: "Id\u0119. Wtorek 18:00.", desc: "Dawid: o kurde, serio\nSeba: bior\u0119 popcorn\nKrzychu: jak ci\u0119 po\u0142o\u017C\u0105 to nie p\u0142acz w grupie", effects: { rep: 1 } },
-            { label: "Id\u0119, ale jak mnie po\u0142o\u017C\u0105, stawiacie kebaba.", desc: "Seba: deal \u{1F32F}\nDawid: du\u017Cy, podw\xF3jne mi\u0119so, zapisuj\u0119\nKrzychu: ju\u017C wiemy kto p\u0142aci \u{1F602}", effects: { media: 1 } },
-            { label: "P\xF3jd\u0119, jak kto\u015B p\xF3jdzie ze mn\u0105.", desc: "Seba: dobra id\u0119 z tob\u0105. na rozgrzewk\u0119\nDawid: Seba na MMA. to b\u0119dzie film\nSeba: zamknij si\u0119", effects: { relations: 1 } }
-          ];
-      }
-    }
-  },
-  {
-    id: "prolog_trener",
-    title: "Trener",
-    once: true,
-    weight: 0,
-    cond: () => false,
-    text: (s) => {
-      const t = clubCoachName(s.club).replace("Trener ", "");
-      const lines = s.profile.start === "wybraniec" ? [`${clubCoachName(s.club)}: To ja jeszcze raz. Zapisz sobie numer: ${t}, trener.`] : [`${clubCoachName(s.club)}: Cze\u015B\u0107, tu ${t}, trener z ${s.club.name}. Dosta\u0142em tw\xF3j numer, \u017Ce chcesz przyj\u015B\u0107.`];
-      lines.push(
-        `${clubCoachName(s.club)}: Wtorek 18:00, ${clubStreet(s.club)}.`,
-        `${clubCoachName(s.club)}: We\u017A wod\u0119, r\u0119cznik i ochraniacz na z\u0119by. Pierwszy trening gratis, potem ${monthly(s.club)} z\u0142 miesi\u0119cznie.`,
-        `${clubCoachName(s.club)}: Jak prze\u017Cyjesz rozgrzewk\u0119, to po kilku tygodniach zrobimy sparing kontrolny. Zobacz\u0119, gdzie ci\u0119 wys\u0142a\u0107.`
-      );
-      return lines.join("\n");
-    },
-    choices: (s) => {
-      const t = clubCoachName(s.club);
-      return [
-        { label: "B\u0119d\u0119 17:45.", desc: `${t}: Dobrze. Sp\xF3\u017Anialscy robi\u0105 burpees. Du\u017Co burpees.`, effects: { rep: 1 } },
-        { label: "A ochraniacz na z\u0119by to jaki?", desc: `${t}: Taki, \u017Ceby z\u0119by zosta\u0142y w buzi.
-${t}: Za 30 z\u0142 w Decathlonie. Wrzucasz do wrz\u0105tku i gryziesz. Nie odwrotnie.`, effects: { media: 1 } },
-        { label: "Trenerze, a da si\u0119 bez biegania?", desc: `${t}: \u{1F602}
-${t}: Nie.`, effects: { relations: 1 } }
-      ];
-    }
-  }
-];
 
 // src/engine/data.ts
 var STAT_LABELS = {
@@ -3609,6 +2799,946 @@ var WIN_DETAILS = {
     { nom: "balacha", form: "balach\u0119" }
   ]
 };
+
+// src/engine/camp.ts
+var CAMP_WEEKS = 3;
+var CAMP_BASE = 2;
+var sc3 = (s) => [1, 1.5, 3, 5, 8][Math.min(4, Math.max(0, s.tier))] ?? 1;
+var zl3 = (s, n) => Math.max(50, Math.round(n * sc3(s) / 50) * 50);
+var STAT_NAME = { stand: "st\xF3jk\u0119", wrest: "zapasy", bjj: "parter", cardio: "kondycj\u0119", chin: "szcz\u0119k\u0119", iq: "taktyk\u0119" };
+function weakest(s) {
+  return ["stand", "wrest", "bjj"].sort((a, b) => s.stats[a] - s.stats[b])[0];
+}
+var CAMP_ACTS = [
+  {
+    id: "sparingi",
+    name: "Twarde sparingi",
+    desc: "Pe\u0142ne rundy z mocniejszymi od siebie.",
+    hint: "du\u017Co formy, zu\u017Cycie",
+    roll: (_s, rng) => {
+      const r = rng.next();
+      if (r < 0.15)
+        return { text: rng.pick(["Mietek trafia ci\u0119 \u0142okciem w \u0142uk brwiowy. Trzy szwy i tydzie\u0144 ostro\u017Cno\u015Bci.", "Sparingpartner o 15 kg ci\u0119\u017Cszy siada ci na \u017Cebrach. Oddychasz ostro\u017Cnie do ko\u0144ca tygodnia."]), effects: { wear: 1 }, mod: 0 };
+      if (r < 0.45)
+        return { text: rng.pick(["Pi\u0119\u0107 rund z by\u0142ym mistrzem regionu. Ko\u0144czysz na kolanach, ale co\u015B zaskoczy\u0142o.", "Trzech sparingpartner\xF3w na zmian\u0119, co minut\u0119 \u015Bwie\u017Cy. Pod koniec przestajesz my\u015Ble\u0107 i zaczynasz walczy\u0107."]), effects: {}, mod: 3 };
+      return { text: rng.pick(["Twarde rundy, czyste trafienia z obu stron. Tak ma wygl\u0105da\u0107 ob\xF3z.", "Sparingi do zm\u0119czenia. Trener tylko kiwa g\u0142ow\u0105, co u niego znaczy \u201Edobrze\u201D.", "Mietek w formie \u017Cycia, ty te\u017C. Nikt nie odpuszcza."]), effects: {}, mod: 2 };
+    }
+  },
+  {
+    id: "technika",
+    name: "Technika z trenerem",
+    desc: "Powt\xF3rzenia, poprawki, tablica z rozrysowanym planem.",
+    hint: "forma, czasem punkt umiej\u0119tno\u015Bci",
+    roll: (s, rng) => {
+      const k = weakest(s);
+      if (rng.chance(0.22)) return { text: `Tydzie\u0144 d\u0142ubania w detalach. Trener w ko\u0144cu przestaje poprawia\u0107 ci ${STAT_NAME[k]}.`, effects: { stats: { [k]: 1 } }, mod: 1 };
+      return { text: rng.pick(["Sto powt\xF3rze\u0144 tego samego wej\u015Bcia. Na sto pierwszym trener m\xF3wi \u201Eno\u201D.", "Godziny przy tarczach i nagraniach. Mniej efektowne ni\u017C sparingi, ale wchodzi w nawyk.", "Trener rozrysowuje plan na tablicy. Tym razem rozumiesz ka\u017Cd\u0105 strza\u0142k\u0119.", "Lustro, cie\u0144 i trener, kt\xF3ry powtarza \u201E\u0142okie\u0107\u201D czterdzie\u015Bci razy dziennie.", "Ca\u0142y tydzie\u0144 jednej kombinacji. W pi\u0105tek robisz j\u0105 przez sen.", "Trener przynosi stare kasety VHS z walk z lat dziewi\u0119\u0107dziesi\u0105tych. Dzia\u0142a."]), effects: {}, mod: 2 };
+    }
+  },
+  {
+    id: "kondycja",
+    name: "Kondycja",
+    desc: "Interwa\u0142y, g\xF3ry, schody na stadionie.",
+    hint: "forma, czasem kondycja",
+    roll: (_s, rng) => {
+      if (rng.chance(0.2)) return { text: "Schody na stadionie, sto razy w g\xF3r\u0119. W trzeciej rundzie b\u0119dziesz \u015Bwie\u017Cy.", effects: { stats: { cardio: 1 } }, mod: 1 };
+      return { text: rng.pick(["Interwa\u0142y na bie\u017Cni, a\u017C ci si\u0119 czarno przed oczami robi. Trener m\xF3wi, \u017Ce to dopiero rozgrzewka.", "Bieganie po lesie z kamizelk\u0105 obci\u0105\u017Ceniow\u0105. Grzybiarze patrz\u0105 dziwnie.", "P\u0142ywalnia o sz\xF3stej rano. Ratownik ju\u017C ci\u0119 zna.", "Rower stacjonarny w piwnicy klubu. Sto minut, zero widok\xF3w, jeden plakat Rocky\u2019ego.", "Sprinty pod g\xF3r\u0119 za klubem. S\u0105siad z dzia\u0142ki dopinguje z le\u017Caka.", "Skakanka, pi\u0119\u0107 rund po pi\u0119\u0107 minut. Sufit w szatni ma now\u0105 plam\u0119 po twoim pocie."]), effects: {}, mod: 2 };
+    }
+  },
+  {
+    id: "rywal",
+    name: "Analiza rywala",
+    desc: "Nagrania jego walk, nawyki, ulubione kombinacje.",
+    hint: "forma na t\u0119 walk\u0119",
+    roll: (s, rng, opp, _w, picks) => {
+      const again = picks.includes("rywal");
+      const smart = s.stats.iq >= 50;
+      if (again) return { text: `Drugi tydzie\u0144 nagra\u0144 tego samego rywala. ${opp.firstName} ${opp.lastName} \u015Bni ci si\u0119 po nocach, ale nic nowego nie widzisz.`, effects: {}, mod: 0 };
+      return {
+        text: rng.pick([
+          `${opp.lastName} przed ka\u017Cdym kopni\u0119ciem opuszcza prawy bark. Trener zatrzymuje nagranie i pokazuje palcem.`,
+          `Dziesi\u0119\u0107 walk rywala w tydzie\u0144. Wiesz ju\u017C, co ${opp.lastName} robi, kiedy si\u0119 zm\u0119czy.`,
+          `${opp.lastName} nie lubi, jak si\u0119 go spycha pod siatk\u0119. Ca\u0142y plan staje si\u0119 prosty.`
+        ]),
+        effects: {},
+        mod: smart ? 3 : 2
+      };
+    }
+  },
+  {
+    id: "regeneracja",
+    name: "Regeneracja",
+    desc: "Fizjo, sauna, sen. Mniej treningu, wi\u0119cej cia\u0142a.",
+    hint: "mniej zu\u017Cycia",
+    roll: (s, rng) => {
+      if (s.wear < 10) return { text: rng.pick(["Regenerujesz si\u0119, cho\u0107 nie by\u0142o z czego. Nudzisz si\u0119 i ogl\u0105dasz seriale.", "Tydzie\u0144 odpoczynku od niczego. Obejrza\u0142e\u015B trzy sezony serialu o mafii.", "Le\u017Cysz i odpoczywasz. Cia\u0142o nie wie, od czego, ale si\u0119 zgadza."]), effects: { wear: -1 }, mod: 0 };
+      return { text: rng.pick(["Pani Ewa z fizjoterapii robi z twoich plec\xF3w nowe plecy.", "Tydzie\u0144 snu, sauny i lekkiego ruchu. Pierwszy raz od miesi\u0119cy nic nie boli.", "Krioterapia w Spale. Trzy minuty w minus stu dziesi\u0119ciu i nagle wszystko jest prostsze.", "Masa\u017C, joga z dziewczyn\u0105 trenera i dziesi\u0119\u0107 godzin snu. Cia\u0142o dzi\u0119kuje.", "Basen, rozci\u0105ganie i drzemki. Trener m\xF3wi, \u017Ce to te\u017C trening. Wierzysz mu na s\u0142owo."]), effects: { wear: -2 }, mod: 1 };
+    }
+  },
+  {
+    id: "fucha",
+    name: "Fucha po treningach",
+    desc: "Bramka, budowa, kurier. Pieni\u0105dze si\u0119 przydadz\u0105.",
+    hint: "pieni\u0105dze, mniej formy",
+    cond: (s) => s.tier <= 2,
+    roll: (s, rng) => ({
+      text: rng.pick(["Trzy nocki na bramce w \u201EPresti\u017Cu\u201D. Kasa jest, snu brak.", "Kuzyn potrzebowa\u0142 r\u0105k na budowie. Plecy bol\u0105, portfel pe\u0142niejszy.", "Kurier po treningach. Znasz ju\u017C ka\u017Cdy domofon na osiedlu.", "Wnoszenie mebli z koleg\u0105. Szafa trzydrzwiowa na czwarte pi\u0119tro to te\u017C trening.", "Ochrona na festynie w gminie. Najgro\u017Aniejszy by\u0142 pan z wat\u0105 cukrow\u0105.", "Roz\u0142adunek w hurtowni. Kierownik pyta, czy nie chcesz etatu."]),
+      effects: { money: zl3(s, 400) },
+      mod: 0
+    })
+  },
+  {
+    id: "media",
+    name: "Media i sponsorzy",
+    desc: "Wywiady, nagrania, zdj\u0119cia z produktem.",
+    hint: "media, mniej formy",
+    roll: (s, rng) => ({
+      text: rng.pick(["Trzy wywiady, dwa podcasty i sesja zdj\u0119ciowa. Trening wciskasz mi\u0119dzy nagrania.", "Tydzie\u0144 jak w telewizji: kamera wsz\u0119dzie, nawet na rozci\u0105ganiu.", "Spotkanie ze sponsorem i rolka na Instagrym. Telefon \u0142adujesz cz\u0119\u015Bciej ni\u017C siebie.", "Nagranie reklamy suplementu. Dwadzie\u015Bcia dubli, w ka\u017Cdym udajesz, \u017Ce smakuje.", "Wywiad do lokalnej gazety. Dziennikarz pyta g\u0142\xF3wnie o twoj\u0105 mam\u0119.", "Sesja zdj\u0119ciowa w hali. Fotograf ka\u017Ce ci \u201Epatrze\u0107 gro\u017Anie, ale przyja\u017Anie\u201D."]),
+      effects: { media: 2, money: s.sponsors.length ? zl3(s, 200) : 0 },
+      mod: 0
+    })
+  }
+];
+function cutting(s) {
+  return WEIGHT_KEYS.indexOf(s.division ?? s.profile.weight ?? "polsrednia") < WEIGHT_KEYS.indexOf(s.profile.weight ?? "polsrednia");
+}
+CAMP_ACTS.push(
+  {
+    id: "dietetyk",
+    name: "Zbijanie wagi z dietetykiem",
+    desc: "Plan posi\u0142k\xF3w co do grama, wa\u017Cenie rano i wieczorem.",
+    hint: "du\u017Co mniejsze ryzyko, \u017Ce nie zrobisz wagi",
+    cond: (s) => cutting(s) && !s.flags.cutPrep,
+    roll: (s, rng) => {
+      s.flags.cutPrep = 1;
+      return { text: rng.pick(["Dietetyczka rozpisuje ka\u017Cdy posi\u0142ek. Ry\u017C wa\u017Cy si\u0119 na wadze kuchennej, a ty patrzysz na niego jak na wroga.", "Tydzie\u0144 pude\u0142ek, wody z cytryn\u0105 i wa\u017Cenia dwa razy dziennie. Waga schodzi r\xF3wno, bez sauny w ostatniej chwili.", "Dietetyk zabiera ci z lod\xF3wki wszystko, co lubisz. Waga dzi\u0119kuje, humor nie."]), effects: {}, mod: 0 };
+    }
+  },
+  {
+    id: "czolowka",
+    name: "Sparingi z czo\u0142\xF3wk\u0105",
+    desc: "P\u0142atne rundy z zawodnikami z top 5 innych federacji.",
+    hint: "bardzo du\u017Co formy, zu\u017Cycie, kosztuje",
+    cond: (s) => s.tier >= 2,
+    roll: (s, rng) => {
+      if (rng.chance(0.2)) return { text: rng.pick(["Zawodnik z czo\u0142\xF3wki nie przyjecha\u0142 sparowa\u0107, tylko bi\u0107. Tydzie\u0144 chodzisz z lodem na \u017Cebrach.", "Rundy jak w walce o pas. Wychodzisz z siniakiem pod okiem i ze \u015Bwiadomo\u015Bci\u0105, ile ci brakuje."]), effects: { money: -zl3(s, 500), wear: 3 }, mod: 1 };
+      return { text: rng.pick(["Pi\u0119\u0107 rund z go\u015Bciem z top 5. Pod koniec tygodnia to on prosi o przerw\u0119.", "Sparingi z czo\u0142\xF3wk\u0105. Ka\u017Cdy b\u0142\u0105d kosztuje, ale tempo walki nagle wydaje si\u0119 wolne.", "Trzech zawodnik\xF3w z ranking\xF3w na zmian\u0119. Po takim tygodniu rywal wydaje si\u0119 mniejszy."]), effects: { money: -zl3(s, 500), wear: 2 }, mod: 4 };
+    }
+  },
+  {
+    id: "wyjazd",
+    name: "Tydzie\u0144 w obcym klubie",
+    desc: "Nowe sale, nowi partnerzy, nowe nawyki.",
+    hint: "forma, szansa na punkt umiej\u0119tno\u015Bci, kosztuje",
+    cond: (s) => s.money >= zl3(s, 2e3),
+    roll: (s, rng) => {
+      const k = weakest(s);
+      const gain = rng.chance(0.35);
+      return {
+        text: gain ? rng.pick([`Tydzie\u0144 w klubie w Holandii. Tamtejszy trener w trzy dni poprawia ci ${STAT_NAME[k]} bardziej ni\u017C ty przez rok.`, `Obcy klub, obce zwyczaje. Na trzecim treningu co\u015B klika i ${STAT_NAME[k]} nagle wygl\u0105da inaczej.`]) : rng.pick(["Tydzie\u0144 w obcym klubie. Nowi partnerzy, nowe kombinacje, nikt nie zna twoich nawyk\xF3w.", "Wyjazd do zaprzyja\u017Anionego klubu. \u015Apisz na materacu w biurze trenera, ale trenujesz jak nigdy."]),
+        effects: { money: -zl3(s, 900), ...gain ? { stats: { [k]: 1 } } : {} },
+        mod: 2
+      };
+    }
+  }
+);
+function findCampAct(id) {
+  return CAMP_ACTS.find((a) => a.id === id);
+}
+
+// src/engine/fightweek.ts
+var sc4 = (s) => [1, 1.5, 3, 5, 8][Math.min(4, Math.max(0, s.tier))] ?? 1;
+var zl4 = (s, n) => Math.max(50, Math.round(n * sc4(s) / 50) * 50);
+var WEEK_EVENTS = [
+  {
+    id: "hotel",
+    title: "Wesele za \u015Bcian\u0105",
+    w: 5,
+    text: (_s, o) => `Hotel organizatora przy obwodnicy. Za \u015Bcian\u0105 wesele do czwartej rano, a za trzy dni walka. Rywal: ${o.opp.lastName}. Disco polo przez \u015Bcian\u0119 s\u0142ycha\u0107 tak, jakby zesp\xF3\u0142 gra\u0142 w \u0142azience.`,
+    choices: (s) => [
+      { label: "Zmieniasz hotel na w\u0142asny koszt", desc: "Cisza, ale portfel cierpi.", effects: { money: -zl4(s, 400) } },
+      {
+        label: "Zatyczki do uszu i medytacja",
+        desc: "Albo zadzia\u0142a, albo nie.",
+        chance: 55,
+        success: { nextFight: 0, note: "\u015Bpisz jak dziecko" },
+        successText: "Zatyczki daj\u0105 rad\u0119. Budzisz si\u0119 wyspany i lekko nucisz \u201EBayer full\u201D.",
+        fail: { nextFight: -2 },
+        failText: "O trzeciej orkiestra gra \u201ESoko\u0142y\u201D. Nie \u015Bpisz do rana."
+      },
+      {
+        label: "Idziesz na wesele",
+        desc: "Skoro i tak nie za\u015Bniesz\u2026",
+        chance: 30,
+        success: { media: 2, nextFight: 1, note: "pan m\u0142ody stawia ci bilet na gal\u0119" },
+        successText: "Ta\u0144czysz z babci\u0105 panny m\u0142odej, a go\u015Bcie obiecuj\u0105, \u017Ce przyjd\u0105 kibicowa\u0107. Wracasz o p\xF3\u0142nocy, na\u0142adowany.",
+        fail: { nextFight: -3, wear: 1 },
+        failText: "Wujek pana m\u0142odego chce si\u0119 si\u0142owa\u0107 na r\u0119k\u0119. Potem drugi wujek. Wracasz o pi\u0105tej."
+      }
+    ]
+  },
+  {
+    id: "zatrucie",
+    title: "Co\u015B by\u0142o nie tak z kebabem",
+    w: 4,
+    text: () => "Dwa dni przed walk\u0105 budzisz si\u0119 o drugiej w nocy. Kebab z dworca okaza\u0142 si\u0119 b\u0142\u0119dem. \u017Bo\u0142\u0105dek robi salta, a wa\u017Cenie jutro rano.",
+    choices: (s) => [
+      { label: "Lekarz gali i kropl\xF3wka", desc: "Pewne, ale kosztuje i troch\u0119 os\u0142abia.", effects: { money: -zl4(s, 300), nextFight: -1 } },
+      {
+        label: "Przetrzymujesz na wodzie z sol\u0105",
+        desc: "Domowy spos\xF3b babci.",
+        chance: 60,
+        success: { nextFight: 0, note: "babcia mia\u0142a racj\u0119" },
+        successText: "Rano jak nowy. Babcia na Mesend\u017Cerze pisze \u201Ea nie m\xF3wi\u0142am\u201D.",
+        fail: { nextFight: -3 },
+        failText: "Do walki wchodzisz blady jak \u015Bciana. Naro\u017Cnik pyta, czy na pewno dasz rad\u0119."
+      }
+    ]
+  },
+  {
+    id: "waga_rywala",
+    title: "Rywal nie zrobi\u0142 wagi",
+    w: 4,
+    cond: (s, o) => !o.title && !o.wantPress && s.tier >= 1,
+    text: (_s, o) => `${o.opp.firstName} ${o.opp.lastName} na wa\u017Ceniu: p\xF3\u0142tora kilo za du\u017Co. Organizator pyta, czy mimo to wychodzisz do walki. Rywal oddaje ci 20% swojej ga\u017Cy.`,
+    choices: (_s, o) => [
+      { label: "Walczysz i bierzesz jego pieni\u0105dze", desc: "B\u0119dzie ci\u0119\u017Cszy, ale kasa jest kasa.", effects: { money: Math.round(o.purse * 0.2 / 100) * 100, nextFight: -1 } },
+      {
+        label: "\u017B\u0105dasz premii od organizatora",
+        desc: "Albo dop\u0142ac\u0105, albo uznaj\u0105 ci\u0119 za kapry\u015Bnego.",
+        chance: 50,
+        success: { money: Math.round(o.purse * 0.4 / 100) * 100, nextFight: -1 },
+        successText: "Organizator wzdycha i dop\u0142aca. Rywal nawet nie patrzy ci w oczy na face to face.",
+        fail: { rep: -2, money: Math.round(o.purse * 0.2 / 100) * 100, nextFight: -1 },
+        failText: "Organizator m\xF3wi, \u017Ce \u201Egwiazdorzysz\u201D. Dostajesz tylko te 20%, a w mediach kto\u015B nazywa ci\u0119 primadonn\u0105."
+      },
+      { label: "\u201ENiech je, mnie to nie robi r\xF3\u017Cnicy\u201D", desc: "Pokaz pewno\u015Bci siebie przed kamerami.", effects: { rep: 2, nextFight: -1, media: 1 } }
+    ]
+  },
+  {
+    id: "kibice",
+    title: "Autokar z twojego miasta",
+    w: 4,
+    text: (s) => `Pod hotel podje\u017Cd\u017Ca autokar. Tablica: ${s.profile.hometown}. Pi\u0119\u0107dziesi\u0105t os\xF3b w koszulkach z twoj\u0105 twarz\u0105, transparent i b\u0119ben. Chc\u0105 zdj\u0119cie. Ka\u017Cdy.`,
+    choices: () => [
+      { label: "Wychodzisz do nich na godzin\u0119", desc: "Zdj\u0119cia, autografy, u\u015Bciski od cio\u0107.", effects: { rep: 2, media: 1, nextFight: 1, note: "ciocia p\u0142acze ze wzruszenia" } },
+      { label: "Machasz z okna i wracasz do planu", desc: "Skupienie przed walk\u0105 jest wa\u017Cniejsze.", effects: { nextFight: 1, rep: -1 } }
+    ]
+  },
+  {
+    id: "trener_chory",
+    title: "Trener z gor\u0105czk\u0105",
+    w: 3,
+    text: () => "Trzy dni przed gal\u0105 trener dzwoni z \u0142\xF3\u017Cka: 39 stopni. W naro\u017Cniku stanie asystent, kt\xF3ry dwa razy w \u017Cyciu trzyma\u0142 tarcze.",
+    choices: (s) => [
+      { label: "Bierzesz asystenta", desc: "M\u0142ody, ch\u0119tny, przera\u017Cony.", effects: { nextFight: -2 } },
+      {
+        label: "Dzwonisz do swojego pierwszego trenera",
+        desc: "Przyjedzie, ale trzeba mu op\u0142aci\u0107 podr\xF3\u017C i nocleg.",
+        effects: { money: -zl4(s, 500), relations: 1, nextFight: 0, note: "stary trener m\xF3wi \u201Ejak za dawnych lat\u201D" }
+      }
+    ]
+  },
+  {
+    id: "grozba",
+    title: "Ten sam samoch\xF3d pod hotelem",
+    w: 4,
+    cond: (_s, o) => !!o.hype?.dm || !!o.opp.freak || !!o.rival,
+    text: () => "Trzeci dzie\u0144 z rz\u0119du pod hotelem stoi ten sam czarny samoch\xF3d z przyciemnianymi szybami. Kto\u015B robi zdj\u0119cia, jak wychodzisz na rozruch.",
+    choices: () => [
+      { label: "Zg\u0142aszasz ochronie federacji", desc: "Niech si\u0119 tym zajm\u0105 profesjonali\u015Bci.", effects: { nextFight: 0, note: "ochrona spisuje numery" } },
+      {
+        label: "Podchodzisz i pukasz w szyb\u0119",
+        desc: "Raz si\u0119 \u017Cyje.",
+        chance: 60,
+        success: { nextFight: 1, media: 1 },
+        successText: "W \u015Brodku fan z aparatem. Przeprasza, prosi o autograf i odje\u017Cd\u017Ca. \u015Amiejesz si\u0119 ca\u0142y dzie\u0144.",
+        fail: { nextFight: -2 },
+        failText: "Samoch\xF3d odje\u017Cd\u017Ca z piskiem opon. Nie \u015Bpisz do rana, ka\u017Cdy d\u017Awi\u0119k na korytarzu brzmi jak kroki."
+      },
+      {
+        label: "Ignorujesz",
+        desc: "Nie dajesz si\u0119 wci\u0105gn\u0105\u0107 w gierki.",
+        chance: 70,
+        success: { nextFight: 0 },
+        successText: "Samoch\xF3d znika po dniu. Pewnie nic takiego.",
+        fail: { nextFight: -1 },
+        failText: "Niby ignorujesz, ale w g\u0142owie siedzi. Na rozruchu jeste\u015B spi\u0119ty."
+      }
+    ]
+  },
+  {
+    id: "media_day",
+    title: "Media day",
+    w: 5,
+    text: (_s, o) => `Media day przed gal\u0105. Dziennikarka z telewizji pyta, czy to prawda, \u017Ce ${o.opp.lastName} sparowa\u0142 z twoim by\u0142ym klubem i \u201Ezna wszystkie twoje sekrety\u201D.`,
+    choices: () => [
+      { label: "\u201ENiech zna. I tak go zaskocz\u0119.\u201D", desc: "Pewno\u015B\u0107 siebie dobrze wygl\u0105da w telewizji.", effects: { media: 1, rep: 1 } },
+      {
+        label: "Zmieniasz plan na ostatni\u0105 chwil\u0119",
+        desc: "Nowa taktyka trzy dni przed walk\u0105. Ryzykowne.",
+        chance: 50,
+        success: { nextFight: 2 },
+        successText: "Trener rysuje nowy plan na serwetce. Rywal b\u0119dzie zaskoczony.",
+        fail: { nextFight: -2 },
+        failText: "Nowy plan miesza ci w g\u0142owie. Na rozgrzewce mylisz kombinacje."
+      },
+      { label: "Wychodzisz z wywiadu", desc: "Nie b\u0119dziesz odpowiada\u0142 na plotki.", effects: { media: 2, rep: -1 } }
+    ]
+  },
+  {
+    id: "sauna",
+    title: "Sauna nieczynna",
+    w: 5,
+    cond: (s) => (s.diet ?? "norma") !== "catering" && (s.division ?? s.profile.weight) !== "ciezka",
+    text: () => "Dzie\u0144 przed wa\u017Ceniem, a hotelowa sauna \u201Ew remoncie\u201D. Do limitu brakuje ci jeszcze kilograma.",
+    choices: (s) => [
+      { label: "Szukasz prywatnej sauny w mie\u015Bcie", desc: "Taks\xF3wka, p\u0142atne wej\u015Bcie, ale waga zejdzie.", effects: { money: -zl4(s, 200) } },
+      {
+        label: "Gor\u0105ca k\u0105piel i folia",
+        desc: "Stary spos\xF3b zawodnik\xF3w.",
+        chance: 65,
+        success: { nextFight: 0 },
+        successText: "Kilogram schodzi do rana. Hotelowa wanna nigdy nie widzia\u0142a tyle potu.",
+        fail: { nextFight: -2, wear: 1 },
+        failText: "Waga schodzi, ale razem z si\u0142ami. Na wa\u017Ceniu kr\u0119ci ci si\u0119 w g\u0142owie."
+      }
+    ]
+  },
+  {
+    id: "walizka",
+    once: true,
+    title: "Baga\u017C polecia\u0142 do Lizbony",
+    w: 3,
+    text: (s) => `Na lotnisku ta\u015Bma kr\u0119ci si\u0119 pusta. Twoja torba z r\u0119kawicami, spodenkami i ochraniaczem polecia\u0142a podobno do Lizbony. Walka za dwa dni. ${s.profile.firstName}, masz na sobie dres i klapki.`,
+    choices: (s) => [
+      { label: "Kupujesz wszystko od nowa", desc: "Sklep sportowy przy galerii, ceny jak na lotnisku.", effects: { money: -zl4(s, 450) } },
+      {
+        label: "Po\u017Cyczasz od ch\u0142opak\xF3w z innych klub\xF3w",
+        desc: "Spodenki dwa rozmiary za du\u017Ce, ale s\u0105.",
+        chance: 70,
+        success: { rep: 1, note: "p\xF3\u0142 szatni ma u ciebie piwo" },
+        successText: "Kto\u015B po\u017Cycza r\u0119kawice, kto\u015B spodenki, kto\u015B ochraniacz (\u201Ewygotowany, przysi\u0119gam\u201D). Szatnia dawno nie by\u0142a tak zgrana.",
+        fail: { nextFight: -1 },
+        failText: "Spodenki spadaj\u0105 przy ka\u017Cdym kopni\u0119ciu. Na rozgrzewce trzymasz je jedn\u0105 r\u0119k\u0105."
+      },
+      {
+        label: "Piszesz posta z p\u0142aczem do linii lotniczych",
+        desc: "Mo\u017Ce si\u0119 rozniesie.",
+        chance: 45,
+        success: { media: 3, note: "linia lotnicza przeprasza na Instagrymie" },
+        successText: "Post wybucha. Linia lotnicza przysy\u0142a kuriera z torb\u0105 i voucher na lot. Ludzie pisz\u0105, \u017Ce to lepsze ni\u017C serial.",
+        fail: { money: -zl4(s, 450), media: 1 },
+        failText: "Linia odpisuje automatem: \u201ETwoje zg\u0142oszenie jest dla nas wa\u017Cne\u201D. Kupujesz wszystko od nowa."
+      }
+    ]
+  },
+  {
+    id: "byla",
+    once: true,
+    title: "\u201EPowodzenia \u2764\uFE0F\u201D",
+    w: 3,
+    text: () => "Trzy dni przed walk\u0105, 23:47. By\u0142a pisze \u201Epowodzenia \u2764\uFE0F\u201D. Pierwsza wiadomo\u015B\u0107 od dw\xF3ch lat. Telefon le\u017Cy na ko\u0142drze i \u015Bwieci.",
+    choices: () => [
+      {
+        label: "Odpisujesz \u201Edzi\u0119ki\u201D",
+        desc: "Kr\xF3tko i kulturalnie.",
+        chance: 55,
+        success: { nextFight: 0 },
+        successText: "Odpisuje kciukiem. Koniec rozmowy. Zasypiasz po godzinie gapienia si\u0119 w sufit.",
+        fail: { nextFight: -1 },
+        failText: "Odpisuje elaboratem. Ko\u0144czycie o trzeciej, a ty nie wiesz ju\u017C, kto kogo zostawi\u0142."
+      },
+      { label: "Blokujesz numer", desc: "Tydzie\u0144 walki to tydzie\u0144 walki.", effects: { nextFight: 1, note: "telefon na noc do szuflady" } },
+      { label: "Pokazujesz trenerowi", desc: "On wie, co z tym zrobi\u0107.", effects: { nextFight: 1, relations: 1, note: "trener: \u201Eusu\u0144 i spa\u0107\u201D" } }
+    ]
+  },
+  {
+    id: "paczek",
+    title: "Zdj\u0119cie z p\u0105czkiem",
+    w: 3,
+    text: (s) => `Portal plotkarski wrzuca zdj\u0119cie: ${s.profile.firstName} ${s.profile.lastName} przed piekarni\u0105, z p\u0105czkiem w r\u0119ce. Tytu\u0142: \u201ETak si\u0119 przygotowuje do walki?!\u201D. To by\u0142 p\u0105czek dla mamy.`,
+    choices: () => [
+      { label: "Wrzucasz zdj\u0119cie mamy z tym p\u0105czkiem", desc: "Dow\xF3d rzeczowy.", effects: { media: 3, rep: 1, note: "mama ma 4 tys. polubie\u0144" } },
+      {
+        label: "Zjadasz p\u0105czka na live\u2019ie",
+        desc: "Skoro i tak ju\u017C o tym pisz\u0105.",
+        chance: 50,
+        success: { media: 4 },
+        successText: "Live ogl\u0105da dziesi\u0119\u0107 tysi\u0119cy ludzi. Kto\u015B robi z tego remix. Nawet rywal pisze \u201Eszacun\u201D.",
+        fail: { media: 2, nextFight: -1 },
+        failText: "\u015Amieszne by\u0142o przez minut\u0119. Waga nast\u0119pnego dnia: p\xF3\u0142 kilo wi\u0119cej. Trener nie odzywa si\u0119 do wieczora."
+      },
+      { label: "Nie komentujesz", desc: "P\u0105czek zniesie wszystko.", effects: {} }
+    ]
+  },
+  {
+    id: "sloiki",
+    title: "Mama w recepcji",
+    w: 3,
+    text: () => "Recepcja dzwoni do pokoju: \u201EPana mama przyjecha\u0142a. Ma ze sob\u0105\u2026 du\u017Co s\u0142oik\xF3w\u201D. Ros\xF3\u0142, go\u0142\u0105bki, pierogi i bigos na wszelki wypadek.",
+    choices: () => [
+      { label: "Jesz ros\xF3\u0142, reszt\u0119 rozdajesz w szatni", desc: "Ros\xF3\u0142 to nie dieta, to lekarstwo.", effects: { nextFight: 1, rep: 1, relations: 1, note: "ca\u0142a karta walk zna twoj\u0105 mam\u0119" } },
+      {
+        label: "Wszystko zjadasz po wa\u017Ceniu",
+        desc: "Po wa\u017Ceniu wolno.",
+        chance: 60,
+        success: { nextFight: 2, relations: 1 },
+        successText: "Po wa\u017Ceniu ros\xF3\u0142, go\u0142\u0105bki i pierogi. Na walk\u0119 wchodzisz jak po trzech tygodniach wakacji.",
+        fail: { nextFight: -2 },
+        failText: "Bigos by\u0142 b\u0142\u0119dem. Wiedzia\u0142e\u015B, \u017Ce bigos b\u0119dzie b\u0142\u0119dem."
+      },
+      { label: "Odsy\u0142asz z pozdrowieniami", desc: "Dieta to dieta.", effects: { relations: -1, nextFight: 0 } }
+    ]
+  },
+  {
+    id: "propozycja",
+    title: "Propozycja przy automacie z kaw\u0105",
+    w: 2,
+    cond: (s) => s.tier >= 1,
+    text: (s) => `Przy automacie z kaw\u0105 podchodzi go\u015B\u0107 w za du\u017Cej marynarce. M\xF3wi, \u017Ce \u201Ema znajomych w zak\u0142adach\u201D i \u017Ce ${zl4(s, 4e3)} z\u0142 czeka, je\u015Bli \u201Ezm\u0119czysz si\u0119\u201D w drugiej rundzie.`,
+    choices: () => [
+      { label: "Odmawiasz i zg\u0142aszasz federacji", desc: "Tak si\u0119 to robi.", effects: { rep: 3, media: 1, note: "federacja dzi\u0119kuje i prosi o dyskrecj\u0119" } },
+      {
+        label: "Udajesz zainteresowanie i nagrywasz",
+        desc: "Dziennikarze \u015Bledczy by si\u0119 ucieszyli.",
+        chance: 45,
+        success: { media: 5, rep: 2, note: "nagranie trafia do medi\xF3w" },
+        successText: "Nagranie trafia do medi\xF3w. P\xF3\u0142 Polski pisze o \u201Emafii w MMA\u201D, a ty jeste\u015B bohaterem dnia.",
+        fail: { nextFight: -2, rep: -1 },
+        failText: "Go\u015B\u0107 orientuje si\u0119 i znika. Do walki ogl\u0105dasz si\u0119 przez rami\u0119, a w sieci kto\u015B pisze, \u017Ce \u201Eco\u015B wiedzia\u0142e\u015B\u201D."
+      },
+      { label: "Odchodzisz bez s\u0142owa", desc: "Nie twoja sprawa.", effects: { nextFight: -1 } }
+    ]
+  },
+  {
+    id: "open_workout",
+    title: "Trening otwarty w galerii",
+    w: 4,
+    text: (s) => `Organizator robi trening otwarty w galerii handlowej, mi\u0119dzy drogeri\u0105 a budk\u0105 z kebabem. Dwie\u015Bcie os\xF3b, dzieci z telefonami i babcia, kt\xF3ra my\u015Bli, \u017Ce to pokaz ${s.tier >= 2 ? "zumby" : "odkurzaczy"}.`,
+    choices: () => [
+      {
+        label: "Robisz salto na zako\u0144czenie",
+        desc: "Ostatni raz robi\u0142e\u015B je w gimnazjum.",
+        chance: 40,
+        success: { media: 4, nextFight: 1 },
+        successText: "L\u0105duje! Galeria bije brawo, a nagranie kr\u0105\u017Cy po sieci. Babcia pyta, gdzie mo\u017Cna kupi\u0107 ten odkurzacz.",
+        fail: { media: 2, wear: 2, nextFight: -1 },
+        failText: "L\u0105dujesz na pupie. Nagranie i tak kr\u0105\u017Cy po sieci, tylko z inn\u0105 muzyk\u0105."
+      },
+      { label: "Spokojne tarcze z trenerem", desc: "Pokaz, nie cyrk.", effects: { rep: 1, media: 1 } },
+      { label: "Uczysz dzieciaki d\u017Awigni na tacie", desc: "Tata si\u0119 zg\u0142osi\u0142 sam.", effects: { media: 2, rep: 2, note: "tata klepie po trzech sekundach" } }
+    ]
+  },
+  {
+    id: "sedzia",
+    title: "Wiesz ju\u017C, kto s\u0119dziuje",
+    w: 3,
+    text: (_s, o) => `Lista s\u0119dzi\xF3w wisi na drzwiach szatni. Twoj\u0105 walk\u0119 (rywal: ${o.opp.lastName}) prowadzi \u201ESzybki Zdzis\u0142aw\u201D, kt\xF3ry przerywa, zanim ktokolwiek zd\u0105\u017Cy upa\u015B\u0107.`,
+    choices: () => [
+      { label: "Ustawiasz plan na szybki finisz", desc: "Jak trafisz, on przerwie.", effects: { nextFight: 1, note: "pierwsza seria ma by\u0107 mocna" } },
+      { label: "Plan: zero ryzyka w st\xF3jce", desc: "Jak ci\u0119 trafi\u0105, on te\u017C przerwie.", effects: { nextFight: 1 } },
+      {
+        label: "Idziesz pogada\u0107 z s\u0119dzi\u0105",
+        desc: "Grzecznie, o zasadach.",
+        chance: 50,
+        success: { rep: 1, nextFight: 1 },
+        successText: "S\u0119dzia okazuje si\u0119 mi\u0142ym panem, kt\xF3ry trenowa\u0142 judo. Wiesz ju\u017C, czego si\u0119 spodziewa\u0107.",
+        fail: { rep: -2 },
+        failText: "S\u0119dzia patrzy na ciebie jak na kogo\u015B, kto pr\xF3buje co\u015B za\u0142atwi\u0107. Federacja dostaje notatk\u0119."
+      }
+    ]
+  },
+  {
+    id: "sponsor_tylek",
+    once: true,
+    title: "Logo na po\u015Bladku",
+    w: 3,
+    text: (s) => `Dzwoni lokalna hurtownia p\u0142ytek (${s.profile.hometown}): ${zl4(s, 600)} z\u0142 za logo na spodenkach. Jedyne wolne miejsce: ty\u0142. Nazwa firmy: \u201EKafel-Max\u201D.`,
+    choices: (s) => [
+      { label: "Bierzesz, pieni\u0105dz nie \u015Bmierdzi", desc: "Kafel-Max na po\u015Bladku.", effects: { money: zl4(s, 600), media: 1, note: "komentator czyta logo na g\u0142os" } },
+      {
+        label: "Negocjujesz prz\xF3d spodenek za wi\u0119cej",
+        desc: "Prz\xF3d to presti\u017C.",
+        chance: 45,
+        success: { money: zl4(s, 1100) },
+        successText: "Pan Mirek z Kafel-Maxu m\xF3wi \u201Edobra, niech pan ma\u201D. Prz\xF3d spodenek wyceniony.",
+        fail: { money: 0 },
+        failText: "Pan Mirek si\u0119 obra\u017Ca i dzwoni do twojego rywala."
+      },
+      { label: "Odmawiasz", desc: "Szacunek do siebie.", effects: { rep: 1 } }
+    ]
+  },
+  {
+    id: "korek",
+    title: "Korek na A2",
+    w: 3,
+    cond: (_s, o) => !o.abroad,
+    text: () => "Autobus z klubu stoi na A2 od trzech godzin. Wypadek, objazdu brak, odprawa przed wa\u017Ceniem za cztery godziny. Kierowca w\u0142\u0105cza radio i rozk\u0142ada r\u0119ce.",
+    choices: (s) => [
+      { label: "Taks\xF3wka z najbli\u017Cszego zjazdu", desc: "Przez pole do zjazdu, potem 180 km.", effects: { money: -zl4(s, 500) } },
+      {
+        label: "Czekasz i rozci\u0105gasz si\u0119 na poboczu",
+        desc: "Kierowcy tr\u0105bi\u0105, kto\u015B nagrywa.",
+        chance: 60,
+        success: { media: 1 },
+        successText: "Ruszacie po godzinie. Na odpraw\u0119 wpadasz w ostatniej minucie, rozci\u0105gni\u0119ty jak nigdy.",
+        fail: { nextFight: -2 },
+        failText: "Na wa\u017Cenie docierasz w ostatniej chwili, zestresowany i g\u0142odny. Ten dzie\u0144 siedzi w nogach."
+      }
+    ]
+  },
+  {
+    id: "popchniecie",
+    title: "Popchni\u0119cie na face to face",
+    w: 4,
+    cond: (s) => s.tier >= 1,
+    text: (_s, o) => `Face to face po wa\u017Ceniu. ${o.opp.lastName} podchodzi za blisko i popycha ci\u0119 obur\u0105cz. Flesze, ochrona ju\u017C biegnie, a prowadz\u0105cy krzyczy \u201Epanowie, w klatce!\u201D.`,
+    choices: () => [
+      { label: "Stoisz i si\u0119 u\u015Bmiechasz", desc: "Najbardziej wkurzaj\u0105ce, co mo\u017Cesz zrobi\u0107.", effects: { rep: 2, nextFight: 1 } },
+      {
+        label: "Oddajesz",
+        desc: "Nikt ci\u0119 nie b\u0119dzie popycha\u0142.",
+        chance: 55,
+        success: { media: 4 },
+        successText: "Zdj\u0119cie z przepychanki jest na ok\u0142adce ka\u017Cdego portalu. Bilety na gal\u0119 schodz\u0105 jak ciep\u0142e bu\u0142ki.",
+        fail: { media: 3, money: -500, rep: -2 },
+        failText: "Federacja karze was obu grzywn\u0105, a nagranie wygl\u0105da tak, jakby\u015B zacz\u0105\u0142."
+      },
+      {
+        label: "M\xF3wisz mu co\u015B do ucha",
+        desc: "Nikt nie us\u0142yszy, on zapami\u0119ta.",
+        chance: 60,
+        success: { nextFight: 2 },
+        successText: "Rywal czerwienieje i rzuca si\u0119 do przodu. Ochrona go trzyma. Wygra\u0142e\u015B pierwsz\u0105 rund\u0119, zanim si\u0119 zacz\u0119\u0142a.",
+        fail: { nextFight: -1 },
+        failText: "Odpowiada co\u015B o twojej mamie. Ca\u0142\u0105 noc wymy\u015Blasz ripost\u0119."
+      }
+    ]
+  },
+  {
+    id: "dzieciak",
+    once: true,
+    title: "List od dzieciaka",
+    w: 3,
+    text: () => "Na recepcji czeka koperta. W \u015Brodku rysunek: ty z pasem i podpis krzywymi literami: \u201EJak wygrasz, dasz mi r\u0119kawice? Mam 9 lat i trenuj\u0119 od wtorku. Kuba\u201D.",
+    choices: () => [
+      { label: "Obiecujesz r\u0119kawice niezale\u017Cnie od wyniku", desc: "Wygrana czy nie, Kuba je dostanie.", effects: { rep: 2, nextFight: 1, note: "rysunek przyklejony w szafce" } },
+      { label: "Zapraszasz Kub\u0119 na rozgrzewk\u0119", desc: "Niech zobaczy szatni\u0119 od \u015Brodka.", effects: { media: 2, rep: 2, nextFight: 1 } }
+    ]
+  },
+  {
+    id: "antydoping",
+    once: true,
+    title: "Kontrola antydopingowa, 6:00",
+    w: 3,
+    cond: (s) => s.tier >= 1,
+    text: () => "Sz\xF3sta rano. Pukanie do drzwi: kontrola antydopingowa. Pan z kontroli ma w\u0105sy, termos i du\u017Co czasu. Ty po wieczornym zbijaniu wagi nie masz w sobie ani kropli wody.",
+    choices: (s) => [
+      { label: "Pijesz i czekasz", desc: "Trzy godziny z panem z w\u0105sami.", effects: { nextFight: -1, note: "pan z w\u0105sami opowiada o w\u0119dkowaniu" } },
+      {
+        label: "Puszczasz wod\u0119 w kranie",
+        desc: "Stara sztuczka.",
+        chance: 70,
+        success: { nextFight: 0 },
+        successText: "Dzia\u0142a po dziesi\u0119ciu minutach. Pan z w\u0105sami zostawia ci wizyt\xF3wk\u0119 \u201Egdyby\u015B chcia\u0142 na ryby\u201D.",
+        fail: { nextFight: -2 },
+        failText: "Nie dzia\u0142a. Siedzicie do jedenastej. Znasz ju\u017C wszystkie jego wnuki z imienia."
+      },
+      ...s.flags.labsAutoSupps || s.backroom?.supps ? [
+        {
+          label: "Nerwowo sprawdzasz sk\u0142ad od\u017Cywek",
+          desc: "Te od sponsora z dziwnymi nazwami\u2026",
+          chance: 75,
+          success: { nextFight: 0 },
+          successText: "Wszystko czyste. Wynik przychodzi po tygodniu: zero uwag.",
+          fail: { rep: -4, media: 2 },
+          failText: "Jeden ze sk\u0142adnik\xF3w jest \u201Ena pograniczu\u201D. Ko\u0144czy si\u0119 upomnieniem, ale portale ju\u017C pisz\u0105."
+        }
+      ] : []
+    ]
+  },
+  {
+    id: "kolano",
+    title: "Kolano strzyka na rozruchu",
+    w: 3,
+    text: () => "Lekki rozruch dzie\u0144 przed walk\u0105 i nagle kolano strzela. Nie boli bardzo, ale strzela przy ka\u017Cdym przysiadzie. Trener udaje, \u017Ce nie widzi.",
+    choices: (s) => [
+      { label: "Lekarz gali i zastrzyk", desc: "Bezpiecznie, ale p\u0142atnie.", effects: { money: -zl4(s, 300) } },
+      {
+        label: "Taping i jedziesz",
+        desc: "Kolano jest twarde. Chyba.",
+        chance: 65,
+        success: { nextFight: 0 },
+        successText: "Taping trzyma, kolano w walce w og\xF3le si\u0119 nie odzywa.",
+        fail: { nextFight: -2, wear: 2 },
+        failText: "Kolano daje zna\u0107 przy ka\u017Cdym kopni\u0119ciu. Kopiesz mniej, ni\u017C planowa\u0142e\u015B."
+      }
+    ]
+  },
+  {
+    id: "emo",
+    title: "Zdj\u0119cie z gimnazjum",
+    w: 3,
+    text: (s) => `Kto\u015B wygrzeba\u0142 twoje zdj\u0119cie z gimnazjum: grzywka na p\xF3\u0142 twarzy, kolczyk i podpis \u201E${s.profile.firstName}xD\u201D. Fani rywala robi\u0105 z tego memy szybciej, ni\u017C zd\u0105\u017Cysz si\u0119 zarumieni\u0107.`,
+    choices: () => [
+      { label: "Ustawiasz to zdj\u0119cie jako profilowe", desc: "Najlepsza obrona to atak.", effects: { media: 3, rep: 1, note: "rywal nie ma ju\u017C czym ci\u0119 zaczepi\u0107" } },
+      {
+        label: "Wrzucasz zdj\u0119cie rywala z komunii",
+        desc: "Kumpel z jego szko\u0142y podes\u0142a\u0142.",
+        chance: 60,
+        success: { media: 4 },
+        successText: "Wojna mem\xF3w wygrana. Komentarze: \u201E0:1 dla emo\u201D.",
+        fail: { media: 2, rep: -2 },
+        failText: "Internet uznaje, \u017Ce przesadzi\u0142e\u015B. Komunia to \u015Bwi\u0119to\u015B\u0107."
+      },
+      { label: "Udajesz, \u017Ce to nie ty", desc: "Grzywka zmienia twarz.", effects: { media: 1 } }
+    ]
+  },
+  {
+    id: "live_wywiad",
+    title: "Wywiad na \u017Cywo",
+    w: 3,
+    text: () => "Wywiad na \u017Cywo dla kana\u0142u federacji. Prowadz\u0105cy, zamiast o walk\u0119, pyta, co my\u015Blisz o nowym zwi\u0105zku pewnej celebrytki i czy \u201Eto prawda, \u017Ce jeste\u015Bcie znajomymi\u201D.",
+    choices: () => [
+      { label: "\u201ENie znam pani, ale \u017Cycz\u0119 szcz\u0119\u015Bcia\u201D", desc: "Dyplomacja.", effects: { rep: 1 } },
+      {
+        label: "Udajesz tajemniczego",
+        desc: "\u201ENie mog\u0119 o tym m\xF3wi\u0107\u201D.",
+        chance: 50,
+        success: { media: 5 },
+        successText: "Plotkarskie portale szalej\u0105 przez trzy dni. Twoje nazwisko pierwszy raz w zak\u0142adce \u201Egwiazdy\u201D.",
+        fail: { media: 2, rep: -2 },
+        failText: "Celebrytka dementuje na Instagrymie: \u201Ekto to w og\xF3le jest?\u201D. P\xF3\u0142 internetu pyta to samo."
+      },
+      { label: "Wracasz do tematu walki", desc: "Jeste\u015B tu, \u017Ceby si\u0119 bi\u0107.", effects: { nextFight: 1 } }
+    ]
+  },
+  {
+    id: "koledzy_z_bloku",
+    title: "Ekipa robi wyjazd",
+    w: 3,
+    text: () => `Ekipa z twojego miasta pisze na grupie, \u017Ce jedzie na gal\u0119. Busem. Z grillem. \u201EOdpalimy ci race przy wej\u015Bciu, spoko, nikt nie zauwa\u017Cy\u201D.`,
+    choices: () => [
+      { label: "Zakazujesz rac", desc: "Federacja i tak by zauwa\u017Cy\u0142a.", effects: { rep: 1, note: "race zostaj\u0105 w busie" } },
+      {
+        label: "Niech b\u0119dzie klimat",
+        desc: "Raz si\u0119 \u017Cyje.",
+        chance: 40,
+        success: { media: 3, nextFight: 1 },
+        successText: "Race, dym, sektor \u015Bpiewa twoje nazwisko. Wchodzisz do klatki jak na derby.",
+        fail: { money: -800, rep: -2, media: 2 },
+        failText: "Ochrona wyprowadza p\xF3\u0142 ekipy, a federacja wysy\u0142a ci faktur\u0119 za \u201Eszkody w obiekcie\u201D."
+      },
+      { label: "Za\u0142atwiasz im bilety w twoim sektorze", desc: "B\u0119d\u0105 blisko i pod kontrol\u0105.", effects: { rep: 1, relations: 1 } }
+    ]
+  },
+  {
+    id: "wesele",
+    title: "Wesele za \u015Bcian\u0105",
+    w: 4,
+    text: () => "Hotel przed gal\u0105 okazuje si\u0119 te\u017C sal\u0105 weseln\u0105. O p\xF3\u0142nocy \u201ESto lat\u201D, o pierwszej \u201EJeste\u015B szalona\u201D, o drugiej kto\u015B puka do twojego pokoju i pyta, czy nie widzia\u0142e\u015B pana m\u0142odego.",
+    choices: (s) => [
+      {
+        label: "Zatyczki i poduszka na g\u0142ow\u0119",
+        desc: "Klasyka hotelowego przetrwania.",
+        chance: 55,
+        success: { nextFight: 0 },
+        successText: "Zasypiasz przy \u201EBayer full\u201D jak przy ko\u0142ysance. Rano czujesz si\u0119 dziwnie wypocz\u0119ty.",
+        fail: { nextFight: -1 },
+        failText: "Zatyczki wypadaj\u0105 przy pierwszych oczepinach. \u015Apisz trzy godziny, \u015Bni\u0105 ci si\u0119 przy\u015Bpiewki."
+      },
+      { label: "Zmieniasz pok\xF3j na drugi koniec hotelu", desc: "Recepcja chce dop\u0142aty \u201Eza standard\u201D.", effects: { money: -zl4(s, 250), nextFight: 1, note: "pok\xF3j przy windzie, ale cicho" } },
+      {
+        label: "Schodzisz na pi\u0119\u0107 minut z\u0142o\u017Cy\u0107 \u017Cyczenia",
+        desc: "Para m\u0142oda rozpoznaje ci\u0119 z plakatu.",
+        chance: 50,
+        success: { media: 2, rep: 1, note: "zdj\u0119cie z par\u0105 m\u0142od\u0105 kr\u0105\u017Cy po sieci" },
+        successText: "Pan m\u0142ody \u015Bciska ci\u0119 jak brata, wujek pokazuje \u201Egard\u0119 z wojska\u201D. Zdj\u0119cie z wesela ma wi\u0119cej lajk\xF3w ni\u017C tw\xF3j plakat.",
+        fail: { nextFight: -1, media: 1 },
+        failText: "Pi\u0119\u0107 minut zamienia si\u0119 w godzin\u0119. Ciocia panny m\u0142odej uczy ci\u0119 krok\xF3w do \u201EOna ta\u0144czy dla mnie\u201D."
+      }
+    ]
+  },
+  {
+    id: "tatuaz",
+    title: "Twoja twarz na \u0142ydce",
+    w: 3,
+    once: true,
+    text: () => "Na otwartym treningu podchodzi fan i podwija nogawk\u0119. Na \u0142ydce twoja twarz. To znaczy: kto\u015B \u0142ysy z w\u0105sem, podobny do ciebie jak s\u0105siad z parteru do aktora z Hollywood. \u201ENajlepszy tatua\u017Cysta w powiecie\u201D \u2014 m\xF3wi z dum\u0105.",
+    choices: (s) => [
+      { label: "Zdj\u0119cie i autograf obok tatua\u017Cu", desc: "D\u0142ugopisem. Na \u0142ydce.", effects: { media: 2, rep: 1, note: "fan obiecuje, \u017Ce autograf te\u017C wytatuuje" } },
+      { label: "Fundujesz mu poprawk\u0119 u dobrego tatua\u017Cysty", desc: "Niech chocia\u017C w\u0105sa nie b\u0119dzie.", effects: { money: -zl4(s, 400), rep: 2, media: 1, note: "poprawka um\xF3wiona na wtorek" } },
+      { label: "M\xF3wisz, \u017Ce wysz\u0142o lepiej ni\u017C orygina\u0142", desc: "Dyplomacja.", effects: { rep: 1 } }
+    ]
+  },
+  {
+    id: "plakat_blad",
+    title: "Plakat z b\u0142\u0119dem",
+    w: 3,
+    once: true,
+    text: (_s, o) => `Plakaty gali wisz\u0105 ju\u017C na mie\u015Bcie. Twoje zdj\u0119cie jest, tylko podpisane nazwiskiem rywala: \u201E${o.opp.lastName.toUpperCase()}\u201D. Organizator: \u201EWydrukowali\u015Bmy pi\u0119\u0107 tysi\u0119cy sztuk. Nikt nie zauwa\u017Cy\u201D.`,
+    choices: () => [
+      { label: "\u017B\u0105dasz poprawki", desc: "Organizator dodrukuje naklejki.", effects: { rep: 1, note: "naklejki z nazwiskiem krzywo przyklejone na ka\u017Cdym plakacie" } },
+      {
+        label: "Robisz z tego \u017Cart w sieci",
+        desc: "Zdj\u0119cie plakatu z podpisem \u201EKim ja jestem?\u201D.",
+        chance: 60,
+        success: { media: 3, note: "plakat z b\u0142\u0119dem sprzedaje si\u0119 jako kolekcjonerski" },
+        successText: "Internet kocha ten plakat. Organizator sprzedaje \u201Ewersj\u0119 z b\u0142\u0119dem\u201D po dwie st\xF3wy i udaje, \u017Ce to by\u0142 plan.",
+        fail: { media: 1, rep: -1 },
+        failText: "\u017Bart nie chwyta. Po\u0142owa komentarzy pyta, czy naprawd\u0119 zmieni\u0142e\u015B nazwisko."
+      },
+      { label: "Zbierasz kilka plakat\xF3w na pami\u0105tk\u0119", desc: "Kiedy\u015B b\u0119d\u0105 warte fortun\u0119. Albo nie.", effects: { relations: 1, note: "mama wiesza plakat w przedpokoju" } }
+    ]
+  },
+  {
+    id: "rekawice",
+    title: "Nowe r\u0119kawice federacji",
+    w: 3,
+    text: () => "Federacja zmieni\u0142a sponsora r\u0119kawic. Nowe s\u0105 twarde jak deska do krojenia i cisn\u0105 w kciuku. Do walki trzy dni.",
+    choices: () => [
+      {
+        label: "Rozbijasz je na worku do nocy",
+        desc: "Stary spos\xF3b. Kciuk i tak zaboli.",
+        chance: 60,
+        success: { nextFight: 1 },
+        successText: "Po trzech godzinach r\u0119kawice uk\u0142adaj\u0105 si\u0119 do d\u0142oni. Kciuk \u017Cyje, ty te\u017C.",
+        fail: { wear: 1, nextFight: -1 },
+        failText: "R\u0119kawice wygrywaj\u0105. Kciuk puchnie, a ty banda\u017Cujesz go na zapas."
+      },
+      {
+        label: "Prosisz o inny rozmiar",
+        desc: "Pan od sprz\u0119tu \u201Ezobaczy, co da si\u0119 zrobi\u0107\u201D.",
+        chance: 45,
+        success: { nextFight: 1, note: "pan od sprz\u0119tu ma jednak zapas" },
+        successText: "Pan od sprz\u0119tu wyci\u0105ga z baga\u017Cnika par\u0119 o p\xF3\u0142 rozmiaru wi\u0119ksz\u0105. Pasuj\u0105 jak ula\u0142.",
+        fail: { nextFight: 0 },
+        failText: "Pan od sprz\u0119tu zobaczy\u0142. Nie da si\u0119 nic zrobi\u0107."
+      },
+      { label: "Walczysz w tym, co daj\u0105", desc: "Rywal ma takie same.", effects: { nextFight: 0, note: "obaj macie twarde r\u0119kawice" } }
+    ]
+  },
+  {
+    id: "tiktoker",
+    title: "\u201EDzie\u0144 z \u017Cycia zawodnika\u201D",
+    w: 3,
+    text: () => "Tiktoker z milionem obserwuj\u0105cych chce nagra\u0107 \u201Edzie\u0144 z \u017Cycia zawodnika przed walk\u0105\u201D. Od rana do wieczora, z kamer\u0105 przy twarzy i pytaniami w stylu \u201Ea co jesz na \u015Bniadanie, bro?\u201D.",
+    choices: () => [
+      { label: "Ca\u0142y dzie\u0144, bez cenzury", desc: "Zasi\u0119gi jak na gali freak fight.", effects: { media: 4, nextFight: -1, note: "p\xF3\u0142 internetu wie, ile jesz jajek" } },
+      { label: "Kwadrans na treningu i koniec", desc: "Tylko tarcze, bez wywiadu.", effects: { media: 1 } },
+      { label: "Odmawiasz", desc: "\u201EBro, jestem w obozie.\u201D", effects: { nextFight: 1 } }
+    ]
+  },
+  {
+    id: "lot",
+    title: "Lot odwo\u0142any",
+    w: 3,
+    cond: (_s, o) => !!o.abroad,
+    text: (_s, o) => `Burza nad lotniskiem, lot do miasta ${o.abroad} odwo\u0142any. Nast\u0119pny jutro wieczorem. Wa\u017Cenie pojutrze rano.`,
+    choices: (s) => [
+      { label: "Wynajmujesz auto i jedziesz noc\u0105", desc: "Dwana\u015Bcie godzin za kierownic\u0105 na zmian\u0119 z trenerem.", effects: { money: -zl4(s, 600), nextFight: -1, note: "trener prowadzi jak na rajdzie" } },
+      {
+        label: "Czekasz na jutrzejszy lot",
+        desc: "Hotel przy lotnisku i nerwy.",
+        chance: 60,
+        success: { nextFight: 0 },
+        successText: "Lot wylatuje o czasie. Wa\u017Cysz si\u0119 zm\u0119czony, ale na czas.",
+        fail: { nextFight: -2 },
+        failText: "Kolejne op\xF3\u017Anienie. L\u0105dujesz trzy godziny przed wa\u017Ceniem i jedziesz prosto na wag\u0119."
+      },
+      {
+        label: "Federacja organizuje busa dla zawodnik\xF3w",
+        desc: "Za darmo, z ca\u0142\u0105 kart\u0105 wst\u0119pn\u0105.",
+        chance: 55,
+        success: { rep: 1, note: "w busie gra si\u0119 w karty z rywalami" },
+        successText: "Bus pe\u0142en zawodnik\xF3w. Gracie w karty, a tw\xF3j przysz\u0142y rywal przegrywa ci pi\u0119\u0107 dych.",
+        fail: { nextFight: -1 },
+        failText: "Bus nie ma klimatyzacji, a kto\u015B z karty wst\u0119pnej zbija wag\u0119 w kurtce zimowej. Wszyscy si\u0119 pocicie."
+      }
+    ]
+  },
+  {
+    id: "nowe_nagranie",
+    title: "Rywal zmieni\u0142 pozycj\u0119",
+    w: 4,
+    text: (_s, o) => `Trener dzwoni o dziesi\u0105tej wieczorem: \u201EWrzucili nagranie z treningu ${genitive(o.opp.lastName)}. \u0106wiczy z odwrotnej pozycji. Albo to zmy\u0142ka, albo co\u015B szykuj\u0105\u201D.`,
+    choices: () => [
+      {
+        label: "Przestawiacie plan pod now\u0105 pozycj\u0119",
+        desc: "Trzy dni, \u017Ceby przestawi\u0107 g\u0142ow\u0119.",
+        chance: 50,
+        success: { nextFight: 2 },
+        successText: "Trafili\u015Bcie. W walce rywal wychodzi z odwrotnej, a ty masz na to gotow\u0105 odpowied\u017A.",
+        fail: { nextFight: -1 },
+        failText: "To by\u0142a zmy\u0142ka. Rywal walczy jak zawsze, a ty szukasz w g\u0142owie starego planu."
+      },
+      { label: "Trzymacie si\u0119 planu", desc: "\u201ENa nagraniach ka\u017Cdy jest mistrzem.\u201D", effects: { nextFight: 0 } },
+      {
+        label: "Dzwonisz do sparingpartnera, kt\xF3ry go zna",
+        desc: "Kosztuje piwo i godzin\u0119 rozmowy.",
+        chance: 65,
+        success: { nextFight: 1, note: "sparingpartner zna jego nawyki" },
+        successText: "Kumpel zna go z obozu: \u201EZ odwrotnej si\u0119 tylko popisuje. Jak si\u0119 zm\u0119czy, wraca do swojej\u201D.",
+        fail: { nextFight: 0 },
+        failText: "Kumpel pami\u0119ta tylko, \u017Ce \u201Eby\u0142 mi\u0142y i jad\u0142 du\u017Co ry\u017Cu\u201D."
+      }
+    ]
+  },
+  {
+    id: "kibice_rywala",
+    title: "Kibice rywala w hotelu",
+    w: 3,
+    cond: (_s, o) => !o.abroad,
+    text: (_s, o) => `W lobby hotelu siedzi kilkunastu kibic\xF3w ${genitive(o.opp.lastName)} w identycznych koszulkach. Na tw\xF3j widok zaczynaj\u0105 \u015Bpiewa\u0107. S\u0142abo, ale g\u0142o\u015Bno.`,
+    choices: () => [
+      { label: "Machasz i idziesz do windy", desc: "Z u\u015Bmiechem, bez s\u0142owa.", effects: { rep: 1 } },
+      {
+        label: "\u015Apiewasz razem z nimi",
+        desc: "Znasz ju\u017C s\u0142owa.",
+        chance: 55,
+        success: { media: 3, note: "nagranie z lobby ma milion wy\u015Bwietle\u0144" },
+        successText: "Kibice rywala si\u0119 \u015Bmiej\u0105 i robi\u0105 sobie z tob\u0105 zdj\u0119cie. Nagranie robi furor\u0119.",
+        fail: { media: 1, nextFight: -1 },
+        failText: "Kibice nie maj\u0105 poczucia humoru. \u015Apiewaj\u0105 pod twoimi drzwiami do pierwszej."
+      },
+      { label: "Prosisz ochron\u0119 o inne wej\u015Bcie", desc: "Zero nerw\xF3w przed walk\u0105.", effects: { nextFight: 1 } }
+    ]
+  }
+];
+function buildWeek(rng, s, o) {
+  const pool = WEEK_EVENTS.filter((e) => (!e.cond || e.cond(s, o)) && !(e.once && s.flags[`wk:${e.id}`])).map((e) => ({ e, w: e.w / (1 + 4 * (s.flags[`wk:${e.id}`] ?? 0)) }));
+  const tot = pool.reduce((a, x) => a + x.w, 0);
+  let r = rng.next() * tot;
+  let pick = pool[0].e;
+  for (const x of pool) {
+    r -= x.w;
+    if (r <= 0) {
+      pick = x.e;
+      break;
+    }
+  }
+  s.flags[`wk:${pick.id}`] = (s.flags[`wk:${pick.id}`] ?? 0) + 1;
+  return pick;
+}
+
+// src/engine/prolog.ts
+var COACH_NAMES = ["Mirek", "Waldek", "Heniek", "Zbyszek", "Rafa\u0142", "Grzesiek"];
+var STREETS = ["Przemys\u0142owa 4, wej\u015Bcie od gara\u017Cy", "Kolejowa 12, piwnica pod si\u0142owni\u0105", "Polna 3, za Pszcz\xF3\u0142k\u0105", "Sportowa 1, hala po starym PGR-ze", "Fabryczna 8, drugie pi\u0119tro, bez windy"];
+function hash(t) {
+  let h = 7;
+  for (const c of t) h = h * 31 + c.charCodeAt(0) >>> 0;
+  return h;
+}
+function clubCoachName(club) {
+  return `Trener ${COACH_NAMES[hash(club.name) % COACH_NAMES.length]}`;
+}
+function clubStreet(club) {
+  return `ul. ${STREETS[hash(club.city + club.name) % STREETS.length]}`;
+}
+var monthly = (c) => Math.max(100, Math.round(c.cost / 12 / 10) * 10);
+var PROLOG_EVENTS = [
+  {
+    id: "prolog_ekipa",
+    title: "Grupa",
+    once: true,
+    weight: 0,
+    cond: () => false,
+    text: (s) => {
+      const me = s.profile.firstName;
+      const c = s.club.name;
+      switch (s.profile.start) {
+        case "biznes":
+          return [
+            `Tata: Zapisa\u0142em ci\u0119 na MMA. ${c}. Prezes klubu kupuje u nas panele, wi\u0119c traktuj to powa\u017Cnie.`,
+            "Mama: Andrzej, on ma szesna\u015Bcie lat!",
+            "Tata: No w\u0142a\u015Bnie. Ja w jego wieku mia\u0142em ju\u017C pierwsz\u0105 hurtowni\u0119.",
+            "Ola: a mog\u0119 przyj\u015B\u0107 popatrze\u0107 jak mu lej\u0105? \u{1F37F}",
+            `Tata: ${me}, kierowca b\u0119dzie o 17:30. Nie przynie\u015B wstydu.`
+          ].join("\n");
+        case "junior":
+          return [
+            `Bartek: elo byki. w ${c} szukaj\u0105 zapa\u015Bnik\xF3w do MMA. m\xF3wi\u0105 \u017Ce w klatce zapa\u015Bnik to kr\xF3l \u{1F451}`,
+            `Trener Zenek: Bartek, nie m\u0105\u0107 mu w g\u0142owie. ${me} w marcu jedzie na mistrzostwa.`,
+            "Bartek: trenerze, w MMA p\u0142ac\u0105",
+            "Trener Zenek: W MMA bij\u0105 po g\u0142owie. Dlatego p\u0142ac\u0105.",
+            `Bartek: ${me} siema byku idziesz ze mn\u0105 na pr\xF3bny? wtorek 18:00`
+          ].join("\n");
+        case "wybraniec":
+          return [
+            `Nieznany numer: Dzie\u0144 dobry. M\xF3wi ${clubCoachName(s.club)}, ${c}.`,
+            "Nieznany numer: Kto\u015B mi podes\u0142a\u0142 nagranie z WF-u, jak po\u0142o\u017Cy\u0142e\u015B wuefist\u0119 na materac. Trzy razy.",
+            "Nieznany numer: Pan Andrzej twierdzi, \u017Ce si\u0119 po\u015Blizgn\u0105\u0142. Obejrza\u0142em to dziesi\u0119\u0107 razy. Nie po\u015Blizgn\u0105\u0142 si\u0119.",
+            "Nieznany numer: Mam dla ciebie miejsce w grupie zawodniczej. Za darmo. Wtorek 18:00."
+          ].join("\n");
+        default:
+          return [
+            `Seba: elo mordy \u{1F44B} w ${c} ruszy\u0142 nab\xF3r na MMA. pierwszy trening za free \u{1F94A}`,
+            "Dawid: seba a ty by\u015B si\u0119 bi\u0142 z kim? z go\u0142\u0119biem spod bloku?",
+            "Seba: zamknij dup\u0119 dawid",
+            `Seba: nie ja. ${me} idzie. ci\u0105gle gada \u017Ce by ka\u017Cdego po\u0142o\u017Cy\u0142 to niech poka\u017Ce`,
+            "Krzychu: \u{1F602}\u{1F602}\u{1F602} ja nagrywam",
+            `Seba: ${me} siema byku. wtorek 18:00. idziesz czy p\u0119kasz`
+          ].join("\n");
+      }
+    },
+    choices: (s) => {
+      switch (s.profile.start) {
+        case "biznes":
+          return [
+            { label: "B\u0119d\u0119 gotowy o 17:20.", desc: "Tata: Tak si\u0119 rozmawia.\nMama: We\u017A chocia\u017C kanapki.\nOla: wys\u0142a\u0142am ci link do ochraniaczy na z\u0119by, r\xF3\u017Cowe", effects: { rep: 1 } },
+            { label: "Mo\u017Ce pojad\u0119 rowerem? \u017Beby nie by\u0142o gadania.", desc: "Tata: Rowerem? Ludzie pomy\u015Bl\u0105, \u017Ce zbankrutowali\u015Bmy.\nMama: Ja tam uwa\u017Cam, \u017Ce to \u0142adnie.\nTata: Kierowca. 17:30.", effects: { relations: 1 } },
+            { label: "Ola, nie przychod\u017A.", desc: "Ola: ju\u017C wrzuci\u0142am na story \u017Ce idziesz \u{1F607}\nOla: 48 wy\u015Bwietle\u0144\nTata: Ola, skasuj to. Natychmiast.\nOla: 112 wy\u015Bwietle\u0144", effects: { media: 1 } }
+          ];
+        case "junior":
+          return [
+            { label: "Id\u0119. Zobacz\u0119, co to za klatka.", desc: "Bartek: TAK\nTrener Zenek: Zobaczysz. I wr\xF3cisz.\nBartek: trenerze to brzmi jak gro\u017Aba\nTrener Zenek: Bo to jest gro\u017Aba.", effects: { rep: 1 } },
+            { label: "Id\u0119, ale z mistrzostw nie rezygnuj\u0119, trenerze.", desc: "Trener Zenek: Trzymam za s\u0142owo.\nTrener Zenek: I \u017Cadnych kopni\u0119\u0107 w kolana. Kolana masz zapa\u015Bnicze, nie do kopania.\nBartek: \u{1F44D}", effects: { relations: 1 } },
+            { label: "Zapa\u015Bnik w klatce to kr\xF3l. Id\u0119.", desc: "Trener Zenek: Kr\xF3l. Do pierwszego kopni\u0119cia w g\u0142ow\u0119.\nBartek: kr\xF3l i jego wierny giermek \u{1F451}\nTrener Zenek: Bartek, ty te\u017C jedziesz w marcu. Pami\u0119taj.", effects: { media: 1 } }
+          ];
+        case "wybraniec":
+          return [
+            { label: "B\u0119d\u0119.", desc: "Nieznany numer: Kr\xF3tko. Lubi\u0119.\nNieznany numer: We\u017A ochraniacz na z\u0119by. I nie m\xF3w nikomu, \u017Ce za darmo, bo reszta p\u0142aci.", effects: { rep: 1 } },
+            { label: "Sk\u0105d pan ma m\xF3j numer?", desc: "Nieznany numer: Od twojej babci. Bardzo mi\u0142a pani.\nNieznany numer: Powiedzia\u0142a, \u017Ce jeste\u015B grzeczny ch\u0142opak i \u017Cebym ci\u0119 za mocno nie bi\u0142.\nNieznany numer: Nie obieca\u0142em.", effects: { relations: 1 } },
+            { label: "To on si\u0119 naprawd\u0119 po\u015Blizgn\u0105\u0142.", desc: "Nieznany numer: Trzy razy?\nNieznany numer: Wtorek, 18:00. Przynie\u015B te po\u015Blizgi.", effects: { media: 1 } }
+          ];
+        default:
+          return [
+            { label: "Id\u0119. Wtorek 18:00.", desc: "Dawid: o kurde serio\nSeba: bior\u0119 popcorn \u{1F37F}\nKrzychu: jak ci\u0119 po\u0142o\u017C\u0105 to nie p\u0142acz na grupie byku", effects: { rep: 1 } },
+            { label: "Id\u0119, ale jak mnie po\u0142o\u017C\u0105, stawiacie kebaba.", desc: "Seba: deal \u{1F32F}\nDawid: du\u017Cy podw\xF3jne mi\u0119so ostry. zapisuj\u0119\nKrzychu: ju\u017C wiemy kto p\u0142aci \u{1F602}", effects: { media: 1 } },
+            { label: "P\xF3jd\u0119, jak kto\u015B p\xF3jdzie ze mn\u0105.", desc: "Seba: dobra id\u0119 z tob\u0105. na rozgrzewk\u0119\nDawid: seba na MMA. to b\u0119dzie film roku\nSeba: zamknij mord\u0119 dawid", effects: { relations: 1 } }
+          ];
+      }
+    }
+  },
+  {
+    id: "prolog_trener",
+    title: "Trener",
+    once: true,
+    weight: 0,
+    cond: () => false,
+    text: (s) => {
+      const t = clubCoachName(s.club).replace("Trener ", "");
+      const lines = s.profile.start === "wybraniec" ? [`${clubCoachName(s.club)}: To ja jeszcze raz. Zapisz sobie numer: ${t}, trener.`] : [`${clubCoachName(s.club)}: Cze\u015B\u0107, tu ${t}, trener z ${s.club.name}. Dosta\u0142em tw\xF3j numer, \u017Ce chcesz przyj\u015B\u0107.`];
+      lines.push(
+        `${clubCoachName(s.club)}: Wtorek 18:00, ${clubStreet(s.club)}.`,
+        `${clubCoachName(s.club)}: We\u017A wod\u0119, r\u0119cznik i ochraniacz na z\u0119by. Pierwszy trening gratis, potem ${monthly(s.club)} z\u0142 miesi\u0119cznie.`,
+        `${clubCoachName(s.club)}: Jak prze\u017Cyjesz rozgrzewk\u0119, to po kilku tygodniach zrobimy sparing kontrolny. Zobacz\u0119, gdzie ci\u0119 wys\u0142a\u0107.`
+      );
+      return lines.join("\n");
+    },
+    choices: (s) => {
+      const t = clubCoachName(s.club);
+      return [
+        { label: "B\u0119d\u0119 17:45.", desc: `${t}: Dobrze. Sp\xF3\u017Anialscy robi\u0105 burpees. Du\u017Co burpees.`, effects: { rep: 1 } },
+        { label: "A ochraniacz na z\u0119by to jaki?", desc: `${t}: Taki, \u017Ceby z\u0119by zosta\u0142y w buzi.
+${t}: Za 30 z\u0142 w Dekatlonie. Wrzucasz do wrz\u0105tku i gryziesz. Nie odwrotnie.`, effects: { media: 1 } },
+        { label: "Trenerze, a da si\u0119 bez biegania?", desc: `${t}: \u{1F602}
+${t}: Nie.`, effects: { relations: 1 } }
+      ];
+    }
+  }
+];
 
 // src/engine/fighter.ts
 var clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -7654,11 +7784,11 @@ function pruneNemesis(s, r) {
   if (n && n.fed === r.fed && n.tier === r.tier && n.div === (r.div ?? divOf(s)) && !r.list.some((f) => f.id === n.id)) s.nemesis = null;
 }
 var METHODS = [
-  (w, l, r) => `${w} kontra ${l}: nokaut w ${r}. rundzie, g\xF3r\u0105 ${w.split(" ").pop()}`,
-  (w, l, r) => `${w} kontra ${l}: duszenie w ${r}. rundzie, wygrywa ${w.split(" ").pop()}`,
-  (w, l) => `${w} kontra ${l}: wojna do ostatniego gongu, na punkty wygrywa ${w.split(" ").pop()}`,
-  (w, l, r) => `${w} kontra ${l}: s\u0119dzia przerywa w ${r}. rundzie, wygrywa ${w.split(" ").pop()}`,
-  (w, l) => `${w} kontra ${l}: niejednog\u0142o\u015Bna decyzja, wygrywa ${w.split(" ").pop()}, hala gwi\u017Cd\u017Ce`
+  (w, l, r) => `${w} kontra ${l}: nokaut w ${r}. rundzie, g\xF3r\u0105 ${surname(w)}`,
+  (w, l, r) => `${w} kontra ${l}: duszenie w ${r}. rundzie, wygrywa ${surname(w)}`,
+  (w, l) => `${w} kontra ${l}: wojna do ostatniego gongu, na punkty wygrywa ${surname(w)}`,
+  (w, l, r) => `${w} kontra ${l}: s\u0119dzia przerywa w ${r}. rundzie, wygrywa ${surname(w)}`,
+  (w, l) => `${w} kontra ${l}: niejednog\u0142o\u015Bna decyzja, wygrywa ${surname(w)}, hala gwi\u017Cd\u017Ce`
 ];
 var INJURIES = ["zerwane wi\u0119zad\u0142o w kolanie", "z\u0142aman\u0105 r\u0119k\u0119", "kontuzj\u0119 barku", "p\u0119kni\u0119ty oczod\xF3\u0142", "operacj\u0119 \u0142okcia"];
 var QUOTES = [
@@ -7886,7 +8016,8 @@ function divisionOptions(s) {
 }
 function weightMissChance(s) {
   if (weightShift(s) >= 0) return 0;
-  return Math.round(clamp(7 + Math.max(0, s.age - 28) * 1.2 + (s.stats.cardio < 35 ? 4 : 0) + DIET[s.diet ?? "norma"].miss, 2, 30));
+  const base = 7 + Math.max(0, s.age - 28) * 1.2 + (s.stats.cardio < 35 ? 4 : 0) + DIET[s.diet ?? "norma"].miss;
+  return Math.round(clamp(s.flags.cutPrep ? base * 0.4 : base, 1, 30));
 }
 var DIET = {
   luz: { label: "Jem, co chc\u0119", desc: "Pierogi babci, kebab po treningu. G\u0142owa wypocz\u0119ta, ale waga ucieka.", miss: 6, cut: -8, form: 1, formCut: -1, cost: 0 },
@@ -9171,7 +9302,14 @@ function errandsLeft(s) {
   return Math.max(0, ERRANDS_PER_YEAR - (s.flags[`errands:${s.season}`] ?? 0));
 }
 function errandOptions(s) {
-  return ERRANDS.filter((e) => !e.cond || e.cond(s)).map((e) => ({ def: e, cost: e.cost?.(s) ?? 0, ok: (e.cost?.(s) ?? 0) <= Math.max(0, s.money) }));
+  const all = ERRANDS.filter((e) => !e.cond || e.cond(s));
+  const k = all.length > 7 ? s.season * 3 % all.length : 0;
+  const pick = all.length > 7 ? [...all.slice(k), ...all.slice(0, k)].slice(0, 7) : all;
+  if (s.errand && !pick.some((e) => e.id === s.errand.id)) {
+    const cur = all.find((e) => e.id === s.errand.id);
+    if (cur) pick.push(cur);
+  }
+  return pick.map((e) => ({ def: e, cost: e.cost?.(s) ?? 0, ok: (e.cost?.(s) ?? 0) <= Math.max(0, s.money) }));
 }
 function errandMs(s, id) {
   const d = findErrand(id);
@@ -9726,7 +9864,7 @@ var tmKey = (s, id, career) => career ? `tm:${id}` : `tm:${s.season}:${id}`;
 var LUXURY = [
   { id: "passat", title: "Passat B5 kombi 1.9 TDI, sprowadzony", desc: ["Niemiec p\u0142aka\u0142, jak sprzedawa\u0142. Przebieg 287 tys. (nie kr\u0119cony, s\u0142owo honoru). Hak, relingi, zapach choinki gratis.", "Auto po dziadku, gara\u017Cowane. Silnik chodzi jak szwajcarski zegarek, tylko troch\u0119 g\u0142o\u015Bniej. Baga\u017Cnik zmie\u015Bci torb\u0119, tarcze i trenera."], seller: "AutoHandel Zbyszek", price: 14e3, minTier: 1, effects: { relations: 1 }, hint: "rodzina +1, koniec z busem spod ko\u015Bcio\u0142a", owned: "Passat B5 kombi, kt\xF3ry prze\u017Cy\u0142 ca\u0142\u0105 twoj\u0105 karier\u0119" },
   { id: "audi", title: "Audi A6, czarne, felgi 19 cali", desc: ["Pierwszy w\u0142a\u015Bciciel w Polsce. Drugi, trzeci i czwarty w Niemczech. Ksenony, sk\xF3ra, podgrzewane wszystko.", "Auto dla kogo\u015B, kto ju\u017C co\u015B osi\u0105gn\u0105\u0142. S\u0105siedzi b\u0119d\u0105 patrze\u0107. Przegl\u0105d do wiosny."], seller: "Premium Cars Radom", price: 85e3, minTier: 2, effects: { media: 2, rep: -1 }, hint: "media +2, reputacja \u22121 (s\u0105siedzi gadaj\u0105)", owned: "czarne Audi, kt\xF3re s\u0105siedzi pami\u0119taj\u0105 do dzi\u015B" },
-  { id: "mama", title: "Mieszkanie M3 z wind\u0105, dla mamy", desc: ["Trzy pokoje, balkon na po\u0142udnie, winda (dzia\u0142a). Blok po termomodernizacji, w okolicy Biedronka i przychodnia.", "Mama m\xF3wi, \u017Ce niczego nie potrzebuje. Mama od dwudziestu lat nosi zakupy na czwarte pi\u0119tro. To mieszkanie ma wind\u0119."], seller: "Biuro Nieruchomo\u015Bci \u201EKlucz\u201D", price: 42e4, minTier: 2, effects: { relations: 3 }, hint: "rodzina +3, mama ma wind\u0119", owned: "mieszkanie z wind\u0105, w kt\xF3rym mama pokazuje go\u015Bciom twoje zdj\u0119cia" },
+  { id: "mama", title: "Mieszkanie M3 z wind\u0105, dla mamy", desc: ["Trzy pokoje, balkon na po\u0142udnie, winda (dzia\u0142a). Blok po termomodernizacji, w okolicy Pszcz\xF3\u0142ka i przychodnia.", "Mama m\xF3wi, \u017Ce niczego nie potrzebuje. Mama od dwudziestu lat nosi zakupy na czwarte pi\u0119tro. To mieszkanie ma wind\u0119."], seller: "Biuro Nieruchomo\u015Bci \u201EKlucz\u201D", price: 42e4, minTier: 2, effects: { relations: 3 }, hint: "rodzina +3, mama ma wind\u0119", owned: "mieszkanie z wind\u0105, w kt\xF3rym mama pokazuje go\u015Bciom twoje zdj\u0119cia" },
   { id: "kebab", title: "Udzia\u0142y w kebabie \u201EPod Klatk\u0105\u201D", desc: ["Lokal przy p\u0119tli autobusowej, czynny do 4:00. Wsp\xF3lnik zna si\u0119 na ro\u017Cnie, ty masz twarz na szyld. Zysk co roku.", "Kebab z tradycjami: dwa razy sanepid, raz telewizja \u015Bniadaniowa. Szukamy wsp\xF3lnika z rozpoznawaln\u0105 twarz\u0105."], seller: "Mehmet i Wojtek s.c.", price: 16e4, minTier: 2, effects: { media: 1 }, hint: "co rok ok. 18 000 z\u0142 zysku", owned: "kebab \u201EPod Klatk\u0105\u201D, na kt\xF3rego szyldzie wci\u0105\u017C wisi twoja twarz" },
   { id: "dom", title: "Dom pod miastem z sal\u0105 w gara\u017Cu", desc: ["180 m\xB2, dzia\u0142ka 1200 m\xB2, gara\u017C przerobiony na sal\u0119 z matami. Cisza, las, s\u0105siad hoduje alpaki.", "Dom z ogrodem i sal\u0105 treningow\u0105. Poprzedni w\u0142a\u015Bciciel: \u201Eprezes od wszystkiego\u201D. Wyjecha\u0142 nagle, cena do negocjacji."], seller: "Domy Premium Mazowsze", price: 14e5, minTier: 3, effects: { relations: 2, wear: -8 }, hint: "rodzina +2, zu\u017Cycie \u22128, ni\u017Csze koszty \u017Cycia", owned: "dom pod miastem z sal\u0105 w gara\u017Cu" },
   { id: "zegarek", title: "Zegarek \u201Ejak u mistrz\xF3w\u201D", desc: ["Szwajcarski, z papierami i pude\u0142kiem. Na konferencji ka\u017Cdy kamerzysta zrobi zbli\u017Cenie.", "Taki sam nosi\u0142 mistrz UFL na wa\u017Ceniu. Kosztuje jak kawalerka, pokazuje t\u0119 sam\u0105 godzin\u0119 co telefon."], seller: "Jubiler Z\u0142ota R\u0105czka", price: 12e4, minTier: 3, effects: { media: 3 }, hint: "media +3", owned: "zegarek, kt\xF3ry pokazuje t\u0119 sam\u0105 godzin\u0119 co telefon" }
@@ -9735,6 +9873,7 @@ function kebabIncome(s) {
   if (!s.flags["own:kebab"]) return 0;
   return 12e3 + (s.season * 3797 + s.profile.lastName.length * 911) % 12 * 1e3;
 }
+var CAREER_DEALS = ["worek", "rowerek", "mata", "skakanka", "ksiazka", "zamrazarka", "tarcze", "drazek"];
 function tasmaItems(s) {
   if (s.phase === "ended") return [];
   const out = [];
@@ -9750,6 +9889,19 @@ function tasmaItems(s) {
     out.push({ id: "worek", kind: "buy", title: "Worek bokserski 40 kg + \u0142a\u0144cuchy", desc: "Odbi\xF3r osobisty, 4 pi\u0119tro, bez windy. Znoszenie to dodatkowy trening gratis.", seller: "Ryszard (emeryt, by\u0142y tragarz)", price: tmZl(s, 250), effects: { stats: { stand: 1 }, wear: 1 }, hint: "st\xF3jka +1, zu\u017Cycie +1" });
   if (!s.flags[tmKey(s, "rowerek", true)])
     out.push({ id: "rowerek", kind: "buy", title: "Rower stacjonarny, stan idealny", desc: "S\u0142u\u017Cy\u0142 jako wieszak na ubrania przez pi\u0119\u0107 lat. Licznik pokazuje 3 km.", seller: "Gra\u017Cyna_z_Bloku", price: tmZl(s, 300), effects: { stats: { cardio: 1 } }, hint: "kondycja +1" });
+  const HOME_DEALS = [
+    { id: "mata", kind: "buy", title: "Mata puzzle 2\xD72 m do pokoju", desc: "Po dzieciach, kt\xF3re \u201Emia\u0142y trenowa\u0107 judo\u201D. Jeden kawa\u0142ek pogryziony przez psa.", seller: "Pani Danuta", price: tmZl(s, 180), effects: { stats: { bjj: 1 } }, hint: "parter +1" },
+    { id: "skakanka", kind: "buy", title: "Skakanka bokserska na \u0142o\u017Cyskach", desc: "Kr\u0119ci si\u0119 tak szybko, \u017Ce raz trafi\u0142a mnie w ucho. Sprzedaj\u0119 z \u017Calem i plastrem.", seller: "Mariusz_box", price: tmZl(s, 60), effects: { stats: { cardio: 1 } }, hint: "kondycja +1" },
+    { id: "ksiazka", kind: "buy", title: "\u201ESztuka wojny\u201D, z notatkami na marginesach", desc: "Notatki poprzedniego w\u0142a\u015Bciciela: \u201Ewa\u017Cne!!!\u201D, \u201Enie rozumiem\u201D i numer telefonu do Krystyny.", seller: "Antykwariat Pod Wag\u0105", price: tmZl(s, 40), effects: { stats: { iq: 1 } }, hint: "taktyka +1" },
+    { id: "zamrazarka", kind: "buy", title: "Zamra\u017Carka skrzyniowa (do k\u0105pieli lodowych)", desc: "Dzia\u0142a, mrozi, mie\u015Bci doros\u0142ego cz\u0142owieka. Pyta\u0144 o poprzedni\u0105 zawarto\u015B\u0107 prosz\u0119 nie zadawa\u0107.", seller: "Zbyszek AGD", price: tmZl(s, 350), effects: { wear: -4 }, hint: "zu\u017Cycie \u22124" },
+    { id: "tarcze", kind: "buy", title: "Tarcze trenerskie, sk\xF3rzane", desc: "Po trenerze, kt\xF3ry wyjecha\u0142 do Anglii. Pami\u0119taj\u0105 tysi\u0105ce cios\xF3w i jedno rozstanie.", seller: "Klub Iskra (likwidacja)", price: tmZl(s, 150), effects: { stats: { stand: 1 } }, hint: "st\xF3jka +1" },
+    { id: "drazek", kind: "buy", title: "Dr\u0105\u017Cek do drzwi + kamizelka 10 kg", desc: "Futryna wytrzyma\u0142a dwa lata. S\u0105siad z do\u0142u twierdzi, \u017Ce on mniej.", seller: "Kuba_z_Wrzosowej", price: tmZl(s, 120), effects: { stats: { wrest: 1 }, wear: 1 }, hint: "zapasy +1, zu\u017Cycie +1" }
+  ];
+  {
+    const free = HOME_DEALS.filter((d) => !s.flags[tmKey(s, d.id, true)]);
+    const k = free.length ? s.season * 2 % free.length : 0;
+    for (const d of [...free.slice(k), ...free.slice(0, k)].slice(0, 2)) out.push(d);
+  }
   if (s.proDebut) {
     for (const l of LUXURY) if (s.tier >= l.minTier && !s.flags[`own:${l.id}`] && !(l.id === "passat" && s.flags["own:audi"])) out.push({ id: `lux-${l.id}`, kind: "buy", title: l.title, desc: vary6(s, l.desc, l.id.length), seller: l.seller, price: l.price, effects: l.effects, hint: l.hint, big: true });
   }
@@ -9763,14 +9915,14 @@ function tasmaItems(s) {
   if (medals > 0) out.push({ id: "medal", kind: "sell", title: "Medal z turnieju amatorskiego", desc: "Prawdziwy, wisia\u0142 w pokoju u mamy. Mama jeszcze nie wie.", seller: "ty", price: tmZl(s, 200), effects: { relations: -1 }, hint: "rodzina \u22121" });
   if (s.proDebut && !s.flags[tmKey(s, "koszulka")])
     out.push({ id: "koszulka", kind: "sell", title: "Koszulka z wyj\u015Bcia do klatki, z autografem", desc: "Prana raz. \u015Alady potu autentyczne, certyfikat wystawiony przez mam\u0119.", seller: "ty", price: tmZl(s, 120) + Math.round(Math.min(40, s.media) * 10 * tmScale(s)), effects: { media: 1 }, hint: "media +1" });
-  return out.filter((it) => it.big || !s.flags[tmKey(s, it.id, it.id === "worek" || it.id === "rowerek" || it.id.startsWith("pas-"))]);
+  return out.filter((it) => it.big || !s.flags[tmKey(s, it.id, CAREER_DEALS.includes(it.id) || it.id.startsWith("pas-"))]);
 }
 function tasmaDeal(s0, id) {
   const it = tasmaItems(s0).find((x) => x.id === id);
   if (!it) return s0;
   if (it.kind === "buy" && s0.money < it.price) return s0;
   const s = clone(s0);
-  const career = id === "worek" || id === "rowerek" || id.startsWith("pas-");
+  const career = CAREER_DEALS.includes(id) || id.startsWith("pas-");
   if (it.big) s.flags[`own:${id.slice(4)}`] = s.season;
   else s.flags[tmKey(s, id, career)] = 1;
   withRng(s, (rng) => {
@@ -9800,7 +9952,7 @@ function tasmaDeal(s0, id) {
 function fotoPostOptions(s) {
   const h = s.history[s.history.length - 1];
   if (!h || s.phase === "ended" || !s.proDebut || s.flags[`fp:${s.history.length}`]) return null;
-  const opp = h.opponent.split(" ").pop();
+  const opp = surname(h.opponent);
   const opts = [
     { id: "respekt", label: "Zdj\u0119cie z rywalem", caption: h.result === "W" ? `${opp}, szacunek. Twarda walka, wielkie serce. \u{1F91D}` : `${opp}, gratulacje. Dzi\u015B by\u0142e\u015B lepszy. Wracam silniejszy. \u{1F91D}`, hint: "reputacja +1, obserwuj\u0105cy +" },
     { id: "trash", label: "Wywo\u0142anie kolejnego rywala", caption: h.result === "W" ? `Nast\u0119pny. Kto chce by\u0107 kolejny? Czekam. \u{1F624}` : `S\u0119dziowie mnie okradli. Rewan\u017C albo nic. \u{1F624}`, hint: "media +2, reputacja \u22121, du\u017Co obserwuj\u0105cych, ryzyko kary" }
@@ -10449,6 +10601,7 @@ function startFight(rng, s, o) {
   }
   if (!amateur && s.contract.kind !== "freak" && !o.weigh && weightShift(s) < 0) {
     const p = weightMissChance(s) * (o.short ? 2 : 1) + (o.short ? 10 : 0);
+    s.flags.cutPrep = 0;
     if (rng.chance(p / 100)) {
       if (s.quick && !(title || o.rival || o.superfight)) o.weigh = "paid";
       else {
@@ -10798,7 +10951,7 @@ function pressContext(s, o, rng) {
   const style = o.opp.style;
   const opts = [];
   const STYLE_Q = {
-    wrestler: vary6(s, [`${me}, po\u0142o\u017C\u0119 ci\u0119 na plecy w pierwszej minucie i b\u0119d\u0119 trzyma\u0142 do gongu.`, `Sprowadzam do parteru ludzi ci\u0119\u017Cszych od ${me}. Na treningu, dla rozgrzewki.`, `${me} b\u0119dzie ogl\u0105da\u0142 t\u0119 walk\u0119 z perspektywy maty. Z bliska.`], o.opp.lastName.length),
+    wrestler: vary6(s, [`${me}, po\u0142o\u017C\u0119 ci\u0119 na plecy w pierwszej minucie i b\u0119d\u0119 trzyma\u0142 do gongu.`, `Sprowadzam do parteru ludzi ci\u0119\u017Cszych od ${genitive(me)}. Na treningu, dla rozgrzewki.`, `${me} b\u0119dzie ogl\u0105da\u0142 t\u0119 walk\u0119 z perspektywy maty. Z bliska.`], o.opp.lastName.length),
     grappler: vary6(s, [`Niech ${me} po\u0107wiczy obron\u0119 dusze\u0144. B\u0119dzie mu potrzebna.`, `${me} jeszcze nie wie, jak wygl\u0105da klatka od do\u0142u. W sobot\u0119 si\u0119 dowie.`, `Klepnie w drugiej rundzie. Mog\u0119 wam powiedzie\u0107 nawet, kt\xF3r\u0105 r\u0119k\u0105.`], o.opp.lastName.length),
     boxer: vary6(s, [`Jedno trafienie i ${me} zobaczy sufit hali.`, `${me} ma szcz\u0119k\u0119 jak z porcelany. Widzia\u0142em jego walki.`, `Nie potrzebuj\u0119 parteru. Wystarczy mi lewy prosty i troch\u0119 cierpliwo\u015Bci.`], o.opp.lastName.length),
     kickboxer: vary6(s, [`${me}, moje kopni\u0119cia na korpus ko\u0144czy\u0142y ju\u017C lepszych zawodnik\xF3w.`, `Niech ${me} wzmocni \u017Cebra. Albo kupi sobie zapasowe.`, `Po moich low kickach ${me} b\u0119dzie schodzi\u0142 po schodach ty\u0142em.`], o.opp.lastName.length),
@@ -11309,13 +11462,13 @@ function updateRank(s, rep) {
       log(s, `\u{1F451} Podw\xF3jny mistrz! Superfight wygrany. Rywal: ${opp.firstName} ${opp.lastName} (waga ${rep.superfight}).`);
     } else if (res === "D") {
       s.flags.superDone = (s.flags.superDone ?? 0) + 1;
-      log(s, `Remis w superfighcie z ${opp.firstName} ${opp.lastName}.`);
+      log(s, `Superfight ko\u0144czy si\u0119 remisem. Rywal: ${opp.firstName} ${opp.lastName}.`);
     } else {
       s.flags.superDone = (s.flags.superDone ?? 0) + 1;
       s.flags.superLoss = 1;
       s.rep = clamp(s.rep - 6, 0, 100);
       s.media = clamp(s.media - 2, 0, 100);
-      log(s, `Przegrany superfight z ${opp.firstName} ${opp.lastName}. Pas zostaje, ale pozycja mistrza si\u0119 chwieje.`);
+      log(s, `Superfight przegrany (rywal: ${opp.firstName} ${opp.lastName}). Pas zostaje, ale pozycja mistrza si\u0119 chwieje.`);
     }
     return;
   }
@@ -12323,12 +12476,12 @@ function negotiateContract(s0, idx, ask) {
       if (ask === "bonus") c.winBonus = Math.round(c.winBonus * 1.6 / 100) * 100;
       if (ask === "signing") c.signing = signingAmount(c);
       const what = ask === "purse" ? `ga\u017Ca ${c.purse.toLocaleString("pl-PL")} z\u0142 za walk\u0119` : ask === "bonus" ? `premia za wygran\u0105 ${c.winBonus.toLocaleString("pl-PL")} z\u0142` : `bonus za podpis ${c.signing.toLocaleString("pl-PL")} z\u0142`;
-      c.nego = { ask, ok: true, text: `Federacja si\u0119 zgadza: ${what}. Dopisuj\u0105 to d\u0142ugopisem nad podpisem.` };
+      c.nego = { ask, ok: true, text: rng.pick([`Federacja si\u0119 zgadza: ${what}. Dopisuj\u0105 to d\u0142ugopisem nad podpisem.`, `Po dw\xF3ch telefonach i jednym \u201Eno dobra\u201D: ${what}. Nowa wersja umowy ju\u017C w mailu.`, `Prezes si\u0119 krzywi, ale podpisuje: ${what}. M\xF3wi, \u017Ce to ostatni raz.`]) };
     } else if (rng.chance(ask === "purse" ? 0.4 : ask === "signing" ? 0.3 : 0.2)) {
       c.purse = Math.round(c.purse * 0.94 / 100) * 100;
       c.nego = { ask, ok: false, text: `Federacja si\u0119 obra\u017Ca: \u201E${ask === "signing" ? "Pieni\u0105dze za sam podpis? Chyba \u017Cartujesz" : ask === "bonus" ? "Premie mamy takie same dla wszystkich" : "Takie stawki to nie u nas"}\u201D. Nowa wersja umowy ma ga\u017C\u0119 ni\u017Csz\u0105 o 6%.` };
     } else {
-      c.nego = { ask, ok: false, text: "Federacja nie ust\u0119puje. Warunki zostaj\u0105, jakie by\u0142y." };
+      c.nego = { ask, ok: false, text: rng.pick(["Federacja nie ust\u0119puje. Warunki zostaj\u0105, jakie by\u0142y.", "Prawnik federacji odpisuje jednym zdaniem: \u201EWarunki s\u0105 ostateczne\u201D. Bez podpisu, bez pozdrowie\u0144.", "Matchmaker si\u0119 \u015Bmieje do s\u0142uchawki. Umowa wraca bez zmian, z dopiskiem \u201Epowodzenia\u201D.", "Federacja dzi\u0119kuje za propozycj\u0119 i przesy\u0142a t\u0119 sam\u0105 umow\u0119. Nawet przecinki te same."]) };
     }
   });
   return s;
