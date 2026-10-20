@@ -139,6 +139,7 @@ __export(game_exports, {
   mainRecordLabel: () => mainRecordLabel,
   marketWarnings: () => marketWarnings,
   medalCount: () => medalCount,
+  migrateSave: () => migrateSave,
   momentTone: () => momentTone,
   msgChance: () => msgChance,
   negotiateChance: () => negotiateChance,
@@ -224,6 +225,28 @@ __export(game_exports, {
   yearGoalOptions: () => yearGoalOptions,
   yearGoalReward: () => yearGoalReward
 });
+
+// src/engine/fresh.ts
+function keyOf(arr) {
+  const f = arr[0];
+  const t = typeof f === "string" ? f : JSON.stringify(f);
+  return t.slice(0, 32);
+}
+function fresh(s, arr, salt = 0) {
+  if (arr.length < 2) return arr[0];
+  const k = keyOf(arr);
+  const mem = s.textMem ??= {};
+  let used = (mem[k] ?? []).filter((i2) => i2 < arr.length);
+  if (used.length >= arr.length) used = used.slice(-1);
+  const free = [];
+  for (let i2 = 0; i2 < arr.length; i2++) if (!used.includes(i2)) free.push(i2);
+  const i = free[Math.abs(s.history.length * 7 + s.season * 3 + salt) % free.length];
+  mem[k] = [...used, i];
+  return arr[i];
+}
+function freshR(s, rng, arr) {
+  return fresh(s, arr, Math.floor(rng.next() * 9973));
+}
 
 // src/engine/grammar.ts
 function genitive(n) {
@@ -372,15 +395,23 @@ function createRng(seed) {
 // src/engine/club_farewell.ts
 var h = (t) => {
   let x = 2166136261;
-  for (let i = 0; i < t.length; i++) x = Math.imul(x ^ t.charCodeAt(i), 16777619) >>> 0;
+  for (let i = 0; i < t.length; i++)
+    x = Math.imul(x ^ t.charCodeAt(i), 16777619) >>> 0;
   return x;
 };
-var ex = (s) => s.exClub ?? { name: "stary klub", coach: "Trener", years: 1, up: true, to: s.club.name };
-var pick = (s, salt, arr) => arr[h(`${salt}:${s.profile.lastName}:${s.season}`) % arr.length];
+var ex = (s) => s.exClub ?? {
+  name: "stary klub",
+  coach: "Trener",
+  years: 1,
+  up: true,
+  to: s.club.name
+};
+var pick = (s, salt, arr) => arr[(h(`${salt}:${s.profile.lastName}`) + (s.flags.farewells ?? 0)) % arr.length];
 var lat = (n) => n === 1 ? "rok" : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20) ? `${n} lata` : `${n} lat`;
 var MATES = ["Seba", "Dawid", "Krzychu", "Mietek", "Ola", "Bartek", "Kamil"];
 function mateOf(s, k) {
-  return MATES[(h(`${ex(s).name}:${s.season}`) + k * 3) % MATES.length];
+  const pool = MATES.filter((m) => m !== s.profile.firstName);
+  return pool[(h(`${ex(s).name}:${s.season}`) + k * 3) % pool.length];
 }
 function coachSulks(s) {
   const e = ex(s);
@@ -414,19 +445,140 @@ var FAREWELL_STEPS = [
       ]);
     },
     choices: (s) => coachSulks(s) ? [
-      { label: pick(s, "tf1", ["Dzwonisz i t\u0142umaczysz", "Jedziesz do niego na sal\u0119", "Piszesz d\u0142ug\u0105 wiadomo\u015B\u0107"]), desc: pick(s, "tf2", ["P\xF3\u0142 godziny, w tym dwadzie\u015Bcia minut milczenia.", "Stoi przy workach i udaje, \u017Ce ci\u0119 nie widzi.", "Trzy wersje, wysy\u0142asz czwart\u0105."]), chance: 60, success: { relations: 2, note: "trener m\xF3wi \u201Edobra, dobra\u201D" }, fail: { relations: -1, note: "odk\u0142ada s\u0142uchawk\u0119" } },
-      { label: "Piszesz \u201Edzi\u0119kuj\u0119 za wszystko\u201D", desc: "Kr\xF3tko i od serca.", effects: { relations: 1 } },
-      { label: "Nie odpisujesz", desc: "Niech och\u0142onie.", effects: { relations: -1 } }
+      pick(s, "tf1", [
+        {
+          label: "Dzwonisz i t\u0142umaczysz",
+          desc: "P\xF3\u0142 godziny, w tym dwadzie\u015Bcia minut milczenia.",
+          chance: 60,
+          success: { relations: 2, note: "trener m\xF3wi \u201Edobra, dobra\u201D" },
+          fail: { relations: -1, note: "odk\u0142ada s\u0142uchawk\u0119" }
+        },
+        {
+          label: "Jedziesz do niego na sal\u0119",
+          desc: "Stoi przy workach i udaje, \u017Ce ci\u0119 nie widzi.",
+          chance: 60,
+          success: {
+            relations: 2,
+            note: "ko\u0144czy si\u0119 wsp\xF3lnym trzymaniem tarcz"
+          },
+          fail: {
+            relations: -1,
+            note: "ka\u017Ce ci wyj\u015B\u0107, bo \u201Etrening trwa\u201D"
+          }
+        },
+        {
+          label: "Piszesz d\u0142ug\u0105 wiadomo\u015B\u0107",
+          desc: "Trzy wersje, wysy\u0142asz czwart\u0105.",
+          chance: 60,
+          success: {
+            relations: 2,
+            note: "odpisuje \u201Eok. powodzenia. naprawd\u0119\u201D"
+          },
+          fail: { relations: -1, note: "odpisuje samym \u201Eaha\u201D" }
+        }
+      ]),
+      pick(s, "tf3", [
+        {
+          label: "Piszesz \u201Edzi\u0119kuj\u0119 za wszystko\u201D",
+          desc: "Kr\xF3tko i od serca.",
+          effects: { relations: 1 }
+        },
+        {
+          label: "\u201EBez pana by mnie tu nie by\u0142o\u201D",
+          desc: "Wys\u0142ane. Czytane. Bez odpowiedzi, ale czytane.",
+          effects: { relations: 1 }
+        },
+        {
+          label: "Wysy\u0142asz zdj\u0119cie pierwszego medalu",
+          desc: "Bez s\u0142owa. On zrozumie.",
+          effects: { relations: 1 }
+        },
+        {
+          label: "Obiecujesz, \u017Ce wpadniesz po sezonie",
+          desc: "I tym razem naprawd\u0119 wpadniesz.",
+          effects: { relations: 1 }
+        }
+      ]),
+      pick(s, "tf4", [
+        {
+          label: "Nie odpisujesz",
+          desc: "Niech och\u0142onie.",
+          effects: { relations: -1 }
+        },
+        {
+          label: "Zostawiasz na \u201Eprzeczytane\u201D",
+          desc: "Dwa niebieskie ptaszki bol\u0105 bardziej ni\u017C s\u0142owa.",
+          effects: { relations: -1 }
+        },
+        {
+          label: "\u201ETaki jest sport, trenerze\u201D",
+          desc: "Prawda, ale nie to chcia\u0142 us\u0142ysze\u0107.",
+          effects: { relations: -1 }
+        }
+      ])
     ] : [
       pick(s, "tc1", [
-        { label: "\u201EDzi\u0119ki, trenerze. Za wszystko.\u201D", desc: "I wysy\u0142asz zdj\u0119cie z pierwszych zawod\xF3w.", effects: { relations: 2, note: "trener ustawia je jako tapet\u0119" } },
-        { label: "Dzwonisz, zamiast pisa\u0107", desc: "Dziesi\u0119\u0107 minut wspominek o pierwszym sparingu.", effects: { relations: 2, note: "trener udaje, \u017Ce ma katar" } },
-        { label: "Wysy\u0142asz zdj\u0119cie starej rozpiski", desc: "Tej z kaw\u0105 rozlan\u0105 na \u015Brod\u0119.", effects: { relations: 2, note: "trener odpisuje samym \u201Eno\u201D" } }
+        {
+          label: "\u201EDzi\u0119ki, trenerze. Za wszystko.\u201D",
+          desc: "I wysy\u0142asz zdj\u0119cie z pierwszych zawod\xF3w.",
+          effects: {
+            relations: 2,
+            note: "trener ustawia je jako tapet\u0119"
+          }
+        },
+        {
+          label: "Dzwonisz, zamiast pisa\u0107",
+          desc: "Dziesi\u0119\u0107 minut wspominek o pierwszym sparingu.",
+          effects: { relations: 2, note: "trener udaje, \u017Ce ma katar" }
+        },
+        {
+          label: "Wysy\u0142asz zdj\u0119cie starej rozpiski",
+          desc: "Tej z kaw\u0105 rozlan\u0105 na \u015Brod\u0119.",
+          effects: { relations: 2, note: "trener odpisuje samym \u201Eno\u201D" }
+        },
+        {
+          label: "\u201EWszystko, co umiem, mam od pana\u201D",
+          desc: "Prawie wszystko. Lewy prosty jest tw\xF3j.",
+          effects: {
+            relations: 2,
+            note: "trener odpisuje po godzinie: \u201Ewiem\u201D"
+          }
+        },
+        {
+          label: "Nagrywasz g\u0142os\xF3wk\u0119",
+          desc: "Trzy minuty, w tym minuta szumu z szatni.",
+          effects: {
+            relations: 2,
+            note: "trener puszcza j\u0105 ch\u0142opakom na rozgrzewce"
+          }
+        }
       ]),
       pick(s, "tc2", [
-        { label: "Obiecujesz, \u017Ce wpadniesz na trening", desc: "Raz w roku, z p\u0105czkami.", effects: { relations: 1, rep: 1 } },
-        { label: "Zapraszasz go na swoj\u0105 gal\u0119", desc: "Miejsce przy klatce, obok mamy.", effects: { relations: 1, rep: 1 } },
-        { label: "Zostawiasz mu swoje stare r\u0119kawice", desc: "Dla dzieciak\xF3w z sekcji.", effects: { relations: 1, rep: 1 } }
+        {
+          label: "Obiecujesz, \u017Ce wpadniesz na trening",
+          desc: "Raz w roku, z p\u0105czkami.",
+          effects: { relations: 1, rep: 1 }
+        },
+        {
+          label: "Zapraszasz go na swoj\u0105 gal\u0119",
+          desc: "Miejsce przy klatce, obok mamy.",
+          effects: { relations: 1, rep: 1 }
+        },
+        {
+          label: "Zostawiasz mu swoje stare r\u0119kawice",
+          desc: "Dla dzieciak\xF3w z sekcji.",
+          effects: { relations: 1, rep: 1 }
+        },
+        {
+          label: "Kupujesz sekcji nowy worek",
+          desc: "Stary pami\u0119ta\u0142 jeszcze poprzedni ustr\xF3j.",
+          effects: { relations: 1, rep: 1, money: -300 }
+        },
+        {
+          label: "Obiecujesz seminarium dla dzieciak\xF3w",
+          desc: "Za darmo, w sobot\u0119, z autografami.",
+          effects: { relations: 1, rep: 1 }
+        }
       ])
     ]
   },
@@ -452,21 +604,158 @@ var FAREWELL_STEPS = [
         `b\u0119dzie nam ciebie brakowa\u0142o na porannych. powodzenia!!`,
         `stary poka\u017C im tam jak si\u0119 bije u nas na dzielni \u{1F525}`,
         `trener niby z\u0142y ale ca\u0142e popo\u0142udnie o tobie gada\u0142. trzymaj si\u0119 mordo`,
-        `jak b\u0119dziesz mia\u0142 walk\u0119 to dawaj zna\u0107, robimy busa`
+        `jak b\u0119dziesz mia\u0142 walk\u0119 to dawaj zna\u0107, robimy busa`,
+        `no to teraz ja jestem najlepszy na sali. dzi\u0119ki ziom \u{1F60E} powodzenia`,
+        `szafka po tobie ju\u017C zaj\u0119ta. ale twoja ksywa na drzwiach zostaje \u{1F94A}`,
+        `powodzenia byku. jak ci\u0119 tam skrzywdz\u0105 to dzwo\u0144, przyjedziemy`
       ]);
     },
     choices: (s) => mateSulks(s, 0) ? [
-      { label: pick(s, "kf1", ["Zapraszasz na piwo", "Proponujesz ostatni wsp\xF3lny sparing", "Dzwonisz pogada\u0107 jak cz\u0142owiek"]), desc: pick(s, "kf2", ["Po piwie wszystko si\u0119 prostuje.", "Trzy rundy i po sprawie.", "Bez emotek, normalnie."]), chance: 70, success: { relations: 1, note: "po drugim piwie znowu jeste\u015Bcie kumplami" }, fail: { relations: -1, note: "nie przyszed\u0142" } },
-      { label: "\u201ETaki sport, byku\u201D", desc: "I emotka z r\u0119kawic\u0105.", effects: { note: "odpisuje samym \u201Eok\u201D" } }
+      pick(s, "kf1", [
+        {
+          label: "Zapraszasz na piwo",
+          desc: "Po piwie wszystko si\u0119 prostuje.",
+          chance: 70,
+          success: {
+            relations: 1,
+            note: "po drugim piwie znowu jeste\u015Bcie kumplami"
+          },
+          fail: { relations: -1, note: "nie przyszed\u0142" }
+        },
+        {
+          label: "Proponujesz ostatni wsp\xF3lny sparing",
+          desc: "Trzy rundy i po sprawie.",
+          chance: 70,
+          success: {
+            relations: 1,
+            note: "po sparingu przybijacie pi\u0105tk\u0119"
+          },
+          fail: { relations: -1, note: "sparing robi si\u0119 za ostry" }
+        },
+        {
+          label: "Dzwonisz pogada\u0107 jak cz\u0142owiek",
+          desc: "Bez emotek, normalnie.",
+          chance: 70,
+          success: {
+            relations: 1,
+            note: "ko\u0144czycie na planowaniu wsp\xF3lnego wyjazdu"
+          },
+          fail: { relations: -1, note: "nie odbiera" }
+        }
+      ]),
+      pick(s, "kf3", [
+        {
+          label: "\u201ETaki sport, byku\u201D",
+          desc: "I emotka z r\u0119kawic\u0105.",
+          effects: { note: "odpisuje samym \u201Eok\u201D" }
+        },
+        {
+          label: "\u201EKiedy\u015B zrozumiesz\u201D",
+          desc: "Brzmi m\u0105drzej, ni\u017C si\u0119 czujesz.",
+          effects: { note: "odpisuje \u201Ejasne, mistrzu\u201D" }
+        }
+      ])
     ] : [
-      pick(s, "k1", [
-        { label: "Obiecujesz bilety na gal\u0119", desc: "Dla ca\u0142ej starej ekipy.", effects: { relations: 1, money: -150, note: "bus ju\u017C zarezerwowany" } },
-        { label: "Stawiasz po\u017Cegnalnego kebaba", desc: "Z podw\xF3jnym mi\u0119sem, dla wszystkich.", effects: { relations: 1, money: -150, note: "kebab u Ahmeda, jak zawsze" } }
+      // bez pieniędzy na koncie nie stawiasz nikomu kebaba: obietnica zamiast przelewu
+      s.money < 300 ? pick(s, "k1free", [
+        {
+          label: "\u201EJak wygram, stawiam pizz\u0119\u201D",
+          desc: "Na kredyt zaufania, nie bankowy.",
+          effects: {
+            relations: 1,
+            note: "ekipa zapisuje to w grupie, na wszelki wypadek"
+          }
+        },
+        {
+          label: "Wpadasz na ostatni wsp\xF3lny trening",
+          desc: "Za darmo, jak za dawnych czas\xF3w.",
+          effects: {
+            relations: 1,
+            note: "po treningu wsp\xF3lne zdj\u0119cie na tle work\xF3w"
+          }
+        }
+      ]) : pick(s, "k1", [
+        {
+          label: "Obiecujesz bilety na gal\u0119",
+          desc: "Dla ca\u0142ej starej ekipy.",
+          effects: {
+            relations: 1,
+            money: -150,
+            note: "bus ju\u017C zarezerwowany"
+          }
+        },
+        {
+          label: "Stawiasz po\u017Cegnalnego kebaba",
+          desc: "Z podw\xF3jnym mi\u0119sem, dla wszystkich.",
+          effects: {
+            relations: 1,
+            money: -150,
+            note: "kebab u Ahmeda, jak zawsze"
+          }
+        },
+        {
+          label: "Zamawiasz pizz\u0119 na sal\u0119",
+          desc: "Trzy du\u017Ce, jedna bez cebuli dla trenera.",
+          effects: {
+            relations: 1,
+            money: -150,
+            note: "pizza zjedzona przed rozci\u0105ganiem"
+          }
+        },
+        {
+          label: "Robisz ostatni wsp\xF3lny trening",
+          desc: "A potem grill u Krzycha na dzia\u0142ce.",
+          effects: {
+            relations: 1,
+            money: -150,
+            note: "grill do p\xF3\u0142nocy"
+          }
+        },
+        {
+          label: "Fundujesz ekipie wej\u015Bcie na basen",
+          desc: "Dwadzie\u015Bcia d\u0142ugo\u015Bci i zje\u017Cd\u017Calnia dla doros\u0142ych.",
+          effects: {
+            relations: 1,
+            money: -150,
+            note: "ratownik dwa razy gwi\u017Cd\u017Ce na Mietka"
+          }
+        },
+        {
+          label: "Kupujesz sali nowe tarcze",
+          desc: "Stare by\u0142y \u0142atane ta\u015Bm\u0105 od czas\xF3w twojego debiutu.",
+          effects: {
+            relations: 1,
+            money: -150,
+            note: "na tarczach kto\u015B pisze markerem twoj\u0105 ksyw\u0119"
+          }
+        }
       ]),
       pick(s, "k2", [
-        { label: "\u201EDzi\u0119ki byku, widzimy si\u0119\u201D", desc: "Kr\xF3tko.", effects: { relations: 1 } },
-        { label: "\u201ENie p\u0142acz, mordo\u201D", desc: "I emotka z r\u0119kawic\u0105.", effects: { relations: 1 } },
-        { label: "Wysy\u0142asz wsp\xF3lne zdj\u0119cie z szatni", desc: "To, na kt\xF3rym wszyscy wygl\u0105daj\u0105 \u017Ale.", effects: { relations: 1 } }
+        {
+          label: "\u201EDzi\u0119ki byku, widzimy si\u0119\u201D",
+          desc: "Kr\xF3tko.",
+          effects: { relations: 1 }
+        },
+        {
+          label: "\u201ENie p\u0142acz, mordo\u201D",
+          desc: "I emotka z r\u0119kawic\u0105.",
+          effects: { relations: 1 }
+        },
+        {
+          label: "Wysy\u0142asz wsp\xF3lne zdj\u0119cie z szatni",
+          desc: "To, na kt\xF3rym wszyscy wygl\u0105daj\u0105 \u017Ale.",
+          effects: { relations: 1 }
+        },
+        {
+          label: "\u201ERezerwuj busa, zapraszam na gal\u0119\u201D",
+          desc: "Obietnica na wyrost, ale mi\u0142a.",
+          effects: { relations: 1 }
+        },
+        {
+          label: "Odpisujesz samym \u{1F94A}",
+          desc: "Mi\u0119dzy wami to wystarczy.",
+          effects: { relations: 1 }
+        }
       ])
     ]
   },
@@ -480,22 +769,62 @@ var FAREWELL_STEPS = [
     text: (s) => {
       const m1 = mateOf(s, 1);
       const m2 = mateOf(s, 2) === m1 ? mateOf(s, 3) : mateOf(s, 2);
-      const lines = mateSulks(s, 1) ? [`${m1}: kto\u015B tu nas zostawi\u0142 dla lepszej sali`, `${m2}: dajcie spok\xF3j, ka\u017Cdy by poszed\u0142`, `${m1}: ja bym nie poszed\u0142`, `${m2}: bo ci\u0119 nikt nie chcia\u0142 XD`] : [`${m1}: trzymamy kciuki!!`, `${m2}: jak wygrasz pierwsz\u0105 walk\u0119 w nowym klubie to stawiasz pizz\u0119`, `${m1}: dwie pizze`];
+      const lines = mateSulks(s, 1) ? [
+        `${m1}: kto\u015B tu nas zostawi\u0142 dla lepszej sali`,
+        `${m2}: dajcie spok\xF3j, ka\u017Cdy by poszed\u0142`,
+        `${m1}: ja bym nie poszed\u0142`,
+        `${m2}: bo ci\u0119 nikt nie chcia\u0142 XD`
+      ] : [
+        `${m1}: trzymamy kciuki!!`,
+        `${m2}: jak wygrasz pierwsz\u0105 walk\u0119 w nowym klubie to stawiasz pizz\u0119`,
+        `${m1}: dwie pizze`
+      ];
       return `Kto\u015B doda\u0142 zdj\u0119cie z twojego pierwszego treningu. Pod spodem:
 ${lines.join("\n")}`;
     },
-    choices: () => [
-      { label: "Wrzucasz \u201Edzi\u0119ki za wszystko, ekipa \u2764\uFE0F\u201D", desc: "Zostajesz w grupie jeszcze troch\u0119.", effects: { relations: 1, media: 1 } },
-      { label: "Wychodzisz z grupy", desc: "Czysta karta.", effects: { note: "grupa pisze \u201Eno i poszed\u0142\u201D" } }
+    choices: (s) => [
+      pick(s, "g1", [
+        {
+          label: "Wrzucasz \u201Edzi\u0119ki za wszystko, ekipa \u2764\uFE0F\u201D",
+          desc: "Zostajesz w grupie jeszcze troch\u0119.",
+          effects: { relations: 1, media: 1 }
+        },
+        {
+          label: "Dodajesz zdj\u0119cie z pierwszej wygranej",
+          desc: "Pod spodem dwadzie\u015Bcia ognistych emotek.",
+          effects: { relations: 1, media: 1 }
+        },
+        {
+          label: "Piszesz \u201Epizza ode mnie po pierwszej walce\u201D",
+          desc: "Grupa nagle bardzo aktywna.",
+          effects: { relations: 1, media: 1 }
+        }
+      ]),
+      pick(s, "g2", [
+        {
+          label: "Wychodzisz z grupy",
+          desc: "Czysta karta.",
+          effects: { note: "grupa pisze \u201Eno i poszed\u0142\u201D" }
+        },
+        {
+          label: "Wyciszasz grup\u0119 na zawsze",
+          desc: "Formalnie jeste\u015B. Praktycznie nie.",
+          effects: { note: "nikt nie zauwa\u017Ca przez miesi\u0105c" }
+        }
+      ])
     ]
   }
 ];
 function scheduleFarewell(s, prev, coach, years, up) {
   s.exClub = { name: prev.name, coach, years, up, to: s.club.name };
+  s.flags.farewells = (s.flags.farewells ?? 0) + 1;
   const ph = s.phone;
   if (!ph) return;
   ph.due = ph.due.filter((d) => !d.step.startsWith("pozegnanie."));
-  ph.due.push({ step: "pozegnanie.trener", at: ph.tick + 1 }, { step: "pozegnanie.kumpel", at: ph.tick + 1 });
+  ph.due.push(
+    { step: "pozegnanie.trener", at: ph.tick + 1 },
+    { step: "pozegnanie.kumpel", at: ph.tick + 1 }
+  );
   if (years >= 2) ph.due.push({ step: "pozegnanie.grupa", at: ph.tick + 2 });
 }
 
@@ -504,6 +833,7 @@ var sc = (s) => [1, 1.5, 3, 5, 8][Math.min(4, Math.max(0, s.tier))] ?? 1;
 var zl = (s, n) => Math.max(50, Math.round(n * sc(s) / 50) * 50);
 var pro = (s) => s.tier >= 1 && !!s.proDebut;
 var lastWin = (s) => s.history[s.history.length - 1]?.result === "W";
+var zbig = (s) => s.profile.firstName === "Zbigniew" ? "Ryszard" : "Zbigniew";
 function twistName(n) {
   if (n.endsWith("ski")) return `${n.slice(0, -3)}cki`;
   if (n.endsWith("cki")) return `${n.slice(0, -3)}ski`;
@@ -1743,10 +2073,10 @@ var THREADS = [
   {
     id: "ustawka.start",
     app: "sms",
-    from: "Pan Zbigniew",
+    from: (s) => `Pan ${zbig(s)}`,
     title: "Propozycja nie do odrzucenia",
     start: { weight: 3, cond: (s, c) => pro(s) && !c.pre && s.tier >= 1 && s.tier <= 2 && !s.flags.ustawka },
-    text: (s) => `Dzie\u0144 dobry, Zbigniew, \u201Eznajomy organizatora\u201D. Najbli\u017Csza walka: przegrywa pan w drugiej rundzie, a dostaje ${zl(s, 5e3).toLocaleString("pl-PL")} z\u0142 w kopercie. Nikt si\u0119 nie dowie. Prosz\u0119 odpisa\u0107 \u201Etak\u201D albo zapomnie\u0107 o tej wiadomo\u015Bci.`,
+    text: (s) => `Dzie\u0144 dobry, ${zbig(s)}, \u201Eznajomy organizatora\u201D. Najbli\u017Csza walka: przegrywa pan w drugiej rundzie, a dostaje ${zl(s, 5e3).toLocaleString("pl-PL")} z\u0142 w kopercie. Nikt si\u0119 nie dowie. Prosz\u0119 odpisa\u0107 \u201Etak\u201D albo zapomnie\u0107 o tej wiadomo\u015Bci.`,
     choices: (s) => [
       { label: "\u201ETak\u201D", desc: "Koperta jest gruba.", effects: { money: zl(s, 5e3), nextFight: -8, flag: "ustawka", follow: { step: "ustawka.przeciek", after: 2 } } },
       { label: "Kasujesz wiadomo\u015B\u0107", desc: "Nie widzia\u0142e\u015B, nie by\u0142o.", effects: { follow: { step: "ustawka.zemsta", after: 1 } } },
@@ -1760,15 +2090,15 @@ var THREADS = [
     from: "KlatkaNews",
     title: "Dziwne zak\u0142ady na twoj\u0105 walk\u0119",
     text: () => "\u201ENa kilka godzin przed gal\u0105 kto\u015B postawi\u0142 du\u017Ce pieni\u0105dze na pora\u017Ck\u0119 faworyta w drugiej rundzie. Federacja przygl\u0105da si\u0119 sprawie.\u201D W tek\u015Bcie jest twoje nazwisko.",
-    choices: () => [
+    choices: (s) => [
       {
         label: "Milczysz i czekasz",
         desc: "Mo\u017Ce przycichnie.",
         chance: 35,
         success: { note: "sprawa przycich\u0142a" },
-        successText: "Po tygodniu portal pisze o czym\u015B innym. Tym razem si\u0119 uda\u0142o. Zbigniew ju\u017C nie odpisuje.",
+        successText: `Po tygodniu portal pisze o czym\u015B innym. Tym razem si\u0119 uda\u0142o. ${zbig(s)} ju\u017C nie odpisuje.`,
         fail: { rep: -15, media: 4, flag: "banned" },
-        failText: "Zbigniew sypie wszystkich, \u017Ceby ratowa\u0107 siebie. Federacja rozwi\u0105zuje z tob\u0105 kontrakt."
+        failText: `${zbig(s)} sypie wszystkich, \u017Ceby ratowa\u0107 siebie. Federacja rozwi\u0105zuje z tob\u0105 kontrakt.`
       },
       {
         label: "Przyznajesz si\u0119 i wsp\xF3\u0142pracujesz",
@@ -1785,7 +2115,7 @@ var THREADS = [
     text: () => "\u201ESzkoda. \u0141adne masz auto.\u201D Rano na drzwiach kierowcy kto\u015B wydrapa\u0142 co\u015B, czego nie da si\u0119 powt\xF3rzy\u0107 przy dzieciach.",
     choices: (s) => [
       { label: "Lakiernik", desc: "Pan Rysiu zrobi taniej.", effects: { money: -zl(s, 600) } },
-      { label: "Zg\u0142aszasz na policj\u0119", desc: "Z wiadomo\u015Bci\u0105 od Zbigniewa.", effects: { rep: 1, note: "dzielnicowy Zbyszek znowu w akcji" } }
+      { label: "Zg\u0142aszasz na policj\u0119", desc: "Z wiadomo\u015Bci\u0105 od \u201Eznajomego organizatora\u201D.", effects: { rep: 1, note: "dzielnicowy Zbyszek znowu w akcji" } }
     ]
   },
   // ---------- Grupa rodzinna ----------
@@ -2948,13 +3278,13 @@ var CAMP_ACTS = [
     name: "Twarde sparingi",
     desc: "Pe\u0142ne rundy z mocniejszymi od siebie.",
     hint: "du\u017Co formy, zu\u017Cycie",
-    roll: (_s, rng) => {
+    roll: (s, rng) => {
       const r = rng.next();
       if (r < 0.15)
-        return { text: rng.pick(["Mietek trafia ci\u0119 \u0142okciem w \u0142uk brwiowy. Trzy szwy i tydzie\u0144 ostro\u017Cno\u015Bci.", "Sparingpartner o 15 kg ci\u0119\u017Cszy siada ci na \u017Cebrach. Oddychasz ostro\u017Cnie do ko\u0144ca tygodnia."]), effects: { wear: 1 }, mod: 0 };
+        return { text: freshR(s, rng, ["Mietek trafia ci\u0119 \u0142okciem w \u0142uk brwiowy. Trzy szwy i tydzie\u0144 ostro\u017Cno\u015Bci.", "Sparingpartner o 15 kg ci\u0119\u017Cszy siada ci na \u017Cebrach. Oddychasz ostro\u017Cnie do ko\u0144ca tygodnia."]), effects: { wear: 1 }, mod: 0 };
       if (r < 0.45)
-        return { text: rng.pick(["Pi\u0119\u0107 rund z by\u0142ym mistrzem regionu. Ko\u0144czysz na kolanach, ale co\u015B zaskoczy\u0142o.", "Trzech sparingpartner\xF3w na zmian\u0119, co minut\u0119 \u015Bwie\u017Cy. Pod koniec przestajesz my\u015Ble\u0107 i zaczynasz walczy\u0107."]), effects: {}, mod: 3 };
-      return { text: rng.pick(["Twarde rundy, czyste trafienia z obu stron. Tak ma wygl\u0105da\u0107 ob\xF3z.", "Sparingi do zm\u0119czenia. Trener tylko kiwa g\u0142ow\u0105, co u niego znaczy \u201Edobrze\u201D.", "Mietek w formie \u017Cycia, ty te\u017C. Nikt nie odpuszcza."]), effects: {}, mod: 2 };
+        return { text: freshR(s, rng, ["Pi\u0119\u0107 rund z by\u0142ym mistrzem regionu. Ko\u0144czysz na kolanach, ale co\u015B zaskoczy\u0142o.", "Trzech sparingpartner\xF3w na zmian\u0119, co minut\u0119 \u015Bwie\u017Cy. Pod koniec przestajesz my\u015Ble\u0107 i zaczynasz walczy\u0107."]), effects: {}, mod: 3 };
+      return { text: freshR(s, rng, ["Twarde rundy, czyste trafienia z obu stron. Tak ma wygl\u0105da\u0107 ob\xF3z.", "Sparingi do zm\u0119czenia. Trener tylko kiwa g\u0142ow\u0105, co u niego znaczy \u201Edobrze\u201D.", "Mietek w formie \u017Cycia, ty te\u017C. Nikt nie odpuszcza."]), effects: {}, mod: 2 };
     }
   },
   {
@@ -2965,7 +3295,7 @@ var CAMP_ACTS = [
     roll: (s, rng) => {
       const k = weakest(s);
       if (rng.chance(0.22)) return { text: `Tydzie\u0144 d\u0142ubania w detalach. Trener w ko\u0144cu przestaje poprawia\u0107 ci ${STAT_NAME[k]}.`, effects: { stats: { [k]: 1 } }, mod: 1 };
-      return { text: rng.pick(["Sto powt\xF3rze\u0144 tego samego wej\u015Bcia. Na sto pierwszym trener m\xF3wi \u201Eno\u201D.", "Godziny przy tarczach i nagraniach. Mniej efektowne ni\u017C sparingi, ale wchodzi w nawyk.", "Trener rozrysowuje plan na tablicy. Tym razem rozumiesz ka\u017Cd\u0105 strza\u0142k\u0119.", "Lustro, cie\u0144 i trener, kt\xF3ry powtarza \u201E\u0142okie\u0107\u201D czterdzie\u015Bci razy dziennie.", "Ca\u0142y tydzie\u0144 jednej kombinacji. W pi\u0105tek robisz j\u0105 przez sen.", "Trener przynosi stare kasety VHS z walk z lat dziewi\u0119\u0107dziesi\u0105tych. Dzia\u0142a."]), effects: {}, mod: 2 };
+      return { text: freshR(s, rng, ["Sto powt\xF3rze\u0144 tego samego wej\u015Bcia. Na sto pierwszym trener m\xF3wi \u201Eno\u201D.", "Godziny przy tarczach i nagraniach. Mniej efektowne ni\u017C sparingi, ale wchodzi w nawyk.", "Trener rozrysowuje plan na tablicy. Tym razem rozumiesz ka\u017Cd\u0105 strza\u0142k\u0119.", "Lustro, cie\u0144 i trener, kt\xF3ry powtarza \u201E\u0142okie\u0107\u201D czterdzie\u015Bci razy dziennie.", "Ca\u0142y tydzie\u0144 jednej kombinacji. W pi\u0105tek robisz j\u0105 przez sen.", "Trener przynosi stare kasety VHS z walk z lat dziewi\u0119\u0107dziesi\u0105tych. Dzia\u0142a."]), effects: {}, mod: 2 };
     }
   },
   {
@@ -2973,9 +3303,9 @@ var CAMP_ACTS = [
     name: "Kondycja",
     desc: "Interwa\u0142y, g\xF3ry, schody na stadionie.",
     hint: "forma, czasem kondycja",
-    roll: (_s, rng) => {
+    roll: (s, rng) => {
       if (rng.chance(0.2)) return { text: "Schody na stadionie, sto razy w g\xF3r\u0119. W trzeciej rundzie b\u0119dziesz \u015Bwie\u017Cy.", effects: { stats: { cardio: 1 } }, mod: 1 };
-      return { text: rng.pick(["Interwa\u0142y na bie\u017Cni, a\u017C ci si\u0119 czarno przed oczami robi. Trener m\xF3wi, \u017Ce to dopiero rozgrzewka.", "Bieganie po lesie z kamizelk\u0105 obci\u0105\u017Ceniow\u0105. Grzybiarze patrz\u0105 dziwnie.", "P\u0142ywalnia o sz\xF3stej rano. Ratownik ju\u017C ci\u0119 zna.", "Rower stacjonarny w piwnicy klubu. Sto minut, zero widok\xF3w, jeden plakat Rocky\u2019ego.", "Sprinty pod g\xF3r\u0119 za klubem. S\u0105siad z dzia\u0142ki dopinguje z le\u017Caka.", "Skakanka, pi\u0119\u0107 rund po pi\u0119\u0107 minut. Sufit w szatni ma now\u0105 plam\u0119 po twoim pocie."]), effects: {}, mod: 2 };
+      return { text: freshR(s, rng, ["Interwa\u0142y na bie\u017Cni, a\u017C ci si\u0119 czarno przed oczami robi. Trener m\xF3wi, \u017Ce to dopiero rozgrzewka.", "Bieganie po lesie z kamizelk\u0105 obci\u0105\u017Ceniow\u0105. Grzybiarze patrz\u0105 dziwnie.", "P\u0142ywalnia o sz\xF3stej rano. Ratownik ju\u017C ci\u0119 zna.", "Rower stacjonarny w piwnicy klubu. Sto minut, zero widok\xF3w, jeden plakat Rocky\u2019ego.", "Sprinty pod g\xF3r\u0119 za klubem. S\u0105siad z dzia\u0142ki dopinguje z le\u017Caka.", "Skakanka, pi\u0119\u0107 rund po pi\u0119\u0107 minut. Sufit w szatni ma now\u0105 plam\u0119 po twoim pocie."]), effects: {}, mod: 2 };
     }
   },
   {
@@ -2988,7 +3318,7 @@ var CAMP_ACTS = [
       const smart = s.stats.iq >= 50;
       if (again) return { text: `Drugi tydzie\u0144 nagra\u0144 tego samego rywala. ${opp.firstName} ${opp.lastName} \u015Bni ci si\u0119 po nocach, ale nic nowego nie widzisz.`, effects: {}, mod: 0 };
       return {
-        text: rng.pick([
+        text: freshR(s, rng, [
           `${opp.lastName} przed ka\u017Cdym kopni\u0119ciem opuszcza prawy bark. Trener zatrzymuje nagranie i pokazuje palcem.`,
           `Dziesi\u0119\u0107 walk rywala w tydzie\u0144. Wiesz ju\u017C, co ${opp.lastName} robi, kiedy si\u0119 zm\u0119czy.`,
           `${opp.lastName} nie lubi, jak si\u0119 go spycha pod siatk\u0119. Ca\u0142y plan staje si\u0119 prosty.`
@@ -3004,8 +3334,8 @@ var CAMP_ACTS = [
     desc: "Fizjo, sauna, sen. Mniej treningu, wi\u0119cej cia\u0142a.",
     hint: "mniej zu\u017Cycia",
     roll: (s, rng) => {
-      if (s.wear < 10) return { text: rng.pick(["Regenerujesz si\u0119, cho\u0107 nie by\u0142o z czego. Nudzisz si\u0119 i ogl\u0105dasz seriale.", "Tydzie\u0144 odpoczynku od niczego. Obejrza\u0142e\u015B trzy sezony serialu o mafii.", "Le\u017Cysz i odpoczywasz. Cia\u0142o nie wie, od czego, ale si\u0119 zgadza."]), effects: { wear: -1 }, mod: 0 };
-      return { text: rng.pick(["Pani Ewa z fizjoterapii robi z twoich plec\xF3w nowe plecy.", "Tydzie\u0144 snu, sauny i lekkiego ruchu. Pierwszy raz od miesi\u0119cy nic nie boli.", "Krioterapia w Spale. Trzy minuty w minus stu dziesi\u0119ciu i nagle wszystko jest prostsze.", "Masa\u017C, joga z dziewczyn\u0105 trenera i dziesi\u0119\u0107 godzin snu. Cia\u0142o dzi\u0119kuje.", "Basen, rozci\u0105ganie i drzemki. Trener m\xF3wi, \u017Ce to te\u017C trening. Wierzysz mu na s\u0142owo."]), effects: { wear: -2 }, mod: 1 };
+      if (s.wear < 10) return { text: freshR(s, rng, ["Regenerujesz si\u0119, cho\u0107 nie by\u0142o z czego. Nudzisz si\u0119 i ogl\u0105dasz seriale.", "Tydzie\u0144 odpoczynku od niczego. Obejrza\u0142e\u015B trzy sezony serialu o mafii.", "Le\u017Cysz i odpoczywasz. Cia\u0142o nie wie, od czego, ale si\u0119 zgadza."]), effects: { wear: -1 }, mod: 0 };
+      return { text: freshR(s, rng, ["Pani Ewa z fizjoterapii robi z twoich plec\xF3w nowe plecy.", "Tydzie\u0144 snu, sauny i lekkiego ruchu. Pierwszy raz od miesi\u0119cy nic nie boli.", "Krioterapia w Spale. Trzy minuty w minus stu dziesi\u0119ciu i nagle wszystko jest prostsze.", "Masa\u017C, joga z dziewczyn\u0105 trenera i dziesi\u0119\u0107 godzin snu. Cia\u0142o dzi\u0119kuje.", "Basen, rozci\u0105ganie i drzemki. Trener m\xF3wi, \u017Ce to te\u017C trening. Wierzysz mu na s\u0142owo."]), effects: { wear: -2 }, mod: 1 };
     }
   },
   {
@@ -3015,7 +3345,7 @@ var CAMP_ACTS = [
     hint: "pieni\u0105dze, mniej formy",
     cond: (s) => s.tier <= 2,
     roll: (s, rng) => ({
-      text: rng.pick(["Trzy nocki na bramce w \u201EPresti\u017Cu\u201D. Kasa jest, snu brak.", "Kuzyn potrzebowa\u0142 r\u0105k na budowie. Plecy bol\u0105, portfel pe\u0142niejszy.", "Kurier po treningach. Znasz ju\u017C ka\u017Cdy domofon na osiedlu.", "Wnoszenie mebli z koleg\u0105. Szafa trzydrzwiowa na czwarte pi\u0119tro to te\u017C trening.", "Ochrona na festynie w gminie. Najgro\u017Aniejszy by\u0142 pan z wat\u0105 cukrow\u0105.", "Roz\u0142adunek w hurtowni. Kierownik pyta, czy nie chcesz etatu."]),
+      text: freshR(s, rng, ["Trzy nocki na bramce w \u201EPresti\u017Cu\u201D. Kasa jest, snu brak.", "Kuzyn potrzebowa\u0142 r\u0105k na budowie. Plecy bol\u0105, portfel pe\u0142niejszy.", "Kurier po treningach. Znasz ju\u017C ka\u017Cdy domofon na osiedlu.", "Wnoszenie mebli z koleg\u0105. Szafa trzydrzwiowa na czwarte pi\u0119tro to te\u017C trening.", "Ochrona na festynie w gminie. Najgro\u017Aniejszy by\u0142 pan z wat\u0105 cukrow\u0105.", "Roz\u0142adunek w hurtowni. Kierownik pyta, czy nie chcesz etatu."]),
       effects: { money: zl3(s, 400) },
       mod: 0
     })
@@ -3026,7 +3356,7 @@ var CAMP_ACTS = [
     desc: "Wywiady, nagrania, zdj\u0119cia z produktem.",
     hint: "media, mniej formy",
     roll: (s, rng) => ({
-      text: rng.pick(["Trzy wywiady, dwa podcasty i sesja zdj\u0119ciowa. Trening wciskasz mi\u0119dzy nagrania.", "Tydzie\u0144 jak w telewizji: kamera wsz\u0119dzie, nawet na rozci\u0105ganiu.", "Spotkanie ze sponsorem i rolka na Instagrym. Telefon \u0142adujesz cz\u0119\u015Bciej ni\u017C siebie.", "Nagranie reklamy suplementu. Dwadzie\u015Bcia dubli, w ka\u017Cdym udajesz, \u017Ce smakuje.", "Wywiad do lokalnej gazety. Dziennikarz pyta g\u0142\xF3wnie o twoj\u0105 mam\u0119.", "Sesja zdj\u0119ciowa w hali. Fotograf ka\u017Ce ci \u201Epatrze\u0107 gro\u017Anie, ale przyja\u017Anie\u201D."]),
+      text: freshR(s, rng, ["Trzy wywiady, dwa podcasty i sesja zdj\u0119ciowa. Trening wciskasz mi\u0119dzy nagrania.", "Tydzie\u0144 jak w telewizji: kamera wsz\u0119dzie, nawet na rozci\u0105ganiu.", "Spotkanie ze sponsorem i rolka na Instagrym. Telefon \u0142adujesz cz\u0119\u015Bciej ni\u017C siebie.", "Nagranie reklamy suplementu. Dwadzie\u015Bcia dubli, w ka\u017Cdym udajesz, \u017Ce smakuje.", "Wywiad do lokalnej gazety. Dziennikarz pyta g\u0142\xF3wnie o twoj\u0105 mam\u0119.", "Sesja zdj\u0119ciowa w hali. Fotograf ka\u017Ce ci \u201Epatrze\u0107 gro\u017Anie, ale przyja\u017Anie\u201D."]),
       effects: { media: 2, money: s.sponsors.length ? zl3(s, 200) : 0 },
       mod: 0
     })
@@ -3044,7 +3374,7 @@ CAMP_ACTS.push(
     cond: (s) => cutting(s) && !s.flags.cutPrep,
     roll: (s, rng) => {
       s.flags.cutPrep = 1;
-      return { text: rng.pick(["Dietetyczka rozpisuje ka\u017Cdy posi\u0142ek. Ry\u017C wa\u017Cy si\u0119 na wadze kuchennej, a ty patrzysz na niego jak na wroga.", "Tydzie\u0144 pude\u0142ek, wody z cytryn\u0105 i wa\u017Cenia dwa razy dziennie. Waga schodzi r\xF3wno, bez sauny w ostatniej chwili.", "Dietetyk zabiera ci z lod\xF3wki wszystko, co lubisz. Waga dzi\u0119kuje, humor nie."]), effects: {}, mod: 0 };
+      return { text: freshR(s, rng, ["Dietetyczka rozpisuje ka\u017Cdy posi\u0142ek. Ry\u017C wa\u017Cy si\u0119 na wadze kuchennej, a ty patrzysz na niego jak na wroga.", "Tydzie\u0144 pude\u0142ek, wody z cytryn\u0105 i wa\u017Cenia dwa razy dziennie. Waga schodzi r\xF3wno, bez sauny w ostatniej chwili.", "Dietetyk zabiera ci z lod\xF3wki wszystko, co lubisz. Waga dzi\u0119kuje, humor nie."]), effects: {}, mod: 0 };
     }
   },
   {
@@ -3054,8 +3384,8 @@ CAMP_ACTS.push(
     hint: "bardzo du\u017Co formy, zu\u017Cycie, kosztuje",
     cond: (s) => s.tier >= 2,
     roll: (s, rng) => {
-      if (rng.chance(0.2)) return { text: rng.pick(["Zawodnik z czo\u0142\xF3wki nie przyjecha\u0142 sparowa\u0107, tylko bi\u0107. Tydzie\u0144 chodzisz z lodem na \u017Cebrach.", "Rundy jak w walce o pas. Wychodzisz z siniakiem pod okiem i ze \u015Bwiadomo\u015Bci\u0105, ile ci brakuje."]), effects: { money: -zl3(s, 500), wear: 3 }, mod: 1 };
-      return { text: rng.pick(["Pi\u0119\u0107 rund z go\u015Bciem z top 5. Pod koniec tygodnia to on prosi o przerw\u0119.", "Sparingi z czo\u0142\xF3wk\u0105. Ka\u017Cdy b\u0142\u0105d kosztuje, ale tempo walki nagle wydaje si\u0119 wolne.", "Trzech zawodnik\xF3w z ranking\xF3w na zmian\u0119. Po takim tygodniu rywal wydaje si\u0119 mniejszy."]), effects: { money: -zl3(s, 500), wear: 2 }, mod: 4 };
+      if (rng.chance(0.2)) return { text: freshR(s, rng, ["Zawodnik z czo\u0142\xF3wki nie przyjecha\u0142 sparowa\u0107, tylko bi\u0107. Tydzie\u0144 chodzisz z lodem na \u017Cebrach.", "Rundy jak w walce o pas. Wychodzisz z siniakiem pod okiem i ze \u015Bwiadomo\u015Bci\u0105, ile ci brakuje."]), effects: { money: -zl3(s, 500), wear: 3 }, mod: 1 };
+      return { text: freshR(s, rng, ["Pi\u0119\u0107 rund z go\u015Bciem z top 5. Pod koniec tygodnia to on prosi o przerw\u0119.", "Sparingi z czo\u0142\xF3wk\u0105. Ka\u017Cdy b\u0142\u0105d kosztuje, ale tempo walki nagle wydaje si\u0119 wolne.", "Trzech zawodnik\xF3w z ranking\xF3w na zmian\u0119. Po takim tygodniu rywal wydaje si\u0119 mniejszy."]), effects: { money: -zl3(s, 500), wear: 2 }, mod: 4 };
     }
   },
   {
@@ -3068,7 +3398,7 @@ CAMP_ACTS.push(
       const k = weakest(s);
       const gain = rng.chance(0.35);
       return {
-        text: gain ? rng.pick([`Tydzie\u0144 w klubie w Holandii. Tamtejszy trener w trzy dni poprawia ci ${STAT_NAME[k]} bardziej ni\u017C ty przez rok.`, `Obcy klub, obce zwyczaje. Na trzecim treningu co\u015B klika i ${STAT_NAME[k]} nagle wygl\u0105da inaczej.`]) : rng.pick(["Tydzie\u0144 w obcym klubie. Nowi partnerzy, nowe kombinacje, nikt nie zna twoich nawyk\xF3w.", "Wyjazd do zaprzyja\u017Anionego klubu. \u015Apisz na materacu w biurze trenera, ale trenujesz jak nigdy."]),
+        text: gain ? freshR(s, rng, [`Tydzie\u0144 w klubie w Holandii. Tamtejszy trener w trzy dni poprawia ci ${STAT_NAME[k]} bardziej ni\u017C ty przez rok.`, `Obcy klub, obce zwyczaje. Na trzecim treningu co\u015B klika i ${STAT_NAME[k]} nagle wygl\u0105da inaczej.`, `Starszy pan w dresie z lat 80. pokazuje ci jeden detal i nagle widzisz ${STAT_NAME[k]} zupe\u0142nie inaczej.`, `Gospodarze trzy dni bij\u0105 ci\u0119 tym samym. Czwartego dnia ${STAT_NAME[k]} masz ju\u017C poprawion\u0105.`]) : freshR(s, rng, ["Tydzie\u0144 w obcym klubie. Nowi partnerzy, nowe kombinacje, nikt nie zna twoich nawyk\xF3w.", "Wyjazd do zaprzyja\u017Anionego klubu. \u015Apisz na materacu w biurze trenera, ale trenujesz jak nigdy.", "Klub w Czechach, piwo za trzy z\u0142ote i sparingi do b\xF3lu. Na piwo nie ma czasu.", "Go\u015Bcinne treningi w Gda\u0144sku. Miejscowi sprawdzaj\u0105, czy jeste\u015B tak dobry, jak w internecie.", "Tydzie\u0144 w klubie kolegi trenera. Wszyscy m\xF3wi\u0105 \u201Eto ten od niego?\u201D i bij\u0105 mocniej.", "Hala w Niemczech, trener z Brazylii, partnerzy z ca\u0142ej Europy. Nikt nie zna twoich nawyk\xF3w, ty nie znasz ich."]),
         effects: { money: -zl3(s, 900), ...gain ? { stats: { [k]: 1 } } : {} },
         mod: 2
       };
@@ -4269,8 +4599,8 @@ function decideOnCards(rep, sim) {
 }
 function pickFresh(rng, rep, arr) {
   const used = new Set(rep.moments.map((m) => m.text));
-  const fresh = arr.filter((t) => !used.has(t));
-  return rng.pick(fresh.length ? fresh : arr);
+  const fresh2 = arr.filter((t) => !used.has(t));
+  return rng.pick(fresh2.length ? fresh2 : arr);
 }
 function addMoment(rep, m) {
   rep.moments.push(m);
@@ -4658,7 +4988,12 @@ function buildDecisionRaw(rng, ctx, sim) {
       id: "hurt",
       round: next,
       title: "Mocno obity",
-      text: `Przerwa przed ${next}. rund\u0105. Krew w ustach, nogi jak z waty, a ${n} to widzi. Trener krzyczy, \u017Ceby\u015B co\u015B zmieni\u0142.`,
+      text: `Przerwa przed ${next}. rund\u0105. ${altLine(n, next, sim.me.dmg, [
+        `Krew w ustach, nogi jak z waty, a ${n} to widzi. Trener krzyczy, \u017Ceby\u015B co\u015B zmieni\u0142.`,
+        `Lekarz zagl\u0105da ci w oczy d\u0142u\u017Cej, ni\u017C by\u015B chcia\u0142. Trener: \u201Emusisz co\u015B zmieni\u0107, s\u0142yszysz?\u201D`,
+        `\u015Awiat lekko p\u0142ywa, a ${n} ju\u017C czeka na \u015Brodku. Naro\u017Cnik ma dziesi\u0119\u0107 sekund na plan.`,
+        "Cutman zatyka \u0142uk, trener trzyma ci\u0119 za kark. \u201EJeszcze jedna runda. Tylko inaczej.\u201D"
+      ])}`,
       options: [
         option("hurt_wrest", "normal", "Klincz i zapasy", "Wi\u0105\u017Cesz go przy siatce i kupujesz czas.", "wrest", me.wrest, op.wrest, base, "przetrwasz i zabierzesz mu tempo", "dalej obrywasz"),
         option("hurt_stand", "risk", "Wszystko na jedn\u0105 kart\u0119", "Stajesz na \u015Brodku i odpowiadasz bombami.", "stand", me.stand, op.stand, base - 10, "szansa na nokaut z niczego", "mo\u017Cesz zgasn\u0105\u0107"),
@@ -4689,6 +5024,41 @@ function buildDecisionRaw(rng, ctx, sim) {
         option("lose_all", "risk", "Wszystko albo nic", "Rzucasz wszystko, co masz.", "stand", me.stand, op.chin, base - 4, "szansa na nokaut", "mo\u017Cesz zosta\u0107 skontrowany"),
         option("lose_bjj", "risk", "Szukasz poddania", "Ryzykowne przej\u015Bcie do parteru.", "bjj", me.bjj, op.bjj, base - 4, "szansa na poddanie", "stracisz pozycj\u0119"),
         option("lose_wrest", "normal", "Wygrywasz rund\u0119 zapasami", "Obalenia i kontrola, reszta w r\u0119kach s\u0119dzi\xF3w.", "wrest", me.wrest, op.wrest, base, "punkty po twojej stronie", "punkty znowu uciekaj\u0105")
+      ]
+    };
+  }
+  if (sim.me.stam < 35 && next < sim.maxRounds + 1 && rng.chance(0.6)) {
+    return {
+      id: "gas",
+      round: next,
+      title: "Brakuje tlenu",
+      text: altLine(n, next, sim.me.stam, [
+        `R\u0119ce jak z o\u0142owiu, nogi nie chc\u0105 wsta\u0107 ze sto\u0142ka. ${n} to widzi i u\u015Bmiecha si\u0119 do swojego naro\u017Cnika.`,
+        "Oddychasz ustami, a przerwa jakby trwa\u0142a dziesi\u0119\u0107 sekund. Trener pyta, ile jeszcze masz w baku.",
+        `Kondycja odjecha\u0142a w drugiej rundzie. ${n} wygl\u0105da \u015Bwie\u017Co. Za \u015Bwie\u017Co.`
+      ]),
+      options: [
+        safe("gas_breathe", "Zwalniasz i oddychasz", "Ruch, dystans, ka\u017Cda sekunda na oddech.", "odzyskujesz si\u0142y", "on dyktuje tempo", "cardio"),
+        option("gas_clinch", "normal", "Wieszasz si\u0119 na nim przy siatce", "Klincz, oparcie, niech on te\u017C si\u0119 m\u0119czy.", "wrest", me.wrest, op.wrest, base, "oddychasz na jego koszt", "tracisz resztki si\u0142"),
+        option("gas_burst", "risk", "Jedna seria, p\xF3ki co\u015B zosta\u0142o", "Wszystko w pierwsz\u0105 minut\u0119 rundy.", "stand", me.stand, op.chin, base - 8, "szansa na nokaut z niczego", "zostaniesz bez si\u0142 do gongu")
+      ]
+    };
+  }
+  if (sim.pro && !sim.hand && sim.round >= 1 && next <= sim.maxRounds && rng.chance(0.07)) {
+    sim.hand = true;
+    return {
+      id: "hand",
+      round: next,
+      title: "Co\u015B chrupn\u0119\u0142o",
+      text: altLine(n, next, sim.opp.dmg, [
+        `Pod koniec rundy trafiasz ${n} w czo\u0142o i czujesz, jak co\u015B chrupie w prawej d\u0142oni. Trener patrzy na r\u0119kawic\u0119 i milczy.`,
+        "Prawa d\u0142o\u0144 puchnie w r\u0119kawicy. Ka\u017Cdy cios to pr\u0105d a\u017C do \u0142okcia. Naro\u017Cnik pyta, czy dasz rad\u0119.",
+        "Kciuk wygi\u0119ty pod dziwnym k\u0105tem po jednym bloku. Lekarz jeszcze nic nie widzia\u0142. Jeszcze."
+      ]),
+      options: [
+        option("hand_kick", "normal", "Przechodzisz na kopni\u0119cia i zapasy", "R\u0119ka zostaje schowana, reszta cia\u0142a pracuje.", "wrest", me.wrest, op.wrest, base - 2, "on nawet nie zauwa\u017Cy r\xF3\u017Cnicy", "bez prawej r\u0119ki brakuje ci argument\xF3w"),
+        option("hand_hide", "risk", "Ukrywasz to i bijesz dalej", "B\xF3l p\xF3\u017Aniej. Teraz jest walka.", "stand", me.stand, op.chin, base - 10, "szansa na nokaut lew\u0105 r\u0119k\u0105", "ka\u017Cdy cios boli ciebie bardziej ni\u017C jego"),
+        safe("hand_safe", "Klincz i czekasz na gong", "Przetrwa\u0107 rund\u0119, potem zobaczymy.", "dowozisz rund\u0119", "oddajesz mu inicjatyw\u0119", "chin")
       ]
     };
   }
@@ -4724,7 +5094,13 @@ function buildDecisionRaw(rng, ctx, sim) {
       id: "mid",
       round: next,
       title: "Naro\u017Cnik pyta",
-      text: `Przerwa przed ${next}. rund\u0105. Wyr\xF3wnana walka. Trener pyta, gdzie czujesz przewag\u0119.`,
+      text: `Przerwa przed ${next}. rund\u0105. ${altLine(n, next, sim.opp.dmg, [
+        "Wyr\xF3wnana walka. Trener pyta, gdzie czujesz przewag\u0119.",
+        `Na kartach pewnie remis. Trener kuca przed tob\u0105: \u201Eco czujesz, gdzie on p\u0119ka?\u201D`,
+        `Runda dla ciebie albo dla niego, nikt nie wie. Trener chce wiedzie\u0107, co dalej.`,
+        `${n} oddycha ci\u0119\u017Cej ni\u017C ty, ale punkt\xF3w nie przyby\u0142o \u017Cadnemu. Naro\u017Cnik pyta o plan.`,
+        "S\u0119dziowie maj\u0105 zagwozdk\u0119. Trener wciska ci wod\u0119 i pyta, gdzie idziemy."
+      ])}`,
       options: [
         option("mid_stand", "normal", "Podkr\u0119casz tempo w st\xF3jce", "Wi\u0119cej kombinacji, wi\u0119cej ryzyka.", "stand", me.stand, op.stand * 0.6 + op.iq * 0.4 + rd("stand"), base, "obijasz go i zabierasz mu rund\u0119", "\u0142apiesz kontr\u0119"),
         option("mid_wrest", "normal", "Schodzisz do n\xF3g i obalasz", "Zapasy i kontrola przy siatce.", "wrest", me.wrest, op.wrest + rd("wrest"), base, "rundy z g\xF3ry", "tracisz si\u0142y"),
@@ -4979,6 +5355,11 @@ function applyDecision(rng, ctx, sim, rep, key) {
       tone = "neutral";
     }
   }
+  if (opt.key === "hand_hide" && out === "fail") {
+    sim.me.dmg += 6;
+    effect = "r\u0119ka spuchni\u0119ta, ka\u017Cdy cios to b\xF3l";
+  }
+  if (opt.key === "gas_burst" && out === "fail") sim.me.stam = clamp(sim.me.stam - 10, 0, 100);
   if (opt.key === "cut_close" && out !== "fail") {
     sim.me.dmg = Math.max(0, sim.me.dmg - 8);
     effect = "rana zamkni\u0119ta, krew nie leci";
@@ -5011,6 +5392,11 @@ function advanceFight(rng, ctx, sim, rep) {
     }
     simulateRound(rng, ctx, sim, rep);
   }
+}
+function altLine(name, round, dmg, arr) {
+  let h2 = round * 31 + Math.round(dmg);
+  for (let i = 0; i < name.length; i++) h2 = h2 * 33 + name.charCodeAt(i) >>> 0;
+  return arr[h2 % arr.length];
 }
 
 // src/engine/events_money.ts
@@ -8264,6 +8650,29 @@ function randomProfile(rng) {
     difficulty: "normal"
   };
 }
+function migrateSave(raw) {
+  if (!raw || typeof raw !== "object") return null;
+  const s = raw;
+  const v = typeof s.v === "number" ? s.v : 0;
+  if (v > SAVE_VERSION) return null;
+  if (!s.profile || typeof s.profile !== "object" || !s.stats || !s.phase) return null;
+  try {
+    const tpl = newGame({ slot: s.slot ?? 1, mode: s.mode ?? "normal", seed: 1, profile: s.profile });
+    for (const k of Object.keys(tpl)) if (s[k] === void 0) s[k] = tpl[k];
+    const sub = ["phone", "profile", "stats", "potential"];
+    for (const k of sub) {
+      const a = s[k];
+      const b = tpl[k];
+      if (a && b && typeof a === "object" && typeof b === "object") {
+        for (const kk of Object.keys(b)) if (a[kk] === void 0) a[kk] = b[kk];
+      }
+    }
+  } catch {
+    return null;
+  }
+  s.v = SAVE_VERSION;
+  return s;
+}
 function newGame(opts) {
   const rng = createRng(opts.seed);
   const p = opts.profile;
@@ -10750,14 +11159,14 @@ function makePoster(rng, s, rep) {
     }
     const rk = i <= 1 ? rng.int(1, 5) : i <= 3 ? rng.int(4, 12) : null;
     const pt = rep.tuneup ? 1 : rep.abroad ? 4 : tier;
-    const fresh = (mk) => {
+    const fresh2 = (mk) => {
       let f = mk();
       for (let k = 0; k < 6 && used.has(f.lastName); k++) f = mk();
       used.add(f.lastName);
       return f;
     };
-    const x = fresh(() => rep.freak ? generateFreak(rng) : generateOpponent(rng, pt, rk, false));
-    const y = fresh(() => rep.freak ? generateFreak(rng) : generateOpponent(rng, pt, rk === null ? null : rk + rng.int(1, 3), false));
+    const x = fresh2(() => rep.freak ? generateFreak(rng) : generateOpponent(rng, pt, rk, false));
+    const y = fresh2(() => rep.freak ? generateFreak(rng) : generateOpponent(rng, pt, rk === null ? null : rk + rng.int(1, 3), false));
     bouts.push({ a: x.lastName, ar: x.freak ? "freak" : recStr(x.record), b: y.lastName, br: y.freak ? "freak" : recStr(y.record), tag: tags[i] });
   }
   bouts[mine].tag = tags[mine];
@@ -10834,7 +11243,7 @@ function startFight(rng, s, o) {
         rep.moments.push({
           round: 0,
           title: "Sprawy poza klatk\u0105",
-          text: pm > 0 ? `${vary6(s, ["To, co dzia\u0142o si\u0119 przed walk\u0105, dzia\u0142a na twoj\u0105 korzy\u015B\u0107.", "Ostatnie dni u\u0142o\u017Cy\u0142y si\u0119 po twojej my\u015Bli.", "Wchodzisz do klatki z czyst\u0105 g\u0142ow\u0105.", "Wszystko poza klatk\u0105 zagra\u0142o."])} Szanse +${pm} pkt.` : `${vary6(s, ["To, co dzia\u0142o si\u0119 przed walk\u0105, siedzi ci w g\u0142owie.", "Ostatnie dni da\u0142y w ko\u015B\u0107.", "G\u0142owa jeszcze jest gdzie\u015B w hotelu.", "My\u015Blami jeste\u015B troch\u0119 obok klatki."])} Szanse \u2212${Math.abs(pm)} pkt.`,
+          text: pm > 0 ? `${fresh(s, ["To, co dzia\u0142o si\u0119 przed walk\u0105, dzia\u0142a na twoj\u0105 korzy\u015B\u0107.", "Ostatnie dni u\u0142o\u017Cy\u0142y si\u0119 po twojej my\u015Bli.", "Wchodzisz do klatki z czyst\u0105 g\u0142ow\u0105.", "Wszystko poza klatk\u0105 zagra\u0142o.", "Telefon milczy, g\u0142owa spokojna. Tak powinno by\u0107 zawsze.", "Sprawy na mie\u015Bcie za\u0142atwione. Mo\u017Cesz my\u015Ble\u0107 tylko o walce.", "Dobra energia z ostatnich dni idzie z tob\u0105 do klatki.", "Spa\u0142e\u015B jak dziecko, zjad\u0142e\u015B jak sportowiec. Rzadkie po\u0142\u0105czenie.", "Wszyscy wok\xF3\u0142 ciebie zrobili swoje. Teraz twoja kolej."])} Szanse +${pm} pkt.` : `${fresh(s, ["To, co dzia\u0142o si\u0119 przed walk\u0105, siedzi ci w g\u0142owie.", "Ostatnie dni da\u0142y w ko\u015B\u0107.", "G\u0142owa jeszcze jest gdzie\u015B w hotelu.", "My\u015Blami jeste\u015B troch\u0119 obok klatki.", "Telefon dzwoni\u0142 do drugiej w nocy. Czujesz to w nogach.", "Sprawy z miasta wchodz\u0105 z tob\u0105 do szatni.", "Co\u015B ci\u0119 gryzie i rywal to zobaczy.", "Rozgrzewka idzie ci\u0119\u017Cko. G\u0142owa jest gdzie indziej."])} Szanse \u2212${Math.abs(pm)} pkt.`,
           tone: pm > 0 ? "good" : "bad"
         });
       }
@@ -10848,7 +11257,7 @@ function startFight(rng, s, o) {
         });
       }
       if (gearMod(s) < 0)
-        rep.moments.push({ round: 0, title: "Zu\u017Cyty sprz\u0119t", text: `Sprz\u0119t zu\u017Cyty w ${Math.round(s.gear ?? 0)}%. ${vary6(s, ["R\u0119kawice sparingowe trzyma ju\u017C tylko ta\u015Bma, a ochraniacz pami\u0119ta poprzedni sezon.", "Ochraniacz na z\u0119by pami\u0119ta czasy amatorki. R\u0119kawice pachn\u0105 jak piwnica.", "Nakolanniki z dziur\u0105, tejpy z odzysku. Nowy sprz\u0119t kupisz na Oliksie albo w zapleczu.", "Sprz\u0119t si\u0119 sypie. Trener patrzy na twoje r\u0119kawice i kr\u0119ci g\u0142ow\u0105."])} Szanse ${gearMod(s)} pkt.`, tone: "bad" });
+        rep.moments.push({ round: 0, title: "Zu\u017Cyty sprz\u0119t", text: `Sprz\u0119t zu\u017Cyty w ${Math.round(s.gear ?? 0)}%. ${fresh(s, ["R\u0119kawice sparingowe trzyma ju\u017C tylko ta\u015Bma, a ochraniacz pami\u0119ta poprzedni sezon.", "Ochraniacz na z\u0119by pami\u0119ta czasy amatorki. R\u0119kawice pachn\u0105 jak piwnica.", "Nakolanniki z dziur\u0105, tejpy z odzysku. Nowy sprz\u0119t kupisz na Oliksie albo w zapleczu.", "Sprz\u0119t si\u0119 sypie. Trener patrzy na twoje r\u0119kawice i kr\u0119ci g\u0142ow\u0105.", "Rzep od r\u0119kawic ju\u017C nie trzyma. Owijasz go ta\u015Bm\u0105 przed ka\u017Cdym sparingiem.", "Spodenki p\u0119k\u0142y w kroku na rozgrzewce. Zszywane na szybko agrafk\u0105.", "Sparingpartnerzy prosz\u0105, \u017Ceby\u015B nie zak\u0142ada\u0142 tych r\u0119kawic. Ze wzgl\u0119du na zapach.", "Ochraniacz na piszczel trzyma si\u0119 na s\u0142owo honoru i gumk\u0119 recepturk\u0119."])} Szanse ${gearMod(s)} pkt.`, tone: "bad" });
       if (!amateur && !freak && (s.flags.sideTired ?? 0) > 0) {
         s.flags.sideTired = 0;
         rep.tired = true;
@@ -10863,25 +11272,30 @@ function startFight(rng, s, o) {
         if (rep.prep === "rival") {
           const cost = prepCost(s, o);
           s.money -= cost;
-          rep.moments.push({ round: 0, title: "Ob\xF3z pod rywala", text: `${vary6(s, ["Sparingpartnerzy w stylu rywala i godziny nagra\u0144.", "Sparingpartner z jego stylem przez trzy tygodnie i analityk z laptopem.", "Nagrania, sparingi, notatki. Rywal nie ma ju\u017C przed tob\u0105 tajemnic."])} Kosztuje ${cost.toLocaleString("pl-PL")} z\u0142, ale znasz ka\u017Cdy jego nawyk.`, tone: "good" });
+          rep.moments.push({ round: 0, title: "Ob\xF3z pod rywala", text: `${fresh(s, ["Sparingpartnerzy w stylu rywala i godziny nagra\u0144.", "Sparingpartner z jego stylem przez trzy tygodnie i analityk z laptopem.", "Nagrania, sparingi, notatki. Rywal nie ma ju\u017C przed tob\u0105 tajemnic.", "Znasz jego walki lepiej ni\u017C on sam. Nawet to, jak poprawia ochraniacz.", "Wynaj\u0119ty sparingpartner kopie dok\u0142adnie tak jak on. A\u017C za dok\u0142adnie.", "Analityk rozpisa\u0142 ka\u017Cd\u0105 jego przerw\u0119. Wiesz, kiedy opuszcza r\u0119ce."])} Kosztuje ${cost.toLocaleString("pl-PL")} z\u0142, ale znasz ka\u017Cdy jego nawyk.`, tone: "good" });
         } else if (rep.prep === "hard") {
           rep.moments.push({
             round: 0,
             title: "Ci\u0119\u017Cki ob\xF3z",
-            text: vary6(s, [
+            text: fresh(s, [
               "Dwa treningi dziennie przez sze\u015B\u0107 tygodni. Forma jest, ale cia\u0142o jest zm\u0119czone.",
               "Sze\u015B\u0107 tygodni na dwie zmiany. Mi\u0119\u015Bnie pami\u0119taj\u0105 ka\u017Cdy sprint pod g\xF3r\u0119.",
               "Ob\xF3z, po kt\xF3rym nawet sen boli. Za to kondycja jak nigdy.",
-              "Trener wyciska\u0142 z ciebie wszystko. Forma jest, kolana si\u0119 skar\u017C\u0105."
+              "Trener wyciska\u0142 z ciebie wszystko. Forma jest, kolana si\u0119 skar\u017C\u0105.",
+              "Schody na stadionie znasz ju\u017C na pami\u0119\u0107. Ka\u017Cdy stopie\u0144 z imienia.",
+              "Sparingi do upad\u0142ego i l\xF3d na kolana co wiecz\xF3r. Waga spad\u0142a sama.",
+              "Trzy tygodnie bez jednego wolnego dnia. Organizm protestuje, ale forma jest.",
+              "Na ostatnim treningu nawet trener przyzna\u0142: \u201Estarczy\u201D. Pierwszy raz w historii.",
+              "Kondycja jak u marato\u0144czyka, plecy jak u dziadka. Taki ob\xF3z."
             ]),
             tone: "neutral"
           });
         }
-        if (rep.tired) rep.moments.push({ round: 0, title: "Weekend poza sal\u0105", text: vary6(s, ["Wydarzenie poza federacj\u0105 zjad\u0142o kilka dni treningu. Czujesz to w nogach.", "Weekend poza sal\u0105 odbija si\u0119 teraz w nogach.", "Przez ten wyjazd zabrak\u0142o kilku trening\xF3w. W drugiej rundzie to wyjdzie."]), tone: "neutral" });
+        if (rep.tired) rep.moments.push({ round: 0, title: "Weekend poza sal\u0105", text: fresh(s, ["Wydarzenie poza federacj\u0105 zjad\u0142o kilka dni treningu. Czujesz to w nogach.", "Weekend poza sal\u0105 odbija si\u0119 teraz w nogach.", "Przez ten wyjazd zabrak\u0142o kilku trening\xF3w. W drugiej rundzie to wyjdzie.", "Dodatkowa fucha by\u0142a przyjemna. Kondycja mniej.", "Kilka dni bez sali i oddech ju\u017C nie ten sam."]), tone: "neutral" });
         if (o.abroad)
           rep.moments.push({ round: 0, title: `Gala w mie\u015Bcie ${o.abroad}`, text: "Lot w biznes klasie, hotel z basenem na dachu i hala pe\u0142na ludzi, kt\xF3rzy nigdy o tobie nie s\u0142yszeli. Dzi\u015B maj\u0105 us\u0142ysze\u0107.", tone: "purple" });
         if (o.short)
-          rep.moments.push({ round: 0, title: "Zast\u0119pstwo", text: `Sze\u015B\u0107 dni temu ogl\u0105da\u0142e\u015B t\u0119 gal\u0119 z kanapy. Teraz idziesz w karcie g\u0142\xF3wnej. Bez obozu, bez planu pod rywala, na samej formie z sali.`, tone: "neutral" });
+          rep.moments.push({ round: 0, title: "Zast\u0119pstwo", text: `${fresh(s, ["Sze\u015B\u0107 dni temu ogl\u0105da\u0142e\u015B t\u0119 gal\u0119 z kanapy. Teraz idziesz w karcie g\u0142\xF3wnej.", "W poniedzia\u0142ek by\u0142 telefon, w sobot\u0119 jest walka. Tak to wygl\u0105da w zast\u0119pstwie.", "Kto\u015B wypad\u0142 z karty, ty wskoczy\u0142e\u015B. Plakaty jeszcze maj\u0105 jego zdj\u0119cie.", "Torba spakowana w dziesi\u0119\u0107 minut, waga zrobiona w trzy dni. Witaj w zast\u0119pstwie."])} Bez obozu, bez planu pod rywala, na samej formie z sali.`, tone: "neutral" });
         if (o.weigh === "paid") {
           rep.weightMiss = true;
           rep.weighMod = -5;
@@ -10935,7 +11349,7 @@ function startFight(rng, s, o) {
         rep.moments.push({
           round: 0,
           title: title ? vary6(s, ["Wiecz\xF3r, na kt\xF3ry pracowa\u0142e\u015B", "Pas le\u017Cy na stoliku", "Najwa\u017Cniejsze 25 minut roku", "Tu si\u0119 pisze histori\u0119"]) : vary6(s, ["To nie jest zwyk\u0142a walka", "Osobiste porachunki", "Ca\u0142a hala wie, o co chodzi"]),
-          text: `${rounds === 5 ? "Pi\u0119\u0107 rund" : "Trzy rundy"}. W tej walce naro\u017Cnik pyta ci\u0119 o decyzj\u0119 w ka\u017Cdej przerwie. ${title ? vary6(s, ["Ka\u017Cda minuta mo\u017Ce zmieni\u0107 ca\u0142\u0105 karier\u0119.", "Jeden b\u0142\u0105d i zaczynasz od nowa. Jedna dobra decyzja i jeste\u015B mistrzem.", "Komentatorzy ju\u017C m\xF3wi\u0105 o \u201Ewalce roku\u201D. Teraz trzeba j\u0105 wygra\u0107."], 1) : vary6(s, ["Wszyscy wiedz\u0105, \u017Ce tu chodzi o co\u015B wi\u0119cej ni\u017C ranking.", "Ranking nie ma tu nic do rzeczy. Liczy si\u0119, kto wyjdzie z klatki z podniesion\u0105 g\u0142ow\u0105."], 1)}`,
+          text: `${rounds === 5 ? "Pi\u0119\u0107 rund" : "Trzy rundy"}. ${fresh(s, ["W tej walce naro\u017Cnik pyta ci\u0119 o decyzj\u0119 w ka\u017Cdej przerwie.", "Ka\u017Cda przerwa to narada z naro\u017Cnikiem: decydujesz ty.", "Mi\u0119dzy rundami trener nie m\xF3wi, co robi\u0107. Pyta.", "Tym razem w ka\u017Cdej przerwie wybierasz plan na kolejn\u0105 rund\u0119."])} ${title ? fresh(s, ["Ka\u017Cda minuta mo\u017Ce zmieni\u0107 ca\u0142\u0105 karier\u0119.", "Jeden b\u0142\u0105d i zaczynasz od nowa. Jedna dobra decyzja i jeste\u015B mistrzem.", "Komentatorzy ju\u017C m\xF3wi\u0105 o \u201Ewalce roku\u201D. Teraz trzeba j\u0105 wygra\u0107.", "Mama ogl\u0105da w \u015Bwietlicy z po\u0142ow\u0105 osiedla. Nie ma presji.", "Pas \u015Bwieci w \u015Bwiat\u0142ach jak lusterko w maluchu. Na wyci\u0105gni\u0119cie r\u0119ki.", "Bilety wyprzedane od miesi\u0105ca. Kto\u015B na trybunach trzyma transparent z twoj\u0105 ksyw\u0105."], 1) : fresh(s, ["Wszyscy wiedz\u0105, \u017Ce tu chodzi o co\u015B wi\u0119cej ni\u017C ranking.", "Ranking nie ma tu nic do rzeczy. Liczy si\u0119, kto wyjdzie z klatki z podniesion\u0105 g\u0142ow\u0105.", "Na konferencji prawie dosz\u0142o do b\xF3jki. Teraz mo\u017Cna legalnie.", "Ca\u0142a szatnia ogl\u0105da ten pojedynek na telefonach. Nikt nie chce przegapi\u0107.", "T\u0119 walk\u0119 ludzie b\u0119d\u0105 wspomina\u0107 przy grillu jeszcze za dziesi\u0119\u0107 lat."], 1)}`,
           tone: "purple"
         });
       }
@@ -11075,7 +11489,12 @@ var PRESS_QUOTES = [
   "Niech {n} odpocznie przed walk\u0105. Po walce te\u017C b\u0119dzie odpoczywa\u0142. D\u0142ugo.",
   "Pytacie, co wiem o rywalu? \u017Be {n} ma \u0142adne zdj\u0119cia na Instagrymie. I tyle.",
   "Niech {n} lepiej przyniesie r\u0119cznik. Przyda si\u0119, \u017Ceby rzuci\u0107 go na ring.",
-  "Nie wiem nawet, jak on si\u0119 nazywa. Za tydzie\u0144 te\u017C nikt nie b\u0119dzie wiedzia\u0142."
+  "Nie wiem nawet, jak on si\u0119 nazywa. Za tydzie\u0144 te\u017C nikt nie b\u0119dzie wiedzia\u0142.",
+  "{n} trenuje w klubie, gdzie najwi\u0119kszym osi\u0105gni\u0119ciem jest nowy automat z batonami.",
+  "Moja babcia ma lepsz\u0105 gard\u0119 ni\u017C {n}. I lepsz\u0105 kondycj\u0119. I wi\u0119cej obserwuj\u0105cych.",
+  "Przyjecha\u0142em tu po wyp\u0142at\u0119. {n} jest tylko po drodze.",
+  "Niech {n} nagra sobie t\u0119 konferencj\u0119. To b\u0119dzie jego najlepszy wyst\u0119p w tym tygodniu.",
+  "Ja trenuj\u0119 dwa razy dziennie. {n} dwa razy dziennie wrzuca relacje."
 ];
 var PRESS_OPTIONS = [
   { key: "calm", label: "Spokojnie i z klas\u0105", desc: "Szacunek, zero emocji. Kibice ceni\u0105." },
@@ -11175,7 +11594,12 @@ function pressAnswer(s0, key) {
       s.rep = clamp(s.rep - (ctx.id === "freak" ? 1 : ctx.id === "losing" ? 6 : 4), 0, 100);
       if (rng.chance(ctx.insult)) {
         o.pressMod = 4;
-        o.pressNote = "Klip z konferencji ma milion wy\u015Bwietle\u0144. Rywal przez ca\u0142y tydzie\u0144 my\u015Bli tylko o tobie, a nie o planie na walk\u0119.";
+        o.pressNote = fresh(s, [
+          "Klip z konferencji ma milion wy\u015Bwietle\u0144. Rywal przez ca\u0142y tydzie\u0144 my\u015Bli tylko o tobie, a nie o planie na walk\u0119.",
+          "Twoja wi\u0105zanka trafia na wszystkie strony z memami. Rywal komentuje ka\u017Cdy z nich zamiast trenowa\u0107.",
+          "Rywal nagrywa odpowied\u017A na twoje s\u0142owa. Potem drug\u0105. Potem trzeci\u0105. Ma plan na walk\u0119, tylko nie na ciebie.",
+          "P\xF3\u0142 internetu si\u0119 z ciebie \u015Bmieje, drugie p\xF3\u0142 z niego. On to bierze do siebie bardziej."
+        ]);
       } else {
         const fine = [0, 1e3, 3e3, 8e3, 2e4][s.tier] ?? 3e3;
         s.money -= fine;
@@ -11365,7 +11789,7 @@ function buildPost(rng, s, rep) {
     return {
       kind: "robbed",
       title: "Kontrowersyjny werdykt",
-      text: "Hala gwi\u017Cd\u017Ce, w internecie wrze. Wielu uwa\u017Ca, \u017Ce to ty wygra\u0142e\u015B. Co robisz?",
+      text: `${fresh(s, ["Hala gwi\u017Cd\u017Ce, w internecie wrze. Wielu uwa\u017Ca, \u017Ce to ty wygra\u0142e\u015B.", "Kibice rzucaj\u0105 kubkami w stron\u0119 s\u0119dzi\xF3w. Komentator m\xF3wi \u201Eskandal\u201D trzy razy z rz\u0119du.", "Statystyki m\xF3wi\u0105 jedno, karty s\u0119dziowskie drugie. Internet ju\u017C wybra\u0142 stron\u0119: twoj\u0105.", "Nawet naro\u017Cnik rywala patrzy na siebie zdziwiony. Werdykt nikogo nie przekona\u0142."])} Co robisz?`,
       options: [
         { key: "rematch", label: "Domagaj si\u0119 rewan\u017Cu", desc: "Federacja mo\u017Ce da\u0107 ci t\u0119 sam\u0105 walk\u0119 jeszcze raz.", chance },
         { key: "class", label: "Przyjmij werdykt z klas\u0105", desc: "Reputacja w g\xF3r\u0119. Idziesz dalej." },
@@ -11404,7 +11828,7 @@ function acceptOffer(s0, prep = "std", tickets = "std") {
   const pressWanted = pressEligible(o) && !s.run.autoAccept && (bigPress || !lastHadPress && (s.run.fights.length + s.season) % 2 === 0);
   if (pressWanted)
     withRng(s, (rng) => {
-      o.pressQuote = rng.pick(PRESS_QUOTES).replace("{n}", s.profile.lastName);
+      o.pressQuote = freshR(s, rng, PRESS_QUOTES).replace("{n}", s.profile.lastName);
       o.pressCtx = pressContext(s, o, rng);
     });
   if (pathOn(s, o)) {
@@ -11436,7 +11860,7 @@ function buildHype(rng, s, o) {
       `Bilety na ${gala} schodz\u0105 w zawrotnym tempie`
     ])
   ];
-  const post = o.rival || o.nemesis ? rng.pick([`Znowu ty? My\u015Bla\u0142em, \u017Ce po ostatnim razie zmienisz sport. Do zobaczenia, ${me}. \u{1F608}`, `Rok czeka\u0142em na ten rewan\u017C. Tym razem nie b\u0119dzie s\u0119dzi\xF3w. \u{1F52A}`]) : o.opp.freak ? rng.pick([`Ten \u201Esportowiec\u201D ${me} to papier. Zrobi\u0119 z niego mema na \u017Cywo \u{1F921}`, `${me} tak si\u0119 boi, \u017Ce ju\u017C szuka wym\xF3wek. Ch\u0142opaki, kupujcie PPV \u{1F4B8}`]) : o.title ? rng.pick([`Pas zostaje u mnie. ${me}, szanuj\u0119, ale przyjdziesz po nauczk\u0119. \u{1F3C6}`, `D\u0142ugo czeka\u0142e\u015B na t\u0119 szans\u0119. Szkoda, \u017Ce sko\u0144czy si\u0119 w pierwszej rundzie.`]) : rng.pick([
+  const post = o.rival || o.nemesis ? freshR(s, rng, [`Znowu ty? My\u015Bla\u0142em, \u017Ce po ostatnim razie zmienisz sport. Do zobaczenia, ${me}. \u{1F608}`, `Rok czeka\u0142em na ten rewan\u017C. Tym razem nie b\u0119dzie s\u0119dzi\xF3w. \u{1F52A}`, `${me}, ty i ja mamy niedoko\u0144czon\u0105 spraw\u0119. W sobot\u0119 j\u0105 ko\u0144czymy.`, `Pami\u0119tam ka\u017Cd\u0105 sekund\u0119 naszej ostatniej walki. Ty zapami\u0119tasz t\u0119. \u{1F525}`]) : o.opp.freak ? freshR(s, rng, [`Ten \u201Esportowiec\u201D ${me} to papier. Zrobi\u0119 z niego mema na \u017Cywo \u{1F921}`, `${me} tak si\u0119 boi, \u017Ce ju\u017C szuka wym\xF3wek. Ch\u0142opaki, kupujcie PPV \u{1F4B8}`, `Kod rabatowy na PPV w bio. ${me}, ty wchodzisz za darmo, bo i tak d\u0142ugo nie zostaniesz \u{1F39F}\uFE0F`]) : o.title ? freshR(s, rng, [`Pas zostaje u mnie. ${me}, szanuj\u0119, ale przyjdziesz po nauczk\u0119. \u{1F3C6}`, `D\u0142ugo czeka\u0142e\u015B na t\u0119 szans\u0119. Szkoda, \u017Ce sko\u0144czy si\u0119 w pierwszej rundzie.`, `Pas ju\u017C si\u0119 do mnie przyzwyczai\u0142. ${me}, nie r\xF3b mu zamieszania. \u{1F3C6}`, `${me} dosta\u0142 szans\u0119, ja dosta\u0142em kolejn\u0105 obron\u0119. Ka\u017Cdy co\u015B dostaje.`, `Wszyscy pytaj\u0105, czy si\u0119 boj\u0119. Boj\u0119 si\u0119 tylko, \u017Ce sko\u0144cz\u0119 za szybko i kibice nie zd\u0105\u017C\u0105 usi\u0105\u015B\u0107.`]) : freshR(s, rng, [
     `Kolejny rywal z listy. ${me}, nic osobistego. \u{1F94A}`,
     `Widzia\u0142em twoje walki, ${me}. St\xF3jka do poprawy. Poka\u017C\u0119 ci, gdzie.`,
     `${me}? Szacunek. Ale w sobot\u0119 szacunek si\u0119 ko\u0144czy. \u{1F4AA}`,
@@ -11461,7 +11885,7 @@ function announceAnswer(s0, key) {
       addFans(s, followersOf(s) * 0.03 + 30);
       if (!o.wantPress && pressEligible(o)) {
         o.wantPress = true;
-        o.pressQuote = rng.pick(PRESS_QUOTES).replace("{n}", s.profile.lastName);
+        o.pressQuote = freshR(s, rng, PRESS_QUOTES).replace("{n}", s.profile.lastName);
         o.pressCtx = pressContext(s, o, rng);
       }
     }
@@ -11822,7 +12246,7 @@ function finalizeFight(rng, s, rep) {
         round: rep.round,
         brand: bonus === "Nokaut wieczoru" ? "knockout" : void 0,
         title: `Bonus: ${bonus.toLowerCase()}`,
-        text: bonus === "Walka wieczoru" ? `Organizator docenia wojn\u0119, jak\u0105 zafundowali\u015Bcie kibicom. Dla ka\u017Cdego z was ${amount.toLocaleString("pl-PL")} z\u0142.` : `Organizator dorzuca ${amount.toLocaleString("pl-PL")} z\u0142 za najlepsze sko\u0144czenie gali.`,
+        text: bonus === "Walka wieczoru" ? `${fresh(s, ["Organizator docenia wojn\u0119, jak\u0105 zafundowali\u015Bcie kibicom.", "Hala wsta\u0142a dwa razy w trakcie jednej rundy. Organizator to widzia\u0142.", "Takie walki sprzedaj\u0105 bilety na nast\u0119pne gale. Organizator wie o tym najlepiej."])} Dla ka\u017Cdego z was ${amount.toLocaleString("pl-PL")} z\u0142.` : `${fresh(s, ["Organizator dorzuca", "Za naj\u0142adniejsze sko\u0144czenie wieczoru organizator dorzuca", "Kopert\u0119 z premi\u0105 przynosi sam w\u0142a\u015Bciciel federacji:", "Bonus za sko\u0144czenie gali:"])} ${amount.toLocaleString("pl-PL")} z\u0142.`,
         tone: "purple"
       });
     }
@@ -13145,7 +13569,8 @@ function afterPaths(s) {
       title: "Promotor gal",
       icon: "ticket",
       desc: "Zak\u0142adasz w\u0142asn\u0105 federacj\u0119 i sam uk\u0142adasz karty walk.",
-      locked: s.totalEarned >= 8e5 ? void 0 : "potrzeba 800 tys. z\u0142 zarobionych w karierze",
+      // własna federacja to kapitał na start: liczy się to, co zostało na koncie, a nie tylko to, co przeszło przez ręce
+      locked: s.totalEarned < 8e5 ? "potrzeba 800 tys. z\u0142 zarobionych w karierze" : s.money < 4e5 ? "potrzeba 400 tys. z\u0142 na koncie na start federacji" : void 0,
       epilogue: `Twoja federacja robi cztery gale rocznie, a na konferencjach to ty uspokajasz zawodnik\xF3w. Czasem \u0142apiesz si\u0119 na tym, \u017Ce negocjujesz z kim\u015B dok\u0142adnie tak, jak kiedy\u015B negocjowano z tob\u0105.`
     },
     {
@@ -13155,6 +13580,14 @@ function afterPaths(s) {
       desc: "Podcast, kana\u0142 i walki pokazowe dla zasi\u0119g\xF3w.",
       locked: fans >= 8e4 ? void 0 : "potrzeba 80 tys. obserwuj\u0105cych",
       epilogue: `Tw\xF3j podcast \u201EPo gongu\u201D ma milion wy\u015Bwietle\u0144 miesi\u0119cznie. Najch\u0119tniej ogl\u0105dany odcinek to ten, w kt\xF3rym opowiadasz, jak w wieku 16 lat mama wyjmowa\u0142a pieni\u0105dze z koperty na pierwsze r\u0119kawice.`
+    },
+    {
+      key: "investor",
+      title: "Inwestor",
+      icon: "trend",
+      desc: "Kapita\u0142 z kariery pracuje: udzia\u0142y w klubach, sprz\u0119t, m\u0142odzi zawodnicy.",
+      locked: s.money >= 1e6 ? void 0 : "potrzeba 1 mln z\u0142 na koncie na koniec kariery",
+      epilogue: `${n} kupuje udzia\u0142y w trzech salach, sponsoruje junior\xF3w z ${town} i siedzi w radzie nadzorczej firmy od r\u0119kawic. W wywiadach m\xF3wi, \u017Ce najtrudniejsza walka by\u0142a z pokus\u0105, \u017Ceby wszystko przepu\u015Bci\u0107. Wygra\u0142 j\u0105 na punkty.`
     },
     {
       key: "firefighter",
@@ -13342,12 +13775,33 @@ async function userId(jwt) {
   const { data, error } = await db.auth.getUser(jwt);
   return error || !data?.user ? null : data.user.id;
 }
+async function shortHash(v) {
+  const salt = (Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "spz").slice(-16);
+  const d = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(salt + v));
+  return [...new Uint8Array(d)].slice(0, 8).map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+function clientNet(req) {
+  const ip = (req.headers.get("x-forwarded-for") ?? req.headers.get("cf-connecting-ip") ?? "").split(",")[0].trim();
+  return ip.includes(":") ? ip.split(":").slice(0, 3).join(":") : ip.split(".").slice(0, 3).join(".");
+}
+var recent = /* @__PURE__ */ new Map();
+function tooFast(uid2) {
+  const t = Date.now();
+  const list = (recent.get(uid2) ?? []).filter((x) => t - x < 6e4);
+  list.push(t);
+  recent.set(uid2, list);
+  if (recent.size > 5e3) recent.clear();
+  return list.length > 90;
+}
+var FAST_MS = 250;
+var FLAG_MIN_ACTS = 200;
+var FLAG_RATIO = 0.6;
 var later = (p) => {
   const rt = globalThis.EdgeRuntime;
   if (rt?.waitUntil) rt.waitUntil(Promise.resolve(p));
   else return p;
 };
-Deno.serve(async (req) => {
+async function handle(req) {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
   try {
     const jwt = (req.headers.get("Authorization") ?? "").replace("Bearer ", "");
@@ -13363,25 +13817,33 @@ Deno.serve(async (req) => {
     ]);
     const leaderboard = async () => {
       if (!season) return [];
-      const { data } = await db.from("careers").select("player_id, legacy, finished, players(nick)").eq("season_id", season.id).order("legacy", { ascending: false }).limit(400);
+      const { data } = await db.from("careers").select("player_id, legacy, finished, players(nick, net_hash, ua_hash)").eq("season_id", season.id).eq("flagged", false).order("legacy", { ascending: false }).limit(400);
       const best = /* @__PURE__ */ new Map();
-      for (const r of data ?? []) if (!best.has(r.player_id)) best.set(r.player_id, { nick: r.players?.nick ?? "?", legacy: r.legacy, finished: r.finished, me: r.player_id === uid2 });
+      const devices = /* @__PURE__ */ new Set();
+      for (const r of data ?? []) {
+        if (best.has(r.player_id)) continue;
+        const dev = r.players?.net_hash && r.players?.ua_hash ? `${r.players.net_hash}:${r.players.ua_hash}` : null;
+        if (dev && devices.has(dev) && r.player_id !== uid2) continue;
+        if (dev) devices.add(dev);
+        best.set(r.player_id, { nick: r.players?.nick ?? "?", legacy: r.legacy, finished: r.finished, me: r.player_id === uid2 });
+      }
       return [...best.values()].slice(0, 100).map((r, i) => ({ place: i + 1, ...r }));
     };
     if (op === "status") {
-      const careers = season && player ? (await db.from("careers").select("id, attempt, legacy, finished, bank, refill_day, state").eq("season_id", season.id).eq("player_id", uid2).order("attempt")).data ?? [] : [];
+      const careers = season && player ? (await db.from("careers").select("id, attempt, legacy, finished, bank, refill_day, first:state->profile->>firstName, last:state->profile->>lastName, age:state->age, phase:state->>phase").eq("season_id", season.id).eq("player_id", uid2).order("attempt")).data ?? [] : [];
       for (const c of careers) refill(c, season);
       return json({
         season: season ? { id: season.id, name: season.name, startsAt: season.starts_at, endsAt: season.ends_at, yearsPerDay: season.years_per_day, bankCap: season.bank_cap, maxCareers: season.max_careers, open: now < season.ends_at } : null,
         player: player ? { nick: player.nick } : null,
-        careers: careers.map((c) => ({ id: c.id, attempt: c.attempt, legacy: c.legacy, finished: c.finished, bank: c.bank, nextRefillAt: nextRefillAt(season, c), name: `${c.state.profile.firstName} ${c.state.profile.lastName}`, age: c.state.age, phase: c.state.phase })),
+        careers: careers.map((c) => ({ id: c.id, attempt: c.attempt, legacy: c.legacy, finished: c.finished, bank: c.bank, nextRefillAt: nextRefillAt(season, c), name: `${c.first} ${c.last}`, age: Number(c.age), phase: c.phase })),
         leaderboard: await leaderboard()
       });
     }
     if (op === "setNick") {
       const nick = String(body.nick ?? "").trim().replace(/\s+/g, " ").slice(0, 20);
       if (nick.length < 2) return json({ error: "Ksywka musi mie\u0107 co najmniej 2 znaki." }, 400);
-      const { error } = await db.from("players").upsert({ id: uid2, nick });
+      const [net_hash, ua_hash] = await Promise.all([shortHash(clientNet(req)), shortHash(req.headers.get("user-agent") ?? "")]);
+      const { error } = await db.from("players").upsert({ id: uid2, nick, net_hash, ua_hash });
       if (error) return json({ error: "Nie uda\u0142o si\u0119 zapisa\u0107 ksywki." }, 500);
       return json({ ok: true, nick });
     }
@@ -13390,6 +13852,14 @@ Deno.serve(async (req) => {
     if (op === "new") {
       const { count } = await db.from("careers").select("id", { count: "exact", head: true }).eq("season_id", season.id).eq("player_id", uid2);
       if ((count ?? 0) >= season.max_careers) return json({ error: `W tym sezonie masz ju\u017C ${season.max_careers} kariery.` }, 409);
+      const net = await shortHash(clientNet(req));
+      if (player.net_hash !== net) later(db.from("players").update({ net_hash: net, ua_hash: await shortHash(req.headers.get("user-agent") ?? "") }).eq("id", uid2));
+      const { data: same } = await db.from("players").select("id").eq("net_hash", net).limit(50);
+      const ids = (same ?? []).map((p) => p.id);
+      if (ids.length > 1) {
+        const { count: netCount } = await db.from("careers").select("id", { count: "exact", head: true }).eq("season_id", season.id).in("player_id", ids);
+        if ((netCount ?? 0) >= season.max_careers * 4) return json({ error: "Z tej sieci za\u0142o\u017Cono ju\u017C bardzo du\u017Co karier w tym sezonie. Spr\xF3buj w kolejnym." }, 409);
+      }
       const profile = body.profile;
       if (!profile || !profile.firstName || !profile.lastName || !profile.start || !profile.style) return json({ error: "Niepe\u0142ny profil zawodnika." }, 400);
       const s = newGame({ slot: 9, mode: "ranked", seed: Number(season.seed) >>> 0, profile, quick: false });
@@ -13403,10 +13873,12 @@ Deno.serve(async (req) => {
       if (!c || c.season_id !== season.id) return json({ error: "Nie ma takiej kariery." }, 404);
       const bank0 = c.bank;
       refill(c, season);
-      let s = c.state;
+      let s = migrateSave(c.state) ?? c.state;
       if (op === "act") {
+        if (tooFast(uid2)) return json({ error: "Za szybko. Daj s\u0119dziemu chwil\u0119 i spr\xF3buj jeszcze raz.", slow: true }, 429);
         const ops = Array.isArray(body.ops) ? body.ops.slice(0, 20) : [];
         const seasonBefore = s.season;
+        const rngBefore = s.rngState;
         for (const o of ops) {
           if (!ALLOWED.has(o?.name)) return json({ error: `Niedozwolona akcja: ${o?.name}` }, 400);
           const args = Array.isArray(o.args) ? [...o.args] : [];
@@ -13419,7 +13891,12 @@ Deno.serve(async (req) => {
           s = next;
         }
         const legacy = legacyOf(s);
-        const { data: saved, error } = await db.from("careers").update({ state: s, bank: c.bank, refill_day: c.refill_day, legacy, finished: s.phase === "ended", version: c.version + 1, updated_at: now }).eq("id", c.id).eq("version", c.version).select("id");
+        const gap = c.last_act_at ? Date.now() - new Date(c.last_act_at).getTime() : 99999;
+        const rolled = s.rngState !== rngBefore;
+        const acts = (c.acts ?? 0) + (rolled ? 1 : 0);
+        const fastActs = (c.fast_acts ?? 0) + (rolled && gap < FAST_MS ? 1 : 0);
+        const flag = !c.flagged && acts >= FLAG_MIN_ACTS && fastActs / acts > FLAG_RATIO;
+        const { data: saved, error } = await db.from("careers").update({ state: s, bank: c.bank, refill_day: c.refill_day, legacy, finished: s.phase === "ended", version: c.version + 1, updated_at: now, acts, fast_acts: fastActs, last_act_at: now, ...flag ? { flagged: true, flag_reason: `rytm: ${fastActs}/${acts} losowa\u0144 szybciej ni\u017C ${FAST_MS} ms po poprzedniej akcji` } : {} }).eq("id", c.id).eq("version", c.version).select("id");
         if (error || !saved?.length) return json({ error: "Kariera zmieni\u0142a si\u0119 w innym oknie. Wczytaj j\u0105 jeszcze raz.", stale: true }, 409);
         await later(db.from("career_log").insert({ career_id: c.id, ops, season_before: seasonBefore, season_after: s.season }));
       } else if (c.bank !== bank0) await db.from("careers").update({ bank: c.bank, refill_day: c.refill_day }).eq("id", c.id);
@@ -13429,4 +13906,16 @@ Deno.serve(async (req) => {
   } catch (e) {
     return json({ error: "B\u0142\u0105d serwera.", detail: String(e?.message ?? e) }, 500);
   }
+}
+Deno.serve(async (req) => {
+  const res = await handle(req);
+  const enc = req.headers.get("Accept-Encoding") ?? "";
+  if (!/\bgzip\b/.test(enc) || res.headers.get("Content-Type") !== "application/json" || !res.body) return res;
+  const buf = await res.arrayBuffer();
+  if (buf.byteLength < 2048) return new Response(buf, { status: res.status, headers: res.headers });
+  const gz = new Response(new Blob([buf]).stream().pipeThrough(new CompressionStream("gzip")));
+  const headers = new Headers(res.headers);
+  headers.set("Content-Encoding", "gzip");
+  headers.set("Vary", "Accept-Encoding");
+  return new Response(await gz.arrayBuffer(), { status: res.status, headers });
 });
