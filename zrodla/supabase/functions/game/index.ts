@@ -21,6 +21,7 @@ __export(game_exports, {
   DONATIONS: () => DONATIONS,
   EXPEDITIONS: () => EXPEDITIONS,
   LABS_SPONSOR: () => LABS_SPONSOR,
+  LUXURY: () => LUXURY,
   METHOD_SHORT: () => METHOD_SHORT,
   OVERDRAFT: () => OVERDRAFT,
   PITCH_SLOTS: () => PITCH_SLOTS,
@@ -130,6 +131,7 @@ __export(game_exports, {
   isDoubleChamp: () => isDoubleChamp,
   isExclusiveContract: () => isExclusiveContract,
   jobSalary: () => jobSalary,
+  kebabIncome: () => kebabIncome,
   legacyScore: () => legacyScore,
   loanOffer: () => loanOffer,
   loanRefusal: () => loanRefusal,
@@ -211,6 +213,7 @@ __export(game_exports, {
   trainingForecast: () => trainingForecast,
   trainingPreview: () => trainingPreview,
   upcomingOffer: () => upcomingOffer,
+  vary: () => vary6,
   weekAnswer: () => weekAnswer,
   weekChance: () => weekChance,
   weekGo: () => weekGo,
@@ -2221,7 +2224,7 @@ var WEEK_EVENTS = [
     id: "sauna",
     title: "Sauna nieczynna",
     w: 5,
-    cond: (s) => (s.diet ?? "norma") !== "catering",
+    cond: (s) => (s.diet ?? "norma") !== "catering" && (s.division ?? s.profile.weight) !== "ciezka",
     text: () => "Dzie\u0144 przed wa\u017Ceniem, a hotelowa sauna \u201Ew remoncie\u201D. Do limitu brakuje ci jeszcze kilograma.",
     choices: (s) => [
       { label: "Szukasz prywatnej sauny w mie\u015Bcie", desc: "Taks\xF3wka, p\u0142atne wej\u015Bcie, ale waga zejdzie.", effects: { money: -zl4(s, 200) } },
@@ -4696,7 +4699,7 @@ var EXTRA_EVENTS = [
     id: "zbijanie_sauna",
     title: "Zbijanie wagi",
     weight: 5,
-    cond: (s) => s.tier >= 1,
+    cond: (s) => s.tier >= 1 && (s.division ?? s.profile.weight) !== "ciezka",
     text: (s) => vary2(s, [
       "Dzie\u0144 przed wa\u017Ceniem brakuje ci dw\xF3ch kilo. Trener przynosi worki na \u015Bmieci i w\u0142\u0105cza saun\u0119 na maksa.",
       "Waga pokazuje 1,8 kg za du\u017Co. Kolega z klubu proponuje \u201Esprawdzony spos\xF3b\u201D: wanna z gor\u0105c\u0105 wod\u0105 i s\xF3l Epsom.",
@@ -6686,7 +6689,7 @@ ${t}: I przy\u0142\xF3\u017C l\xF3d na to oko.`;
     id: "rekord_wagi",
     title: "Waga nie schodzi",
     weight: 3,
-    cond: (s) => s.tier >= 1,
+    cond: (s) => s.tier >= 1 && (s.division ?? s.profile.weight) !== "ciezka",
     text: () => "Dzie\u0144 przed wa\u017Ceniem waga pokazuje 1,5 kg za du\u017Co. Trener patrzy na saun\u0119, dietetyk na ciebie.",
     choices: (s) => [
       { label: "Sauna do ostatniej kropli", desc: "Wchodzisz w limit, ale suchy jak wi\xF3r.", effects: { form: -2, wear: 2 } },
@@ -7897,11 +7900,11 @@ function budgetLines(s) {
     }
   }
   const jd = jobDef(s);
-  const living = Math.round(livingCost(s.age) * (jd ? jd.living : 1) / 500) * 500 + (s.flags.kid ? 1e4 : 0);
+  const living = Math.round(livingCost(s.age) * (jd ? jd.living : 1) * (s.flags["own:dom"] ? 0.6 : 1) / 500) * 500 + (s.flags.kid ? 1e4 : 0);
   if (living > 0)
     lines.push({
       label: "\u017Bycie",
-      sub: jd?.id === "full" ? "etat pokrywa wi\u0119kszo\u015B\u0107, trenujesz po pracy" : jd?.id === "half" ? "p\xF3\u0142 etatu pokrywa po\u0142ow\u0119 koszt\xF3w" : s.flags.kid ? "mieszkanie, jedzenie, dziecko" : "mieszkanie i jedzenie",
+      sub: jd?.id === "full" ? "etat pokrywa wi\u0119kszo\u015B\u0107, trenujesz po pracy" : jd?.id === "half" ? "p\xF3\u0142 etatu pokrywa po\u0142ow\u0119 koszt\xF3w" : s.flags["own:dom"] ? "w\u0142asny dom: pr\u0105d, jedzenie, karma dla alpak s\u0105siada" : s.flags.kid ? "mieszkanie, jedzenie, dziecko" : "mieszkanie i jedzenie",
       amount: -living,
       icon: "home"
     });
@@ -7912,6 +7915,8 @@ function budgetLines(s) {
   for (const l of s.loans) lines.push({ label: "Rata kredytu", sub: `${l.left === 1 ? "ostatnia rata" : `zosta\u0142o ${l.left} ${pl(l.left, "rata", "raty", "rat")}`}`, amount: -l.installment, icon: "card" });
   for (const sp of s.sponsors)
     lines.push({ label: sp.name, sub: `${sp.clause} \xB7 ${sp.seasonsLeft === 1 ? "ostatni rok" : `jeszcze ${sp.seasonsLeft} ${pl(sp.seasonsLeft, "rok", "lata", "lat")}`}`, amount: sp.perSeason, logo: { kind: "sponsor", name: sp.name } });
+  const kb = kebabIncome(s);
+  if (kb) lines.push({ label: "Kebab \u201EPod Klatk\u0105\u201D", sub: vary6(s, ["udzia\u0142y: nowy sos czosnkowy podbi\u0142 osiedle", "udzia\u0142y: sanepid by\u0142, wyszed\u0142 najedzony", "udzia\u0142y: wsp\xF3lnik kupi\u0142 drugi ro\u017Cen", "udzia\u0142y: studenci w sesji jedz\u0105 za trzech"], 3), amount: kb, icon: "trend" });
   if (s.academy) lines.push({ label: academyName(s), sub: `twoja akademia \xB7 ${ACADEMY_LEVELS[s.academy - 1].name}`, amount: academyIncome(s), icon: "home" });
   if (s.age < 19 && s.relations >= 3) lines.push({ label: "Rodzice dok\u0142adaj\u0105", sub: "z trzynastki", amount: 2e3 + s.relations * 300, icon: "heart" });
   return lines;
@@ -8868,8 +8873,9 @@ function weekGo(s0) {
 function tourneyEntry(s, t, ti) {
   const coach = clubCoachName(s.club);
   const fee = [60, 80, 120][Math.min(2, amLevel(s) + (t.championship ? 1 : 0))];
-  const first = s.history.filter((h) => h.amateur).length === 0;
+  const first = s.history.filter((h2) => h2.amateur).length === 0;
   const k = s.season * 3 + ti;
+  const h = k * 7 + s.profile.lastName.length + (s.flags.entryN ?? 0);
   const open = t.championship ? `To s\u0105 Mistrzostwa Polski, ${t.city}. Tu nie ma przypadkowych ludzi: ka\u017Cdy w drabince wygra\u0142 ju\u017C swoje wojew\xF3dztwo.` : first ? `Zapisa\u0142em ci\u0119 na ${t.name} w ${t.city}. Twoje pierwsze zawody. Spokojnie, ka\u017Cdy kiedy\u015B debiutowa\u0142.` : [`Zapisa\u0142em ci\u0119 na ${t.name}, ${t.city}.`, `Lista startowa na ${t.name} posz\u0142a. Jeste\u015B na niej. ${t.city}.`, `Nast\u0119pne zawody: ${t.name} w ${t.city}. Ju\u017C ci\u0119 zg\u0142osi\u0142em.`][k % 3];
   const body = `Kategoria: ${t.division}. O\u015Bmiu w drabince, trzy wygrane walki dziel\u0105 ci\u0119 od z\u0142ota. Wa\u017Cenie o 7:00, wpisowe ${fee} z\u0142 p\u0142aci klub.`;
   const tail = ["Jak jedziemy?", "Pisz, jak doje\u017Cd\u017Casz.", "Wyjazd wcze\u015Bnie rano. Albo radzisz sobie sam."][k % 3];
@@ -8885,8 +8891,11 @@ ${coach}: ${tail}`,
       [
         { label: "Jad\u0119 dzie\u0144 wcze\u015Bniej, \u015Bpi\u0119 przy hali", desc: "Hotel kosztuje, ale rano jeste\u015B wyspany.", effects: { money: -lodging, nextFight: 1, note: "wyspany na wa\u017Ceniu" } },
         { label: "Hostel przy hali, pok\xF3j z trzema judokami", desc: "Tanio, blisko. Judocy chrapi\u0105 w kimonach.", effects: { money: -Math.round(lodging / 2 / 50) * 50, nextFight: 1, note: "judocy po\u017Cyczaj\u0105 ci klapki" } },
-        { label: "Pensjonat \u201EPod D\u0119bem\u201D, dwa kilometry od hali", desc: "W\u0142a\u015Bcicielka obiecuje \u015Bniadanie \u201Edla sportowca\u201D.", effects: { money: -lodging, nextFight: 1, note: "jajecznica z sze\u015Bciu jaj" } }
-      ][k % 3],
+        { label: "Pensjonat \u201EPod D\u0119bem\u201D, dwa kilometry od hali", desc: "W\u0142a\u015Bcicielka obiecuje \u015Bniadanie \u201Edla sportowca\u201D.", effects: { money: -lodging, nextFight: 1, note: "jajecznica z sze\u015Bciu jaj" } },
+        { label: "Studio na wynajem, \u201Eprzytulne\u201D, ocena 4,2", desc: "Przytulne znaczy: \u0142\xF3\u017Cko stoi w kuchni.", effects: { money: -Math.round(lodging * 0.8 / 50) * 50, nextFight: 1, note: "klucz w skrzynce na listy" } },
+        { label: "Internat szko\u0142y sportowej przy hali", desc: "\u0141\xF3\u017Cko pi\u0119trowe, kakao na \u015Bniadanie, cisza nocna od 22:00.", effects: { money: -Math.round(lodging / 3 / 50) * 50, nextFight: 1, note: "kakao jak w podstaw\xF3wce" } },
+        { label: "Motel przy kraj\xF3wce", desc: "Tirowcy, schabowy do sufitu i cisza od 23:00 (w teorii).", effects: { money: -Math.round(lodging / 2 / 50) * 50, nextFight: 1, note: "schabowy na kolacj\u0119, ry\u017C na \u015Bniadanie" } }
+      ][h % 6],
       [
         {
           label: "Klubowy bus o 4:30",
@@ -8914,8 +8923,35 @@ ${coach}: ${tail}`,
           successText: "Poci\u0105g punktualny, przesiadka g\u0142adka. Na hali jeste\u015B pierwszy, jeszcze przed s\u0119dziami.",
           fail: { money: -40, nextFight: -1 },
           failText: "Op\xF3\u017Anienie 70 minut \u201Ez przyczyn technicznych\u201D. Wa\u017Cysz si\u0119, ledwo \u0142api\u0105c oddech."
+        },
+        {
+          label: "Tata wiezie ci\u0119 \u201Eskr\xF3tem\u201D",
+          desc: "Za darmo. Tata nie ufa nawigacji od 2009 roku.",
+          chance: 55,
+          success: { relations: 1, note: "tata: \u201Em\xF3wi\u0142em, \u017Ce skr\xF3tem szybciej\u201D" },
+          successText: "Skr\xF3t, o dziwo, dzia\u0142a. Tata przez ca\u0142e zawody powtarza ka\u017Cdemu, kto chce s\u0142ucha\u0107, \u017Ce \u201Ezna drogi\u201D.",
+          fail: { nextFight: -1 },
+          failText: "Skr\xF3t prowadzi przez trzy wsie i przejazd kolejowy, kt\xF3ry stoi zamkni\u0119ty od p\xF3\u0142 godziny. Doje\u017Cd\u017Cacie na styk."
+        },
+        {
+          label: "Wsp\xF3lny przejazd z panem Zdzis\u0142awem",
+          desc: "Pi\u0119\u0107 dych. Pan Zdzis\u0142aw w profilu ma \u201Erozmowny\u201D.",
+          chance: 70,
+          success: { money: -50, note: "znasz ju\u017C histori\u0119 przepukliny pana Zdzis\u0142awa" },
+          successText: "Doje\u017Cd\u017Cacie przed czasem. Znasz ju\u017C ca\u0142e \u017Cycie pana Zdzis\u0142awa, z przepuklin\u0105 w\u0142\u0105cznie.",
+          fail: { money: -50, nextFight: -1 },
+          failText: "Pan Zdzis\u0142aw staje na ka\u017Cdej stacji \u201Ena kawk\u0119\u201D. Na wa\u017Cenie wbiegasz z torb\u0105 w z\u0119bach."
+        },
+        {
+          label: "Rodzice juniora maj\u0105 wolne miejsce w busie",
+          desc: "Za darmo. Minivan, trzech junior\xF3w i bajki z tabletu.",
+          chance: 65,
+          success: { rep: 1, note: "juniorzy patrz\u0105 w ciebie jak w obrazek" },
+          successText: "Juniorzy przez ca\u0142\u0105 drog\u0119 pytaj\u0105, ile masz walk. Na hali nios\u0105 ci torb\u0119 jak giermkowie.",
+          fail: { nextFight: -1 },
+          failText: "Cztery godziny tej samej bajki na p\u0119tli. Na rozgrzewce nucisz czo\u0142\xF3wk\u0119 i nie mo\u017Cesz przesta\u0107."
         }
-      ][(k + 1) % 3],
+      ][(h * 5 + 1) % 6],
       [
         {
           label: t.city === s.profile.hometown ? "\u015Api\u0119 w domu, mama robi \u015Bniadanie" : `\u015Api\u0119 u cioci w ${t.city}`,
@@ -8943,8 +8979,35 @@ ${coach}: ${tail}`,
           successText: "\u015Apisz zaskakuj\u0105co dobrze. Trener m\xF3wi, \u017Ce \u201Eprawdziwi zawodnicy tak zaczynali\u201D.",
           fail: { nextFight: -2 },
           failText: "O trzeciej budzi ci\u0119 ochroniarz parkingu. O czwartej znowu. Plecy pami\u0119taj\u0105 skrzyni\u0119 bieg\xF3w."
+        },
+        {
+          label: "Materac na sali klubu gospodarzy",
+          desc: "Za darmo. Pachnie matami i p\u0142ynem do dezynfekcji.",
+          chance: 55,
+          success: { rep: 1, nextFight: 1, note: "gospodarze cz\u0119stuj\u0105 herbat\u0105" },
+          successText: "Gospodarze przynosz\u0105 herbat\u0119 i koc. Rano rozgrzewasz si\u0119 tam, gdzie spa\u0142e\u015B. Wygodniej si\u0119 nie da.",
+          fail: { nextFight: -1 },
+          failText: "Kto\u015B zostawi\u0142 grzejnik na pe\u0142nej mocy. Budzisz si\u0119 mokry jak po saunie, tyle \u017Ce bez zbijania wagi."
+        },
+        {
+          label: "Kanapa u znajomego ze szko\u0142y",
+          desc: "Za darmo. Znajomy zapewnia, \u017Ce ma \u201Espokojne mieszkanie\u201D.",
+          chance: 50,
+          success: { nextFight: 1, relations: 1 },
+          successText: "Spokojne mieszkanie naprawd\u0119 jest spokojne. Rano znajomy robi ci jajecznic\u0119 i jedzie kibicowa\u0107.",
+          fail: { nextFight: -1 },
+          failText: "W spokojnym mieszkaniu wsp\xF3\u0142lokator ma urodziny. Impreza ko\u0144czy si\u0119 o trzeciej, karaoke o czwartej."
+        },
+        {
+          label: "Nocny autobus i drzemka na dworcu",
+          desc: "Najtaniej. \u0141awki na dworcu kto\u015B zaprojektowa\u0142 przeciwko spaniu.",
+          chance: 40,
+          success: { money: -30, note: "\u015Bpisz na torbie jak w busie" },
+          successText: "Przysypiasz na dwie godziny w poczekalni. Wystarczy. Na hali czujesz si\u0119 dziwnie lekki.",
+          fail: { money: -30, nextFight: -2 },
+          failText: "Pod\u0142okietnik co p\xF3\u0142 metra. Nie \u015Bpisz wcale, a o pi\u0105tej sprz\u0105taczka myje pod\u0142og\u0119 pod twoimi nogami."
         }
-      ][(k + 2) % 3]
+      ][(h * 11 + 2) % 6]
     ]
   };
 }
@@ -9264,6 +9327,18 @@ function gearCost(s) {
 var tmScale = (s) => [1, 1.5, 3, 5, 8][Math.min(4, Math.max(0, s.tier))] ?? 1;
 var tmZl = (s, n) => Math.max(20, Math.round(n * tmScale(s) / 10) * 10);
 var tmKey = (s, id, career) => career ? `tm:${id}` : `tm:${s.season}:${id}`;
+var LUXURY = [
+  { id: "passat", title: "Passat B5 kombi 1.9 TDI, sprowadzony", desc: ["Niemiec p\u0142aka\u0142, jak sprzedawa\u0142. Przebieg 287 tys. (nie kr\u0119cony, s\u0142owo honoru). Hak, relingi, zapach choinki gratis.", "Auto po dziadku, gara\u017Cowane. Silnik chodzi jak szwajcarski zegarek, tylko troch\u0119 g\u0142o\u015Bniej. Baga\u017Cnik zmie\u015Bci torb\u0119, tarcze i trenera."], seller: "AutoHandel Zbyszek", price: 14e3, minTier: 1, effects: { relations: 1 }, hint: "rodzina +1, koniec z busem spod ko\u015Bcio\u0142a", owned: "Passat B5 kombi, kt\xF3ry prze\u017Cy\u0142 ca\u0142\u0105 twoj\u0105 karier\u0119" },
+  { id: "audi", title: "Audi A6, czarne, felgi 19 cali", desc: ["Pierwszy w\u0142a\u015Bciciel w Polsce. Drugi, trzeci i czwarty w Niemczech. Ksenony, sk\xF3ra, podgrzewane wszystko.", "Auto dla kogo\u015B, kto ju\u017C co\u015B osi\u0105gn\u0105\u0142. S\u0105siedzi b\u0119d\u0105 patrze\u0107. Przegl\u0105d do wiosny."], seller: "Premium Cars Radom", price: 85e3, minTier: 2, effects: { media: 2, rep: -1 }, hint: "media +2, reputacja \u22121 (s\u0105siedzi gadaj\u0105)", owned: "czarne Audi, kt\xF3re s\u0105siedzi pami\u0119taj\u0105 do dzi\u015B" },
+  { id: "mama", title: "Mieszkanie M3 z wind\u0105, dla mamy", desc: ["Trzy pokoje, balkon na po\u0142udnie, winda (dzia\u0142a). Blok po termomodernizacji, w okolicy Biedronka i przychodnia.", "Mama m\xF3wi, \u017Ce niczego nie potrzebuje. Mama od dwudziestu lat nosi zakupy na czwarte pi\u0119tro. To mieszkanie ma wind\u0119."], seller: "Biuro Nieruchomo\u015Bci \u201EKlucz\u201D", price: 42e4, minTier: 2, effects: { relations: 3 }, hint: "rodzina +3, mama ma wind\u0119", owned: "mieszkanie z wind\u0105, w kt\xF3rym mama pokazuje go\u015Bciom twoje zdj\u0119cia" },
+  { id: "kebab", title: "Udzia\u0142y w kebabie \u201EPod Klatk\u0105\u201D", desc: ["Lokal przy p\u0119tli autobusowej, czynny do 4:00. Wsp\xF3lnik zna si\u0119 na ro\u017Cnie, ty masz twarz na szyld. Zysk co roku.", "Kebab z tradycjami: dwa razy sanepid, raz telewizja \u015Bniadaniowa. Szukamy wsp\xF3lnika z rozpoznawaln\u0105 twarz\u0105."], seller: "Mehmet i Wojtek s.c.", price: 16e4, minTier: 2, effects: { media: 1 }, hint: "co rok ok. 18 000 z\u0142 zysku", owned: "kebab \u201EPod Klatk\u0105\u201D, na kt\xF3rego szyldzie wci\u0105\u017C wisi twoja twarz" },
+  { id: "dom", title: "Dom pod miastem z sal\u0105 w gara\u017Cu", desc: ["180 m\xB2, dzia\u0142ka 1200 m\xB2, gara\u017C przerobiony na sal\u0119 z matami. Cisza, las, s\u0105siad hoduje alpaki.", "Dom z ogrodem i sal\u0105 treningow\u0105. Poprzedni w\u0142a\u015Bciciel: \u201Eprezes od wszystkiego\u201D. Wyjecha\u0142 nagle, cena do negocjacji."], seller: "Domy Premium Mazowsze", price: 14e5, minTier: 3, effects: { relations: 2, wear: -8 }, hint: "rodzina +2, zu\u017Cycie \u22128, ni\u017Csze koszty \u017Cycia", owned: "dom pod miastem z sal\u0105 w gara\u017Cu" },
+  { id: "zegarek", title: "Zegarek \u201Ejak u mistrz\xF3w\u201D", desc: ["Szwajcarski, z papierami i pude\u0142kiem. Na konferencji ka\u017Cdy kamerzysta zrobi zbli\u017Cenie.", "Taki sam nosi\u0142 mistrz UFL na wa\u017Ceniu. Kosztuje jak kawalerka, pokazuje t\u0119 sam\u0105 godzin\u0119 co telefon."], seller: "Jubiler Z\u0142ota R\u0105czka", price: 12e4, minTier: 3, effects: { media: 3 }, hint: "media +3", owned: "zegarek, kt\xF3ry pokazuje t\u0119 sam\u0105 godzin\u0119 co telefon" }
+];
+function kebabIncome(s) {
+  if (!s.flags["own:kebab"]) return 0;
+  return 12e3 + (s.season * 3797 + s.profile.lastName.length * 911) % 12 * 1e3;
+}
 function tasmaItems(s) {
   if (s.phase === "ended") return [];
   const out = [];
@@ -9279,6 +9354,9 @@ function tasmaItems(s) {
     out.push({ id: "worek", kind: "buy", title: "Worek bokserski 40 kg + \u0142a\u0144cuchy", desc: "Odbi\xF3r osobisty, 4 pi\u0119tro, bez windy. Znoszenie to dodatkowy trening gratis.", seller: "Ryszard (emeryt, by\u0142y tragarz)", price: tmZl(s, 250), effects: { stats: { stand: 1 }, wear: 1 }, hint: "st\xF3jka +1, zu\u017Cycie +1" });
   if (!s.flags[tmKey(s, "rowerek", true)])
     out.push({ id: "rowerek", kind: "buy", title: "Rower stacjonarny, stan idealny", desc: "S\u0142u\u017Cy\u0142 jako wieszak na ubrania przez pi\u0119\u0107 lat. Licznik pokazuje 3 km.", seller: "Gra\u017Cyna_z_Bloku", price: tmZl(s, 300), effects: { stats: { cardio: 1 } }, hint: "kondycja +1" });
+  if (s.proDebut) {
+    for (const l of LUXURY) if (s.tier >= l.minTier && !s.flags[`own:${l.id}`] && !(l.id === "passat" && s.flags["own:audi"])) out.push({ id: `lux-${l.id}`, kind: "buy", title: l.title, desc: vary6(s, l.desc, l.id.length), seller: l.seller, price: l.price, effects: l.effects, hint: l.hint, big: true });
+  }
   const titles = s.history.filter((h) => h.title && h.result === "W");
   for (const h of titles.slice(-3)) {
     const id = `pas-${h.season}-${h.opponent.replace(/\s+/g, "")}`;
@@ -9289,7 +9367,7 @@ function tasmaItems(s) {
   if (medals > 0) out.push({ id: "medal", kind: "sell", title: "Medal z turnieju amatorskiego", desc: "Prawdziwy, wisia\u0142 w pokoju u mamy. Mama jeszcze nie wie.", seller: "ty", price: tmZl(s, 200), effects: { relations: -1 }, hint: "rodzina \u22121" });
   if (s.proDebut && !s.flags[tmKey(s, "koszulka")])
     out.push({ id: "koszulka", kind: "sell", title: "Koszulka z wyj\u015Bcia do klatki, z autografem", desc: "Prana raz. \u015Alady potu autentyczne, certyfikat wystawiony przez mam\u0119.", seller: "ty", price: tmZl(s, 120) + Math.round(Math.min(40, s.media) * 10 * tmScale(s)), effects: { media: 1 }, hint: "media +1" });
-  return out.filter((it) => !s.flags[tmKey(s, it.id, it.id === "worek" || it.id === "rowerek" || it.id.startsWith("pas-"))]);
+  return out.filter((it) => it.big || !s.flags[tmKey(s, it.id, it.id === "worek" || it.id === "rowerek" || it.id.startsWith("pas-"))]);
 }
 function tasmaDeal(s0, id) {
   const it = tasmaItems(s0).find((x) => x.id === id);
@@ -9297,7 +9375,8 @@ function tasmaDeal(s0, id) {
   if (it.kind === "buy" && s0.money < it.price) return s0;
   const s = clone(s0);
   const career = id === "worek" || id === "rowerek" || id.startsWith("pas-");
-  s.flags[tmKey(s, id, career)] = 1;
+  if (it.big) s.flags[`own:${id.slice(4)}`] = s.season;
+  else s.flags[tmKey(s, id, career)] = 1;
   withRng(s, (rng) => {
     if (it.kind === "buy") {
       s.money -= it.price;
