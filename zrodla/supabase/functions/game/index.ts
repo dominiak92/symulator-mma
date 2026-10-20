@@ -10966,6 +10966,9 @@ function pickOpponent(rng, s, idx) {
     }
     return { opp: amateurOpponent(rng, s, t, t.stage ?? "qf"), title: false, defense: false, peer: null };
   }
+  if (s.record.w + s.record.l + s.record.d === 0 && s.rank === null) {
+    return { opp: generateOpponent(rng, tier, null, hard), title: false, defense: false, peer: null };
+  }
   const rivalPeer = s.rivalId ? s.peers.find((p) => p.id === s.rivalId && !p.retired && p.tier === tier && tier >= 1 && !metThisSeason.has(p.id)) : void 0;
   const asRival = (p, rank) => ({ ...p, stats: { ...p.stats }, record: { ...p.record }, rank, peer: true });
   if (s.rank === 0) {
@@ -10993,7 +10996,13 @@ function pickOpponent(rng, s, idx) {
     const opp = { ...rival, stats: { ...rival.stats }, record: { ...rival.record }, rank: rival.rank ?? null, peer: true };
     return { opp, title: false, defense: false, peer: rival };
   }
-  if (peers.length && (wantPeer || rng.chance(0.18))) return peerPick();
+  const mineRank = s.rank ?? size + 2;
+  const fairPeers = peers.filter((p) => p.rank === null || p.rank >= mineRank - 4);
+  if (wantPeer && peers.length) return peerPick();
+  if (fairPeers.length && rng.chance(0.18)) {
+    const p = rng.pick(fairPeers);
+    return { opp: { ...p, stats: { ...p.stats }, record: { ...p.record }, rank: p.rank ?? null, peer: true }, title: false, defense: false, peer: p };
+  }
   const mine = s.rank ?? size + 2;
   const mg = activeManager(s);
   const q = mg?.quality ?? 0;
