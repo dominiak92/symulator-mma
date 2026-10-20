@@ -13804,14 +13804,40 @@ var later = (p) => {
   if (rt?.waitUntil) rt.waitUntil(Promise.resolve(p));
   else return p;
 };
+var EVENT_NAMES = /* @__PURE__ */ new Set(["app_open", "career_start", "season_end", "first_fight", "career_end", "ranked_open", "limit_hit", "tutorial_done", "session", "crash", "share"]);
+var telLimit = /* @__PURE__ */ new Map();
+async function telemetry(req, body) {
+  const net = await shortHash(clientNet(req));
+  const t = Date.now();
+  const list = (telLimit.get(net) ?? []).filter((x) => t - x < 6e4);
+  list.push(t);
+  telLimit.set(net, list);
+  if (telLimit.size > 5e3) telLimit.clear();
+  if (list.length > 30) return json({ ok: false }, 429);
+  const v = String(body.v ?? "").slice(0, 40);
+  if (body.op === "feedback") {
+    const text = String(body.text ?? "").trim().slice(0, 2e3);
+    if (text.length < 3) return json({ error: "Napisz co\u015B wi\u0119cej." }, 400);
+    const ctxStr = JSON.stringify(body.ctx ?? {});
+    const { error: error2 } = await db.from("feedback").insert({ v, text, ctx: ctxStr.length > 4e3 ? { cut: true } : JSON.parse(ctxStr) });
+    return json({ ok: !error2 }, error2 ? 500 : 200);
+  }
+  const evs = (Array.isArray(body.events) ? body.events : []).slice(0, 40).filter((e) => EVENT_NAMES.has(e?.ev));
+  if (!evs.length) return json({ ok: true });
+  const rows = evs.map((e) => ({ v, ev: e.ev, props: JSON.stringify(e.props ?? {}).length > 1500 ? { cut: true } : e.props ?? {}, at: typeof e.at === "number" && Math.abs(t - e.at) < 864e5 * 3 ? new Date(e.at).toISOString() : new Date(t).toISOString() }));
+  const { error } = await db.from("events").insert(rows);
+  return json({ ok: !error }, error ? 500 : 200);
+}
 var marks = /* @__PURE__ */ new WeakMap();
 var mark = (req, name) => marks.get(req)?.push([name, performance.now()]);
 async function handle(req) {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
   if (req.method === "GET") return new Response("ok", { headers: cors });
   try {
+    const body = await req.json().catch(() => ({}));
+    if (body.op === "track" || body.op === "feedback") return await telemetry(req, body);
     const jwt = (req.headers.get("Authorization") ?? "").replace("Bearer ", "");
-    const [uid2, body] = await Promise.all([userId(jwt), req.json().catch(() => ({}))]);
+    const uid2 = await userId(jwt);
     mark(req, "auth");
     if (!uid2) return json({ error: "Brak sesji gracza." }, 401);
     const op = body.op;
