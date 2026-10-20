@@ -13730,7 +13730,10 @@ var YEAR_COST = {
 var cors = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS"
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  // przeglądarka pamięta zgodę CORS: bez tego każde kliknięcie to dwa zapytania zamiast jednego
+  "Access-Control-Max-Age": "7200",
+  "Access-Control-Expose-Headers": "Server-Timing"
 };
 var json = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: { ...cors, "Content-Type": "application/json" } });
 var DAY = 864e5;
@@ -13801,11 +13804,14 @@ var later = (p) => {
   if (rt?.waitUntil) rt.waitUntil(Promise.resolve(p));
   else return p;
 };
+var marks = /* @__PURE__ */ new WeakMap();
+var mark = (req, name) => marks.get(req)?.push([name, performance.now()]);
 async function handle(req) {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
   try {
     const jwt = (req.headers.get("Authorization") ?? "").replace("Bearer ", "");
     const [uid2, body] = await Promise.all([userId(jwt), req.json().catch(() => ({}))]);
+    mark(req, "auth");
     if (!uid2) return json({ error: "Brak sesji gracza." }, 401);
     const op = body.op;
     const now = (/* @__PURE__ */ new Date()).toISOString();
@@ -13815,6 +13821,7 @@ async function handle(req) {
       db.from("players").select("*").eq("id", uid2).maybeSingle(),
       needCareer ? db.from("careers").select("*").eq("id", body.careerId).eq("player_id", uid2).maybeSingle() : Promise.resolve({ data: null })
     ]);
+    mark(req, "db");
     const leaderboard = async () => {
       if (!season) return [];
       const { data } = await db.from("careers").select("player_id, legacy, finished, players(nick, net_hash, ua_hash)").eq("season_id", season.id).eq("flagged", false).order("legacy", { ascending: false }).limit(400);
@@ -13890,6 +13897,7 @@ async function handle(req) {
           if (cost > 0 && next !== s) c.bank -= cost;
           s = next;
         }
+        mark(req, "silnik");
         const legacy = legacyOf(s);
         const gap = c.last_act_at ? Date.now() - new Date(c.last_act_at).getTime() : 99999;
         const rolled = s.rngState !== rngBefore;
@@ -13897,6 +13905,7 @@ async function handle(req) {
         const fastActs = (c.fast_acts ?? 0) + (rolled && gap < FAST_MS ? 1 : 0);
         const flag = !c.flagged && acts >= FLAG_MIN_ACTS && fastActs / acts > FLAG_RATIO;
         const { data: saved, error } = await db.from("careers").update({ state: s, bank: c.bank, refill_day: c.refill_day, legacy, finished: s.phase === "ended", version: c.version + 1, updated_at: now, acts, fast_acts: fastActs, last_act_at: now, ...flag ? { flagged: true, flag_reason: `rytm: ${fastActs}/${acts} losowa\u0144 szybciej ni\u017C ${FAST_MS} ms po poprzedniej akcji` } : {} }).eq("id", c.id).eq("version", c.version).select("id");
+        mark(req, "zapis");
         if (error || !saved?.length) return json({ error: "Kariera zmieni\u0142a si\u0119 w innym oknie. Wczytaj j\u0105 jeszcze raz.", stale: true }, 409);
         await later(db.from("career_log").insert({ career_id: c.id, ops, season_before: seasonBefore, season_after: s.season }));
       } else if (c.bank !== bank0) await db.from("careers").update({ bank: c.bank, refill_day: c.refill_day }).eq("id", c.id);
@@ -13908,7 +13917,15 @@ async function handle(req) {
   }
 }
 Deno.serve(async (req) => {
-  const res = await handle(req);
+  const t0 = performance.now();
+  marks.set(req, [["start", t0]]);
+  const res0 = await handle(req);
+  const ms = marks.get(req) ?? [];
+  ms.push(["koniec", performance.now()]);
+  const timing = ms.slice(1).map(([n, t], i) => `${n};dur=${Math.round(t - ms[i][1])}`).join(", ");
+  const h0 = new Headers(res0.headers);
+  h0.set("Server-Timing", timing);
+  const res = new Response(res0.body, { status: res0.status, headers: h0 });
   const enc = req.headers.get("Accept-Encoding") ?? "";
   if (!/\bgzip\b/.test(enc) || res.headers.get("Content-Type") !== "application/json" || !res.body) return res;
   const buf = await res.arrayBuffer();
