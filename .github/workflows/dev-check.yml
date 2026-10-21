@@ -1,0 +1,35 @@
+# Po każdym wgraniu nowej wersji na /dev/ GitHub sam sprawdza grę w przeglądarce:
+# test ekranów (każda aplikacja na kilku zapisach, szerokość iPhone'a) i pierwsze 15 minut nowego gracza.
+# Wynik: zielony albo czerwony znaczek przy commicie, szczegóły w zakładce Actions.
+name: Test wersji dev
+on:
+  push:
+    branches: [main]
+    paths: ['dev/**', 'assets/**', 'zrodla/scripts/**', 'zrodla/tests/fixtures/ui/**', '.github/workflows/dev-check.yml']
+  workflow_dispatch:
+jobs:
+  sprawdz:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Przeglądarka do testów
+        run: |
+          pip install playwright==1.47.0
+          python -m playwright install --with-deps chromium
+      - name: Czekam, aż Cloudflare poda nową wersję
+        run: |
+          ASSET=$(grep -o 'assets/index-[A-Za-z0-9_-]*\.js' dev/index.html | head -1)
+          echo "Szukam $ASSET"
+          for i in $(seq 1 60); do
+            if curl -s "https://symulator-mma.pages.dev/dev/?t=$(date +%s)" | grep -q "$ASSET"; then echo "Jest"; exit 0; fi
+            sleep 10
+          done
+          echo "Nowa wersja nie pojawiła się w 10 minut"; exit 1
+      - name: Test ekranów
+        run: python zrodla/scripts/ui_smoke.py https://symulator-mma.pages.dev/dev/
+      - name: Pierwsze 15 minut
+        run: python zrodla/scripts/first15.py https://symulator-mma.pages.dev/dev/
