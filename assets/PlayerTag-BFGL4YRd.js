@@ -1,0 +1,1 @@
+import{t as e}from"./vendor-D_zmH4-i.js";var t=e();function n({nick:e,short:n=!1}){return e?(0,t.jsxs)(`span`,{className:`pl-tag`,title:`Prawdziwy gracz: ${e}`,children:[(0,t.jsx)(`b`,{children:`GRACZ`}),!n&&(0,t.jsx)(`span`,{className:`pl-tag-nick`,children:e})]}):null}export{n as t};
