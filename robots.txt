@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /dev/
+Disallow: /design/
+Disallow: /wydania/
+Sitemap: https://mmamiszcz.io/sitemap.xml
