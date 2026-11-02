@@ -26,7 +26,7 @@ LAMANIE = os.environ.get('SMOKE_LAMANIE')
 
 # co człowiek stuka w pierwszej kolejności (od najbardziej oczywistego)
 SEL = ['.slot-empty', '.pc-unlock', '.ch-item.unread', '.call-btn.accept', '.camp-go .btn-primary', '.camp-end .btn', '.fp-entry-go', '.fg-draft', '.tel-pop .btn',
-       '.fp-rest .btn-primary', '.fight-intro .btn-primary', '.brk-opt.advised', '.opt', '.rp-opt', '.tel-next', '.tel-done',
+       '.fp-rest .btn-primary', '.fight-intro .btn-primary', '.brk-opt.advised', '.rplan-go:enabled', '.rp1-opt', '.opt', '.rp-opt', '.tel-next', '.tel-done',
        '.notice-modal .btn-primary', '.camp-ev-opt', '.camp-opts .choice', '.choice', '.icon-pill.next', '.phone-wait', '.now-link', '.home-now', '.btn-primary']
 
 problems = []
