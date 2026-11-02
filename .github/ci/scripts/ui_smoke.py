@@ -242,6 +242,11 @@ BTN_JS = r"""
 }
 """
 BTN = os.environ.get('SMOKE_BTN', '1') == '1'
+STYLE_OUT = os.environ.get('SMOKE_STYLES')
+STYLES = []
+STYLE_JS = r"""
+() => [...document.querySelectorAll('#dev-screen .btn, #dev-screen button')].filter((e) => { const r = e.getBoundingClientRect(); return r.width > 40 && r.height > 20 && r.bottom > 0 && r.top < innerHeight; }).map((e) => { const c = getComputedStyle(e), r = e.getBoundingClientRect(); return { cls: (e.className && e.className.baseVal === undefined ? e.className : '').toString().slice(0, 60), txt: (e.innerText || '').trim().replace(/\s+/g, ' ').slice(0, 30), h: Math.round(r.height), w: Math.round(r.width), fs: c.fontSize, ff: c.fontFamily.split(',')[0], rad: c.borderTopLeftRadius, bg: c.backgroundImage !== 'none' ? 'grad' : c.backgroundColor }; })
+"""
 
 LAMANIE = os.environ.get('SMOKE_LAMANIE')
 # iPhone (Safari < 26) nie zna text-wrap: pretty: SMOKE_IOS=1 wyłącza je przed sprawdzeniem
@@ -300,6 +305,10 @@ with sync_playwright() as p:
                     if BTN:
                         for pr in pg.evaluate(BTN_JS, '#dev-screen'):
                             problems.append(f'{w}px {name} › {lab}: {pr}')
+                    if i == 0 and STYLE_OUT:
+                        # spis przycisków (SMOKE_STYLES=plik): wysokość, czcionka, zaokrąglenie, do przeglądu spójności
+                        for st in pg.evaluate(STYLE_JS):
+                            STYLES.append({'app': lab, 'save': name, **st})
                     if i == 0:
                         for pr in pg.evaluate(CENTER_JS, '.app'):
                             problems.append(f'{w}px {name} › {lab}: {pr}')
@@ -332,6 +341,8 @@ with sync_playwright() as p:
     b.close()
 
 uniq = list(dict.fromkeys(problems))
+if STYLE_OUT:
+    json.dump(STYLES, open(STYLE_OUT, 'w'), ensure_ascii=False, indent=0)
 print(f'Sprawdzone zapisy: {len(SAVES)}, ekrany: {SIZES}, tekst {FONT}%, otwartych aplikacji: {opened}')
 for pr in uniq:
     print(' -', pr)
