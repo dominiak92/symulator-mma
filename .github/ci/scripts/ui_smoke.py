@@ -168,6 +168,8 @@ CENTER_JS = r"""
         }
       } else if (x.tagName === 'svg' || x.tagName === 'IMG') {
         const pc = getComputedStyle(x); if (pc.position === 'absolute' || pc.display === 'none') continue;
+        // obrócona ikonka (słuchawka „Odrzuć”) ma pudełko większe niż to, co widać
+        if (pc.transform !== 'none' && !/^matrix\(1, 0, 0, 1,/.test(pc.transform)) continue;
         rects = [x.getBoundingClientRect()];
       } else {
         // plakietka z tłem (licznik, chip) liczy się całym pudełkiem, nie samym tekstem
