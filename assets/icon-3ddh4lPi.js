@@ -1,0 +1,1 @@
+var e=new URL(`icon-Dq5GA7-p.svg`,import.meta.url).href;export{e as t};
