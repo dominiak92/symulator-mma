@@ -1,0 +1,242 @@
+[
+ {
+  "id": "amator-turniej",
+  "group": "Amatorka",
+  "title": "Turniej amatorski",
+  "desc": "Pierwszy turniej: zgłoszenie i drabinka.",
+  "who": "Robert Wróbel",
+  "age": 16,
+  "tier": 0,
+  "season": 1
+ },
+ {
+  "id": "amator-walka",
+  "group": "Amatorka",
+  "title": "Walka amatorska",
+  "desc": "Plan na walkę w turnieju.",
+  "who": "Robert Wróbel",
+  "age": 16,
+  "tier": 0,
+  "season": 1
+ },
+ {
+  "id": "debiut-oferta",
+  "group": "Zwykła walka",
+  "title": "Oferta walki",
+  "desc": "Pierwsza oferta zawodowa: gaża, rywal, obóz.",
+  "who": "Robert Wróbel",
+  "age": 18,
+  "tier": 1,
+  "season": 3
+ },
+ {
+  "id": "ogloszenie",
+  "group": "Zwykła walka",
+  "title": "Ogłoszenie walki",
+  "desc": "Plakat, nagłówki i post rywala.",
+  "who": "Robert Wróbel",
+  "age": 18,
+  "tier": 1,
+  "season": 3
+ },
+ {
+  "id": "oboz",
+  "group": "Zwykła walka",
+  "title": "Obóz",
+  "desc": "Trzy tygodnie przygotowań.",
+  "who": "Robert Wróbel",
+  "age": 18,
+  "tier": 1,
+  "season": 3
+ },
+ {
+  "id": "tydzien",
+  "group": "Zwykła walka",
+  "title": "Tydzień walki",
+  "desc": "Sprawa z ostatnich dni przed galą.",
+  "who": "Robert Wróbel",
+  "age": 18,
+  "tier": 1,
+  "season": 3
+ },
+ {
+  "id": "konferencja",
+  "group": "Zwykła walka",
+  "title": "Konferencja",
+  "desc": "Pytanie i trzy odpowiedzi.",
+  "who": "Robert Wróbel",
+  "age": 19,
+  "tier": 1,
+  "season": 4
+ },
+ {
+  "id": "wazenie-kara",
+  "group": "Zwykła walka",
+  "title": "Waga nie wychodzi",
+  "desc": "Sauna albo kara z gaży.",
+  "who": "Bruno Dąbrowski",
+  "age": 31,
+  "tier": 2,
+  "season": 16
+ },
+ {
+  "id": "walka-start",
+  "group": "Zwykła walka",
+  "title": "Początek walki",
+  "desc": "Plan na 1. rundę.",
+  "who": "Robert Wróbel",
+  "age": 18,
+  "tier": 1,
+  "season": 3
+ },
+ {
+  "id": "walka-przerwa",
+  "group": "Zwykła walka",
+  "title": "Przerwa między rundami",
+  "desc": "Narożnik po 1. rundzie.",
+  "who": "Robert Wróbel",
+  "age": 18,
+  "tier": 1,
+  "season": 3
+ },
+ {
+  "id": "mikrofon",
+  "group": "Zwykła walka",
+  "title": "Po walce: mikrofon",
+  "desc": "Decyzja zaraz po walce.",
+  "who": "Robert Wróbel",
+  "age": 18,
+  "tier": 1,
+  "season": 3
+ },
+ {
+  "id": "po-walce",
+  "group": "Zwykła walka",
+  "title": "Ekran po walce",
+  "desc": "Wynik, gaża, media, przerwa.",
+  "who": "Robert Wróbel",
+  "age": 18,
+  "tier": 1,
+  "season": 3
+ },
+ {
+  "id": "pas-media",
+  "group": "Wielka walka",
+  "title": "Walka o pas: media day",
+  "desc": "Pierwsze pytanie na media day.",
+  "who": "Robert Wróbel",
+  "age": 20,
+  "tier": 1,
+  "season": 5
+ },
+ {
+  "id": "pas-face",
+  "group": "Wielka walka",
+  "title": "Walka o pas: face-off",
+  "desc": "Ważenie ceremonialne.",
+  "who": "Robert Wróbel",
+  "age": 20,
+  "tier": 1,
+  "season": 5
+ },
+ {
+  "id": "pas-wyjscie",
+  "group": "Wielka walka",
+  "title": "Walka o pas: wyjście",
+  "desc": "Wyjście do klatki.",
+  "who": "Robert Wróbel",
+  "age": 20,
+  "tier": 1,
+  "season": 5
+ },
+ {
+  "id": "pas-walka",
+  "group": "Wielka walka",
+  "title": "Walka o pas: w klatce",
+  "desc": "Pięć rund, plan na 1. rundę.",
+  "who": "Robert Wróbel",
+  "age": 20,
+  "tier": 1,
+  "season": 5
+ },
+ {
+  "id": "obrona-face",
+  "group": "Wielka walka",
+  "title": "Obrona pasa: face-off",
+  "desc": "Mistrz na ważeniu.",
+  "who": "Marcin Zając",
+  "age": 24,
+  "tier": 1,
+  "season": 9
+ },
+ {
+  "id": "zadra-face",
+  "group": "Wielka walka",
+  "title": "Rewanż / rywal: face-off",
+  "desc": "Ktoś, z kim masz historię.",
+  "who": "Robert Wróbel",
+  "age": 20,
+  "tier": 1,
+  "season": 5
+ },
+ {
+  "id": "freak-face",
+  "group": "Wielka walka",
+  "title": "Freak fight: face-off",
+  "desc": "Gala freaków.",
+  "who": "Arkadiusz Kulesza",
+  "age": 19,
+  "tier": 1,
+  "season": 4
+ },
+ {
+  "id": "pozegnanie-wyjscie",
+  "group": "Wielka walka",
+  "title": "Walka pożegnalna: wyjście",
+  "desc": "Ostatnie wyjście w karierze.",
+  "who": "Robert Wróbel",
+  "age": 35,
+  "tier": 3,
+  "season": 20
+ },
+ {
+  "id": "podsumowanie",
+  "group": "Rok",
+  "title": "Podsumowanie roku",
+  "desc": "Bilans roku i punkty.",
+  "who": "Robert Wróbel",
+  "age": 18,
+  "tier": 1,
+  "season": 3
+ },
+ {
+  "id": "rynek",
+  "group": "Rok",
+  "title": "Rynek kontraktów",
+  "desc": "Oferty federacji i klubów.",
+  "who": "Robert Wróbel",
+  "age": 19,
+  "tier": 1,
+  "season": 4
+ },
+ {
+  "id": "plan-roku",
+  "group": "Rok",
+  "title": "Plan roku",
+  "desc": "Budżet, cel roku, sponsorzy.",
+  "who": "Robert Wróbel",
+  "age": 18,
+  "tier": 1,
+  "season": 3
+ },
+ {
+  "id": "koniec-kariery",
+  "group": "Rok",
+  "title": "Koniec kariery",
+  "desc": "Dorobek i co dalej.",
+  "who": "Robert Wróbel",
+  "age": 35,
+  "tier": 3,
+  "season": 20
+ }
+]
