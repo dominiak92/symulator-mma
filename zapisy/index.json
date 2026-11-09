@@ -65,9 +65,9 @@
   "title": "Konferencja",
   "desc": "Pytanie i trzy odpowiedzi.",
   "who": "Robert Wróbel",
-  "age": 19,
+  "age": 18,
   "tier": 1,
-  "season": 4
+  "season": 3
  },
  {
   "id": "wazenie-kara",
@@ -75,9 +75,9 @@
   "title": "Waga nie wychodzi",
   "desc": "Sauna albo kara z gaży.",
   "who": "Bruno Dąbrowski",
-  "age": 31,
-  "tier": 2,
-  "season": 16
+  "age": 26,
+  "tier": 3,
+  "season": 11
  },
  {
   "id": "walka-start",
@@ -125,9 +125,9 @@
   "title": "Walka o pas: media day",
   "desc": "Pierwsze pytanie na media day.",
   "who": "Robert Wróbel",
-  "age": 20,
+  "age": 19,
   "tier": 1,
-  "season": 5
+  "season": 4
  },
  {
   "id": "pas-face",
@@ -135,9 +135,9 @@
   "title": "Walka o pas: face-off",
   "desc": "Ważenie ceremonialne.",
   "who": "Robert Wróbel",
-  "age": 20,
+  "age": 19,
   "tier": 1,
-  "season": 5
+  "season": 4
  },
  {
   "id": "pas-wyjscie",
@@ -145,9 +145,9 @@
   "title": "Walka o pas: wyjście",
   "desc": "Wyjście do klatki.",
   "who": "Robert Wróbel",
-  "age": 20,
+  "age": 19,
   "tier": 1,
-  "season": 5
+  "season": 4
  },
  {
   "id": "pas-walka",
@@ -155,19 +155,19 @@
   "title": "Walka o pas: w klatce",
   "desc": "Pięć rund, plan na 1. rundę.",
   "who": "Robert Wróbel",
-  "age": 20,
+  "age": 19,
   "tier": 1,
-  "season": 5
+  "season": 4
  },
  {
   "id": "obrona-face",
   "group": "Wielka walka",
   "title": "Obrona pasa: face-off",
   "desc": "Mistrz na ważeniu.",
-  "who": "Marcin Zając",
-  "age": 24,
+  "who": "Bartek Zając",
+  "age": 23,
   "tier": 1,
-  "season": 9
+  "season": 8
  },
  {
   "id": "zadra-face",
@@ -175,9 +175,9 @@
   "title": "Rewanż / rywal: face-off",
   "desc": "Ktoś, z kim masz historię.",
   "who": "Robert Wróbel",
-  "age": 20,
-  "tier": 1,
-  "season": 5
+  "age": 21,
+  "tier": 2,
+  "season": 6
  },
  {
   "id": "freak-face",
@@ -185,19 +185,19 @@
   "title": "Freak fight: face-off",
   "desc": "Gala freaków.",
   "who": "Arkadiusz Kulesza",
-  "age": 19,
+  "age": 20,
   "tier": 1,
-  "season": 4
+  "season": 5
  },
  {
   "id": "pozegnanie-wyjscie",
   "group": "Wielka walka",
   "title": "Walka pożegnalna: wyjście",
   "desc": "Ostatnie wyjście w karierze.",
-  "who": "Robert Wróbel",
-  "age": 35,
+  "who": "Marcin Zając",
+  "age": 31,
   "tier": 3,
-  "season": 20
+  "season": 16
  },
  {
   "id": "podsumowanie",
@@ -235,8 +235,8 @@
   "title": "Koniec kariery",
   "desc": "Dorobek i co dalej.",
   "who": "Robert Wróbel",
-  "age": 35,
+  "age": 30,
   "tier": 3,
-  "season": 20
+  "season": 15
  }
 ]
