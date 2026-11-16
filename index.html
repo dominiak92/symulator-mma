@@ -28,16 +28,18 @@
     <meta property="og:image:height" content="630" />
     <meta name="twitter:card" content="summary_large_image" />
     <title>MMA Miszcz · Symulator polskiego zawodnika MMA · Ground Game</title>
-    <script type="module" crossorigin src="./assets/index-BuduyZUk.js"></script>
+    <script type="module" crossorigin src="./assets/index-CK4Nn90H.js"></script>
     <link rel="modulepreload" crossorigin href="./assets/rolldown-runtime-4tVxZq34.js">
     <link rel="modulepreload" crossorigin href="./assets/vendor-D_zmH4-i.js">
     <link rel="modulepreload" crossorigin href="./assets/storage-ClS68Vm-.js">
     <link rel="modulepreload" crossorigin href="./assets/format-DrfL1m-K.js">
     <link rel="modulepreload" crossorigin href="./assets/data-Y1LsZpLA.js">
     <link rel="modulepreload" crossorigin href="./assets/rng-BncOSDRi.js">
-    <link rel="stylesheet" crossorigin href="./assets/index-BDyDKjUa.css">
+    <link rel="stylesheet" crossorigin href="./assets/index-CsgTcxH6.css" media="print" onload="this.media='all'">
   </head>
-  <body>
-    <div id="root"></div>
+  <body style="margin:0;background:#0f0f10">
+    <!-- (16.11, Sebastian: „zamiast szarego ekranu loader, zanim gra się wczyta”) ekran startowy bez JS i bez CSS gry;
+         React podmienia zawartość #root przy pierwszym renderze, więc loader znika sam -->
+    <div id="root"><div id="boot-loader" role="status" aria-live="polite"><style>#boot-loader{color:#e9edf2;text-align:center;background:#0f0f10;align-content:center;place-items:center;gap:18px;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;display:grid;position:fixed;inset:0}#boot-loader img{width:84px;height:84px;animation:1.6s ease-in-out infinite bl-pulse}#boot-loader b{letter-spacing:.08em;font-size:22px;font-style:italic;font-weight:900}#boot-loader small{color:#8b93a1;font-size:13px}#boot-loader .bl-bar{background:#ffffff1f;width:160px;height:3px;overflow:hidden}#boot-loader .bl-bar i{background:#01e7ff;width:40%;height:100%;animation:1.1s ease-in-out infinite bl-run;display:block}#boot-loader .bl-slow{color:#8b93a1;font-size:13px;display:none}#boot-loader .bl-slow a{color:#01e7ff}@keyframes bl-run{0%{transform:translate(-100%)}to{transform:translate(250%)}}@keyframes bl-pulse{0%,to{opacity:1}50%{opacity:.75}}@media (prefers-reduced-motion:reduce){#boot-loader img,#boot-loader .bl-bar i{animation:none}}</style><img src="/pwa/icon-192.png" alt="" /><b>MMA MISZCZ</b><div class="bl-bar"><i></i></div><small>Wczytuję grę…</small><span class="bl-slow">Trwa to dłużej niż zwykle. Sprawdź internet albo <a href="/">odśwież stronę</a>.</span><script>setTimeout(function(){var e=document.querySelector('#boot-loader .bl-slow');if(e)e.style.display='block'},12000)</script></div></div>
   </body>
 </html>
