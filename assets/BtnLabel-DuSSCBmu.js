@@ -1,0 +1,1 @@
+import{t as e}from"./vendor-D_zmH4-i.js";var t=e();function n({main:e,sub:n}){return n?(0,t.jsxs)(`span`,{className:`btn-txt`,children:[(0,t.jsx)(`span`,{className:`btn-main`,children:e}),(0,t.jsx)(`small`,{className:`btn-sub`,children:n})]}):(0,t.jsx)(t.Fragment,{children:e})}export{n as t};
