@@ -12,7 +12,8 @@ from playwright.sync_api import sync_playwright
 URL = next((a for a in sys.argv[1:] if a.startswith('http')), 'http://localhost:5175/')
 SHOTS = sys.argv[sys.argv.index('--shots') + 1] if '--shots' in sys.argv else None
 HERE = os.path.dirname(os.path.abspath(__file__))
-SAVES = sorted(glob.glob(os.path.join(HERE, '..', 'tests', 'fixtures', 'ui', '*.json')))
+# SMOKE_SAVES=KATALOG: inne zapisy niż stałe z tests/fixtures/ui (np. rzadkie stany: kontuzja, zawieszenie, dług)
+SAVES = sorted(glob.glob(os.path.join(os.environ.get('SMOKE_SAVES') or os.path.join(HERE, '..', 'tests', 'fixtures', 'ui'), '*.json')))
 WIDTHS = [393, 360]
 # SMOKE_SIZES=393x395,360x640: inne ekrany (np. iPhone w Chrome z paskami: 393×395); SMOKE_FONT=130: powiększony tekst
 SIZES = [tuple(int(v) for v in x.split('x')) for x in os.environ['SMOKE_SIZES'].split(',')] if os.environ.get('SMOKE_SIZES') else [(w, 760) for w in WIDTHS]

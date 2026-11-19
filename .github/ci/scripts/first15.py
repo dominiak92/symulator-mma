@@ -147,7 +147,9 @@ with sync_playwright() as p:
         key, txt = screen_key()
         same = same + 1 if key == last_key else 0
         last_key = key
-        if same >= 6:
+        # transmisja walki (scena 3D) w przeglądarce bez karty graficznej bywa tak wolna, że stuknięcie w taktykę nie dochodzi przez kilkanaście kroków
+        # (15.11: bramka wow102 padła 1 raz na 6 na ekranie „Taktyka na całą walkę”, choć gra szła dalej); tam czekamy dłużej
+        if same >= (16 if pg.locator('.tv-pick').count() else 6):
             problems.append(f'krok {step}: ekran stoi po 6 stuknięciach: „{txt[:120]}”')
             break
         for pr in pg.evaluate(CENTER_JS, '.app'):
@@ -172,7 +174,7 @@ with sync_playwright() as p:
         dlg = pg.locator('[role=dialog]:visible')
         had_dlg = dlg.count() > 0
         scopes = [dlg.last] if dlg.count() else [pg]
-        sels = ['.btn-primary', '.call-btn.accept', '.brk-opt.advised', '.opt', '.choice', '.rp-opt', 'button'] if dlg.count() else SEL + ['button:has-text("Dalej")', 'button:has-text("Zaczynam")', 'button:has-text("Start")']
+        sels = ['.tv-opt', '.btn-primary', '.call-btn.accept', '.brk-opt.advised', '.opt', '.choice', '.rp-opt', 'button'] if dlg.count() else SEL + ['button:has-text("Dalej")', 'button:has-text("Zaczynam")', 'button:has-text("Start")']
         for scope in scopes:
             for sel in sels:
                 # człowiek nie wychodzi z gry w trakcie i nie kasuje niczego
