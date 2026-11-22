@@ -265,7 +265,7 @@ with sync_playwright() as p:
             pg.on('pageerror', lambda e: errs.append(str(e)))
             pg.goto(URL)
             data = open(save).read()
-            pg.evaluate("([d, f]) => { localStorage.clear(); localStorage.setItem('spz-mma-slot-1', d); localStorage.setItem('spz-mma-settings', JSON.stringify({animations:false,cardTheme:'dark',tips:false,tipsSeen:[],tutorialSeen:true,fontScale:f})); localStorage.setItem('spz-mma-seen-version','999'); }", [data, FONT])
+            pg.evaluate("([d, f]) => { localStorage.clear(); localStorage.setItem('spz-mma-slot-1', d); localStorage.setItem('spz-mma-settings', JSON.stringify({animations:false,cardTheme:'dark',tips:false,tipsSeen:[],tutorialSeen:true,fontScale:f})); localStorage.setItem('spz-mma-ann-gramin','1'); localStorage.setItem('spz-mma-seen-version','999'); }", [data, FONT])
             pg.reload(); pg.wait_for_timeout(400)
             pg.locator('.cv-quick').first.click(); pg.wait_for_timeout(300)
             pg.locator('.slot button, button').filter(has_text=re.compile('Kontynuuj|Zobacz kartę')).first.click(); pg.wait_for_timeout(1200)
