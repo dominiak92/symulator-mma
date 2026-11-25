@@ -102,7 +102,7 @@ with sync_playwright() as p:
     errs = []
     pg.on('pageerror', lambda e: errs.append(str(e)))
     pg.goto(URL)
-    pg.evaluate("() => { localStorage.clear(); localStorage.setItem('spz-mma-seen-version','999'); localStorage.setItem('spz-mma-settings', JSON.stringify({animations:true,cardTheme:'dark',tips:false,tipsSeen:[],tutorialSeen:true,fontScale:100})); localStorage.setItem('spz-mma-ann-gramin','1'); }")
+    pg.evaluate("() => { localStorage.clear(); localStorage.setItem('spz-mma-seen-version','999'); localStorage.setItem('spz-mma-settings', JSON.stringify({animations:true,cardTheme:'dark',tips:false,tipsSeen:[],tutorialSeen:true,fontScale:100})); localStorage.setItem('spz-mma-ann-gramin','1'); localStorage.setItem('spz-mma-ankieta-later','s3:9999999999999'); }")
     pg.reload(); pg.wait_for_timeout(600)
     SAVE = os.environ.get('F15_SAVE')
     if SAVE:
